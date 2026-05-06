@@ -1,0 +1,1156 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>모래묻은 키보드 - 일하면서 즐기는 완벽한 휴식</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --primary: #2c6480;
+        --primary-light: #3d8aaa;
+        --accent-blue: #c3edf6;
+        --accent-yellow: #f6e5ba;
+        --text-dark: #191c1e;
+        --text-mid: #475569;
+        --text-muted: #64748b;
+        --text-light: #94a3b8;
+        --border: #e2e8f0;
+        --border-light: #f1f5f9;
+        --bg: #f7f9fb;
+        --bg-section: #f8fafc;
+        --white: #ffffff;
+        --gradient-hero: linear-gradient(135deg, #c3edf6 0%, #f9e8bd 100%);
+        --gradient-icon: linear-gradient(135deg, #c3edf6 0%, #f6e5ba 100%);
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        font-family: "Noto Sans KR", sans-serif;
+        background: var(--bg);
+        color: var(--text-dark);
+        line-height: 1.6;
+        overflow-x: hidden;
+      }
+
+      /* ─── NAV ─── */
+      nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        height: 80px;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 15px 30px -10px rgba(12, 74, 110, 0.05);
+      }
+      .nav-inner {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 32px;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .nav-left {
+        display: flex;
+        align-items: center;
+        gap: 48px;
+      }
+      .logo {
+        font-size: 20px;
+        font-weight: 500;
+        background: linear-gradient(90deg, #7dd3fc, #fde68a);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .nav-links a {
+        padding: 8px 12px;
+        font-size: 16px;
+        color: var(--text-mid);
+        text-decoration: none;
+        border-radius: 8px;
+        transition:
+          background 0.2s,
+          color 0.2s;
+        white-space: nowrap;
+      }
+      .nav-links a:hover {
+        background: var(--border-light);
+        color: var(--text-dark);
+      }
+      .nav-links a.active {
+        color: #0284c7;
+        border-bottom: 2px solid #7dd3fc;
+        border-radius: 0;
+        padding-bottom: 6px;
+      }
+      .nav-right {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .btn-login {
+        padding: 8px 16px;
+        font-size: 16px;
+        font-family: "Noto Sans KR", sans-serif;
+        color: var(--text-mid);
+        background: none;
+        border: none;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: background 0.2s;
+      }
+      .btn-login:hover {
+        background: var(--border-light);
+      }
+      .btn-start {
+        padding: 10px 24px;
+        font-size: 16px;
+        font-family: "Noto Sans KR", sans-serif;
+        color: white;
+        background: var(--primary);
+        border: none;
+        border-radius: 9999px;
+        cursor: pointer;
+        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+        transition:
+          background 0.2s,
+          transform 0.1s;
+        white-space: nowrap;
+      }
+      .btn-start:hover {
+        background: var(--primary-light);
+        transform: translateY(-1px);
+      }
+
+      /* ─── HERO ─── */
+      .hero {
+        margin-top: 80px;
+        height: 870px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+        background: var(--gradient-hero);
+      }
+      .hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.08);
+      }
+      .hero-container {
+        position: relative;
+        z-index: 1;
+        max-width: 1280px;
+        width: 100%;
+        padding: 0 32px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .hero h1 {
+        font-size: 64px;
+        font-weight: 500;
+        color: white;
+        text-align: center;
+        text-shadow:
+          0 4px 1.5px rgba(0, 0, 0, 0.1),
+          0 10px 4px rgba(0, 0, 0, 0.04);
+        margin-bottom: 16px;
+        line-height: 1.5;
+      }
+      .hero p {
+        font-size: 20px;
+        color: white;
+        text-align: center;
+        text-shadow:
+          0 2px 1px rgba(0, 0, 0, 0.06),
+          0 4px 1.5px rgba(0, 0, 0, 0.07);
+        margin-bottom: 48px;
+      }
+
+      /* 검색바 */
+      .search-bar {
+        width: 100%;
+        max-width: 896px;
+        padding: 6px;
+        background: var(--gradient-hero);
+        border-radius: 32px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      }
+      .search-inner {
+        background: white;
+        border-radius: 28px;
+        display: flex;
+        align-items: center;
+        padding: 16px;
+      }
+      .search-field {
+        flex: 1;
+        padding: 0 24px;
+        border-right: 1px solid var(--border-light);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .search-field:last-of-type {
+        border-right: none;
+      }
+      .search-label {
+        font-size: 10px;
+        font-weight: 500;
+        color: var(--text-light);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .search-input {
+        font-size: 16px;
+        font-family: "Noto Sans KR", sans-serif;
+        color: var(--text-light);
+        border: none;
+        outline: none;
+        background: none;
+        width: 100%;
+      }
+      .search-input::placeholder {
+        color: var(--text-light);
+      }
+      .search-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 16px 32px;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 9999px;
+        font-size: 16px;
+        font-family: "Noto Sans KR", sans-serif;
+        font-weight: 500;
+        cursor: pointer;
+        box-shadow:
+          0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        transition:
+          background 0.2s,
+          transform 0.1s;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .search-btn:hover {
+        background: var(--primary-light);
+        transform: translateY(-1px);
+      }
+      .search-icon {
+        width: 18px;
+        height: 18px;
+        fill: none;
+        stroke: white;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      /* ─── SECTION WRAPPER ─── */
+      .section-wrap {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 80px 32px;
+      }
+      .section-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        margin-bottom: 24px;
+      }
+      .section-title-group {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+      }
+      .section-label {
+        font-size: 16px;
+        color: #3d646c;
+        font-weight: 500;
+      }
+      .section-desc {
+        font-size: 18px;
+        color: var(--text-muted);
+      }
+      .btn-view-all {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 16px;
+        color: var(--primary);
+        text-decoration: none;
+        transition: opacity 0.2s;
+      }
+      .btn-view-all:hover {
+        opacity: 0.7;
+      }
+      .btn-view-all svg {
+        width: 13px;
+        height: 13px;
+        stroke: var(--primary);
+        stroke-width: 2;
+        fill: none;
+      }
+
+      /* ─── 숙소 카드 ─── */
+      .cards-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 32px;
+      }
+      .card {
+        background: white;
+        border: 1px solid var(--border-light);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+        cursor: pointer;
+      }
+      .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+      }
+      .card-img {
+        height: 256px;
+        position: relative;
+        overflow: hidden;
+      }
+      .card-img img {
+        width: 100%;
+        height: 149%;
+        object-fit: cover;
+        position: absolute;
+        top: -24.61%;
+        left: 0;
+        transition: transform 0.4s;
+      }
+      .card:hover .card-img img {
+        transform: scale(1.04);
+      }
+      .card-location {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        padding: 4px 12px;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(4px);
+        border-radius: 9999px;
+        font-size: 12px;
+        color: var(--primary);
+        font-weight: 500;
+      }
+      .card-body {
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .card-title {
+        font-size: 16px;
+        color: var(--text-dark);
+        font-weight: 500;
+      }
+      .card-tags {
+        display: flex;
+        gap: 8px;
+        padding-bottom: 8px;
+        flex-wrap: wrap;
+      }
+      .tag {
+        padding: 4px 12px;
+        border-radius: 9999px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .tag-blue {
+        background: var(--accent-blue);
+        color: #456d74;
+      }
+      .tag-yellow {
+        background: var(--accent-yellow);
+        color: #726643;
+      }
+      .card-footer {
+        border-top: 1px solid #f8fafc;
+        padding-top: 17px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .card-price {
+        display: flex;
+        align-items: baseline;
+        gap: 3px;
+      }
+      .price-amount {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--primary);
+        font-family: "Plus Jakarta Sans", sans-serif;
+      }
+      .price-unit {
+        font-size: 14px;
+        color: var(--text-light);
+        font-family: "Plus Jakarta Sans", sans-serif;
+      }
+      .wish-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px;
+        transition: transform 0.2s;
+      }
+      .wish-btn:hover {
+        transform: scale(1.2);
+      }
+      .wish-btn svg {
+        width: 20px;
+        height: 19px;
+      }
+
+      /* ─── WHY SECTION ─── */
+      .why-section {
+        background: var(--bg-section);
+        padding: 80px 0;
+      }
+      .why-inner {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 64px;
+      }
+      .why-header {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        align-items: center;
+      }
+      .why-label {
+        font-size: 16px;
+        color: #3d646c;
+        font-weight: 500;
+        text-align: center;
+      }
+      .why-desc {
+        font-size: 16px;
+        color: var(--text-muted);
+        text-align: center;
+        max-width: 672px;
+      }
+      .features-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 48px;
+      }
+      .feature-card {
+        background: white;
+        border: 1px solid white;
+        border-radius: 32px;
+        padding: 33px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+      }
+      .feature-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(44, 100, 128, 0.1);
+      }
+      .feature-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+        background: var(--gradient-icon);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .feature-icon svg {
+        width: 28px;
+        height: 28px;
+        stroke: var(--primary);
+        stroke-width: 1.8;
+        fill: none;
+      }
+      .feature-title {
+        font-size: 16px;
+        font-weight: 500;
+        color: var(--text-dark);
+        text-align: center;
+        padding-top: 12px;
+      }
+      .feature-desc {
+        font-size: 16px;
+        color: var(--text-muted);
+        text-align: center;
+        line-height: 1.6;
+      }
+
+      /* ─── BENTO GRID ─── */
+      .bento-section {
+        padding: 80px 32px;
+        max-width: 1280px;
+        margin: 0 auto;
+      }
+      .bento-label {
+        font-size: 16px;
+        color: #3d646c;
+        font-weight: 500;
+        margin-bottom: 24px;
+      }
+      .bento-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+        gap: 16px;
+        height: 600px;
+      }
+      .bento-item {
+        border-radius: 24px;
+        overflow: hidden;
+        position: relative;
+        cursor: pointer;
+        transition: transform 0.3s;
+      }
+      .bento-item:hover {
+        transform: scale(1.01);
+      }
+      .bento-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .bento-item-lg {
+        grid-column: 1 / span 2;
+        grid-row: 1 / span 2;
+      }
+      .bento-item-top {
+        grid-column: 3 / span 2;
+        grid-row: 1;
+      }
+      .bento-item-bl {
+        grid-column: 3;
+        grid-row: 2;
+      }
+      .bento-item-br {
+        grid-column: 4;
+        grid-row: 2;
+      }
+      .bento-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          to top,
+          rgba(0, 0, 0, 0.6) 0%,
+          rgba(0, 0, 0, 0) 50%
+        );
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        padding: 32px;
+      }
+      .bento-overlay-center {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .bento-title {
+        font-size: 16px;
+        color: white;
+        font-weight: 500;
+        margin-bottom: 4px;
+      }
+      .bento-desc {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.8);
+        line-height: 1.5;
+      }
+      .bento-center-title {
+        font-size: 16px;
+        color: white;
+        font-weight: 500;
+      }
+
+      /* ─── FOOTER ─── */
+      footer {
+        background: var(--bg-section);
+        border-top: 1px solid var(--border);
+      }
+      .footer-inner {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 96px 32px 32px;
+      }
+      .footer-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 64px;
+      }
+      .footer-brand {
+        max-width: 320px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .footer-logo {
+        font-size: 18px;
+        font-weight: 500;
+        color: #1e293b;
+      }
+      .footer-tagline {
+        font-size: 16px;
+        color: var(--text-muted);
+        line-height: 1.7;
+      }
+      .footer-social {
+        display: flex;
+        gap: 16px;
+        padding-top: 8px;
+      }
+      .social-btn {
+        width: 40px;
+        height: 40px;
+        background: var(--border);
+        border-radius: 9999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition:
+          background 0.2s,
+          transform 0.2s;
+        border: none;
+      }
+      .social-btn:hover {
+        background: var(--accent-blue);
+        transform: translateY(-2px);
+      }
+      .social-btn svg {
+        width: 16px;
+        height: 16px;
+        fill: var(--text-mid);
+      }
+      .footer-links {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 64px;
+      }
+      .footer-col {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .footer-col-title {
+        font-size: 12px;
+        font-weight: 500;
+        color: #1e293b;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+      }
+      .footer-col a {
+        font-size: 16px;
+        color: var(--text-muted);
+        text-decoration: none;
+        transition: color 0.2s;
+      }
+      .footer-col a:hover {
+        color: var(--primary);
+      }
+      .footer-bottom {
+        border-top: 1px solid var(--border);
+        padding-top: 33px;
+        padding-bottom: 32px;
+      }
+      .footer-copy {
+        font-size: 14px;
+        color: var(--text-light);
+        font-family: "Plus Jakarta Sans", sans-serif;
+      }
+
+      /* ─── 애니메이션 ─── */
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(24px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .hero h1 {
+        animation: fadeUp 0.7s ease both;
+      }
+      .hero p {
+        animation: fadeUp 0.7s 0.15s ease both;
+      }
+      .search-bar {
+        animation: fadeUp 0.7s 0.3s ease both;
+      }
+
+      .reveal {
+        opacity: 0;
+        transform: translateY(20px);
+        transition:
+          opacity 0.6s ease,
+          transform 0.6s ease;
+      }
+      .reveal.visible {
+        opacity: 1;
+        transform: none;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- NAV -->
+    <nav>
+      <div class="nav-inner">
+        <div class="nav-left">
+          <a href="#" class="logo">모래묻은 키보드</a>
+          <div class="nav-links">
+            <a href="#" class="active">홈</a>
+            <a href="#">여행지</a>
+            <a href="#">업무 공간</a>
+            <a href="#">커뮤니티</a>
+            <a href="#">고객지원</a>
+          </div>
+        </div>
+        <div class="nav-right">
+          <button class="btn-login">로그인</button>
+          <button class="btn-start">시작하기</button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-container">
+        <h1>일하면서 즐기는 완벽한 휴식, 워케이션</h1>
+        <p>
+          답답한 사무실을 벗어나 영감을 주는 곳에서 당신의 업무 효율을
+          높여보세요.
+        </p>
+        <div class="search-bar">
+          <div class="search-inner">
+            <div class="search-field">
+              <span class="search-label">위치</span>
+              <input
+                class="search-input"
+                type="text"
+                placeholder="어디로 떠나시나요?"
+              />
+            </div>
+            <div class="search-field">
+              <span class="search-label">일정</span>
+              <input class="search-input" type="text" placeholder="날짜 추가" />
+            </div>
+            <div class="search-field" style="border-right: none">
+              <span class="search-label">인원</span>
+              <input
+                class="search-input"
+                type="text"
+                placeholder="몇 명인가요?"
+              />
+            </div>
+            <button class="search-btn">
+              <svg class="search-icon" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              검색
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 추천 워케이션 -->
+    <div class="section-wrap reveal">
+      <div class="section-header">
+        <div class="section-title-group">
+          <span class="section-label">당신을 위한 추천 워케이션</span>
+          <span class="section-desc"
+            >업무 집중도를 극대화할 수 있도록 엄선된 워케이션 장소입니다.</span
+          >
+        </div>
+        <a href="#" class="btn-view-all">
+          전체 보기
+          <svg
+            viewBox="0 0 24 24"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </a>
+      </div>
+      <div class="cards-grid">
+        <!-- Card 1 -->
+        <div class="card">
+          <div class="card-img">
+            <img
+              src="https://www.figma.com/api/mcp/asset/a304396a-5647-4798-8441-bb07ab29ef20"
+              alt="제주 오션뷰 로프트"
+            />
+            <span class="card-location">제주</span>
+          </div>
+          <div class="card-body">
+            <div class="card-title">오션뷰 로프트</div>
+            <div class="card-tags">
+              <span class="tag tag-blue">초고속 WIFI</span>
+              <span class="tag tag-yellow">정숙 구역</span>
+            </div>
+            <div class="card-footer">
+              <div class="card-price">
+                <span class="price-amount">₩120,000</span>
+                <span class="price-unit">/ 1박</span>
+              </div>
+              <button class="wish-btn" title="찜하기">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#f9e2af"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <!-- Card 2 -->
+        <div class="card">
+          <div class="card-img">
+            <img
+              src="https://www.figma.com/api/mcp/asset/8f983209-cea7-4921-aaa9-0ced5c863812"
+              alt="발리 트로피컬 허브"
+            />
+            <span class="card-location">발리</span>
+          </div>
+          <div class="card-body">
+            <div class="card-title">트로피컬 디지털 노마드 허브</div>
+            <div class="card-tags">
+              <span class="tag tag-blue">커뮤니티 키친</span>
+              <span class="tag tag-yellow">24/7 이용 가능</span>
+            </div>
+            <div class="card-footer">
+              <div class="card-price">
+                <span class="price-amount">₩85,000</span>
+                <span class="price-unit">/ 1박</span>
+              </div>
+              <button class="wish-btn" title="찜하기">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#f9e2af"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <!-- Card 3 -->
+        <div class="card">
+          <div class="card-img">
+            <img
+              src="https://www.figma.com/api/mcp/asset/19b2ec05-4b2d-4232-8e55-53deef70fd29"
+              alt="양양 서퍼의 작업 공간"
+            />
+            <span class="card-location">양양</span>
+          </div>
+          <div class="card-body">
+            <div class="card-title">서퍼의 작업 공간</div>
+            <div class="card-tags">
+              <span class="tag tag-blue">인체공학 의자</span>
+              <span class="tag tag-yellow">커피 바</span>
+            </div>
+            <div class="card-footer">
+              <div class="card-price">
+                <span class="price-amount">₩95,000</span>
+                <span class="price-unit">/ 1박</span>
+              </div>
+              <button class="wish-btn" title="찜하기">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#f9e2af"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WHY 섹션 -->
+    <section class="why-section">
+      <div class="why-inner reveal">
+        <div class="why-header">
+          <div class="why-label">왜 모래묻은 키보드인가요?</div>
+          <div class="why-desc">
+            고급 오피스의 업무 효율과 세계에서 가장 아름다운 휴양지의 평온함을
+            결합했습니다.
+          </div>
+        </div>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24">
+                <rect x="2" y="3" width="20" height="14" rx="2" />
+                <line x1="8" y1="21" x2="16" y2="21" />
+                <line x1="12" y1="17" x2="12" y2="21" />
+              </svg>
+            </div>
+            <div class="feature-title">생산성 향상</div>
+            <div class="feature-desc">
+              듀얼 모니터, 초고속 광랜, 인체공학적 가구가 구비된 검증된 작업
+              공간을 제공합니다.
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"
+                />
+                <path d="M12 6v6l4 2" />
+              </svg>
+            </div>
+            <div class="feature-title">정신적 재충전</div>
+            <div class="feature-desc">
+              화면에서 고개를 돌리면 바로 바다가 보입니다. 자연과 함께
+              번아웃에서 벗어나세요.
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+            </div>
+            <div class="feature-title">글로벌 네트워킹</div>
+            <div class="feature-desc">
+              커뮤니티 이벤트를 통해 전 세계의 창작자, 개발자, 기업가들과
+              소통하세요.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 큐레이션 컬렉션 (Bento Grid) -->
+    <div class="bento-section reveal">
+      <div class="bento-label">큐레이션 컬렉션</div>
+      <div class="bento-grid">
+        <div class="bento-item bento-item-lg">
+          <img
+            src="https://www.figma.com/api/mcp/asset/b6ca7d96-d3e8-45e7-a130-9f9849aa11d4"
+            alt="개발자를 위한 낙원"
+          />
+          <div class="bento-overlay">
+            <div class="bento-title">개발자를 위한 낙원</div>
+            <div class="bento-desc">
+              다중 모니터와 초고속 인터넷이 완비된 최고의 장소들.
+            </div>
+          </div>
+        </div>
+        <div class="bento-item bento-item-top">
+          <img
+            src="https://www.figma.com/api/mcp/asset/474281fa-bcfb-445a-a399-3df2aabf0e34"
+            alt="몰입을 위한 은신처"
+          />
+          <div class="bento-overlay">
+            <div class="bento-title">몰입을 위한 은신처</div>
+            <div class="bento-desc">
+              중요한 프로젝트에 집중할 수 있는 방해 없는 환경.
+            </div>
+          </div>
+        </div>
+        <div class="bento-item bento-item-bl">
+          <img
+            src="https://www.figma.com/api/mcp/asset/856f6175-8fa5-4be9-a379-e9b35875748b"
+            alt="해변가"
+          />
+          <div class="bento-overlay-center">
+            <div class="bento-center-title">해변가</div>
+          </div>
+        </div>
+        <div class="bento-item bento-item-br">
+          <img
+            src="https://www.figma.com/api/mcp/asset/4ff96057-92a3-4e52-9a6d-b99f19c6dbf0"
+            alt="도심의 활기"
+          />
+          <div class="bento-overlay-center">
+            <div class="bento-center-title">도심의 활기</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+      <div class="footer-inner">
+        <div class="footer-top">
+          <div class="footer-brand">
+            <div class="footer-logo">모래묻은 키보드</div>
+            <div class="footer-tagline">
+              일하는 장소가 일하는 방식만큼이나 중요하다고 믿는 현대 전문가들을
+              위해 디자인되었습니다.
+            </div>
+            <div class="footer-social">
+              <button class="social-btn" title="트위터">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"
+                  />
+                </svg>
+              </button>
+              <button class="social-btn" title="인스타그램">
+                <svg viewBox="0 0 24 24">
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="footer-links">
+            <div class="footer-col">
+              <div class="footer-col-title">제품</div>
+              <a href="#">여행지</a>
+              <a href="#">업무 공간</a>
+              <a href="#">커뮤니티</a>
+            </div>
+            <div class="footer-col">
+              <div class="footer-col-title">회사</div>
+              <a href="#">회사 소개</a>
+              <a href="#">인재 채용</a>
+              <a href="#">문의하기</a>
+            </div>
+            <div class="footer-col">
+              <div class="footer-col-title">법적 고지</div>
+              <a href="#">개인정보 처리방침</a>
+              <a href="#">이용 약관</a>
+            </div>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <div class="footer-copy">
+            © 2024 모래묻은 키보드. Effortlessly Productive.
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      // 스크롤 reveal
+      const reveals = document.querySelectorAll(".reveal");
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry, i) => {
+            if (entry.isIntersecting) {
+              entry.target.style.transitionDelay = i * 0.05 + "s";
+              entry.target.classList.add("visible");
+            }
+          });
+        },
+        { threshold: 0.1 },
+      );
+      reveals.forEach((el) => observer.observe(el));
+
+      // 찜 버튼 토글
+      document.querySelectorAll(".wish-btn").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const path = btn.querySelector("path");
+          const isFilled = path.getAttribute("fill") === "#f9e2af";
+          path.setAttribute("fill", isFilled ? "none" : "#f9e2af");
+          path.setAttribute("stroke", isFilled ? "#f9e2af" : "#f9a825");
+        });
+      });
+
+      // 네브 스크롤 효과
+      window.addEventListener("scroll", () => {
+        const nav = document.querySelector("nav");
+        if (window.scrollY > 20) {
+          nav.style.background = "rgba(255,255,255,0.95)";
+        } else {
+          nav.style.background = "rgba(255,255,255,0.85)";
+        }
+      });
+    </script>
+  </body>
+</html>
