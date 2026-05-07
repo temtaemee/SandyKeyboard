@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import LoginPage from "./../features/member/pages/login/LoginPage";
+import SignupPage from "./../features/member/pages/singup/SignupPage";
 
 /**
  * User 도메인 라우터
@@ -13,6 +14,7 @@ export default function UserRouter() {
     <Routes>
       {/* 예시: /users/login */}
       <Route path="login" element={<LoginPage />} />
+      <Route path="join" element={<SignupPage />} />
 
       {/* 예시: /users/mypage */}
       <Route path="mypage" element={<div>My Page (준비 중)</div>} />

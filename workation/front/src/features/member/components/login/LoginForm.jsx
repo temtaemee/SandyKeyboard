@@ -1,8 +1,10 @@
 // components/login/LoginForm.jsx
 import styled from "styled-components";
 import SocialLoginButtons from "./SocialLoginButtons";
+import { useNavigate } from "react-router-dom";
 
 function LoginForm() {
+  const navi = useNavigate();
   return (
     <Card>
       <TitleArea>
@@ -52,7 +54,13 @@ function LoginForm() {
 
       <SignupArea>
         계정이 없으신가요?
-        <SignupLink>회원가입</SignupLink>
+        <SignupLink
+          onClick={() => {
+            navi(`/user/join`);
+          }}
+        >
+          회원가입
+        </SignupLink>
       </SignupArea>
     </Card>
   );
