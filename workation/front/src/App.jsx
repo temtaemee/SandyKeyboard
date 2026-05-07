@@ -7,6 +7,8 @@ import HomePage from "./pages/HomePage";
 
 import SpaceRouter from "./routes/SpaceRouter";
 import UserRouter from "./routes/UserRouter";
+import SellerRouter from "./routes/SellerRouter";
+import SellerHomePage from "./features/seller/pages/SellerHomePage";
 
 export default function App() {
   return (
@@ -30,6 +32,9 @@ export default function App() {
 
           {/* 유저(User) 관련 라우트 - 팀원 B */}
           <Route path="user/*" element={<UserRouter />} />
+
+          {/* 판매자(Seller) 관련 라우트 - 팀원 김영욱 */}
+          <Route path="seller/*" element={<SellerRouter />}></Route>
 
           {/* 추가 도메인 예시: 
             <Route path="reservations/*" element={<ReservationRouter />} /> 
