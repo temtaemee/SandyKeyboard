@@ -29,7 +29,7 @@ export default function App() {
           <Route path="spaces/*" element={<SpaceRouter />} />
 
           {/* 유저(User) 관련 라우트 - 팀원 B */}
-          <Route path="users/*" element={<UserRouter />} />
+          <Route path="user/*" element={<UserRouter />} />
 
           {/* 추가 도메인 예시: 
             <Route path="reservations/*" element={<ReservationRouter />} /> 

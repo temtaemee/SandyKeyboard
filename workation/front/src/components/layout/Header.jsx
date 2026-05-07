@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import styled, { css } from "styled-components";
 import { NAV_LINKS } from "../../data/homeData";
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
+
+  const navi = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -30,7 +32,13 @@ export default function Header() {
         </Center>
 
         <Right>
-          <LoginBtn>로그인</LoginBtn>
+          <LoginBtn
+            onClick={() => {
+              navi(`/user/login`);
+            }}
+          >
+            로그인
+          </LoginBtn>
           <StartBtn>시작하기</StartBtn>
         </Right>
       </Inner>
