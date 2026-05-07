@@ -1,4 +1,4 @@
-export const NAV_LINKS = ["홈", "여행지", "업무 공간", "커뮤니티", "고객지원"];
+export const NAV_LINKS = ["여행지", "참여 후기", "고객지원", "이벤트"];
 
 export const RECOMMENDED_SPACES = [
   {
