@@ -1,7 +1,7 @@
-import styled from 'styled-components';
-import SpaceCard from './SpaceCard';
-import { RECOMMENDED_SPACES } from '../../data/homeData';
-import useReveal from '../../hooks/useReveal';
+import styled from "styled-components";
+import SpaceCard from "./SpaceCard";
+import { RECOMMENDED_SPACES } from "../../data/homeData";
+import useReveal from "../../hooks/useReveal";
 
 export default function RecommendedSection() {
   const { ref, visible } = useReveal();
@@ -11,7 +11,9 @@ export default function RecommendedSection() {
       <Header>
         <TitleGroup>
           <Label>당신을 위한 추천 워케이션</Label>
-          <Desc>업무 집중도를 극대화할 수 있도록 엄선된 워케이션 장소입니다.</Desc>
+          <Desc>
+            업무 집중도를 극대화할 수 있도록 엄선된 워케이션 장소입니다.
+          </Desc>
         </TitleGroup>
         <ViewAllLink href="#">
           전체 보기 <ChevronIcon />
@@ -29,7 +31,16 @@ export default function RecommendedSection() {
 
 function ChevronIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <polyline points="9 18 15 12 9 6" />
     </svg>
   );
@@ -42,8 +53,11 @@ const Section = styled.div`
   margin: 0 auto;
   padding: 80px 32px;
   opacity: ${({ $visible }) => ($visible ? 1 : 0)};
-  transform: ${({ $visible }) => ($visible ? 'translateY(0)' : 'translateY(20px)')};
-  transition: opacity 0.6s ease, transform 0.6s ease;
+  transform: ${({ $visible }) =>
+    $visible ? "translateY(0)" : "translateY(20px)"};
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s ease;
 `;
 
 const Header = styled.div`

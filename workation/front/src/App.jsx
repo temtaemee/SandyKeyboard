@@ -5,10 +5,10 @@ import GlobalStyle from "./styles/GlobalStyle";
 import Layout from "./components/layout/Layout";
 import HomePage from "./pages/HomePage";
 
-import SpaceRouter from "./routes/SpaceRouter";
 import UserRouter from "./routes/UserRouter";
 import SellerRouter from "./routes/SellerRouter";
 import SellerHomePage from "./features/seller/pages/SellerHomePage";
+import AdminRouter from "./routes/AdminRouter";
 
 export default function App() {
   return (
@@ -27,18 +27,14 @@ export default function App() {
             3. 각 팀원은 본인이 맡은 Router 파일만 수정하여 충돌을 방지합니다.
           */}
 
-          {/* 공간(Space) 관련 라우트 - 팀원 A */}
-          <Route path="spaces/*" element={<SpaceRouter />} />
-
-          {/* 유저(User) 관련 라우트 - 팀원 B */}
+          {/* 유저(User) 관련 라우트 - 팀원 <A:blank></A:blank> */}
           <Route path="user/*" element={<UserRouter />} />
 
           {/* 판매자(Seller) 관련 라우트 - 팀원 김영욱 */}
-          <Route path="seller/*" element={<SellerRouter />}></Route>
+          <Route path="seller/*" element={<SellerRouter />} />
 
-          {/* 추가 도메인 예시: 
-            <Route path="reservations/*" element={<ReservationRouter />} /> 
-          */}
+          {/* 관리자(Admin)) 관련 라우트 - 팀원 라형준 */}
+          <Route path="admin/*" element={<AdminRouter />} />
         </Route>
       </Routes>
     </ThemeProvider>
