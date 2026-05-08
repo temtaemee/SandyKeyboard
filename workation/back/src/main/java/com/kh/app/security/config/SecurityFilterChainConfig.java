@@ -32,7 +32,7 @@ public class SecurityFilterChainConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity hs){
+    public SecurityFilterChain securityFilterChain(HttpSecurity hs, AuthenticationManager authenticationManager){
         //불필요한 설정 끄기
         hs.csrf(AbstractHttpConfigurer::disable);
         hs.formLogin(AbstractHttpConfigurer::disable);
@@ -57,7 +57,7 @@ public class SecurityFilterChainConfig {
         hs.addFilterBefore(jwtFilter , UsernamePasswordAuthenticationFilter.class);
 
         //로그인 필터 설정
-        CustomLoginFilter customLoginFilter = new CustomLoginFilter(authenticationManager() , jwtUtil , objectMapper);
+        CustomLoginFilter customLoginFilter = new CustomLoginFilter(authenticationManager, jwtUtil , objectMapper);
         customLoginFilter.setFilterProcessesUrl("/api/guest/login");
         hs.addFilterAt( customLoginFilter , UsernamePasswordAuthenticationFilter.class);
         hs.cors(

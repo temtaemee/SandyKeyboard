@@ -21,7 +21,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         MemberEntity entity = memberRepository
-                .findByUsernameAndDeletedAtIsNull(username)
+                .findByUsername(username)
                 .orElseThrow(EntityNotFoundException::new);
 
         List<String> roles = entity.getRoleList()

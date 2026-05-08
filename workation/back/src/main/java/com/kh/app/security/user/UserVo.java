@@ -1,11 +1,13 @@
 package com.kh.app.security.user;
 
-import lombok.Builder;
-import lombok.Getter;
+import lombok.*;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-@Getter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class UserVo {
 

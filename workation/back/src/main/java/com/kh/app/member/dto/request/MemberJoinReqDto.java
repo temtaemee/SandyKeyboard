@@ -3,7 +3,6 @@ package com.kh.app.member.dto.request;
 import com.kh.app.member.entity.MemberEntity;
 import com.kh.app.member.entity.MemberProfileEntity;
 import com.kh.app.member.entity.RoleEntity;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
