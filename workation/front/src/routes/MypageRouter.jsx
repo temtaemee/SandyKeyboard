@@ -14,6 +14,7 @@ export default function MypageRouter() {
     <Routes>
       {/* 예시: /mypage */}
       <Route path="mypage" element={<div>My Page (준비 중)</div>} />
+      <Route path="mypage/reservation" element={<MyReservationListPage />} />
 
       {/* ↓ 여기에 추가적인 유저 관련 라우트를 작성하세요 */}
     </Routes>
