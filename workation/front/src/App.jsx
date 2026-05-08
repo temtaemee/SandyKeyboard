@@ -5,7 +5,7 @@ import GlobalStyle from './styles/GlobalStyle';
 import Layout from './components/layout/Layout';
 import HomePage from './pages/HomePage';
 
-import UserRouter from './routes/UserRouter';
+import UserRouter from './routes/MypageRouter';
 import SellerRouter from './routes/SellerRouter';
 import SellerHomePage from './features/seller/pages/SellerHomePage';
 import AdminRouter from './routes/AdminRouter';
@@ -36,7 +36,7 @@ export default function App() {
           */}
 
           {/* 유저(User) 관련 라우트 - 팀원 <A:blank></A:blank> */}
-          <Route path="user/*" element={<UserRouter />} />
+          <Route path="mypage/*" element={<UserRouter />} />
           <Route path="join" element={<SignupPage />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="find-id" element={<FindIdPage />} />
