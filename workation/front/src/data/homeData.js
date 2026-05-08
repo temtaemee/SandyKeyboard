@@ -1,4 +1,16 @@
-export const NAV_LINKS = ["여행지", "참여 후기", "고객지원", "이벤트"];
+export const NAV_LINKS = [{
+  label: "여행지",
+  path: `/resv`,
+}, {
+  label: "참여후기",
+  path: `/board/review`,
+}, {
+  label: "고객지원",
+  path: `/board/notice`,
+}, {
+  label: "이벤트",
+  path: `/board/event`,
+}];
 
 export const RECOMMENDED_SPACES = [
   {

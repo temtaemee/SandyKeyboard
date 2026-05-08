@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
-import styled, { css } from "styled-components";
-import { NAV_LINKS } from "../../data/homeData";
+import { useState, useEffect } from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import styled, { css } from 'styled-components';
+import { NAV_LINKS } from '../../data/homeData';
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
@@ -10,8 +10,8 @@ export default function Header() {
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
@@ -24,8 +24,8 @@ export default function Header() {
         <Center>
           <Links>
             {NAV_LINKS.map((link) => (
-              <NavItem key={link} to="/" end>
-                {link}
+              <NavItem key={link.label} to={link.path} end>
+                {link.label}
               </NavItem>
             ))}
           </Links>
@@ -56,7 +56,7 @@ const Nav = styled.nav`
   z-index: 100;
   height: 80px;
   background: ${({ $scrolled }) =>
-    $scrolled ? "rgba(255,255,255,0.97)" : "rgba(255,255,255,0.85)"};
+    $scrolled ? 'rgba(255,255,255,0.97)' : 'rgba(255,255,255,0.85)'};
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
