@@ -16,7 +16,6 @@ import SignupPage from './features/member/pages/singup/SignupPage';
 import BoardRouter from './routes/BoardRouter';
 import ResvRouter from './routes/ResvRouter';
 import LoginPage from './features/member/pages/login/LoginPage';
-import ReviewRouter from './routes/ReviewRouter';
 
 export default function App() {
   return (
