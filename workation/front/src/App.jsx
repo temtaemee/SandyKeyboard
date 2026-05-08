@@ -16,6 +16,7 @@ import SignupPage from './features/member/pages/singup/SignupPage';
 import BoardRouter from './routes/BoardRouter';
 import ResvRouter from './routes/ResvRouter';
 import LoginPage from './features/member/pages/login/LoginPage';
+import ReviewRouter from './routes/ReviewRouter';
 
 export default function App() {
   return (
@@ -43,7 +44,9 @@ export default function App() {
 
           {/* 예약(reservation) 관련 라우트 - 팀원 김민성 */}
           <Route path="resv/*" element={<ResvRouter />} />
-          {/* 게시판(board) 관련 라우트 - 팀원 양희우 */}
+          {/* 리뷰(review) 관련 라우트 - 팀원 양희우 */}
+          <Route path="review/*" element={<ReviewRouter />} />
+          {/* 게시판(board) 관련 라우트 - 팀원 라형준 */}
           <Route path="board/*" element={<BoardRouter />} />
         </Route>
 

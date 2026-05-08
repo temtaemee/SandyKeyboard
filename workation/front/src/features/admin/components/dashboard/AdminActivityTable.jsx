@@ -71,9 +71,7 @@ export default function AdminActivityTable() {
 
       {/* 페이지네이션 */}
       <TableFooter>
-        <FooterInfo>
-          {TOTAL.toLocaleString()}개 항목 중 1-{PER_PAGE}번 표시 중
-        </FooterInfo>
+        <FooterInfo>총 {TOTAL.toLocaleString()}개의 항목</FooterInfo>
         <Pagination>
           <PageBtn
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
