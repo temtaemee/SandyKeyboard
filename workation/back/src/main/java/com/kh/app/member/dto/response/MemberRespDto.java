@@ -1,7 +1,7 @@
 package com.kh.app.member.dto.response;
 
 import com.kh.app.member.entity.MemberEntity;
-import com.kh.app.member.entity.RoleEntity;
+import com.kh.app.member.entity.Role;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -42,9 +42,9 @@ public class MemberRespDto {
                 .phone(phone)
                 .email(email)
                 .roles(
-                        member.getRoleList()
+                        member.getRoleSet()
                                 .stream()
-                                .map(RoleEntity::getName)
+                                .map(Role::name)
                                 .toList()
                 )
                 .banYn(member.getBanYn())

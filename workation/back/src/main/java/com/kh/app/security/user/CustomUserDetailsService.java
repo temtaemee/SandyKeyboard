@@ -1,7 +1,7 @@
 package com.kh.app.security.user;
 
 import com.kh.app.member.entity.MemberEntity;
-import com.kh.app.member.entity.RoleEntity;
+import com.kh.app.member.entity.Role;
 import com.kh.app.member.repository.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -22,11 +22,11 @@ public class CustomUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         MemberEntity entity = memberRepository
                 .findByUsername(username)
-                .orElseThrow(EntityNotFoundException::new);
+                .orElseThrow(()-> new UsernameNotFoundException("회원 없음"));
 
-        List<String> roles = entity.getRoleList()
+        List<String> roles = entity.getRoleSet()
                 .stream()
-                .map(RoleEntity::getName)
+                .map(Role::name)
                 .toList();
 
         UserVo userVo = UserVo.builder()
