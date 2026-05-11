@@ -64,28 +64,5 @@ public class ReservationService {
         return reservation.getId();
     }
 
-    @Transactional(readOnly = true)
-    public ReservationResDto getOne(Long id) {
 
-        ReservationEntity reservation = reservationRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("reservation not found"));
-
-        return ReservationResDto.from(reservation);
-    }
-
-    public void cancel(Long id) {
-
-        ReservationEntity reservation = reservationRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("reservation not found"));
-
-        reservation.cancel();
-    }
-
-    public void complete(Long id) {
-
-        ReservationEntity reservation = reservationRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("reservation not found"));
-
-        reservation.complete();
-    }
 }
