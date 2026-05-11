@@ -15,6 +15,9 @@ import java.time.LocalDateTime;
 @Getter
 public class StayEntity extends BaseEntity {
 
+
+
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -49,5 +52,17 @@ public class StayEntity extends BaseEntity {
     private LocalDateTime checkOutTime;
 
     @Column()
-    private int timePrice;
+    private int monPrice;
+    @Column()
+    private int tuePrice;
+    @Column()
+    private int wedPrice;
+    @Column()
+    private int thuPrice;
+    @Column()
+    private int friPrice;
+    @Column()
+    private int satPrice;
+    @Column()
+    private int sunPrice;
 }

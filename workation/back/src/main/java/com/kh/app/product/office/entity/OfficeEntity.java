@@ -49,18 +49,7 @@ public class OfficeEntity extends BaseEntity {
     private LocalDateTime checkOutTime;
 
     @Column()
-    private int monPrice;
-    @Column()
-    private int tuePrice;
-    @Column()
-    private int wedPrice;
-    @Column()
-    private int thuPrice;
-    @Column()
-    private int friPrice;
-    @Column()
-    private int satPrice;
-    @Column()
-    private int sunPrice;
+    private int timePrice;
+
 
 }

@@ -55,9 +55,11 @@ public class SpaceEntity extends BaseEntity {
     @Builder.Default
     private String visibleYn = "Y";
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "area", nullable = false)
+    private Area areaId;
 
-    private Long applyId;//join
-    private Long areaId;//join
+    private Long applyId;//join해야함
 
 
 }
