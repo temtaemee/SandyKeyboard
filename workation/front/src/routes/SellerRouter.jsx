@@ -1,6 +1,7 @@
-import { Routes, Route } from "react-router-dom";
-import SellerHomePage from "../features/seller/pages/SellerHomePage";
-import SellerDefaultLayout from "../features/seller/layouts/SellerDefaultLayout";
+import { Routes, Route } from 'react-router-dom';
+import SellerHomePage from '../features/seller/pages/SellerHomePage';
+import SellerDefaultLayout from '../features/seller/layouts/SellerDefaultLayout';
+import SellerDashboardPage from '../features/seller/pages/SellerDashboardPage';
 
 /**
  * Seller 도메인 라우터
@@ -13,7 +14,7 @@ export default function SellerRouter() {
   return (
     <Routes>
       {/* 예시: login */}
-      <Route index element={<SellerHomePage />} />
+      <Route index element={<SellerDashboardPage />} />
 
       {/* ↓ 여기에 추가적인 유저 관련 라우트를 작성하세요 */}
     </Routes>

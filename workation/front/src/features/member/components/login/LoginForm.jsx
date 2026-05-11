@@ -1,7 +1,7 @@
 // components/login/LoginForm.jsx
-import styled from "styled-components";
-import SocialLoginButtons from "./SocialLoginButtons";
-import { useNavigate } from "react-router-dom";
+import styled from 'styled-components';
+import SocialLoginButtons from './SocialLoginButtons';
+import { useNavigate } from 'react-router-dom';
 
 function LoginForm() {
   const navi = useNavigate();
@@ -56,7 +56,7 @@ function LoginForm() {
         계정이 없으신가요?
         <SignupLink
           onClick={() => {
-            navi(`/user/join`);
+            navi(`/join`);
           }}
         >
           회원가입
@@ -221,7 +221,7 @@ const Divider = styled.div`
   }
 
   &::before {
-    content: "";
+    content: '';
 
     position: absolute;
     top: 50%;
