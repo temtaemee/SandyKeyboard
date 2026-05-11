@@ -18,9 +18,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class MemberApiController {
     private final MemberService memberService;
     @PostMapping("/guest/join")
-    public void join(@RequestBody MemberJoinReqDto dto){
+    public ResponseEntity<Object> join(@RequestBody MemberJoinReqDto dto){
         memberService.join(dto);
-        ResponseEntity.status(HttpStatus.CREATED).build();
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
 }

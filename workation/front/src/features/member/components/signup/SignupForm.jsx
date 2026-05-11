@@ -1,36 +1,107 @@
 // components/signup/SignupForm.jsx
-import styled from "styled-components";
+import { useState } from 'react';
+import styled from 'styled-components';
+import useJoin from '../../hooks/useJoin';
 
 function SignupForm() {
+  const { fetchJoin, navi } = useJoin();
+  const [vo, setVo] = useState({
+    name: '',
+    username: '',
+    password: '',
+    phone: '',
+    email: '',
+  });
+
+  const [passwordCheck, setPasswordCheck] = useState('');
+
+  function handleChange(e) {
+    const { name, value } = e.target;
+    setVo((prev) => ({ ...prev, [name]: value }));
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (vo.password !== passwordCheck) {
+      alert('비밀번호가 일치하지 않습니다.');
+      return;
+    }
+
+    await fetchJoin(vo);
+  }
+
   return (
     <Card>
       <Title>계정 만들기</Title>
 
       <SubTitle>모래묻은 키보드에 오신 것을 환영합니다!</SubTitle>
 
-      <Form>
+      <Form onSubmit={handleSubmit}>
         <InputWrapper>
           <Label>이름</Label>
 
-          <Input type="text" placeholder="홍길동" />
+          <Input
+            type="text"
+            name="name"
+            value={vo.name}
+            placeholder="홍길동"
+            onChange={handleChange}
+          />
         </InputWrapper>
 
         <InputWrapper>
-          <Label>이메일</Label>
+          <Label>아이디</Label>
 
-          <Input type="email" placeholder="example@workation.com" />
+          <Input
+            type="text"
+            name="username"
+            placeholder="ID입력"
+            onChange={handleChange}
+          />
         </InputWrapper>
 
         <InputWrapper>
           <Label>비밀번호</Label>
 
-          <Input type="password" placeholder="••••••••" />
+          <Input
+            type="password"
+            name="password"
+            placeholder="••••••••"
+            onChange={handleChange}
+          />
         </InputWrapper>
 
         <InputWrapper>
           <Label>비밀번호 확인</Label>
 
-          <Input type="password" placeholder="••••••••" />
+          <Input
+            type="password"
+            name="password2"
+            placeholder="••••••••"
+            onChange={(e) => setPasswordCheck(e.target.value)}
+          />
+        </InputWrapper>
+
+        <InputWrapper>
+          <Label>연락처</Label>
+
+          <Input
+            type="number"
+            name="phone"
+            placeholder="숫자만 입력"
+            onChange={handleChange}
+          />
+        </InputWrapper>
+
+        <InputWrapper>
+          <Label>이메일</Label>
+
+          <Input
+            type="email"
+            name="email"
+            placeholder="example@naver.com"
+            onChange={handleChange}
+          />
         </InputWrapper>
 
         <AgreeArea>
@@ -39,7 +110,7 @@ function SignupForm() {
           <span>이용약관 및 개인정보처리방침에 동의합니다.</span>
         </AgreeArea>
 
-        <SignupButton>가입하기</SignupButton>
+        <SignupButton type="submit">가입하기</SignupButton>
       </Form>
 
       <LoginText>
@@ -91,7 +162,7 @@ const SubTitle = styled.p`
   margin-bottom: 38px;
 `;
 
-const Form = styled.div``;
+const Form = styled.form``;
 
 const InputWrapper = styled.div`
   margin-bottom: 22px;
@@ -203,7 +274,7 @@ const Divider = styled.div`
   }
 
   &::before {
-    content: "";
+    content: '';
 
     position: absolute;
     top: 50%;

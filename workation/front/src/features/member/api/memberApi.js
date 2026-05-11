@@ -8,5 +8,5 @@ export async function login(vo) {
 
 export async function join(vo) {
     const resp = await api.post(`/guest/join`, vo);
-    return resp.data;
+    return resp;
 }

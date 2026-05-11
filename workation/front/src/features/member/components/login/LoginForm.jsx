@@ -5,7 +5,7 @@ import useLogin from '../../hooks/useLogin';
 import { useState } from 'react';
 
 function LoginForm() {
-  const { fetchLogin } = useLogin();
+  const { fetchLogin, navi } = useLogin();
   const [vo, setVo] = useState({
     username: '',
     password: '',
@@ -38,7 +38,7 @@ function LoginForm() {
             <Input
               type="text"
               name="username"
-              placeholder="example@keyboard.com"
+              placeholder="ID입력"
               onChange={handleChange}
             />
           </InputBox>
