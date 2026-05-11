@@ -1,5 +1,5 @@
 // components/login/SocialLoginButtons.jsx
-import styled from "styled-components";
+import styled from 'styled-components';
 
 function SocialLoginButtons() {
   return (
@@ -29,7 +29,7 @@ const SocialButton = styled.button`
 
   border-radius: 10px;
 
-  border: ${(props) => (props.border ? "1px solid #d1d5db" : "none")};
+  border: ${(props) => (props.$border ? '1px solid #d1d5db' : 'none')};
 
   background-color: ${(props) => props.bg};
 
