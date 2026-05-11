@@ -1,7 +1,6 @@
 package com.kh.app.product.space.entity;
 
 import com.kh.app.common.entity.BaseEntity;
-import com.kh.app.member.entity.RoleEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -42,7 +41,7 @@ public class SpaceEntity extends BaseEntity {
     private String address1;
 
     @Column(nullable = false, length = 100)
-    private String address;
+    private String address2;
 
     // 위도: -90.0 ~ 90.0 (정수부 최대 2자리 + 소수점 7자리 = 9자리면 충분하지만 보통 10으로 맞춤)
     @Column(precision = 10, scale = 7)
