@@ -15,7 +15,7 @@ import java.util.List;
 @RequestMapping("/api/reservation")
 @RequiredArgsConstructor
 @Slf4j
-public class ReservationApiController {
+public class ResA {
 
     private final ReservationService reservationService;
 
