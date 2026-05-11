@@ -1,13 +1,8 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
-// ─────────────────────────────────────────────
-// 📌 나중에 AuthContext 연동 시 아래 줄로 교체하세요
-// import { useAuth } from '../../../../context/AuthContext';
-// const { isLoggedIn } = useAuth();
-// ─────────────────────────────────────────────
-const MOCK_IS_LOGGED_IN = false; // 로그인 테스트: true / false로 변경
+const MOCK_IS_LOGGED_IN = false;
+// 📌 실제 연동 시: import { useAuth } from '../../../../context/AuthContext';
 
 const coupons = [
   {
@@ -16,8 +11,8 @@ const coupons = [
     discount: 10,
     description: '첫 예약 시 10% 할인',
     expiry: '2026.06.30',
-    color: '#c3edf6',
-    textColor: '#2c6480',
+    bg: '#c3edf6',
+    color: '#2c6480',
   },
   {
     id: 2,
@@ -25,8 +20,8 @@ const coupons = [
     discount: 20,
     description: '5월 한 달 예약 시 20% 할인',
     expiry: '2026.05.31',
-    color: '#f6e5ba',
-    textColor: '#92640a',
+    bg: '#f6e5ba',
+    color: '#92640a',
   },
   {
     id: 3,
@@ -34,8 +29,8 @@ const coupons = [
     discount: 15,
     description: '주말 예약 한정 15% 할인',
     expiry: '2026.06.15',
-    color: '#e0f2e9',
-    textColor: '#276749',
+    bg: '#e0f2e9',
+    color: '#276749',
   },
   {
     id: 4,
@@ -43,129 +38,117 @@ const coupons = [
     discount: 25,
     description: '3박 이상 예약 시 25% 할인',
     expiry: '2026.07.31',
-    color: '#ede9fe',
-    textColor: '#5b21b6',
+    bg: '#ede9fe',
+    color: '#5b21b6',
   },
 ];
 
+const btnColors = {
+  idle: { bg: '#2c6480', hover: '#3d8aaa' },
+  issued: { bg: '#22c55e', hover: '#16a34a' },
+  notLoggedIn: { bg: '#ef4444', hover: '#dc2626' },
+  duplicate: { bg: '#f97316', hover: '#ea580c' },
+};
+
 export default function EventPage() {
-  const navigate = useNavigate();
-
-  // 발급된 쿠폰 id 목록 (실제 연동 시 서버에서 유저 보유 쿠폰 조회로 교체)
   const [issuedIds, setIssuedIds] = useState([]);
-
-  // 각 버튼 상태: 'idle' | 'notLoggedIn' | 'issued' | 'duplicate'
   const [btnState, setBtnState] = useState({});
 
-  function handleIssue(couponId) {
-    // ── 로그인 체크 ──
+  function handleIssue(id) {
     if (!MOCK_IS_LOGGED_IN) {
-      setBtnState((prev) => ({ ...prev, [couponId]: 'notLoggedIn' }));
-      setTimeout(
-        () => setBtnState((prev) => ({ ...prev, [couponId]: 'idle' })),
-        2500
-      );
+      setBtnState((p) => ({ ...p, [id]: 'notLoggedIn' }));
+      setTimeout(() => setBtnState((p) => ({ ...p, [id]: 'idle' })), 2500);
       return;
     }
-
-    // ── 중복 체크 ──
-    if (issuedIds.includes(couponId)) {
-      setBtnState((prev) => ({ ...prev, [couponId]: 'duplicate' }));
-      setTimeout(
-        () => setBtnState((prev) => ({ ...prev, [couponId]: 'idle' })),
-        2500
-      );
+    if (issuedIds.includes(id)) {
+      setBtnState((p) => ({ ...p, [id]: 'duplicate' }));
+      setTimeout(() => setBtnState((p) => ({ ...p, [id]: 'idle' })), 2500);
       return;
     }
-
-    // ── 발급 완료 ──
-    setIssuedIds((prev) => [...prev, couponId]);
-    setBtnState((prev) => ({ ...prev, [couponId]: 'issued' }));
+    setIssuedIds((p) => [...p, id]);
+    setBtnState((p) => ({ ...p, [id]: 'issued' }));
   }
 
-  function getButtonLabel(couponId) {
-    const state = btnState[couponId] || 'idle';
-    if (state === 'notLoggedIn') return '🔒 로그인이 필요합니다';
-    if (state === 'duplicate') return '이미 발급된 쿠폰입니다';
-    if (issuedIds.includes(couponId)) return '✓ 발급완료';
+  function getLabel(id) {
+    const s = btnState[id] || 'idle';
+    if (s === 'notLoggedIn') return '🔒 로그인이 필요합니다';
+    if (s === 'duplicate') return '이미 발급된 쿠폰입니다';
+    if (issuedIds.includes(id)) return '✓ 발급완료';
     return '쿠폰 받기';
   }
 
-  function getButtonStyle(couponId) {
-    const state = btnState[couponId] || 'idle';
-    if (state === 'notLoggedIn') return 'notLoggedIn';
-    if (state === 'duplicate') return 'duplicate';
-    if (issuedIds.includes(couponId)) return 'issued';
+  function getStyle(id) {
+    const s = btnState[id] || 'idle';
+    if (s === 'notLoggedIn') return 'notLoggedIn';
+    if (s === 'duplicate') return 'duplicate';
+    if (issuedIds.includes(id)) return 'issued';
     return 'idle';
   }
 
   return (
     <Wrapper>
-      <Title>이벤트 &amp; 쿠폰</Title>
-      <SubTitle>쿠폰을 발급받아 예약 시 할인 혜택을 누리세요</SubTitle>
+      <PageTitle>이벤트 &amp; 쿠폰</PageTitle>
+      <PageSubTitle>쿠폰을 발급받아 예약 시 할인 혜택을 누리세요</PageSubTitle>
 
       <Grid>
         {coupons.map((coupon) => (
-          <CouponCard key={coupon.id} $bg={coupon.color}>
-            <CardTop $color={coupon.textColor}>
-              <DiscountBadge $color={coupon.textColor}>
-                {coupon.discount}% OFF
-              </DiscountBadge>
-              <CouponLabel>{coupon.label}</CouponLabel>
+          <CouponCard key={coupon.id} $bg={coupon.bg}>
+            <CardTop $color={coupon.color}>
+              <Badge $color={coupon.color}>{coupon.discount}% OFF</Badge>
+              <CouponName>{coupon.label}</CouponName>
               <CouponDesc>{coupon.description}</CouponDesc>
             </CardTop>
 
-            <Divider>
-              <Circle className="left" />
-              <DashedLine />
-              <Circle className="right" />
-            </Divider>
+            <Perforation>
+              <Notch className="left" />
+              <DashLine />
+              <Notch className="right" />
+            </Perforation>
 
             <CardBottom>
-              <ExpiryText>유효기간 · {coupon.expiry}까지</ExpiryText>
-              <IssueButton
-                $style={getButtonStyle(coupon.id)}
+              <Expiry>유효기간 · {coupon.expiry}까지</Expiry>
+              <IssueBtn
+                $s={getStyle(coupon.id)}
                 onClick={() => handleIssue(coupon.id)}
                 disabled={issuedIds.includes(coupon.id)}
               >
-                {getButtonLabel(coupon.id)}
-              </IssueButton>
+                {getLabel(coupon.id)}
+              </IssueBtn>
             </CardBottom>
           </CouponCard>
         ))}
       </Grid>
 
-      <Notice>
-        <NoticeTitle>쿠폰 유의사항</NoticeTitle>
-        <NoticeList>
+      <CautionBox>
+        <CautionTitle>쿠폰 유의사항</CautionTitle>
+        <CautionList>
           <li>
             쿠폰은 예약 결제 시 보유 쿠폰 목록에서 선택해 적용할 수 있습니다.
           </li>
           <li>쿠폰은 1회 예약에 1장만 사용 가능합니다.</li>
           <li>동일한 쿠폰은 중복 발급되지 않습니다.</li>
           <li>유효기간이 지난 쿠폰은 사용이 불가합니다.</li>
-        </NoticeList>
-      </Notice>
+        </CautionList>
+      </CautionBox>
     </Wrapper>
   );
 }
-
-/* ── Styled Components ── */
 
 const Wrapper = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   padding: 80px 20px;
+  font-family: ${({ theme }) => theme.fonts.base};
 `;
 
-const Title = styled.h1`
+const PageTitle = styled.h1`
   font-size: 40px;
   font-weight: 700;
   margin-bottom: 12px;
   color: ${({ theme }) => theme.colors.textDark};
 `;
 
-const SubTitle = styled.p`
+const PageSubTitle = styled.p`
   font-size: 16px;
   color: ${({ theme }) => theme.colors.textMid};
   margin-bottom: 48px;
@@ -176,7 +159,6 @@ const Grid = styled.div`
   grid-template-columns: repeat(2, 1fr);
   gap: 24px;
   margin-bottom: 64px;
-
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
   }
@@ -184,8 +166,13 @@ const Grid = styled.div`
 
 const CouponCard = styled.div`
   background: ${({ $bg }) => $bg};
-  border-radius: 20px;
+  border-radius: ${({ theme }) => theme.radius.lg};
   overflow: hidden;
+  box-shadow: ${({ theme }) => theme.shadows.card};
+  transition: box-shadow 0.2s;
+  &:hover {
+    box-shadow: ${({ theme }) => theme.shadows.cardHover};
+  }
 `;
 
 const CardTop = styled.div`
@@ -193,35 +180,33 @@ const CardTop = styled.div`
   color: ${({ $color }) => $color};
 `;
 
-const DiscountBadge = styled.div`
+const Badge = styled.div`
   display: inline-block;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   background: ${({ $color }) => $color};
   color: white;
   padding: 4px 12px;
-  border-radius: 999px;
+  border-radius: ${({ theme }) => theme.radius.full};
   margin-bottom: 16px;
 `;
 
-const CouponLabel = styled.div`
+const CouponName = styled.div`
   font-size: 20px;
   font-weight: 700;
   margin-bottom: 8px;
 `;
-
 const CouponDesc = styled.div`
   font-size: 14px;
   opacity: 0.8;
 `;
 
-const Divider = styled.div`
+const Perforation = styled.div`
   position: relative;
   display: flex;
   align-items: center;
   margin: 0 -1px;
-
   .left {
     left: -12px;
   }
@@ -230,7 +215,7 @@ const Divider = styled.div`
   }
 `;
 
-const Circle = styled.div`
+const Notch = styled.div`
   position: absolute;
   width: 24px;
   height: 24px;
@@ -238,66 +223,58 @@ const Circle = styled.div`
   border-radius: 50%;
 `;
 
-const DashedLine = styled.div`
+const DashLine = styled.div`
   width: 100%;
-  border-top: 2px dashed rgba(0, 0, 0, 0.12);
+  border-top: 2px dashed rgba(0, 0, 0, 0.1);
 `;
 
 const CardBottom = styled.div`
   padding: 20px 28px 28px;
-  background: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.5);
 `;
 
-const ExpiryText = styled.div`
+const Expiry = styled.div`
   font-size: 12px;
-  color: #666;
+  color: ${({ theme }) => theme.colors.textMuted};
   margin-bottom: 12px;
 `;
 
-const btnColors = {
-  idle: { bg: '#111', hover: '#333' },
-  issued: { bg: '#22c55e', hover: '#16a34a' },
-  notLoggedIn: { bg: '#ef4444', hover: '#dc2626' },
-  duplicate: { bg: '#f97316', hover: '#ea580c' },
-};
-
-const IssueButton = styled.button`
+const IssueBtn = styled.button`
   width: 100%;
   padding: 12px 0;
-  border-radius: 12px;
+  border-radius: ${({ theme }) => theme.radius.sm};
   border: none;
-  background: ${({ $style }) => btnColors[$style]?.bg || '#111'};
+  background: ${({ $s }) => btnColors[$s]?.bg || '#2c6480'};
   color: white;
   font-size: 14px;
   font-weight: 600;
   cursor: ${({ disabled }) => (disabled ? 'default' : 'pointer')};
   transition: background 0.2s;
-
+  font-family: ${({ theme }) => theme.fonts.base};
   &:hover {
-    background: ${({ $style, disabled }) =>
-      disabled ? btnColors['issued'].bg : btnColors[$style]?.hover || '#333'};
+    background: ${({ $s, disabled }) =>
+      disabled ? btnColors['issued'].bg : btnColors[$s]?.hover};
   }
 `;
 
-const Notice = styled.div`
-  border-top: 2px solid black;
+const CautionBox = styled.div`
+  border-top: 2px solid ${({ theme }) => theme.colors.textDark};
   padding-top: 32px;
 `;
 
-const NoticeTitle = styled.h3`
+const CautionTitle = styled.h3`
   font-size: 16px;
   font-weight: 700;
   margin-bottom: 16px;
   color: ${({ theme }) => theme.colors.textDark};
 `;
 
-const NoticeList = styled.ul`
+const CautionList = styled.ul`
   list-style: disc;
   padding-left: 20px;
   display: flex;
   flex-direction: column;
   gap: 8px;
-
   li {
     font-size: 14px;
     color: ${({ theme }) => theme.colors.textMid};

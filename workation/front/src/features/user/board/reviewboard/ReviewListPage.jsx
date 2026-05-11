@@ -26,42 +26,38 @@ export default function ReviewListPage() {
   const navigate = useNavigate();
 
   return (
-    <Wrapper>
-      <Board>
-        <HeaderRow>
-          <ColNum>번호</ColNum>
-          <ColTitle>제목</ColTitle>
-          <ColWriter>작성자</ColWriter>
-          <ColDate>날짜</ColDate>
-        </HeaderRow>
+    <Board>
+      <HeaderRow>
+        <ColNum>번호</ColNum>
+        <ColTitle>제목</ColTitle>
+        <ColWriter>작성자</ColWriter>
+        <ColDate>날짜</ColDate>
+      </HeaderRow>
 
-        {dummyList.map((review) => (
-          <Row
-            key={review.reviewId}
-            onClick={() => navigate(`/board/review/detail/${review.reviewId}`)}
-          >
-            <ColNum>{review.reviewId}</ColNum>
-            <ColTitle>{review.title}</ColTitle>
-            <ColWriter>{review.writer}</ColWriter>
-            <ColDate>{review.date}</ColDate>
-          </Row>
-        ))}
-      </Board>
-    </Wrapper>
+      {dummyList.map((review) => (
+        <Row
+          key={review.reviewId}
+          onClick={() => navigate(`/board/review/detail/${review.reviewId}`)}
+        >
+          <ColNum>{review.reviewId}</ColNum>
+          <ColTitle>{review.title}</ColTitle>
+          <ColWriter>{review.writer}</ColWriter>
+          <ColDate>{review.date}</ColDate>
+        </Row>
+      ))}
+    </Board>
   );
 }
 
-const Wrapper = styled.div``;
-
 const Board = styled.div`
-  border-top: 2px solid black;
+  border-top: 2px solid ${({ theme }) => theme.colors.textDark};
 `;
 
 const HeaderRow = styled.div`
   display: flex;
   padding: 14px 10px;
-  border-bottom: 1px solid #e5e7eb;
-  color: #999;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  color: ${({ theme }) => theme.colors.textLight};
   font-size: 14px;
   font-weight: 600;
 `;
@@ -69,37 +65,42 @@ const HeaderRow = styled.div`
 const Row = styled.div`
   display: flex;
   align-items: center;
-  padding: 24px 10px;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 22px 10px;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
   cursor: pointer;
+  transition: background 0.12s;
 
   &:hover {
-    background: #fafafa;
+    background: ${({ theme }) => theme.colors.bgSection};
   }
 `;
 
 const ColNum = styled.div`
   width: 60px;
   flex-shrink: 0;
-  color: #999;
+  color: ${({ theme }) => theme.colors.textLight};
+  font-size: 14px;
 `;
 
 const ColTitle = styled.div`
   flex: 1;
-  font-size: 16px;
-  color: #111;
+  font-size: 15px;
+  color: ${({ theme }) => theme.colors.textDark};
+  font-weight: 500;
 `;
 
 const ColWriter = styled.div`
   width: 100px;
   flex-shrink: 0;
-  color: #999;
+  color: ${({ theme }) => theme.colors.textMuted};
+  font-size: 14px;
   text-align: center;
 `;
 
 const ColDate = styled.div`
   width: 100px;
   flex-shrink: 0;
-  color: #999;
+  color: ${({ theme }) => theme.colors.textLight};
+  font-size: 14px;
   text-align: right;
 `;

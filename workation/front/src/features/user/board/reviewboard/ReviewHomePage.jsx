@@ -15,9 +15,7 @@ export default function ReviewHomePage() {
         </WriteButton>
       </TabContainer>
 
-      <Content>
-        <Outlet />
-      </Content>
+      <Outlet />
     </Wrapper>
   );
 }
@@ -26,48 +24,59 @@ const Wrapper = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   padding: 80px 20px;
+  font-family: ${({ theme }) => theme.fonts.base};
+  background: ${({ theme }) => theme.colors.bg};
+  min-height: 100vh;
 `;
 
 const Title = styled.h1`
   font-size: 40px;
   font-weight: 700;
   margin-bottom: 40px;
+  color: ${({ theme }) => theme.colors.textDark};
 `;
 
 const TabContainer = styled.div`
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   margin-bottom: 40px;
 `;
 
 const Tab = styled(NavLink)`
-  padding: 12px 24px;
-  border-radius: 999px;
+  padding: 10px 24px;
+  border-radius: ${({ theme }) => theme.radius.full};
   text-decoration: none;
-  background: #f3f4f6;
-  color: #333;
+  background: ${({ theme }) => theme.colors.borderLight};
+  color: ${({ theme }) => theme.colors.textMid};
   font-weight: 600;
+  font-size: 14px;
+  transition: all 0.15s;
 
   &.active {
-    background: black;
-    color: white;
+    background: ${({ theme }) => theme.colors.primary};
+    color: ${({ theme }) => theme.colors.white};
+  }
+
+  &:hover:not(.active) {
+    background: ${({ theme }) => theme.colors.border};
   }
 `;
 
 const WriteButton = styled.button`
-  padding: 12px 24px;
-  border-radius: 999px;
-  border: none;
-  background: #f3f4f6;
-  color: #333;
+  padding: 10px 24px;
+  border-radius: ${({ theme }) => theme.radius.full};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  background: ${({ theme }) => theme.colors.white};
+  color: ${({ theme }) => theme.colors.textMid};
   font-weight: 600;
-  cursor: pointer;
   font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
 
   &:hover {
-    background: #e5e7eb;
+    background: ${({ theme }) => theme.colors.primary};
+    color: ${({ theme }) => theme.colors.white};
+    border-color: ${({ theme }) => theme.colors.primary};
   }
 `;
-
-const Content = styled.div``;

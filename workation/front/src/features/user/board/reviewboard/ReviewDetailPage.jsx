@@ -24,7 +24,6 @@ const dummyData = {
   },
 };
 
-// 예시 댓글 데이터
 const initialComments = [
   {
     id: 1,
@@ -44,17 +43,12 @@ export default function ReviewDetailPage() {
   const [commentInput, setCommentInput] = useState('');
   const [deleteCommentId, setDeleteCommentId] = useState(null);
 
-  if (!review) {
+  if (!review)
     return (
       <Wrapper>
         <p>존재하지 않는 후기입니다.</p>
       </Wrapper>
     );
-  }
-
-  function handleEdit() {
-    navigate(`/board/review/write`);
-  }
 
   function handleDelete() {
     setShowConfirm(false);
@@ -63,37 +57,42 @@ export default function ReviewDetailPage() {
 
   function handleCommentSubmit() {
     if (!commentInput.trim()) return;
-    const newComment = {
-      id: Date.now(),
-      writer: 'user01', // 실제 연동 시 로그인 유저로 교체
-      date: new Date()
-        .toLocaleDateString('ko-KR')
-        .replace(/\. /g, '.')
-        .replace('.', '.')
-        .slice(0, 10),
-      content: commentInput.trim(),
-    };
-    setComments((prev) => [...prev, newComment]);
+    setComments((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        writer: 'user01',
+        date: new Date()
+          .toLocaleDateString('ko-KR')
+          .replace(/\. /g, '.')
+          .slice(0, 10),
+        content: commentInput.trim(),
+      },
+    ]);
     setCommentInput('');
   }
 
-  function handleCommentDelete(commentId) {
-    setComments((prev) => prev.filter((c) => c.id !== commentId));
+  function handleCommentDelete(id) {
+    setComments((prev) => prev.filter((c) => c.id !== id));
     setDeleteCommentId(null);
   }
 
   return (
     <Wrapper>
-      {/* ── 본문 ── */}
       <DetailTitle>{review.title}</DetailTitle>
 
       <Meta>
-        <span>{review.writer}</span>
-        <span>{review.date}</span>
+        <MetaItem>
+          <MetaLabel>작성자</MetaLabel>
+          <MetaValue>{review.writer}</MetaValue>
+        </MetaItem>
+        <MetaItem>
+          <MetaLabel>작성일</MetaLabel>
+          <MetaValue>{review.date}</MetaValue>
+        </MetaItem>
       </Meta>
 
       <Divider />
-
       <Body>{review.content}</Body>
 
       <ActionRow>
@@ -101,38 +100,37 @@ export default function ReviewDetailPage() {
           ← 목록으로
         </BackButton>
         <RightButtons>
-          <EditButton onClick={handleEdit}>수정</EditButton>
+          <EditButton onClick={() => navigate('/board/review/write')}>
+            수정
+          </EditButton>
           <DeleteButton onClick={() => setShowConfirm(true)}>삭제</DeleteButton>
         </RightButtons>
       </ActionRow>
 
-      {/* ── 댓글 섹션 ── */}
+      {/* 댓글 섹션 */}
       <CommentSection>
         <CommentTitle>
           댓글 <CommentCount>{comments.length}</CommentCount>
         </CommentTitle>
 
-        {/* 댓글 목록 */}
         <CommentList>
-          {comments.map((comment) => (
-            <CommentItem key={comment.id}>
+          {comments.map((c) => (
+            <CommentItem key={c.id}>
               <CommentTop>
-                <CommentWriter>{comment.writer}</CommentWriter>
-                <CommentDate>{comment.date}</CommentDate>
+                <CommentWriter>{c.writer}</CommentWriter>
+                <CommentDate>{c.date}</CommentDate>
               </CommentTop>
-              <CommentBody>{comment.content}</CommentBody>
-              <CommentDeleteBtn onClick={() => setDeleteCommentId(comment.id)}>
+              <CommentBody>{c.content}</CommentBody>
+              <CommentDeleteBtn onClick={() => setDeleteCommentId(c.id)}>
                 삭제
               </CommentDeleteBtn>
             </CommentItem>
           ))}
-
           {comments.length === 0 && (
             <EmptyComment>첫 번째 댓글을 남겨보세요 💬</EmptyComment>
           )}
         </CommentList>
 
-        {/* 댓글 입력 */}
         <CommentInputRow>
           <CommentTextArea
             placeholder="댓글을 입력하세요"
@@ -151,7 +149,7 @@ export default function ReviewDetailPage() {
         </CommentInputRow>
       </CommentSection>
 
-      {/* ── 게시글 삭제 확인 모달 ── */}
+      {/* 게시글 삭제 모달 */}
       {showConfirm && (
         <Overlay>
           <Modal>
@@ -160,13 +158,13 @@ export default function ReviewDetailPage() {
               <ModalCancel onClick={() => setShowConfirm(false)}>
                 취소
               </ModalCancel>
-              <ModalConfirm onClick={handleDelete}>삭제</ModalConfirm>
+              <ModalDelete onClick={handleDelete}>삭제</ModalDelete>
             </ModalButtons>
           </Modal>
         </Overlay>
       )}
 
-      {/* ── 댓글 삭제 확인 모달 ── */}
+      {/* 댓글 삭제 모달 */}
       {deleteCommentId && (
         <Overlay>
           <Modal>
@@ -175,11 +173,9 @@ export default function ReviewDetailPage() {
               <ModalCancel onClick={() => setDeleteCommentId(null)}>
                 취소
               </ModalCancel>
-              <ModalConfirm
-                onClick={() => handleCommentDelete(deleteCommentId)}
-              >
+              <ModalDelete onClick={() => handleCommentDelete(deleteCommentId)}>
                 삭제
-              </ModalConfirm>
+              </ModalDelete>
             </ModalButtons>
           </Modal>
         </Overlay>
@@ -188,34 +184,48 @@ export default function ReviewDetailPage() {
   );
 }
 
-/* ── Styled Components ── */
-
 const Wrapper = styled.div``;
 
 const DetailTitle = styled.h2`
   font-size: 24px;
   font-weight: 700;
   margin-bottom: 16px;
+  color: ${({ theme }) => theme.colors.textDark};
 `;
 
 const Meta = styled.div`
   display: flex;
-  gap: 20px;
-  color: #999;
-  font-size: 14px;
+  gap: 28px;
   margin-bottom: 20px;
+`;
+
+const MetaItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const MetaLabel = styled.span`
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.textLight};
+`;
+
+const MetaValue = styled.span`
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.textMid};
+  font-weight: 600;
 `;
 
 const Divider = styled.hr`
   border: none;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
   margin-bottom: 32px;
 `;
 
 const Body = styled.p`
-  font-size: 16px;
-  line-height: 1.8;
-  color: #333;
+  font-size: 15px;
+  line-height: 1.9;
+  color: ${({ theme }) => theme.colors.textMid};
   margin-bottom: 48px;
 `;
 
@@ -232,76 +242,76 @@ const RightButtons = styled.div`
 `;
 
 const BackButton = styled.button`
-  padding: 12px 24px;
-  border-radius: 999px;
-  border: 1px solid #e5e7eb;
-  background: white;
-  color: #333;
+  padding: 10px 22px;
+  border-radius: ${({ theme }) => theme.radius.full};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  background: ${({ theme }) => theme.colors.white};
+  color: ${({ theme }) => theme.colors.textMid};
   font-weight: 600;
-  cursor: pointer;
   font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
   &:hover {
-    background: #f3f4f6;
+    background: ${({ theme }) => theme.colors.bgSection};
   }
 `;
 
 const EditButton = styled.button`
-  padding: 12px 24px;
-  border-radius: 999px;
-  border: 1px solid #e5e7eb;
-  background: white;
-  color: #333;
+  padding: 10px 22px;
+  border-radius: ${({ theme }) => theme.radius.full};
+  border: 1px solid ${({ theme }) => theme.colors.primary};
+  background: ${({ theme }) => theme.colors.white};
+  color: ${({ theme }) => theme.colors.primary};
   font-weight: 600;
-  cursor: pointer;
   font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
   &:hover {
-    background: #f3f4f6;
+    background: ${({ theme }) => theme.colors.primary};
+    color: white;
   }
 `;
 
 const DeleteButton = styled.button`
-  padding: 12px 24px;
-  border-radius: 999px;
+  padding: 10px 22px;
+  border-radius: ${({ theme }) => theme.radius.full};
   border: none;
   background: #ef4444;
   color: white;
   font-weight: 600;
-  cursor: pointer;
   font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s;
   &:hover {
     background: #dc2626;
   }
 `;
 
-/* ── 댓글 섹션 ── */
+/* 댓글 */
 
 const CommentSection = styled.div`
-  border-top: 2px solid black;
+  border-top: 2px solid ${({ theme }) => theme.colors.textDark};
   padding-top: 32px;
 `;
 
 const CommentTitle = styled.h3`
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
   margin-bottom: 24px;
-  color: #111;
+  color: ${({ theme }) => theme.colors.textDark};
 `;
 
 const CommentCount = styled.span`
-  font-size: 15px;
-  color: #2c6480;
+  color: ${({ theme }) => theme.colors.primary};
 `;
 
 const CommentList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0;
   margin-bottom: 32px;
 `;
 
 const CommentItem = styled.div`
   padding: 20px 10px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
   position: relative;
 `;
 
@@ -315,17 +325,17 @@ const CommentTop = styled.div`
 const CommentWriter = styled.span`
   font-size: 14px;
   font-weight: 700;
-  color: #111;
+  color: ${({ theme }) => theme.colors.textDark};
 `;
 
 const CommentDate = styled.span`
   font-size: 13px;
-  color: #bbb;
+  color: ${({ theme }) => theme.colors.textLight};
 `;
 
 const CommentBody = styled.p`
-  font-size: 15px;
-  color: #333;
+  font-size: 14px;
+  color: ${({ theme }) => theme.colors.textMid};
   line-height: 1.7;
 `;
 
@@ -334,7 +344,7 @@ const CommentDeleteBtn = styled.button`
   top: 20px;
   right: 10px;
   font-size: 13px;
-  color: #bbb;
+  color: ${({ theme }) => theme.colors.textLight};
   background: none;
   border: none;
   cursor: pointer;
@@ -346,7 +356,7 @@ const CommentDeleteBtn = styled.button`
 const EmptyComment = styled.div`
   padding: 32px 0;
   text-align: center;
-  color: #bbb;
+  color: ${({ theme }) => theme.colors.textLight};
   font-size: 15px;
 `;
 
@@ -359,40 +369,43 @@ const CommentInputRow = styled.div`
 const CommentTextArea = styled.textarea`
   flex: 1;
   padding: 14px 16px;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.radius.sm};
   font-size: 14px;
-  color: #333;
+  color: ${({ theme }) => theme.colors.textDark};
   resize: none;
   height: 72px;
   line-height: 1.6;
   outline: none;
-
+  font-family: ${({ theme }) => theme.fonts.base};
+  background: ${({ theme }) => theme.colors.white};
+  transition: border-color 0.15s;
   &::placeholder {
-    color: #bbb;
+    color: ${({ theme }) => theme.colors.textLight};
   }
   &:focus {
-    border-color: #2c6480;
+    border-color: ${({ theme }) => theme.colors.primary};
   }
 `;
 
 const CommentSubmitBtn = styled.button`
   padding: 0 24px;
   height: 72px;
-  border-radius: 12px;
+  border-radius: ${({ theme }) => theme.radius.sm};
   border: none;
-  background: black;
+  background: ${({ theme }) => theme.colors.primary};
   color: white;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
+  transition: background 0.15s;
   &:hover {
-    background: #222;
+    background: ${({ theme }) => theme.colors.primaryLight};
   }
 `;
 
-/* ── 모달 공통 ── */
+/* 모달 */
 
 const Overlay = styled.div`
   position: fixed;
@@ -405,20 +418,20 @@ const Overlay = styled.div`
 `;
 
 const Modal = styled.div`
-  background: white;
-  border-radius: 20px;
+  background: ${({ theme }) => theme.colors.white};
+  border-radius: ${({ theme }) => theme.radius.md};
   padding: 40px 48px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 28px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  box-shadow: ${({ theme }) => theme.shadows.cardHover};
 `;
 
 const ModalText = styled.p`
   font-size: 18px;
   font-weight: 600;
-  color: #111;
+  color: ${({ theme }) => theme.colors.textDark};
 `;
 
 const ModalButtons = styled.div`
@@ -428,27 +441,27 @@ const ModalButtons = styled.div`
 
 const ModalCancel = styled.button`
   padding: 12px 28px;
-  border-radius: 999px;
-  border: 1px solid #e5e7eb;
-  background: white;
-  color: #333;
+  border-radius: ${({ theme }) => theme.radius.full};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  background: ${({ theme }) => theme.colors.white};
+  color: ${({ theme }) => theme.colors.textMid};
   font-weight: 600;
-  cursor: pointer;
   font-size: 14px;
+  cursor: pointer;
   &:hover {
-    background: #f3f4f6;
+    background: ${({ theme }) => theme.colors.bgSection};
   }
 `;
 
-const ModalConfirm = styled.button`
+const ModalDelete = styled.button`
   padding: 12px 28px;
-  border-radius: 999px;
+  border-radius: ${({ theme }) => theme.radius.full};
   border: none;
   background: #ef4444;
   color: white;
   font-weight: 600;
-  cursor: pointer;
   font-size: 14px;
+  cursor: pointer;
   &:hover {
     background: #dc2626;
   }

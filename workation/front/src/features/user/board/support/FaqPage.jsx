@@ -25,25 +25,18 @@ const initialFaqList = [
 export default function FaqPage() {
   const [faqList, setFaqList] = useState(initialFaqList);
   const [openId, setOpenId] = useState(null);
-
-  // 글쓰기 / 수정 모달 상태
   const [showForm, setShowForm] = useState(false);
-  const [editTarget, setEditTarget] = useState(null); // null이면 신규, 객체면 수정
+  const [editTarget, setEditTarget] = useState(null);
   const [formQ, setFormQ] = useState('');
   const [formA, setFormA] = useState('');
-
-  // 삭제 확인 모달 상태
   const [deleteId, setDeleteId] = useState(null);
 
-  /* ── 글쓰기 열기 ── */
   function openWrite() {
     setEditTarget(null);
     setFormQ('');
     setFormA('');
     setShowForm(true);
   }
-
-  /* ── 수정 열기 ── */
   function openEdit(faq) {
     setEditTarget(faq);
     setFormQ(faq.question);
@@ -51,46 +44,36 @@ export default function FaqPage() {
     setShowForm(true);
   }
 
-  /* ── 등록 / 수정 저장 ── */
   function handleFormSubmit() {
     if (!formQ.trim()) return alert('질문을 입력해주세요.');
     if (!formA.trim()) return alert('답변을 입력해주세요.');
-
     if (editTarget) {
-      // 수정
       setFaqList((prev) =>
         prev.map((f) =>
           f.id === editTarget.id ? { ...f, question: formQ, answer: formA } : f
         )
       );
     } else {
-      // 신규 등록
-      const newFaq = {
-        id: Date.now(),
-        question: formQ,
-        answer: formA,
-      };
-      setFaqList((prev) => [...prev, newFaq]);
+      setFaqList((prev) => [
+        ...prev,
+        { id: Date.now(), question: formQ, answer: formA },
+      ]);
     }
-
     setShowForm(false);
   }
 
-  /* ── 삭제 ── */
   function handleDelete() {
     setFaqList((prev) => prev.filter((f) => f.id !== deleteId));
-    setDeleteId(null);
     if (openId === deleteId) setOpenId(null);
+    setDeleteId(null);
   }
 
   return (
     <Wrapper>
-      {/* 글쓰기 버튼 */}
       <TopRow>
         <WriteButton onClick={openWrite}>✏️ 글쓰기</WriteButton>
       </TopRow>
 
-      {/* FAQ 아코디언 목록 */}
       <Board>
         {faqList.map((faq) => (
           <Item key={faq.id}>
@@ -122,12 +105,11 @@ export default function FaqPage() {
         {faqList.length === 0 && <Empty>등록된 FAQ가 없습니다.</Empty>}
       </Board>
 
-      {/* ── 글쓰기 / 수정 모달 ── */}
+      {/* 글쓰기/수정 모달 */}
       {showForm && (
         <Overlay>
           <FormModal>
             <FormTitle>{editTarget ? 'FAQ 수정' : 'FAQ 등록'}</FormTitle>
-
             <FormGroup>
               <FormLabel>질문</FormLabel>
               <FormInput
@@ -136,7 +118,6 @@ export default function FaqPage() {
                 onChange={(e) => setFormQ(e.target.value)}
               />
             </FormGroup>
-
             <FormGroup>
               <FormLabel>답변</FormLabel>
               <FormTextArea
@@ -145,7 +126,6 @@ export default function FaqPage() {
                 onChange={(e) => setFormA(e.target.value)}
               />
             </FormGroup>
-
             <FormButtons>
               <ModalCancel onClick={() => setShowForm(false)}>취소</ModalCancel>
               <ModalConfirm onClick={handleFormSubmit}>
@@ -156,7 +136,7 @@ export default function FaqPage() {
         </Overlay>
       )}
 
-      {/* ── 삭제 확인 모달 ── */}
+      {/* 삭제 확인 모달 */}
       {deleteId && (
         <Overlay>
           <Modal>
@@ -172,8 +152,6 @@ export default function FaqPage() {
   );
 }
 
-/* ── Styled Components ── */
-
 const Wrapper = styled.div``;
 
 const TopRow = styled.div`
@@ -183,25 +161,26 @@ const TopRow = styled.div`
 `;
 
 const WriteButton = styled.button`
-  padding: 10px 22px;
-  border-radius: 999px;
+  padding: 9px 22px;
+  border-radius: ${({ theme }) => theme.radius.full};
   border: none;
-  background: black;
+  background: ${({ theme }) => theme.colors.primary};
   color: white;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  transition: background 0.15s;
   &:hover {
-    background: #222;
+    background: ${({ theme }) => theme.colors.primaryLight};
   }
 `;
 
 const Board = styled.div`
-  border-top: 2px solid black;
+  border-top: 2px solid ${({ theme }) => theme.colors.textDark};
 `;
 
 const Item = styled.div`
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
 const QuestionRow = styled.div`
@@ -217,13 +196,14 @@ const QuestionText = styled.div`
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 24px 10px;
-  font-size: 16px;
+  padding: 22px 10px;
+  font-size: 15px;
   font-weight: 600;
-  color: #111;
+  color: ${({ theme }) => theme.colors.textDark};
   cursor: pointer;
+  transition: color 0.15s;
   &:hover {
-    color: #2c6480;
+    color: ${({ theme }) => theme.colors.primary};
   }
 `;
 
@@ -232,7 +212,7 @@ const QBadge = styled.span`
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: black;
+  background: ${({ theme }) => theme.colors.primary};
   color: white;
   font-size: 13px;
   font-weight: 800;
@@ -244,7 +224,7 @@ const QBadge = styled.span`
 const Arrow = styled.span`
   margin-left: auto;
   font-size: 18px;
-  color: #bbb;
+  color: ${({ theme }) => theme.colors.textLight};
   transform: ${({ $open }) => ($open ? 'rotate(180deg)' : 'rotate(0deg)')};
   transition: transform 0.2s;
 `;
@@ -257,27 +237,31 @@ const ItemButtons = styled.div`
 
 const ItemEditBtn = styled.button`
   padding: 6px 14px;
-  border-radius: 999px;
-  border: 1px solid #e5e7eb;
-  background: white;
-  color: #333;
+  border-radius: ${({ theme }) => theme.radius.full};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  background: ${({ theme }) => theme.colors.white};
+  color: ${({ theme }) => theme.colors.textMid};
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.15s;
   &:hover {
-    background: #f3f4f6;
+    background: ${({ theme }) => theme.colors.accentBlue};
+    border-color: ${({ theme }) => theme.colors.primary};
+    color: ${({ theme }) => theme.colors.primary};
   }
 `;
 
 const ItemDeleteBtn = styled.button`
   padding: 6px 14px;
-  border-radius: 999px;
+  border-radius: ${({ theme }) => theme.radius.full};
   border: none;
   background: #ef4444;
   color: white;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  transition: background 0.15s;
   &:hover {
     background: #dc2626;
   }
@@ -287,7 +271,8 @@ const Answer = styled.div`
   display: flex;
   gap: 14px;
   align-items: flex-start;
-  padding: 0 10px 28px 10px;
+  padding: 0 10px 24px 10px;
+  background: ${({ theme }) => theme.colors.bgSection};
 `;
 
 const ABadge = styled.span`
@@ -295,8 +280,8 @@ const ABadge = styled.span`
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: #f3f4f6;
-  color: #555;
+  background: ${({ theme }) => theme.colors.accentBlue};
+  color: ${({ theme }) => theme.colors.primary};
   font-size: 13px;
   font-weight: 800;
   display: flex;
@@ -305,8 +290,8 @@ const ABadge = styled.span`
 `;
 
 const AnswerText = styled.p`
-  font-size: 15px;
-  color: #555;
+  font-size: 14px;
+  color: ${({ theme }) => theme.colors.textMid};
   line-height: 1.8;
   padding-top: 4px;
 `;
@@ -314,12 +299,11 @@ const AnswerText = styled.p`
 const Empty = styled.div`
   padding: 48px 0;
   text-align: center;
-  color: #bbb;
+  color: ${({ theme }) => theme.colors.textLight};
   font-size: 15px;
 `;
 
-/* ── 모달 공통 ── */
-
+/* 모달 */
 const Overlay = styled.div`
   position: fixed;
   inset: 0;
@@ -331,20 +315,20 @@ const Overlay = styled.div`
 `;
 
 const FormModal = styled.div`
-  background: white;
-  border-radius: 20px;
+  background: ${({ theme }) => theme.colors.white};
+  border-radius: ${({ theme }) => theme.radius.md};
   padding: 40px 48px;
   width: 560px;
   display: flex;
   flex-direction: column;
   gap: 24px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  box-shadow: ${({ theme }) => theme.shadows.cardHover};
 `;
 
 const FormTitle = styled.h3`
   font-size: 20px;
   font-weight: 700;
-  color: #111;
+  color: ${({ theme }) => theme.colors.textDark};
 `;
 
 const FormGroup = styled.div`
@@ -356,39 +340,43 @@ const FormGroup = styled.div`
 const FormLabel = styled.label`
   font-size: 13px;
   font-weight: 700;
-  color: #999;
+  color: ${({ theme }) => theme.colors.textLight};
 `;
 
 const FormInput = styled.input`
   padding: 12px 16px;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.radius.sm};
   font-size: 15px;
-  color: #333;
+  color: ${({ theme }) => theme.colors.textDark};
+  font-family: ${({ theme }) => theme.fonts.base};
   outline: none;
+  transition: border-color 0.15s;
   &:focus {
-    border-color: #2c6480;
+    border-color: ${({ theme }) => theme.colors.primary};
   }
   &::placeholder {
-    color: #bbb;
+    color: ${({ theme }) => theme.colors.textLight};
   }
 `;
 
 const FormTextArea = styled.textarea`
   padding: 12px 16px;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.radius.sm};
   font-size: 15px;
-  color: #333;
+  color: ${({ theme }) => theme.colors.textDark};
+  font-family: ${({ theme }) => theme.fonts.base};
   outline: none;
   resize: none;
   min-height: 120px;
   line-height: 1.7;
+  transition: border-color 0.15s;
   &:focus {
-    border-color: #2c6480;
+    border-color: ${({ theme }) => theme.colors.primary};
   }
   &::placeholder {
-    color: #bbb;
+    color: ${({ theme }) => theme.colors.textLight};
   }
 `;
 
@@ -399,59 +387,59 @@ const FormButtons = styled.div`
 `;
 
 const Modal = styled.div`
-  background: white;
-  border-radius: 20px;
+  background: ${({ theme }) => theme.colors.white};
+  border-radius: ${({ theme }) => theme.radius.md};
   padding: 40px 48px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 28px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  box-shadow: ${({ theme }) => theme.shadows.cardHover};
 `;
 
 const ModalText = styled.p`
   font-size: 18px;
   font-weight: 600;
-  color: #111;
+  color: ${({ theme }) => theme.colors.textDark};
 `;
 
 const ModalCancel = styled.button`
   padding: 12px 28px;
-  border-radius: 999px;
-  border: 1px solid #e5e7eb;
-  background: white;
-  color: #333;
+  border-radius: ${({ theme }) => theme.radius.full};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  background: ${({ theme }) => theme.colors.white};
+  color: ${({ theme }) => theme.colors.textMid};
   font-weight: 600;
-  cursor: pointer;
   font-size: 14px;
+  cursor: pointer;
   &:hover {
-    background: #f3f4f6;
+    background: ${({ theme }) => theme.colors.bgSection};
   }
 `;
 
 const ModalConfirm = styled.button`
   padding: 12px 28px;
-  border-radius: 999px;
+  border-radius: ${({ theme }) => theme.radius.full};
   border: none;
-  background: black;
+  background: ${({ theme }) => theme.colors.primary};
   color: white;
   font-weight: 600;
-  cursor: pointer;
   font-size: 14px;
+  cursor: pointer;
   &:hover {
-    background: #222;
+    background: ${({ theme }) => theme.colors.primaryLight};
   }
 `;
 
 const ModalDelete = styled.button`
   padding: 12px 28px;
-  border-radius: 999px;
+  border-radius: ${({ theme }) => theme.radius.full};
   border: none;
   background: #ef4444;
   color: white;
   font-weight: 600;
-  cursor: pointer;
   font-size: 14px;
+  cursor: pointer;
   &:hover {
     background: #dc2626;
   }
