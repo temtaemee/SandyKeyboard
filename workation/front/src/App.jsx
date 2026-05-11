@@ -2,8 +2,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from 'styled-components';
 import { theme } from './styles/theme';
 import GlobalStyle from './styles/GlobalStyle';
-import Layout from './components/layout/Layout';
-import HomePage from './pages/HomePage';
+import Layout from './home/components/layout/Layout';
+import HomePage from './home/pages/HomePage';
 
 import UserRouter from './routes/MypageRouter';
 import SellerRouter from './routes/SellerRouter';

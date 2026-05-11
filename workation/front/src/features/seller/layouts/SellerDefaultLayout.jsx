@@ -1,7 +1,7 @@
 import React from "react";
 import SellerHeader from "../components/SellerHeader";
 import { Outlet } from "react-router-dom";
-import Footer from "../../../components/layout/Footer";
+import Footer from "../../../home/components/layout/Footer";
 
 function SellerDefaultLayout() {
   return (

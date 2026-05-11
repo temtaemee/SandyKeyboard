@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
-import { NAV_LINKS } from "../../../data/homeData";
-import { Link, NavLink, useNavigate } from "react-router-dom";
-import styled from "styled-components";
+import React, { useEffect, useState } from 'react';
+import { NAV_LINKS } from '../../../home/data/homeData';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
+import styled from 'styled-components';
 
 function SellerHeader() {
   const [scrolled, setScrolled] = useState(false);
@@ -10,8 +10,8 @@ function SellerHeader() {
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
@@ -60,7 +60,7 @@ const Nav = styled.nav`
   z-index: 100;
   height: 80px;
   background: ${({ $scrolled }) =>
-    $scrolled ? "rgba(255,255,255,0.97)" : "rgba(255,255,255,0.85)"};
+    $scrolled ? 'rgba(255,255,255,0.97)' : 'rgba(255,255,255,0.85)'};
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);

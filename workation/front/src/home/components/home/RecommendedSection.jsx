@@ -1,7 +1,7 @@
 import styled from "styled-components";
 import SpaceCard from "./SpaceCard";
 import { RECOMMENDED_SPACES } from "../../data/homeData";
-import useReveal from "../../hooks/useReveal";
+import useReveal from "../../../hooks/useReveal";
 
 export default function RecommendedSection() {
   const { ref, visible } = useReveal();
