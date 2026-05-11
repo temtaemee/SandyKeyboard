@@ -15,7 +15,7 @@ public interface MemberRepository extends JpaRepository<MemberEntity, Long> {
     @Query("""
     select m
     from MemberEntity m
-    left join fetch m.roleList
+    left join fetch m.roleSet
     where m.username = :username
     and m.deletedAt is null
 """)

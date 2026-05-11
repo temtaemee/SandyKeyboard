@@ -1,6 +1,6 @@
 import styled, { css } from 'styled-components';
 import { COLLECTIONS } from '../../data/homeData';
-import useReveal from '../../hooks/useReveal';
+import useReveal from '../../../hooks/useReveal';
 
 export default function BentoSection() {
   const { ref, visible } = useReveal();

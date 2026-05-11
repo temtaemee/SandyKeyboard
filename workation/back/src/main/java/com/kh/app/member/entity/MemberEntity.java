@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "MEMBER")
@@ -33,8 +35,15 @@ public class MemberEntity{
     @Column(length = 1 , nullable = false)
     private String banYn;
 
-    @OneToMany(mappedBy = "member")
-    private List<RoleEntity> roleList;
+    @ElementCollection(fetch = FetchType.EAGER)
+    @Enumerated(EnumType.STRING)
+    @CollectionTable(
+            name = "MEMBER_ROLE",
+            joinColumns = @JoinColumn(name = "MEMBER_NO")
+    )
+    @Column(name = "ROLE_NAME")
+    @Builder.Default
+    private Set<Role> roleSet = new HashSet<>();
 
 
     @PrePersist

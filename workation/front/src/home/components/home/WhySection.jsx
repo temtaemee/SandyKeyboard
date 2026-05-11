@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { FEATURES } from "../../data/homeData";
-import useReveal from "../../hooks/useReveal";
+import useReveal from "../../../hooks/useReveal";
 
 const ICONS = {
   monitor: (

@@ -2,7 +2,6 @@ package com.kh.app.member.dto.request;
 
 import com.kh.app.member.entity.MemberEntity;
 import com.kh.app.member.entity.MemberProfileEntity;
-import com.kh.app.member.entity.RoleEntity;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -46,14 +45,5 @@ public class MemberJoinReqDto {
                 .build();
     }
 
-    // =========================
-    // ROLE 생성
-    // =========================
-    public RoleEntity toRoleEntity(MemberEntity member) {
 
-        return RoleEntity.builder()
-                .member(member)
-                .name("USER")
-                .build();
-    }
 }

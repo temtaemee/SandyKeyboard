@@ -1,7 +1,7 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
-// 실제 연동 시 API로 교체
 const noticeData = {
   1: {
     id: 1,
@@ -53,12 +53,25 @@ export default function NoticeDetailPage() {
   const navigate = useNavigate();
   const notice = noticeData[noticeId];
 
+  const [showConfirm, setShowConfirm] = useState(false);
+
   if (!notice) {
     return (
       <Wrapper>
         <p>존재하지 않는 공지사항입니다.</p>
       </Wrapper>
     );
+  }
+
+  function handleEdit() {
+    // 실제 연동 시 navigate(`/board/support/notice/edit/${noticeId}`) 로 변경
+    navigate('/board/support/notice/write');
+  }
+
+  function handleDelete() {
+    // 실제 연동 시 API 삭제 호출 후 navigate
+    setShowConfirm(false);
+    navigate('/board/support/notice');
   }
 
   return (
@@ -80,7 +93,7 @@ export default function NoticeDetailPage() {
 
       <Body>{notice.content}</Body>
 
-      {/* 파일 첨부 */}
+      {/* 첨부파일 */}
       {notice.files.length > 0 && (
         <FileSection>
           <FileTitle>첨부파일</FileTitle>
@@ -90,12 +103,7 @@ export default function NoticeDetailPage() {
                 <FileIcon>📎</FileIcon>
                 <FileName>{file.name}</FileName>
                 <FileSize>{file.size}</FileSize>
-                <DownloadBtn
-                  onClick={() => {
-                    // 실제 연동 시 파일 다운로드 API 호출
-                    alert(`${file.name} 다운로드`);
-                  }}
-                >
+                <DownloadBtn onClick={() => alert(`${file.name} 다운로드`)}>
                   다운로드
                 </DownloadBtn>
               </FileItem>
@@ -104,9 +112,30 @@ export default function NoticeDetailPage() {
         </FileSection>
       )}
 
-      <BackButton onClick={() => navigate('/board/support/notice')}>
-        ← 목록으로
-      </BackButton>
+      <ActionRow>
+        <BackButton onClick={() => navigate('/board/support/notice')}>
+          ← 목록으로
+        </BackButton>
+        <RightButtons>
+          <EditButton onClick={handleEdit}>수정</EditButton>
+          <DeleteButton onClick={() => setShowConfirm(true)}>삭제</DeleteButton>
+        </RightButtons>
+      </ActionRow>
+
+      {/* 삭제 확인 모달 */}
+      {showConfirm && (
+        <Overlay>
+          <Modal>
+            <ModalText>정말 삭제하시겠습니까?</ModalText>
+            <ModalButtons>
+              <ModalCancel onClick={() => setShowConfirm(false)}>
+                취소
+              </ModalCancel>
+              <ModalConfirm onClick={handleDelete}>삭제</ModalConfirm>
+            </ModalButtons>
+          </Modal>
+        </Overlay>
+      )}
     </Wrapper>
   );
 }
@@ -160,8 +189,6 @@ const Body = styled.pre`
   font-family: inherit;
 `;
 
-/* ── 첨부파일 ── */
-
 const FileSection = styled.div`
   border: 1px solid #e5e7eb;
   border-radius: 12px;
@@ -212,10 +239,20 @@ const DownloadBtn = styled.button`
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-
   &:hover {
     background: #f3f4f6;
   }
+`;
+
+const ActionRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const RightButtons = styled.div`
+  display: flex;
+  gap: 10px;
 `;
 
 const BackButton = styled.button`
@@ -227,8 +264,97 @@ const BackButton = styled.button`
   font-weight: 600;
   cursor: pointer;
   font-size: 14px;
-
   &:hover {
     background: #f3f4f6;
+  }
+`;
+
+const EditButton = styled.button`
+  padding: 12px 24px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  color: #333;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+  &:hover {
+    background: #f3f4f6;
+  }
+`;
+
+const DeleteButton = styled.button`
+  padding: 12px 24px;
+  border-radius: 999px;
+  border: none;
+  background: #ef4444;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+  &:hover {
+    background: #dc2626;
+  }
+`;
+
+/* ── 삭제 확인 모달 ── */
+
+const Overlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+`;
+
+const Modal = styled.div`
+  background: white;
+  border-radius: 20px;
+  padding: 40px 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+`;
+
+const ModalText = styled.p`
+  font-size: 18px;
+  font-weight: 600;
+  color: #111;
+`;
+
+const ModalButtons = styled.div`
+  display: flex;
+  gap: 12px;
+`;
+
+const ModalCancel = styled.button`
+  padding: 12px 28px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  color: #333;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+  &:hover {
+    background: #f3f4f6;
+  }
+`;
+
+const ModalConfirm = styled.button`
+  padding: 12px 28px;
+  border-radius: 999px;
+  border: none;
+  background: #ef4444;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+  &:hover {
+    background: #dc2626;
   }
 `;
