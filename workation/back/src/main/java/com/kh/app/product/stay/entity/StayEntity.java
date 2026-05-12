@@ -65,4 +65,6 @@ public class StayEntity extends BaseEntity {
     private int satPrice;
     @Column()
     private int sunPrice;
+    @Column()
+    private int holidayPrice;
 }

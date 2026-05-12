@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public enum SpaceCategory {
+public enum SpacePictureCategory {
 
     EXTERIOR("외부/전경"),
     ROOM("객실"),

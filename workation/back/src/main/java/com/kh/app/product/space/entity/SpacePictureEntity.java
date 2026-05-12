@@ -37,7 +37,7 @@ public class SpacePictureEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "CATEGORY", length = 100, nullable = false)
-    private SpaceCategory category; // 아까 만든 Enum 타입 사용
+    private SpacePictureEntity category; // 아까 만든 Enum 타입 사용
 
 
 }

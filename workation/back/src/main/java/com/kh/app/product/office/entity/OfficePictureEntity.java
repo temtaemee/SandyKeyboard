@@ -19,7 +19,7 @@ public class OfficePictureEntity {
 
     @JoinColumn(name = "OFFICE_ID", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
-    private OfficeEntity offieId;
+    private OfficeEntity officeId;
 
     @Column(name = "FILE_PATH", columnDefinition = "TEXT", nullable = false)
     private String filePath;

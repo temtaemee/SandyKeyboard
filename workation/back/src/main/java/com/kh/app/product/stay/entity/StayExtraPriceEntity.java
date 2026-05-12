@@ -42,5 +42,7 @@ public class StayExtraPriceEntity {
     private int satPrice;
     @Column()
     private int sunPrice;
+    @Column()
+    private int holidayPrice;
 
 }
