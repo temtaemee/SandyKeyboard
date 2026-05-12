@@ -47,13 +47,13 @@ const PageTitleGroup = styled.div`
 const PageTitle = styled.h1`
   font-size: 24px;
   font-weight: 500;
-  color: #0d1c2e;
+  color: ${({ theme }) => theme.colors.adminTextDark};
   letter-spacing: -0.24px;
   line-height: 1.33;
 `;
 
 const PageSub = styled.p`
   font-size: 14px;
-  color: #64748b;
+  color: ${({ theme }) => theme.colors.textMuted};
 `;
 

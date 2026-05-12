@@ -74,14 +74,14 @@ const Grid = styled.div`
 `;
 
 const Card = styled.div`
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: ${({ theme }) => theme.colors.white};
+  border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 8px;
   padding: 25px;
   display: flex;
   flex-direction: column;
   gap: 4px;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+  box-shadow: ${({ theme }) => theme.shadows.card};
   transition: transform 0.2s, box-shadow 0.2s;
 
   &:hover {
@@ -118,7 +118,7 @@ const Badge = styled.span`
 const CardLabel = styled.p`
   font-size: 12px;
   font-weight: 500;
-  color: #64748b;
+  color: ${({ theme }) => theme.colors.textMuted};
   text-transform: uppercase;
   letter-spacing: 0.6px;
   padding-top: 12px;
@@ -127,14 +127,14 @@ const CardLabel = styled.p`
 const CardValue = styled.p`
   font-size: 30px;
   font-weight: 700;
-  color: #0d1c2e;
+  color: ${({ theme }) => theme.colors.adminTextDark};
   letter-spacing: -0.6px;
   line-height: 1.27;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: ${({ theme }) => theme.fonts.number};
 `;
 
 const CardSub = styled.p`
   font-size: 11px;
-  color: #94a3b8;
+  color: ${({ theme }) => theme.colors.textLight};
   padding-top: 3px;
 `;

@@ -101,8 +101,8 @@ const Header = styled.header`
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  border-bottom: 1px solid #e2e8f0;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  box-shadow: ${({ theme }) => theme.shadows.card};
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -126,16 +126,16 @@ const SearchIconWrap = styled.div`
 const SearchInput = styled.input`
   width: 100%;
   padding: 8px 16px 8px 40px;
-  background: #f8fafc;
+  background: ${({ theme }) => theme.colors.bgSection};
   border: none;
   border-radius: 12px;
   font-size: 13px;
-  color: #0d1c2e;
+  color: ${({ theme }) => theme.colors.adminTextDark};
   font-family: inherit;
   outline: none;
 
   &::placeholder {
-    color: #6b7280;
+    color: ${({ theme }) => theme.colors.textMuted};
   }
 `;
 
@@ -156,7 +156,7 @@ const IconBtn = styled.button`
   transition: background 0.15s;
 
   &:hover {
-    background: #f1f5f9;
+    background: ${({ theme }) => theme.colors.borderLight};
   }
 
   ${({ $hasAlert }) =>
@@ -176,7 +176,7 @@ const IconBtn = styled.button`
 const VertDivider = styled.div`
   width: 1px;
   height: 32px;
-  background: #e2e8f0;
+  background: ${({ theme }) => theme.colors.border};
   margin: 0 12px;
 `;
 
@@ -195,13 +195,13 @@ const InfoText = styled.div`
 const AdminName = styled.p`
   font-size: 13px;
   font-weight: 500;
-  color: #0d1c2e;
+  color: ${({ theme }) => theme.colors.adminTextDark};
   line-height: 1.4;
 `;
 
 const AdminRole = styled.p`
   font-size: 11px;
-  color: #94a3b8;
+  color: ${({ theme }) => theme.colors.textLight};
   line-height: 1.5;
 `;
 
@@ -209,13 +209,13 @@ const AdminAvatar = styled.div`
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  background: #244c54;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  background: ${({ theme }) => theme.colors.adminPrimary};
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
   font-weight: 500;
-  color: white;
+  color: ${({ theme }) => theme.colors.white};
   cursor: pointer;
 `;

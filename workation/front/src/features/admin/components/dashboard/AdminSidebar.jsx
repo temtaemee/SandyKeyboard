@@ -198,8 +198,8 @@ const Aside = styled.aside`
   left: 0;
   width: 256px;
   height: 100vh;
-  background: white;
-  border-right: 1px solid #e2e8f0;
+  background: ${({ theme }) => theme.colors.white};
+  border-right: 1px solid ${({ theme }) => theme.colors.border};
   display: flex;
   flex-direction: column;
   padding: 16px 0;
@@ -216,7 +216,7 @@ const LogoArea = styled.div`
 const LogoIcon = styled.div`
   width: 32px;
   height: 32px;
-  background: #244c54;
+  background: ${({ theme }) => theme.colors.adminPrimary};
   border-radius: 2px;
   display: flex;
   align-items: center;
@@ -232,13 +232,13 @@ const LogoText = styled.div`
 const LogoTitle = styled.p`
   font-size: 16px;
   font-weight: 500;
-  color: #134e4a;
+  color: ${({ theme }) => theme.colors.adminPrimary};
   line-height: 1.25;
 `;
 
 const LogoSub = styled.p`
   font-size: 11px;
-  color: #64748b;
+  color: ${({ theme }) => theme.colors.textMuted};
   letter-spacing: 1.1px;
   text-transform: uppercase;
 `;
@@ -256,21 +256,21 @@ const NavItem = styled(NavLink)`
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  color: #64748b;
+  color: ${({ theme }) => theme.colors.textMuted};
   border-left: 4px solid transparent;
   transition:
     background 0.15s,
     color 0.15s;
 
   &:hover {
-    background: #f0fdf4;
-    color: #3d646c;
+    background: rgba(36, 76, 84, 0.06);
+    color: ${({ theme }) => theme.colors.adminPrimaryLight};
   }
 
   &.active {
-    background: rgba(240, 253, 250, 0.5);
-    color: #3d646c;
-    border-left-color: #3d646c;
+    background: rgba(36, 76, 84, 0.05);
+    color: ${({ theme }) => theme.colors.adminPrimaryLight};
+    border-left-color: ${({ theme }) => theme.colors.adminPrimaryLight};
   }
 `;
 
@@ -292,7 +292,7 @@ const BottomNav = styled.div`
 
 const Divider = styled.div`
   height: 1px;
-  background: #f1f5f9;
+  background: ${({ theme }) => theme.colors.borderLight};
   margin-bottom: 16px;
 `;
 
@@ -301,14 +301,14 @@ const BottomItem = styled(NavLink)`
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  color: #64748b;
+  color: ${({ theme }) => theme.colors.textMuted};
   transition:
     background 0.15s,
     color 0.15s;
   border-left: 4px solid transparent;
 
   &:hover {
-    background: #f8fafc;
-    color: #3d646c;
+    background: ${({ theme }) => theme.colors.bgSection};
+    color: ${({ theme }) => theme.colors.adminPrimaryLight};
   }
 `;

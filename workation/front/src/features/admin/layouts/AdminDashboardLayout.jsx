@@ -43,7 +43,7 @@ function PlusIcon() {
 const Wrapper = styled.div`
   display: flex;
   min-height: 100vh;
-  background: linear-gradient(90deg, #f8f9ff 0%, #f8f9ff 100%);
+  background: ${({ theme }) => theme.colors.bgSection};
 `;
 
 const ContentArea = styled.div`
@@ -67,7 +67,7 @@ const Fab = styled.button`
   bottom: 31.5px;
   right: 32px;
   width: 56px; height: 56px;
-  background: #244c54;
+  background: ${({ theme }) => theme.colors.adminPrimary};
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -77,7 +77,7 @@ const Fab = styled.button`
   z-index: 40;
 
   &:hover {
-    background: #3d646c;
+    background: ${({ theme }) => theme.colors.adminPrimaryLight};
     transform: translateY(-2px);
   }
 `;

@@ -291,13 +291,13 @@ const PageTitleGroup = styled.div`
 const PageTitle = styled.h1`
   font-size: 24px;
   font-weight: 500;
-  color: #0d1c2e;
+  color: ${({ theme }) => theme.colors.adminTextDark};
   letter-spacing: -0.24px;
 `;
 
 const PageSub = styled.p`
   font-size: 14px;
-  color: #64748b;
+  color: ${({ theme }) => theme.colors.textMuted};
 `;
 
 /* 통계 카드 */
@@ -308,11 +308,11 @@ const StatsSection = styled.div`
 `;
 
 const StatCard = styled.div`
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: ${({ theme }) => theme.colors.white};
+  border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 8px;
   padding: 20px 24px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: ${({ theme }) => theme.shadows.card};
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -338,14 +338,14 @@ const StatIconWrap = styled.div`
 
 const StatLabel = styled.p`
   font-size: 12px;
-  color: #64748b;
+  color: ${({ theme }) => theme.colors.textMuted};
 `;
 
 const StatValue = styled.p`
   font-size: 28px;
   font-weight: 700;
-  color: #0d1c2e;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: ${({ theme }) => theme.colors.adminTextDark};
+  font-family: ${({ theme }) => theme.fonts.number};
   letter-spacing: -0.5px;
   line-height: 1.2;
 `;
@@ -365,14 +365,14 @@ const TrendText = styled.span`
 
 const StatSubText = styled.p`
   font-size: 11px;
-  color: #94a3b8;
+  color: ${({ theme }) => theme.colors.textLight};
   margin-top: 4px;
 `;
 
 const ProgressWrap = styled.div`
   margin-top: 8px;
   height: 6px;
-  background: #f1f5f9;
+  background: ${({ theme }) => theme.colors.borderLight};
   border-radius: 999px;
   overflow: hidden;
 `;
@@ -380,7 +380,7 @@ const ProgressWrap = styled.div`
 const ProgressBar = styled.div`
   height: 100%;
   width: ${({ $width }) => $width}%;
-  background: #244c54;
+  background: ${({ theme }) => theme.colors.adminPrimary};
   border-radius: 999px;
 `;
 
@@ -394,17 +394,17 @@ const MidSection = styled.div`
 
 /* 차트 카드 */
 const ChartCard = styled.div`
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: ${({ theme }) => theme.colors.white};
+  border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 8px;
   padding: 22px 24px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: ${({ theme }) => theme.shadows.card};
 `;
 
 const ChartTitle = styled.p`
   font-size: 14px;
   font-weight: 600;
-  color: #0d1c2e;
+  color: ${({ theme }) => theme.colors.adminTextDark};
   margin-bottom: 20px;
 `;
 
@@ -436,20 +436,20 @@ const BarWrap = styled.div`
 const Bar = styled.div`
   width: 100%;
   height: ${({ $height }) => $height}%;
-  background: ${({ $highlight }) => ($highlight ? '#244c54' : '#e2e8f0')};
+  background: ${({ $highlight, theme }) => ($highlight ? theme.colors.adminPrimary : theme.colors.border)};
   border-radius: 4px 4px 0 0;
   transition: background 0.2s;
 `;
 
 const BarLabel = styled.span`
   font-size: 11px;
-  color: ${({ $highlight }) => ($highlight ? '#244c54' : '#94a3b8')};
+  color: ${({ $highlight, theme }) => ($highlight ? theme.colors.adminPrimary : theme.colors.textLight)};
   font-weight: ${({ $highlight }) => ($highlight ? '700' : '500')};
 `;
 
 const ChartFooterText = styled.p`
   font-size: 12px;
-  color: #64748b;
+  color: ${({ theme }) => theme.colors.textMuted};
   line-height: 1.6;
 `;
 
@@ -460,17 +460,17 @@ const Strong = styled.strong`
 
 /* TOP5 카드 */
 const Top5Card = styled.div`
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: ${({ theme }) => theme.colors.white};
+  border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 8px;
   padding: 22px 24px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: ${({ theme }) => theme.shadows.card};
 `;
 
 const Top5Title = styled.p`
   font-size: 14px;
   font-weight: 600;
-  color: #0d1c2e;
+  color: ${({ theme }) => theme.colors.adminTextDark};
   margin-bottom: 16px;
 `;
 
@@ -489,7 +489,7 @@ const Top5Item = styled.div`
 const Top5Rank = styled.span`
   font-size: 13px;
   font-weight: 700;
-  color: #64748b;
+  color: ${({ theme }) => theme.colors.textMuted};
   width: 16px;
   flex-shrink: 0;
 `;
@@ -504,12 +504,12 @@ const Top5Info = styled.div`
 const Top5Name = styled.span`
   font-size: 13px;
   font-weight: 500;
-  color: #0d1c2e;
+  color: ${({ theme }) => theme.colors.adminTextDark};
 `;
 
 const Top5Date = styled.span`
   font-size: 11px;
-  color: #94a3b8;
+  color: ${({ theme }) => theme.colors.textLight};
   display: flex;
   align-items: center;
 `;
@@ -517,8 +517,8 @@ const Top5Date = styled.span`
 const Top5Amount = styled.span`
   font-size: 13px;
   font-weight: 600;
-  color: #0d1c2e;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: ${({ theme }) => theme.colors.adminTextDark};
+  font-family: ${({ theme }) => theme.fonts.number};
   white-space: nowrap;
 `;
 
@@ -558,8 +558,8 @@ const AlertList = styled.div`
 `;
 
 const AlertItem = styled.div`
-  background: white;
-  border: 1px solid ${({ $urgent }) => ($urgent ? '#fca5a5' : '#e2e8f0')};
+  background: ${({ theme }) => theme.colors.white};
+  border: 1px solid ${({ $urgent, theme }) => ($urgent ? '#fca5a5' : theme.colors.border)};
   border-radius: 6px;
   padding: 12px 14px;
   display: flex;
@@ -585,9 +585,9 @@ const AlertActionBtn = styled.button`
   font-weight: 600;
   padding: 3px 8px;
   border-radius: 4px;
-  border: 1px solid ${({ $dark }) => ($dark ? '#1e293b' : '#e2e8f0')};
-  background: ${({ $dark }) => ($dark ? '#1e293b' : 'white')};
-  color: ${({ $dark }) => ($dark ? 'white' : '#475569')};
+  border: 1px solid ${({ $dark, theme }) => ($dark ? '#1e293b' : theme.colors.border)};
+  background: ${({ $dark, theme }) => ($dark ? '#1e293b' : theme.colors.white)};
+  color: ${({ $dark, theme }) => ($dark ? theme.colors.white : theme.colors.textMid)};
   font-family: inherit;
   transition: opacity 0.15s;
   &:hover { opacity: 0.8; }
@@ -595,7 +595,7 @@ const AlertActionBtn = styled.button`
 
 const AlertDesc = styled.p`
   font-size: 11px;
-  color: #94a3b8;
+  color: ${({ theme }) => theme.colors.textLight};
 `;
 
 const AlertFooterNote = styled.p`
@@ -608,11 +608,11 @@ const AlertFooterNote = styled.p`
 
 /* 하단 정산 대기 목록 */
 const PendingSection = styled.div`
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: ${({ theme }) => theme.colors.white};
+  border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: ${({ theme }) => theme.shadows.card};
 `;
 
 const PendingHeader = styled.div`
@@ -620,18 +620,18 @@ const PendingHeader = styled.div`
   align-items: center;
   justify-content: space-between;
   padding: 18px 24px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
 `;
 
 const PendingTitle = styled.h2`
   font-size: 15px;
   font-weight: 600;
-  color: #0d1c2e;
+  color: ${({ theme }) => theme.colors.adminTextDark};
 `;
 
 const PendingCount = styled.p`
   font-size: 12px;
-  color: #94a3b8;
+  color: ${({ theme }) => theme.colors.textLight};
 `;
 
 const PendingTable = styled.table`
@@ -640,14 +640,14 @@ const PendingTable = styled.table`
 `;
 
 const PTHead = styled.thead`
-  background: #f8fafc;
-  border-bottom: 1px solid #f1f5f9;
+  background: ${({ theme }) => theme.colors.bgSection};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
 `;
 
 const PTBody = styled.tbody``;
 
 const PTR = styled.tr`
-  border-top: ${({ $hoverable }) => ($hoverable ? '1px solid #f1f5f9' : 'none')};
+  border-top: ${({ $hoverable, theme }) => ($hoverable ? `1px solid ${theme.colors.borderLight}` : 'none')};
   transition: background 0.1s;
   &:hover {
     background: ${({ $hoverable }) => ($hoverable ? '#fafbfc' : 'transparent')};
@@ -659,7 +659,7 @@ const PTH = styled.th`
   text-align: left;
   font-size: 12px;
   font-weight: 600;
-  color: #64748b;
+  color: ${({ theme }) => theme.colors.textMuted};
   width: ${({ $width }) => $width || 'auto'};
   white-space: nowrap;
 `;
@@ -673,7 +673,7 @@ const PendingId = styled.span`
   font-size: 12px;
   font-weight: 600;
   color: #334155;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: ${({ theme }) => theme.fonts.number};
 `;
 
 const SellerName = styled.span`
@@ -684,15 +684,15 @@ const SellerName = styled.span`
 
 const DateCell = styled.span`
   font-size: 12px;
-  color: #94a3b8;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: ${({ theme }) => theme.colors.textLight};
+  font-family: ${({ theme }) => theme.fonts.number};
 `;
 
 const AmountCell = styled.span`
   font-size: 13px;
   font-weight: 600;
-  color: #0d1c2e;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: ${({ theme }) => theme.colors.adminTextDark};
+  font-family: ${({ theme }) => theme.fonts.number};
 `;
 
 const StatusBadge = styled.span`
@@ -722,18 +722,18 @@ const ViewAllRow = styled.div`
   display: flex;
   justify-content: center;
   padding: 16px;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid ${({ theme }) => theme.colors.borderLight};
 `;
 
 const ViewAllBtn = styled.button`
   font-size: 13px;
   font-weight: 500;
-  color: #475569;
+  color: ${({ theme }) => theme.colors.textMid};
   padding: 8px 24px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 6px;
-  background: white;
+  background: ${({ theme }) => theme.colors.white};
   font-family: inherit;
   transition: background 0.15s;
-  &:hover { background: #f8fafc; }
+  &:hover { background: ${({ theme }) => theme.colors.bgSection}; }
 `;
