@@ -31,7 +31,7 @@ public class StayPictureEntity {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String storedName;
 
-    @Column(columnDefinition = "CHAR(1)", nullable = false)
+    @Column(nullable = false, length = 1)
     private String mainYn; // 'Y' 또는 'N'
 
     @Column(nullable = false)
