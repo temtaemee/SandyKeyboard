@@ -110,7 +110,7 @@ export const PAYMENT_STATUS_MAP = {
 };
 
 export const ADMIN_NAV_ITEMS = [
-  { id: 'dashboard', label: '매출', path: '/admin/dashboard', icon: 'grid' },
+  { id: 'dashboard', label: '매출', path: '/admin/dashboard', icon: 'chart' },
   {
     id: 'reservations',
     label: '예약/기업 관리',
@@ -118,9 +118,9 @@ export const ADMIN_NAV_ITEMS = [
     icon: 'bookmark',
   },
   {
-    id: 'sellers',
-    label: '판매자 관리',
-    path: '/admin/sellers',
+    id: 'accounts',
+    label: '계정/판매자 관리',
+    path: '/admin/accounts',
     icon: 'users',
   },
   { id: 'spaces', label: '숙소 관리', path: '/admin/spaces', icon: 'home' },

@@ -22,32 +22,32 @@ export default function AdminSalesPage() {
           <PageTitle>정산 관리</PageTitle>
           <PageSub>전체 거래처의 정산 현황 및 지표를 통합 관리합니다.</PageSub>
         </PageTitleGroup>
-        <HeaderActions>
-          <FilterBtn>
-            <FilterIcon />
-            상세 필터
-          </FilterBtn>
-          <NewBtn>
-            <PlusIcon />
-            신규 정산 생성
-          </NewBtn>
-        </HeaderActions>
       </PageHeader>
 
       {/* ── 상단 통계 카드 3개 ── */}
       <StatsSection>
         {/* 카드 1: 정산 완료 금액 */}
         <StatCard>
+          <StatCardTop>
+            <StatIconWrap $bg="rgba(34,197,94,0.1)" $color="#16a34a">
+              <WalletIcon />
+            </StatIconWrap>
+            <StatTrendRow>
+              <TrendUp />
+              <TrendText>+8.4%</TrendText>
+            </StatTrendRow>
+          </StatCardTop>
           <StatLabel>{SALES_STAT_CARDS[0].label}</StatLabel>
           <StatValue>{SALES_STAT_CARDS[0].value}</StatValue>
-          <StatTrendRow>
-            <TrendUp />
-            <TrendText>+8.4%</TrendText>
-          </StatTrendRow>
         </StatCard>
 
         {/* 카드 2: 정산 건수 */}
         <StatCard>
+          <StatCardTop>
+            <StatIconWrap $bg="rgba(59,130,246,0.1)" $color="#2563eb">
+              <ReceiptIcon />
+            </StatIconWrap>
+          </StatCardTop>
           <StatLabel>{SALES_STAT_CARDS[1].label}</StatLabel>
           <StatValue>{SALES_STAT_CARDS[1].value}</StatValue>
           <ProgressWrap>
@@ -57,6 +57,11 @@ export default function AdminSalesPage() {
 
         {/* 카드 3: 수수료 총액 */}
         <StatCard>
+          <StatCardTop>
+            <StatIconWrap $bg="rgba(249,115,22,0.1)" $color="#ea580c">
+              <PercentIcon />
+            </StatIconWrap>
+          </StatCardTop>
           <StatLabel>{SALES_STAT_CARDS[2].label}</StatLabel>
           <StatValue>{SALES_STAT_CARDS[2].value}</StatValue>
           <StatSubText>{SALES_STAT_CARDS[2].sub}</StatSubText>
@@ -203,17 +208,28 @@ export default function AdminSalesPage() {
 }
 
 /* ── Icon Components ── */
-function FilterIcon() {
+function WalletIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="11" y1="18" x2="13" y2="18" />
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 12V8a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2" />
+      <line x1="20" y1="12" x2="14" y2="12" /><circle cx="14" cy="12" r="2" />
     </svg>
   );
 }
-function PlusIcon() {
+function ReceiptIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
-      <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="9" y1="13" x2="15" y2="13" /><line x1="9" y1="17" x2="15" y2="17" />
+    </svg>
+  );
+}
+function PercentIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="19" y1="5" x2="5" y2="19" />
+      <circle cx="6.5" cy="6.5" r="2.5" /><circle cx="17.5" cy="17.5" r="2.5" />
     </svg>
   );
 }
@@ -264,7 +280,6 @@ const PageWrapper = styled.div`
 const PageHeader = styled.div`
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
 `;
 
 const PageTitleGroup = styled.div`
@@ -285,43 +300,6 @@ const PageSub = styled.p`
   color: #64748b;
 `;
 
-const HeaderActions = styled.div`
-  display: flex;
-  gap: 10px;
-  align-items: center;
-`;
-
-const FilterBtn = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 9px 16px;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #475569;
-  font-family: inherit;
-  transition: background 0.15s;
-  &:hover { background: #f8fafc; }
-`;
-
-const NewBtn = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 9px 16px;
-  background: #244c54;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  color: white;
-  font-family: inherit;
-  transition: background 0.15s;
-  &:hover { background: #3d646c; }
-`;
-
 /* 통계 카드 */
 const StatsSection = styled.div`
   display: grid;
@@ -333,11 +311,29 @@ const StatCard = styled.div`
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  padding: 22px 24px;
+  padding: 20px 24px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
+`;
+
+const StatCardTop = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+`;
+
+const StatIconWrap = styled.div`
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: ${({ $bg }) => $bg};
+  color: ${({ $color }) => $color};
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;
 
 const StatLabel = styled.p`

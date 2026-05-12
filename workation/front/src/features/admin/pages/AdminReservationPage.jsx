@@ -27,19 +27,30 @@ export default function AdminReservationPage() {
         </PageTitleGroup>
       </PageHeader>
 
-      {/* ── 상단: 통계 카드 2개 + 검색창 ── */}
+      {/* ── 상단: 통계 카드 2개 ── */}
       <TopSection>
-        {RESERVATION_STAT_CARDS.map((card) => (
+        {RESERVATION_STAT_CARDS.map((card, idx) => (
           <StatCard key={card.id}>
+            <StatCardTop>
+              <StatIconWrap
+                $bg={idx === 0 ? 'rgba(59,130,246,0.1)' : 'rgba(34,197,94,0.1)'}
+                $color={idx === 0 ? '#2563eb' : '#16a34a'}
+              >
+                {idx === 0 ? <CalendarIcon /> : <BuildingStatIcon />}
+              </StatIconWrap>
+              <StatBadge $color={card.badge.color}>{card.badge.text}</StatBadge>
+            </StatCardTop>
             <StatLabel>{card.label}</StatLabel>
             <StatValueRow>
               <StatValue>{card.value}</StatValue>
-              <StatBadge $color={card.badge.color}>{card.badge.text}</StatBadge>
             </StatValueRow>
           </StatCard>
         ))}
+      </TopSection>
 
-        <SearchCard>
+      {/* ── 예약 검색 ── */}
+      <ResvSearchRow>
+        <ResvSearchWrap>
           <SearchIconWrap>
             <SearchSvg />
           </SearchIconWrap>
@@ -48,8 +59,8 @@ export default function AdminReservationPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-        </SearchCard>
-      </TopSection>
+        </ResvSearchWrap>
+      </ResvSearchRow>
 
       {/* ── 중단: 예약 테이블 ── */}
       <TableSection>
@@ -199,8 +210,8 @@ export default function AdminReservationPage() {
             value={companyName}
             onChange={(e) => setCompanyName(e.target.value)}
           />
-          <RegisterBtn>
-            ▌▌▌▌▌ (Register)
+          <RegisterBtn onClick={() => { if (companyName.trim()) setCompanyName(''); }}>
+            등록하기
           </RegisterBtn>
         </QuickRegisterCard>
       </BottomSection>
@@ -209,6 +220,24 @@ export default function AdminReservationPage() {
 }
 
 /* ── Icon Components ── */
+function CalendarIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+      <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+    </svg>
+  );
+}
+function BuildingStatIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <path d="M9 22V12h6v10" />
+      <path d="M9 7h1" /><path d="M14 7h1" /><path d="M9 11h1" /><path d="M14 11h1" />
+    </svg>
+  );
+}
 function SearchSvg() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -290,11 +319,29 @@ const PageSub = styled.p`
   color: #64748b;
 `;
 
-/* 상단 통계 + 검색 */
+/* 상단 통계 */
 const TopSection = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr 2fr;
+  grid-template-columns: 1fr 1fr;
   gap: 16px;
+`;
+
+/* 예약 검색 */
+const ResvSearchRow = styled.div`
+  display: flex;
+  justify-content: flex-end;
+`;
+
+const ResvSearchWrap = styled.div`
+  width: 320px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 `;
 
 const StatCard = styled.div`
@@ -303,12 +350,33 @@ const StatCard = styled.div`
   border-radius: 8px;
   padding: 20px 24px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
+
+const StatCardTop = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+`;
+
+const StatIconWrap = styled.div`
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: ${({ $bg }) => $bg};
+  color: ${({ $color }) => $color};
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;
 
 const StatLabel = styled.p`
   font-size: 12px;
   color: #64748b;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 `;
 
 const StatValueRow = styled.div`
@@ -730,7 +798,7 @@ const FormInput = styled.input`
   font-family: inherit;
   outline: none;
   transition: border-color 0.15s;
-
+  box-sizing: border-box;
   &::placeholder { color: #cbd5e1; }
   &:focus { border-color: #244c54; }
 `;
@@ -748,3 +816,4 @@ const RegisterBtn = styled.button`
   transition: background 0.15s;
   &:hover { background: #244c54; }
 `;
+
