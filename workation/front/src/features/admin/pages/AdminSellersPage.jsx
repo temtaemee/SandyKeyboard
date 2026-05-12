@@ -2,12 +2,17 @@
 import { useState } from 'react';
 import styled from 'styled-components';
 import {
+  Home, Building2, Coffee, Tent, Store, Users, CheckCircle, XCircle,
+  UserPlus, Briefcase, User,
+  ChevronLeft as LucideChevronLeft, ChevronRight as LucideChevronRight,
+} from 'lucide-react';
+import {
   SELLER_STATUS_MAP,
   SELLERS_LIST,
 } from '../data/adminSellersData';
 
 const TOTAL_PAGES = 3;
-const FILTER_TABS = ['전체', '활동 중', '정지됨'];
+const FILTER_TABS = ['전체', '활동 중', '정지됨', '신규'];
 
 /* ── 고객 계정 목데이터 ── */
 const CUSTOMER_LIST = [
@@ -16,11 +21,19 @@ const CUSTOMER_LIST = [
   { id: 'USR-003', name: '서하준', email: 'hajun.seo@example.com', phone: '010-3333-4444', joinDate: '2023-06-14', resvCount: 2, status: 'stopped' },
   { id: 'USR-004', name: '김도연', email: 'doyeon.kim@example.com', phone: '010-4444-5555', joinDate: '2023-08-30', resvCount: 9, status: 'active' },
   { id: 'USR-005', name: '이나영', email: 'nayoung.lee@example.com', phone: '010-5555-6666', joinDate: '2023-11-05', resvCount: 3, status: 'active' },
-  { id: 'USR-006', name: '박성민', email: 'sungmin.park@example.com', phone: '010-6666-7777', joinDate: '2024-01-20', resvCount: 1, status: 'active' },
-  { id: 'USR-007', name: '조현우', email: 'hyunwoo.jo@example.com', phone: '010-7777-8888', joinDate: '2024-03-07', resvCount: 0, status: 'stopped' },
-  { id: 'USR-008', name: '신예진', email: 'yejin.shin@example.com', phone: '010-8888-9999', joinDate: '2024-04-12', resvCount: 5, status: 'active' },
+  { id: 'USR-006', name: '박성민', email: 'sungmin.park@example.com', phone: '010-6666-7777', joinDate: '2026-03-10', resvCount: 1, status: 'active' },
+  { id: 'USR-007', name: '조현우', email: 'hyunwoo.jo@example.com', phone: '010-7777-8888', joinDate: '2026-04-07', resvCount: 0, status: 'stopped' },
+  { id: 'USR-008', name: '신예진', email: 'yejin.shin@example.com', phone: '010-8888-9999', joinDate: '2026-05-01', resvCount: 5, status: 'active' },
 ];
 const AVATAR_COLORS = ['#dbeafe','#dcfce7','#fef9c3','#fce7f3','#ede9fe','#ffedd5','#cffafe','#f1f5f9'];
+
+/* 가입일(createdAt)이 현재 기준 3개월 이내면 신규 */
+const isNewMember = (dateStr) => {
+  const joined = new Date(dateStr.replace(/\./g, '-'));
+  const cutoff = new Date();
+  cutoff.setMonth(cutoff.getMonth() - 3);
+  return joined >= cutoff;
+};
 
 export default function AdminSellersPage() {
   const [view, setView] = useState('customer'); // 'customer' | 'seller'
@@ -69,11 +82,13 @@ export default function AdminSellersPage() {
   const filteredSellers = SELLERS_LIST.filter((s) => {
     if (filter === '활동 중') return !isSellerSuspended(s);
     if (filter === '정지됨') return isSellerSuspended(s);
+    if (filter === '신규') return isNewMember(s.joinedAt);
     return true;
   });
   const filteredCustomers = CUSTOMER_LIST.filter((c) => {
     if (filter === '활동 중') return !isCustomerSuspended(c);
     if (filter === '정지됨') return isCustomerSuspended(c);
+    if (filter === '신규') return isNewMember(c.joinDate);
     return true;
   });
 
@@ -106,7 +121,7 @@ export default function AdminSellersPage() {
       {/* ── 통계 카드 ── */}
       {view === 'seller' ? (
         <StatsSection>
-          <StatCard>
+          <StatCard $active={filter === '전체'} onClick={() => setFilter('전체')}>
             <StatCardTop>
               <StatIconWrap $bg="rgba(30,41,59,0.08)"><SellersIcon /></StatIconWrap>
               <StatBadge $green>+2.4%</StatBadge>
@@ -115,7 +130,7 @@ export default function AdminSellersPage() {
             <StatValue>1,284</StatValue>
             <StatProgress $color="#1e293b" $width={100} />
           </StatCard>
-          <StatCard>
+          <StatCard $active={filter === '활동 중'} onClick={() => setFilter('활동 중')}>
             <StatCardTop>
               <StatIconWrap $bg="rgba(16,185,129,0.1)"><ActiveIcon /></StatIconWrap>
               <StatBadge $green>+4.2%</StatBadge>
@@ -124,7 +139,7 @@ export default function AdminSellersPage() {
             <StatValue>1,270</StatValue>
             <StatProgress $color="#10b981" $width={99} />
           </StatCard>
-          <StatCard>
+          <StatCard $active={filter === '정지됨'} onClick={() => setFilter('정지됨')}>
             <StatCardTop>
               <StatIconWrap $bg="rgba(239,68,68,0.08)"><StoppedIcon /></StatIconWrap>
               <StatBadge $red>-2.1%</StatBadge>
@@ -133,7 +148,7 @@ export default function AdminSellersPage() {
             <StatValue>14</StatValue>
             <StatProgress $color="#ef4444" $width={8} />
           </StatCard>
-          <StatCard>
+          <StatCard $active={filter === '신규'} onClick={() => setFilter('신규')}>
             <StatCardTop>
               <StatIconWrap $bg="rgba(245,158,11,0.1)"><NewSellerIcon /></StatIconWrap>
             </StatCardTop>
@@ -144,7 +159,7 @@ export default function AdminSellersPage() {
         </StatsSection>
       ) : (
         <StatsSection>
-          <StatCard>
+          <StatCard $active={filter === '전체'} onClick={() => setFilter('전체')}>
             <StatCardTop>
               <StatIconWrap $bg="rgba(59,130,246,0.1)"><SellersIcon /></StatIconWrap>
             </StatCardTop>
@@ -152,7 +167,7 @@ export default function AdminSellersPage() {
             <StatValue>8,420</StatValue>
             <StatProgress $color="#3b82f6" $width={100} />
           </StatCard>
-          <StatCard>
+          <StatCard $active={filter === '활동 중'} onClick={() => setFilter('활동 중')}>
             <StatCardTop>
               <StatIconWrap $bg="rgba(16,185,129,0.1)"><ActiveIcon /></StatIconWrap>
               <StatBadge $green>+3.1%</StatBadge>
@@ -161,7 +176,7 @@ export default function AdminSellersPage() {
             <StatValue>8,180</StatValue>
             <StatProgress $color="#10b981" $width={97} />
           </StatCard>
-          <StatCard>
+          <StatCard $active={filter === '정지됨'} onClick={() => setFilter('정지됨')}>
             <StatCardTop>
               <StatIconWrap $bg="rgba(239,68,68,0.08)"><StoppedIcon /></StatIconWrap>
               <StatBadge $red>-0.8%</StatBadge>
@@ -170,7 +185,7 @@ export default function AdminSellersPage() {
             <StatValue>240</StatValue>
             <StatProgress $color="#ef4444" $width={3} />
           </StatCard>
-          <StatCard>
+          <StatCard $active={filter === '신규'} onClick={() => setFilter('신규')}>
             <StatCardTop>
               <StatIconWrap $bg="rgba(245,158,11,0.1)"><NewSellerIcon /></StatIconWrap>
             </StatCardTop>
@@ -204,6 +219,7 @@ export default function AdminSellersPage() {
                 <TH $width="150px">연락처</TH>
                 <TH $width="110px">가입일</TH>
                 <TH $width="90px">거래 건수</TH>
+                <TH $width="60px">신규</TH>
                 <TH $width="80px">상태</TH>
                 <TH $width="90px">활동정지</TH>
               </TR>
@@ -227,6 +243,7 @@ export default function AdminSellersPage() {
                     <TD><PhoneText>{seller.phone}</PhoneText></TD>
                     <TD><DateText>{seller.joinedAt}</DateText></TD>
                     <TD><TransactionText>{seller.transactions.toLocaleString()}</TransactionText></TD>
+                    <TD>{isNewMember(seller.joinedAt) && <NewBadge>NEW</NewBadge>}</TD>
                     <TD>
                       <StatusBadge $bg={sus ? '#fee2e2' : '#dcfce7'} $color={sus ? '#b91c1c' : '#15803d'}>
                         {sus ? '정지됨' : '활동 중'}
@@ -253,6 +270,7 @@ export default function AdminSellersPage() {
                 <TH $width="140px">전화번호</TH>
                 <TH $width="120px">가입일</TH>
                 <TH $width="90px">총 예약</TH>
+                <TH $width="60px">신규</TH>
                 <TH $width="80px">상태</TH>
                 <TH $width="90px">활동정지</TH>
               </TR>
@@ -273,6 +291,7 @@ export default function AdminSellersPage() {
                     <TD><PhoneText>{customer.phone}</PhoneText></TD>
                     <TD><DateText>{customer.joinDate}</DateText></TD>
                     <TD><TransactionText>{customer.resvCount}건</TransactionText></TD>
+                    <TD>{isNewMember(customer.joinDate) && <NewBadge>NEW</NewBadge>}</TD>
                     <TD>
                       <StatusBadge $bg={sus ? '#fee2e2' : '#dcfce7'} $color={sus ? '#b91c1c' : '#15803d'}>
                         {sus ? '정지됨' : '활성'}
@@ -345,66 +364,23 @@ export default function AdminSellersPage() {
 
 /* ── Icons ── */
 function CategoryIcon({ category }) {
-  if (category === '숙박/호텔') return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-      <polyline points="9 22 9 12 15 12 15 22" />
-    </svg>
-  );
-  if (category === '공유오피스') return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="7" width="20" height="14" rx="2" />
-      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
-      <line x1="8" y1="12" x2="16" y2="12" />
-    </svg>
-  );
-  if (category === '카페/식음료') return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 8h1a4 4 0 0 1 0 8h-1" />
-      <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z" />
-      <line x1="6" y1="2" x2="6" y2="4" /><line x1="10" y1="2" x2="10" y2="4" /><line x1="14" y1="2" x2="14" y2="4" />
-    </svg>
-  );
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 17l5-10 4 7 3-4 4 7H3z" />
-    </svg>
-  );
+  const props = { size: 16, color: '#475569', strokeWidth: 1.8 };
+  if (category === '숙박/호텔') return <Home {...props} />;
+  if (category === '공유오피스') return <Building2 {...props} />;
+  if (category === '카페/식음료') return <Coffee {...props} />;
+  return <Tent {...props} />;
 }
-function StoreIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-      <polyline points="9 22 9 12 15 12 15 22" />
-    </svg>
-  );
-}
-function SellersIcon() {
-  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1e293b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>;
-}
-function ActiveIcon() {
-  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>;
-}
-function StoppedIcon() {
-  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" /></svg>;
-}
-function NewSellerIcon() {
-  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /><line x1="12" y1="12" x2="12" y2="18" /><line x1="9" y1="15" x2="15" y2="15" /></svg>;
-}
-function SuspendModalIcon() {
-  return <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" /></svg>;
-}
-function ResumeModalIcon() {
-  return <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>;
-}
-function SellerSvg({ active }) {
-  return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={active ? '#244c54' : '#94a3b8'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /></svg>;
-}
-function CustomerSvg({ active }) {
-  return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={active ? '#244c54' : '#94a3b8'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>;
-}
-function ChevronLeft() { return <svg width="5" height="9" viewBox="0 0 6 10" fill="none" stroke="#475569" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="5 1 1 5 5 9" /></svg>; }
-function ChevronRight() { return <svg width="5" height="9" viewBox="0 0 6 10" fill="none" stroke="#475569" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 1 5 5 1 9" /></svg>; }
+function StoreIcon() { return <Store size={16} color="#475569" strokeWidth={1.8} />; }
+function SellersIcon() { return <Users size={18} color="#1e293b" />; }
+function ActiveIcon() { return <CheckCircle size={18} color="#10b981" />; }
+function StoppedIcon() { return <XCircle size={18} color="#ef4444" />; }
+function NewSellerIcon() { return <UserPlus size={18} color="#f59e0b" />; }
+function SuspendModalIcon() { return <XCircle size={28} color="#ef4444" />; }
+function ResumeModalIcon() { return <CheckCircle size={28} color="#16a34a" />; }
+function SellerSvg({ active }) { return <Briefcase size={14} color={active ? '#244c54' : '#94a3b8'} />; }
+function CustomerSvg({ active }) { return <User size={14} color={active ? '#244c54' : '#94a3b8'} />; }
+function ChevronLeft() { return <LucideChevronLeft size={14} color="#475569" strokeWidth={1.5} />; }
+function ChevronRight() { return <LucideChevronRight size={14} color="#475569" strokeWidth={1.5} />; }
 function IdDots() {
   return (
     <span style={{ display: 'inline-flex', gap: 1.5, marginRight: 5, verticalAlign: 'middle' }}>
@@ -465,14 +441,14 @@ const StatsSection = styled.div`
 
 const StatCard = styled.div`
   background: white;
-  border: 1px solid #e2e8f0;
+  border: 1px solid ${({ $active }) => ($active ? '#244c54' : '#e2e8f0')};
   border-radius: 10px;
   padding: 20px 22px 18px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: ${({ $active }) => ($active ? '0 0 0 3px rgba(36,76,84,0.1)' : '0 1px 2px rgba(0,0,0,0.05)')};
   display: flex;
   flex-direction: column;
   gap: 5px;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
   cursor: pointer;
   &:hover {
     transform: translateY(-2px);
@@ -613,6 +589,16 @@ const StatusBadge = styled.span`
   font-size: 11px; font-weight: 500;
   background: ${({ $bg }) => $bg};
   color: ${({ $color }) => $color};
+  white-space: nowrap;
+`;
+
+const NewBadge = styled.span`
+  display: inline-block;
+  padding: 2px 7px; border-radius: 999px;
+  font-size: 10px; font-weight: 700;
+  background: #fef3c7;
+  color: #b45309;
+  letter-spacing: 0.4px;
   white-space: nowrap;
 `;
 

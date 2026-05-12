@@ -1,10 +1,18 @@
 // src/features/admin/components/dashboard/AdminChartPanel.jsx
 import { useState } from 'react';
 import styled from 'styled-components';
-import { ADMIN_CHART_DATA, REGIONAL_SALES_DATA } from '../../data/adminDashboardData';
+import { ADMIN_CHART_DATA, ADMIN_CHART_DATA_12M, REGIONAL_SALES_DATA } from '../../data/adminDashboardData';
+
+const PERIOD_OPTIONS = [
+  { value: '6m', label: '최근 6개월', sub: '지난 6개월간의 결제 데이터 추이', data: ADMIN_CHART_DATA },
+  { value: '1y', label: '최근 1년', sub: '지난 1년간의 결제 데이터 추이', data: ADMIN_CHART_DATA_12M },
+];
 
 export default function AdminChartPanel() {
-  const maxHeight = Math.max(...ADMIN_CHART_DATA.map((d) => d.height));
+  const [period, setPeriod] = useState('6m');
+
+  const selected = PERIOD_OPTIONS.find((o) => o.value === period);
+  const chartData = selected.data;
 
   return (
     <Grid>
@@ -13,9 +21,19 @@ export default function AdminChartPanel() {
         <ChartHeader>
           <ChartTitleGroup>
             <ChartTitle>월간 매출 트렌드</ChartTitle>
-            <ChartSub>지난 6개월간의 결제 데이터 추이</ChartSub>
+            <ChartSub>{selected.sub}</ChartSub>
           </ChartTitleGroup>
-          <PeriodBtn>최근 6개월</PeriodBtn>
+          <PeriodToggle>
+            {PERIOD_OPTIONS.map((opt) => (
+              <PeriodBtn
+                key={opt.value}
+                $active={period === opt.value}
+                onClick={() => setPeriod(opt.value)}
+              >
+                {opt.label}
+              </PeriodBtn>
+            ))}
+          </PeriodToggle>
         </ChartHeader>
 
         <BarChart>
@@ -23,8 +41,8 @@ export default function AdminChartPanel() {
             {[0, 1, 2, 3].map((i) => <GridLine key={i} />)}
           </GridLines>
           <Bars>
-            {ADMIN_CHART_DATA.map((d) => (
-              <BarCol key={d.month}>
+            {chartData.map((d, i) => (
+              <BarCol key={`${d.month}-${i}`}>
                 <Bar $height={d.height} $highlight={d.highlight} />
                 <BarLabel $highlight={d.highlight}>{d.month}</BarLabel>
               </BarCol>
@@ -101,17 +119,26 @@ const ChartSub = styled.p`
   color: #64748b;
 `;
 
+const PeriodToggle = styled.div`
+  display: flex;
+  background: ${({ theme }) => theme.colors.borderLight};
+  border-radius: 6px;
+  padding: 3px;
+  gap: 2px;
+`;
+
 const PeriodBtn = styled.button`
-  background: white;
-  border: 1px solid #e2e8f0;
+  padding: 7px 14px;
   border-radius: 4px;
-  padding: 9px 13px;
-  font-size: 13px;
-  color: #0d1c2e;
+  font-size: 12px;
+  font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  transition: background 0.15s;
-  &:hover { background: #f8fafc; }
+  transition: all 0.15s;
+  background: ${({ $active, theme }) => ($active ? theme.colors.white : 'transparent')};
+  color: ${({ $active, theme }) => ($active ? theme.colors.adminPrimary : theme.colors.textMuted)};
+  box-shadow: ${({ $active }) => ($active ? '0 1px 3px rgba(0,0,0,0.08)' : 'none')};
+  white-space: nowrap;
 `;
 
 const BarChart = styled.div`

@@ -18,6 +18,10 @@ export const theme = {
     bg: "#f7f9fb", // 페이지 전체 배경
     bgSection: "#f8fafc", // 섹션별 배경 (bg보다 약간 흰색에 가까움)
     white: "#ffffff", // 카드 배경 등 순수 흰색
+    // admin 전용
+    adminPrimary: "#244c54",      // 사이드바·버튼·active 강조 (dark teal)
+    adminPrimaryLight: "#3d646c", // admin hover 상태
+    adminTextDark: "#0d1c2e",     // admin 페이지 제목·숫자 값
   },
   gradients: {
     hero: "linear-gradient(135deg, #c3edf6 0%, #f9e8bd 100%)", // 히어로 섹션 배경 (하늘 → 크림)

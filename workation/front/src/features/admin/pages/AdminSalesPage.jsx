@@ -1,6 +1,7 @@
 // src/features/admin/pages/AdminSalesPage.jsx
 import { useState } from 'react';
 import styled from 'styled-components';
+import { Wallet, Receipt, Percent, TrendingUp, AlertTriangle, Filter } from 'lucide-react';
 import {
   SALES_STAT_CARDS,
   MONTHLY_CHART_DATA,
@@ -208,63 +209,18 @@ export default function AdminSalesPage() {
 }
 
 /* ── Icon Components ── */
-function WalletIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 12V8a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2" />
-      <line x1="20" y1="12" x2="14" y2="12" /><circle cx="14" cy="12" r="2" />
-    </svg>
-  );
-}
-function ReceiptIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="9" y1="13" x2="15" y2="13" /><line x1="9" y1="17" x2="15" y2="17" />
-    </svg>
-  );
-}
-function PercentIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="19" y1="5" x2="5" y2="19" />
-      <circle cx="6.5" cy="6.5" r="2.5" /><circle cx="17.5" cy="17.5" r="2.5" />
-    </svg>
-  );
-}
-function TrendUp() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" />
-    </svg>
-  );
-}
+function WalletIcon() { return <Wallet size={20} />; }
+function ReceiptIcon() { return <Receipt size={20} />; }
+function PercentIcon() { return <Percent size={20} />; }
+function TrendUp() { return <TrendingUp size={14} color="#16a34a" />; }
 function TrendInline() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 2 }}>
-      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-    </svg>
-  );
+  return <TrendingUp size={12} color="#16a34a" style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 2 }} />;
 }
-function AlertDiamondIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-      <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-    </svg>
-  );
-}
+function AlertDiamondIcon() { return <AlertTriangle size={16} color="#ef4444" />; }
 function DateDot() {
   return <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#94a3b8', display: 'inline-block', marginRight: 4, verticalAlign: 'middle' }} />;
 }
-function PinIconSmall() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="11" y1="18" x2="13" y2="18" />
-    </svg>
-  );
-}
+function PinIconSmall() { return <Filter size={12} color="#94a3b8" />; }
 function RowDotIcon() {
   return <span style={{ display: 'flex', gap: 2 }}>{[0,1].map(i => <span key={i} style={{ width: 3, height: 3, borderRadius: '50%', background: '#cbd5e1', display: 'block' }} />)}</span>;
 }
@@ -291,13 +247,13 @@ const PageTitleGroup = styled.div`
 const PageTitle = styled.h1`
   font-size: 24px;
   font-weight: 500;
-  color: #0d1c2e;
+  color: ${({ theme }) => theme.colors.adminTextDark};
   letter-spacing: -0.24px;
 `;
 
 const PageSub = styled.p`
   font-size: 14px;
-  color: #64748b;
+  color: ${({ theme }) => theme.colors.textMuted};
 `;
 
 /* 통계 카드 */
@@ -308,11 +264,11 @@ const StatsSection = styled.div`
 `;
 
 const StatCard = styled.div`
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: ${({ theme }) => theme.colors.white};
+  border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 8px;
   padding: 20px 24px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: ${({ theme }) => theme.shadows.card};
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -338,14 +294,14 @@ const StatIconWrap = styled.div`
 
 const StatLabel = styled.p`
   font-size: 12px;
-  color: #64748b;
+  color: ${({ theme }) => theme.colors.textMuted};
 `;
 
 const StatValue = styled.p`
   font-size: 28px;
   font-weight: 700;
-  color: #0d1c2e;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: ${({ theme }) => theme.colors.adminTextDark};
+  font-family: ${({ theme }) => theme.fonts.number};
   letter-spacing: -0.5px;
   line-height: 1.2;
 `;
@@ -365,14 +321,14 @@ const TrendText = styled.span`
 
 const StatSubText = styled.p`
   font-size: 11px;
-  color: #94a3b8;
+  color: ${({ theme }) => theme.colors.textLight};
   margin-top: 4px;
 `;
 
 const ProgressWrap = styled.div`
   margin-top: 8px;
   height: 6px;
-  background: #f1f5f9;
+  background: ${({ theme }) => theme.colors.borderLight};
   border-radius: 999px;
   overflow: hidden;
 `;
@@ -380,7 +336,7 @@ const ProgressWrap = styled.div`
 const ProgressBar = styled.div`
   height: 100%;
   width: ${({ $width }) => $width}%;
-  background: #244c54;
+  background: ${({ theme }) => theme.colors.adminPrimary};
   border-radius: 999px;
 `;
 
@@ -394,17 +350,17 @@ const MidSection = styled.div`
 
 /* 차트 카드 */
 const ChartCard = styled.div`
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: ${({ theme }) => theme.colors.white};
+  border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 8px;
   padding: 22px 24px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: ${({ theme }) => theme.shadows.card};
 `;
 
 const ChartTitle = styled.p`
   font-size: 14px;
   font-weight: 600;
-  color: #0d1c2e;
+  color: ${({ theme }) => theme.colors.adminTextDark};
   margin-bottom: 20px;
 `;
 
@@ -436,20 +392,20 @@ const BarWrap = styled.div`
 const Bar = styled.div`
   width: 100%;
   height: ${({ $height }) => $height}%;
-  background: ${({ $highlight }) => ($highlight ? '#244c54' : '#e2e8f0')};
+  background: ${({ $highlight, theme }) => ($highlight ? theme.colors.adminPrimary : theme.colors.border)};
   border-radius: 4px 4px 0 0;
   transition: background 0.2s;
 `;
 
 const BarLabel = styled.span`
   font-size: 11px;
-  color: ${({ $highlight }) => ($highlight ? '#244c54' : '#94a3b8')};
+  color: ${({ $highlight, theme }) => ($highlight ? theme.colors.adminPrimary : theme.colors.textLight)};
   font-weight: ${({ $highlight }) => ($highlight ? '700' : '500')};
 `;
 
 const ChartFooterText = styled.p`
   font-size: 12px;
-  color: #64748b;
+  color: ${({ theme }) => theme.colors.textMuted};
   line-height: 1.6;
 `;
 
@@ -460,17 +416,17 @@ const Strong = styled.strong`
 
 /* TOP5 카드 */
 const Top5Card = styled.div`
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: ${({ theme }) => theme.colors.white};
+  border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 8px;
   padding: 22px 24px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: ${({ theme }) => theme.shadows.card};
 `;
 
 const Top5Title = styled.p`
   font-size: 14px;
   font-weight: 600;
-  color: #0d1c2e;
+  color: ${({ theme }) => theme.colors.adminTextDark};
   margin-bottom: 16px;
 `;
 
@@ -489,7 +445,7 @@ const Top5Item = styled.div`
 const Top5Rank = styled.span`
   font-size: 13px;
   font-weight: 700;
-  color: #64748b;
+  color: ${({ theme }) => theme.colors.textMuted};
   width: 16px;
   flex-shrink: 0;
 `;
@@ -504,12 +460,12 @@ const Top5Info = styled.div`
 const Top5Name = styled.span`
   font-size: 13px;
   font-weight: 500;
-  color: #0d1c2e;
+  color: ${({ theme }) => theme.colors.adminTextDark};
 `;
 
 const Top5Date = styled.span`
   font-size: 11px;
-  color: #94a3b8;
+  color: ${({ theme }) => theme.colors.textLight};
   display: flex;
   align-items: center;
 `;
@@ -517,8 +473,8 @@ const Top5Date = styled.span`
 const Top5Amount = styled.span`
   font-size: 13px;
   font-weight: 600;
-  color: #0d1c2e;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: ${({ theme }) => theme.colors.adminTextDark};
+  font-family: ${({ theme }) => theme.fonts.number};
   white-space: nowrap;
 `;
 
@@ -558,8 +514,8 @@ const AlertList = styled.div`
 `;
 
 const AlertItem = styled.div`
-  background: white;
-  border: 1px solid ${({ $urgent }) => ($urgent ? '#fca5a5' : '#e2e8f0')};
+  background: ${({ theme }) => theme.colors.white};
+  border: 1px solid ${({ $urgent, theme }) => ($urgent ? '#fca5a5' : theme.colors.border)};
   border-radius: 6px;
   padding: 12px 14px;
   display: flex;
@@ -585,9 +541,9 @@ const AlertActionBtn = styled.button`
   font-weight: 600;
   padding: 3px 8px;
   border-radius: 4px;
-  border: 1px solid ${({ $dark }) => ($dark ? '#1e293b' : '#e2e8f0')};
-  background: ${({ $dark }) => ($dark ? '#1e293b' : 'white')};
-  color: ${({ $dark }) => ($dark ? 'white' : '#475569')};
+  border: 1px solid ${({ $dark, theme }) => ($dark ? '#1e293b' : theme.colors.border)};
+  background: ${({ $dark, theme }) => ($dark ? '#1e293b' : theme.colors.white)};
+  color: ${({ $dark, theme }) => ($dark ? theme.colors.white : theme.colors.textMid)};
   font-family: inherit;
   transition: opacity 0.15s;
   &:hover { opacity: 0.8; }
@@ -595,7 +551,7 @@ const AlertActionBtn = styled.button`
 
 const AlertDesc = styled.p`
   font-size: 11px;
-  color: #94a3b8;
+  color: ${({ theme }) => theme.colors.textLight};
 `;
 
 const AlertFooterNote = styled.p`
@@ -608,11 +564,11 @@ const AlertFooterNote = styled.p`
 
 /* 하단 정산 대기 목록 */
 const PendingSection = styled.div`
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: ${({ theme }) => theme.colors.white};
+  border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: ${({ theme }) => theme.shadows.card};
 `;
 
 const PendingHeader = styled.div`
@@ -620,18 +576,18 @@ const PendingHeader = styled.div`
   align-items: center;
   justify-content: space-between;
   padding: 18px 24px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
 `;
 
 const PendingTitle = styled.h2`
   font-size: 15px;
   font-weight: 600;
-  color: #0d1c2e;
+  color: ${({ theme }) => theme.colors.adminTextDark};
 `;
 
 const PendingCount = styled.p`
   font-size: 12px;
-  color: #94a3b8;
+  color: ${({ theme }) => theme.colors.textLight};
 `;
 
 const PendingTable = styled.table`
@@ -640,14 +596,14 @@ const PendingTable = styled.table`
 `;
 
 const PTHead = styled.thead`
-  background: #f8fafc;
-  border-bottom: 1px solid #f1f5f9;
+  background: ${({ theme }) => theme.colors.bgSection};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
 `;
 
 const PTBody = styled.tbody``;
 
 const PTR = styled.tr`
-  border-top: ${({ $hoverable }) => ($hoverable ? '1px solid #f1f5f9' : 'none')};
+  border-top: ${({ $hoverable, theme }) => ($hoverable ? `1px solid ${theme.colors.borderLight}` : 'none')};
   transition: background 0.1s;
   &:hover {
     background: ${({ $hoverable }) => ($hoverable ? '#fafbfc' : 'transparent')};
@@ -659,7 +615,7 @@ const PTH = styled.th`
   text-align: left;
   font-size: 12px;
   font-weight: 600;
-  color: #64748b;
+  color: ${({ theme }) => theme.colors.textMuted};
   width: ${({ $width }) => $width || 'auto'};
   white-space: nowrap;
 `;
@@ -673,7 +629,7 @@ const PendingId = styled.span`
   font-size: 12px;
   font-weight: 600;
   color: #334155;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: ${({ theme }) => theme.fonts.number};
 `;
 
 const SellerName = styled.span`
@@ -684,15 +640,15 @@ const SellerName = styled.span`
 
 const DateCell = styled.span`
   font-size: 12px;
-  color: #94a3b8;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: ${({ theme }) => theme.colors.textLight};
+  font-family: ${({ theme }) => theme.fonts.number};
 `;
 
 const AmountCell = styled.span`
   font-size: 13px;
   font-weight: 600;
-  color: #0d1c2e;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: ${({ theme }) => theme.colors.adminTextDark};
+  font-family: ${({ theme }) => theme.fonts.number};
 `;
 
 const StatusBadge = styled.span`
@@ -722,18 +678,18 @@ const ViewAllRow = styled.div`
   display: flex;
   justify-content: center;
   padding: 16px;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid ${({ theme }) => theme.colors.borderLight};
 `;
 
 const ViewAllBtn = styled.button`
   font-size: 13px;
   font-weight: 500;
-  color: #475569;
+  color: ${({ theme }) => theme.colors.textMid};
   padding: 8px 24px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 6px;
-  background: white;
+  background: ${({ theme }) => theme.colors.white};
   font-family: inherit;
   transition: background 0.15s;
-  &:hover { background: #f8fafc; }
+  &:hover { background: ${({ theme }) => theme.colors.bgSection}; }
 `;

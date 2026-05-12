@@ -1,6 +1,7 @@
 // src/features/admin/layouts/AdminDashboardLayout.jsx
 import { Outlet } from 'react-router-dom';
 import styled from 'styled-components';
+import { Plus } from 'lucide-react';
 import AdminSidebar from '../components/dashboard/AdminSidebar';
 import AdminHeader from '../components/dashboard/AdminHeader';
 
@@ -24,17 +25,9 @@ export default function AdminDashboardLayout() {
 
       {/* 피그마 FAB 버튼 */}
       <Fab title="빠른 등록">
-        <PlusIcon />
+        <Plus size={20} color="white" />
       </Fab>
     </Wrapper>
-  );
-}
-
-function PlusIcon() {
-  return (
-    <svg width="20" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-    </svg>
   );
 }
 
@@ -43,7 +36,7 @@ function PlusIcon() {
 const Wrapper = styled.div`
   display: flex;
   min-height: 100vh;
-  background: linear-gradient(90deg, #f8f9ff 0%, #f8f9ff 100%);
+  background: ${({ theme }) => theme.colors.bgSection};
 `;
 
 const ContentArea = styled.div`
@@ -67,7 +60,7 @@ const Fab = styled.button`
   bottom: 31.5px;
   right: 32px;
   width: 56px; height: 56px;
-  background: #244c54;
+  background: ${({ theme }) => theme.colors.adminPrimary};
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -77,7 +70,7 @@ const Fab = styled.button`
   z-index: 40;
 
   &:hover {
-    background: #3d646c;
+    background: ${({ theme }) => theme.colors.adminPrimaryLight};
     transform: translateY(-2px);
   }
 `;

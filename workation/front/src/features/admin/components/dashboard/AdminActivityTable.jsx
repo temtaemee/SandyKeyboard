@@ -1,6 +1,7 @@
 // src/features/admin/components/dashboard/AdminActivityTable.jsx
 import { useState } from 'react';
 import styled from 'styled-components';
+import { ChevronLeft as LucideChevronLeft, ChevronRight as LucideChevronRight } from 'lucide-react';
 import { ADMIN_ACTIVITY_LOGS, STATUS_MAP } from '../../data/adminDashboardData';
 
 const TOTAL = 2401;
@@ -100,38 +101,8 @@ export default function AdminActivityTable() {
   );
 }
 
-function ChevronLeft() {
-  return (
-    <svg
-      width="5.55"
-      height="9"
-      viewBox="0 0 6 10"
-      fill="none"
-      stroke="#475569"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polyline points="5 1 1 5 5 9" />
-    </svg>
-  );
-}
-function ChevronRight() {
-  return (
-    <svg
-      width="5.55"
-      height="9"
-      viewBox="0 0 6 10"
-      fill="none"
-      stroke="#475569"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polyline points="1 1 5 5 1 9" />
-    </svg>
-  );
-}
+function ChevronLeft() { return <LucideChevronLeft size={14} color="#475569" strokeWidth={1.5} />; }
+function ChevronRight() { return <LucideChevronRight size={14} color="#475569" strokeWidth={1.5} />; }
 
 /* ── Styled Components ── */
 
