@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { ADMIN_NAV_ITEMS } from '../../data/adminDashboardData';
 
 const ICONS = {
-  grid: (
+  chart: (
     <svg
       width="18"
       height="18"
@@ -15,10 +15,10 @@ const ICONS = {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <rect x="3" y="3" width="7" height="7" />
-      <rect x="14" y="3" width="7" height="7" />
-      <rect x="14" y="14" width="7" height="7" />
-      <rect x="3" y="14" width="7" height="7" />
+      <line x1="18" y1="20" x2="18" y2="10" />
+      <line x1="12" y1="20" x2="12" y2="4" />
+      <line x1="6" y1="20" x2="6" y2="14" />
+      <line x1="2" y1="20" x2="22" y2="20" />
     </svg>
   ),
   home: (

@@ -17,6 +17,7 @@ export default function AdminRouter() {
         <Route path="spaces" element={<AdminSpacesPage />} />
         <Route path="reservations" element={<AdminReservationPage />} />
         <Route path="sellers" element={<AdminSellersPage />} />
+        <Route path="accounts" element={<AdminSellersPage />} />
         <Route path="board" element={<AdminBoardPage />} />
         <Route path="sales" element={<AdminSalesPage />} />
       </Route>

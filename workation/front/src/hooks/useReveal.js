@@ -21,7 +21,7 @@ export default function useReveal(threshold = 0.1) {
           observer.disconnect(); // 한 번 실행 후 해제
         }
       },
-      { threshold },
+      { threshold }
     );
 
     observer.observe(el);
