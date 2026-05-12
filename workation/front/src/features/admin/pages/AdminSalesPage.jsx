@@ -1,6 +1,7 @@
 // src/features/admin/pages/AdminSalesPage.jsx
 import { useState } from 'react';
 import styled from 'styled-components';
+import { Wallet, Receipt, Percent, TrendingUp, AlertTriangle, Filter } from 'lucide-react';
 import {
   SALES_STAT_CARDS,
   MONTHLY_CHART_DATA,
@@ -208,63 +209,18 @@ export default function AdminSalesPage() {
 }
 
 /* ── Icon Components ── */
-function WalletIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 12V8a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2" />
-      <line x1="20" y1="12" x2="14" y2="12" /><circle cx="14" cy="12" r="2" />
-    </svg>
-  );
-}
-function ReceiptIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="9" y1="13" x2="15" y2="13" /><line x1="9" y1="17" x2="15" y2="17" />
-    </svg>
-  );
-}
-function PercentIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="19" y1="5" x2="5" y2="19" />
-      <circle cx="6.5" cy="6.5" r="2.5" /><circle cx="17.5" cy="17.5" r="2.5" />
-    </svg>
-  );
-}
-function TrendUp() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" />
-    </svg>
-  );
-}
+function WalletIcon() { return <Wallet size={20} />; }
+function ReceiptIcon() { return <Receipt size={20} />; }
+function PercentIcon() { return <Percent size={20} />; }
+function TrendUp() { return <TrendingUp size={14} color="#16a34a" />; }
 function TrendInline() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 2 }}>
-      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-    </svg>
-  );
+  return <TrendingUp size={12} color="#16a34a" style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 2 }} />;
 }
-function AlertDiamondIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-      <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-    </svg>
-  );
-}
+function AlertDiamondIcon() { return <AlertTriangle size={16} color="#ef4444" />; }
 function DateDot() {
   return <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#94a3b8', display: 'inline-block', marginRight: 4, verticalAlign: 'middle' }} />;
 }
-function PinIconSmall() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="11" y1="18" x2="13" y2="18" />
-    </svg>
-  );
-}
+function PinIconSmall() { return <Filter size={12} color="#94a3b8" />; }
 function RowDotIcon() {
   return <span style={{ display: 'flex', gap: 2 }}>{[0,1].map(i => <span key={i} style={{ width: 3, height: 3, borderRadius: '50%', background: '#cbd5e1', display: 'block' }} />)}</span>;
 }

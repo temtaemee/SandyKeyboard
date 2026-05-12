@@ -1,6 +1,7 @@
 // src/features/admin/components/dashboard/AdminPaymentTable.jsx
 import { useState } from 'react';
 import styled from 'styled-components';
+import { ChevronLeft as LucideChevronLeft, ChevronRight as LucideChevronRight, Filter } from 'lucide-react';
 import { RECENT_PAYMENTS, PAYMENT_STATUS_MAP } from '../../data/adminDashboardData';
 
 const TOTAL = 2401;
@@ -86,29 +87,9 @@ export default function AdminPaymentTable() {
   );
 }
 
-function ChevronLeft() {
-  return (
-    <svg width="5.55" height="9" viewBox="0 0 6 10" fill="none" stroke="#475569" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="5 1 1 5 5 9" />
-    </svg>
-  );
-}
-function ChevronRight() {
-  return (
-    <svg width="5.55" height="9" viewBox="0 0 6 10" fill="none" stroke="#475569" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="1 1 5 5 1 9" />
-    </svg>
-  );
-}
-function FilterIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="4" y1="6" x2="20" y2="6" />
-      <line x1="8" y1="12" x2="16" y2="12" />
-      <line x1="11" y1="18" x2="13" y2="18" />
-    </svg>
-  );
-}
+function ChevronLeft() { return <LucideChevronLeft size={14} color="#475569" strokeWidth={1.5} />; }
+function ChevronRight() { return <LucideChevronRight size={14} color="#475569" strokeWidth={1.5} />; }
+function FilterIcon() { return <Filter size={14} color="#64748b" />; }
 
 /* ── Styled Components ── */
 

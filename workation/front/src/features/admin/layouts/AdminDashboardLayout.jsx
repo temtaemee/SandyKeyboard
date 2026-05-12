@@ -1,6 +1,7 @@
 // src/features/admin/layouts/AdminDashboardLayout.jsx
 import { Outlet } from 'react-router-dom';
 import styled from 'styled-components';
+import { Plus } from 'lucide-react';
 import AdminSidebar from '../components/dashboard/AdminSidebar';
 import AdminHeader from '../components/dashboard/AdminHeader';
 
@@ -24,17 +25,9 @@ export default function AdminDashboardLayout() {
 
       {/* 피그마 FAB 버튼 */}
       <Fab title="빠른 등록">
-        <PlusIcon />
+        <Plus size={20} color="white" />
       </Fab>
     </Wrapper>
-  );
-}
-
-function PlusIcon() {
-  return (
-    <svg width="20" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-    </svg>
   );
 }
 
