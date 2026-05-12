@@ -1,5 +1,8 @@
 // src/features/admin/data/adminSpacesData.js
 
+/* ==========================================
+   [MOCK DATA] 서버 연결 시 삭제/대체 필요
+   ========================================== */
 export const SPACES_STAT_CARDS = [
   {
     id: 1,
@@ -24,12 +27,18 @@ export const SPACES_STAT_CARDS = [
   },
 ];
 
+/* ==========================================
+   [CONSTANTS] 서버 연결 후에도 유지 (UI 설정값)
+   ========================================== */
 export const SPACES_STATUS_MAP = {
   active:   { label: '운영중', bg: '#dcfce7', color: '#15803d' },
   stopped:  { label: '중지됨', bg: '#f1f5f9', color: '#475569' },
   pending:  { label: '대기중', bg: '#fef9c3', color: '#a16207' },
 };
 
+/* ==========================================
+   [MOCK DATA] 서버 연결 시 삭제/대체 필요
+   ========================================== */
 export const SPACES_LIST = [
   {
     id: 1,

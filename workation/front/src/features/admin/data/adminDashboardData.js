@@ -1,5 +1,8 @@
 // src/features/admin/data/adminDashboardData.js
 
+/* ==========================================
+   [MOCK DATA] 서버 연결 시 삭제/대체 필요
+   ========================================== */
 export const ADMIN_STAT_CARDS = [
   {
     id: 1,
@@ -117,6 +120,9 @@ export const RECENT_PAYMENTS = [
   },
 ];
 
+/* ==========================================
+   [CONSTANTS] 서버 연결 후에도 유지 (UI 설정값)
+   ========================================== */
 export const PAYMENT_STATUS_MAP = {
   paid: { label: '결제완료', bg: '#dcfce7', color: '#15803d' },
   pending: { label: '결제대기', bg: '#ffedd5', color: '#c2410c' },

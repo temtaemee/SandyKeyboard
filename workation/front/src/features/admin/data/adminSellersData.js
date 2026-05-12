@@ -1,5 +1,8 @@
 // src/features/admin/data/adminSellersData.js
 
+/* ==========================================
+   [MOCK DATA] 서버 연결 시 삭제/대체 필요
+   ========================================== */
 export const SELLERS_STAT_CARDS = [
   {
     id: 1,
@@ -39,6 +42,9 @@ export const SELLERS_STAT_CARDS = [
   },
 ];
 
+/* ==========================================
+   [CONSTANTS] 서버 연결 후에도 유지 (UI 설정값)
+   ========================================== */
 export const SELLER_STATUS_MAP = {
   active:  { label: '활동 중', bg: '#dcfce7', color: '#15803d' },
   stopped: { label: '정지됨',  bg: '#fee2e2', color: '#b91c1c' },
@@ -51,6 +57,9 @@ export const CATEGORY_ICONS = {
   '캠핑/글램핑': 'camping',
 };
 
+/* ==========================================
+   [MOCK DATA] 서버 연결 시 삭제/대체 필요
+   ========================================== */
 export const SELLERS_LIST = [
   {
     id: 'ST-20231024',

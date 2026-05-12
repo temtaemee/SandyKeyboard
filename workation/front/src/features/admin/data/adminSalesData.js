@@ -1,5 +1,8 @@
 // src/features/admin/data/adminSalesData.js
 
+/* ==========================================
+   [MOCK DATA] 서버 연결 시 삭제/대체 필요
+   ========================================== */
 export const SALES_STAT_CARDS = [
   {
     id: 1,
@@ -86,6 +89,9 @@ export const PENDING_LIST = [
   },
 ];
 
+/* ==========================================
+   [CONSTANTS] 서버 연결 후에도 유지 (UI 설정값)
+   ========================================== */
 export const SETTLEMENT_STATUS_MAP = {
   completed: { label: '정산완료', bg: '#dcfce7', color: '#15803d' },
   pending:   { label: '정산대기', bg: '#f1f5f9', color: '#475569' },
