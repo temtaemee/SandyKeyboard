@@ -2,8 +2,24 @@
 import { useState } from 'react';
 import styled from 'styled-components';
 
+const NOTIFICATIONS = [
+  { id: 1, type: 'warning', title: '긴급 정산 지연 건 발생', desc: 'ST-20231115 해변의 정원 — 3일 이상 지연 중', time: '방금 전', unread: true },
+  { id: 2, type: 'info', title: '신규 판매자 가입 승인 요청', desc: '포레스트 캠핑 외 2건 승인 대기 중입니다.', time: '12분 전', unread: true },
+  { id: 3, type: 'info', title: '이달 신규 고객 급증 알림', desc: '이번 달 신규 가입자가 342명으로 전달 대비 12% 증가했습니다.', time: '1시간 전', unread: true },
+  { id: 4, type: 'success', title: '숙소 승인 처리 완료', desc: '오션 브리즈 리조트 신규 등록이 승인되었습니다.', time: '3시간 전', unread: false },
+  { id: 5, type: 'info', title: '시스템 점검 예정 안내', desc: '2024.06.01 02:00 ~ 04:00 정기 점검이 예정되어 있습니다.', time: '어제', unread: false },
+];
+
 export default function AdminHeader() {
   const [search, setSearch] = useState('');
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifs, setNotifs] = useState(NOTIFICATIONS);
+
+  const unreadCount = notifs.filter((n) => n.unread).length;
+
+  const handleMarkAllRead = () => {
+    setNotifs((prev) => prev.map((n) => ({ ...n, unread: false })));
+  };
 
   return (
     <Header>
@@ -21,7 +37,7 @@ export default function AdminHeader() {
 
       {/* 우측 */}
       <Right>
-        <IconBtn aria-label="알림" $hasAlert>
+        <IconBtn aria-label="알림" $hasAlert={unreadCount > 0} onClick={() => setNotifOpen(true)}>
           <BellIcon />
         </IconBtn>
 
@@ -34,6 +50,53 @@ export default function AdminHeader() {
           <AdminAvatar>관</AdminAvatar>
         </AdminInfo>
       </Right>
+
+      {/* 알림 모달 */}
+      {notifOpen && (
+        <NotifOverlay onClick={() => setNotifOpen(false)}>
+          <NotifModal onClick={(e) => e.stopPropagation()}>
+            <NotifModalHeader>
+              <NotifModalTitleRow>
+                <NotifModalTitle>알림</NotifModalTitle>
+                {unreadCount > 0 && <UnreadBadge>{unreadCount}</UnreadBadge>}
+              </NotifModalTitleRow>
+              <NotifHeaderActions>
+                {unreadCount > 0 && (
+                  <MarkAllBtn onClick={handleMarkAllRead}>모두 읽음</MarkAllBtn>
+                )}
+                <CloseBtn onClick={() => setNotifOpen(false)}>
+                  <CloseSvg />
+                </CloseBtn>
+              </NotifHeaderActions>
+            </NotifModalHeader>
+
+            <NotifList>
+              {notifs.map((n) => (
+                <NotifItem
+                  key={n.id}
+                  $unread={n.unread}
+                  onClick={() => setNotifs((prev) =>
+                    prev.map((item) => item.id === n.id ? { ...item, unread: false } : item)
+                  )}
+                >
+                  <NotifDot $type={n.type} $show={n.unread} />
+                  <NotifContent>
+                    <NotifTitle $unread={n.unread}>{n.title}</NotifTitle>
+                    <NotifDesc>{n.desc}</NotifDesc>
+                    <NotifTime>{n.time}</NotifTime>
+                  </NotifContent>
+                </NotifItem>
+              ))}
+            </NotifList>
+
+            <NotifModalFooter>
+              <NotifFooterBtn onClick={() => setNotifOpen(false)}>
+                전체 알림 보기
+              </NotifFooterBtn>
+            </NotifModalFooter>
+          </NotifModal>
+        </NotifOverlay>
+      )}
     </Header>
   );
 }
@@ -70,6 +133,14 @@ function BellIcon() {
     >
       <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
       <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  );
+}
+function CloseSvg() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
     </svg>
   );
 }
@@ -203,6 +274,164 @@ const AdminRole = styled.p`
   font-size: 11px;
   color: ${({ theme }) => theme.colors.textLight};
   line-height: 1.5;
+`;
+
+/* ── 알림 모달 ── */
+const NOTIF_TYPE_COLOR = { warning: '#ef4444', info: '#3b82f6', success: '#16a34a' };
+
+const NotifOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+  z-index: 200;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding-top: 72px;
+  padding-right: 16px;
+`;
+
+const NotifModal = styled.div`
+  width: 380px;
+  background: ${({ theme }) => theme.colors.white};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: calc(100vh - 96px);
+`;
+
+const NotifModalHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
+`;
+
+const NotifModalTitleRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const NotifModalTitle = styled.h3`
+  font-size: 15px;
+  font-weight: 700;
+  color: ${({ theme }) => theme.colors.adminTextDark};
+`;
+
+const UnreadBadge = styled.span`
+  background: ${({ theme }) => theme.colors.adminPrimary};
+  color: ${({ theme }) => theme.colors.white};
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+`;
+
+const NotifHeaderActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const MarkAllBtn = styled.button`
+  font-size: 12px;
+  font-weight: 500;
+  color: ${({ theme }) => theme.colors.adminPrimary};
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: inherit;
+  transition: background 0.15s;
+  &:hover { background: rgba(36,76,84,0.06); }
+`;
+
+const CloseBtn = styled.button`
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${({ theme }) => theme.colors.textMuted};
+  transition: background 0.15s;
+  &:hover { background: ${({ theme }) => theme.colors.borderLight}; }
+`;
+
+const NotifList = styled.div`
+  overflow-y: auto;
+  flex: 1;
+`;
+
+const NotifItem = styled.div`
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
+  background: ${({ $unread }) => ($unread ? 'rgba(36,76,84,0.03)' : 'transparent')};
+  cursor: pointer;
+  transition: background 0.1s;
+  &:last-child { border-bottom: none; }
+  &:hover { background: ${({ theme }) => theme.colors.bgSection}; }
+`;
+
+const NotifDot = styled.div`
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 5px;
+  background: ${({ $type, $show }) => ($show ? NOTIF_TYPE_COLOR[$type] ?? '#3b82f6' : 'transparent')};
+  border: ${({ $show }) => ($show ? 'none' : '1.5px solid #e2e8f0')};
+`;
+
+const NotifContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+`;
+
+const NotifTitle = styled.p`
+  font-size: 13px;
+  font-weight: ${({ $unread }) => ($unread ? '600' : '500')};
+  color: ${({ theme }) => theme.colors.adminTextDark};
+  line-height: 1.4;
+`;
+
+const NotifDesc = styled.p`
+  font-size: 12px;
+  color: ${({ theme }) => theme.colors.textMuted};
+  line-height: 1.5;
+`;
+
+const NotifTime = styled.p`
+  font-size: 11px;
+  color: ${({ theme }) => theme.colors.textLight};
+  margin-top: 2px;
+`;
+
+const NotifModalFooter = styled.div`
+  border-top: 1px solid ${({ theme }) => theme.colors.borderLight};
+  padding: 12px 20px;
+  display: flex;
+  justify-content: center;
+`;
+
+const NotifFooterBtn = styled.button`
+  font-size: 13px;
+  font-weight: 500;
+  color: ${({ theme }) => theme.colors.textMid};
+  padding: 6px 16px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 6px;
+  font-family: inherit;
+  transition: background 0.15s;
+  &:hover { background: ${({ theme }) => theme.colors.bgSection}; }
 `;
 
 const AdminAvatar = styled.div`

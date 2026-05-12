@@ -44,6 +44,21 @@ export const ADMIN_CHART_DATA = [
   { month: '6월', height: 240 },
 ];
 
+export const ADMIN_CHART_DATA_12M = [
+  { month: '7월', height: 88 },
+  { month: '8월', height: 104 },
+  { month: '9월', height: 136 },
+  { month: '10월', height: 152 },
+  { month: '11월', height: 120 },
+  { month: '12월', height: 160 },
+  { month: '1월', height: 128 },
+  { month: '2월', height: 176 },
+  { month: '3월', height: 144 },
+  { month: '4월', height: 224, highlight: true },
+  { month: '5월', height: 192 },
+  { month: '6월', height: 240 },
+];
+
 export const REGIONAL_SALES_DATA = [
   { rank: 1, region: '서울', amount: '₩64.4M' },
   { rank: 2, region: '제주', amount: '₩42.8M' },

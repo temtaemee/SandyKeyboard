@@ -61,6 +61,7 @@ export const SELLERS_LIST = [
     joinedAt: '2023.10.24',
     transactions: 1420,
     status: 'active',
+    isNew: false,
   },
   {
     id: 'ST-20231102',
@@ -71,6 +72,7 @@ export const SELLERS_LIST = [
     joinedAt: '2023.11.02',
     transactions: 856,
     status: 'active',
+    isNew: false,
   },
   {
     id: 'ST-20231115',
@@ -81,6 +83,7 @@ export const SELLERS_LIST = [
     joinedAt: '2023.11.15',
     transactions: 230,
     status: 'stopped',
+    isNew: true,
   },
   {
     id: 'ST-20231120',
@@ -91,5 +94,6 @@ export const SELLERS_LIST = [
     joinedAt: '2023.11.20',
     transactions: 45,
     status: 'active',
+    isNew: true,
   },
 ];

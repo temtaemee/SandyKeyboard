@@ -7,18 +7,18 @@ import {
 } from '../data/adminSellersData';
 
 const TOTAL_PAGES = 3;
-const FILTER_TABS = ['전체', '활동 중', '정지됨'];
+const FILTER_TABS = ['전체', '활동 중', '정지됨', '신규'];
 
 /* ── 고객 계정 목데이터 ── */
 const CUSTOMER_LIST = [
-  { id: 'USR-001', name: '강다은', email: 'daeun.kang@example.com', phone: '010-1111-2222', joinDate: '2023-02-10', resvCount: 14, status: 'active' },
-  { id: 'USR-002', name: '윤지오', email: 'jio.yoon@example.com', phone: '010-2222-3333', joinDate: '2023-04-25', resvCount: 6, status: 'active' },
-  { id: 'USR-003', name: '서하준', email: 'hajun.seo@example.com', phone: '010-3333-4444', joinDate: '2023-06-14', resvCount: 2, status: 'stopped' },
-  { id: 'USR-004', name: '김도연', email: 'doyeon.kim@example.com', phone: '010-4444-5555', joinDate: '2023-08-30', resvCount: 9, status: 'active' },
-  { id: 'USR-005', name: '이나영', email: 'nayoung.lee@example.com', phone: '010-5555-6666', joinDate: '2023-11-05', resvCount: 3, status: 'active' },
-  { id: 'USR-006', name: '박성민', email: 'sungmin.park@example.com', phone: '010-6666-7777', joinDate: '2024-01-20', resvCount: 1, status: 'active' },
-  { id: 'USR-007', name: '조현우', email: 'hyunwoo.jo@example.com', phone: '010-7777-8888', joinDate: '2024-03-07', resvCount: 0, status: 'stopped' },
-  { id: 'USR-008', name: '신예진', email: 'yejin.shin@example.com', phone: '010-8888-9999', joinDate: '2024-04-12', resvCount: 5, status: 'active' },
+  { id: 'USR-001', name: '강다은', email: 'daeun.kang@example.com', phone: '010-1111-2222', joinDate: '2023-02-10', resvCount: 14, status: 'active', isNew: false },
+  { id: 'USR-002', name: '윤지오', email: 'jio.yoon@example.com', phone: '010-2222-3333', joinDate: '2023-04-25', resvCount: 6, status: 'active', isNew: false },
+  { id: 'USR-003', name: '서하준', email: 'hajun.seo@example.com', phone: '010-3333-4444', joinDate: '2023-06-14', resvCount: 2, status: 'stopped', isNew: false },
+  { id: 'USR-004', name: '김도연', email: 'doyeon.kim@example.com', phone: '010-4444-5555', joinDate: '2023-08-30', resvCount: 9, status: 'active', isNew: false },
+  { id: 'USR-005', name: '이나영', email: 'nayoung.lee@example.com', phone: '010-5555-6666', joinDate: '2023-11-05', resvCount: 3, status: 'active', isNew: false },
+  { id: 'USR-006', name: '박성민', email: 'sungmin.park@example.com', phone: '010-6666-7777', joinDate: '2024-01-20', resvCount: 1, status: 'active', isNew: true },
+  { id: 'USR-007', name: '조현우', email: 'hyunwoo.jo@example.com', phone: '010-7777-8888', joinDate: '2024-03-07', resvCount: 0, status: 'stopped', isNew: true },
+  { id: 'USR-008', name: '신예진', email: 'yejin.shin@example.com', phone: '010-8888-9999', joinDate: '2024-04-12', resvCount: 5, status: 'active', isNew: true },
 ];
 const AVATAR_COLORS = ['#dbeafe','#dcfce7','#fef9c3','#fce7f3','#ede9fe','#ffedd5','#cffafe','#f1f5f9'];
 
@@ -69,11 +69,13 @@ export default function AdminSellersPage() {
   const filteredSellers = SELLERS_LIST.filter((s) => {
     if (filter === '활동 중') return !isSellerSuspended(s);
     if (filter === '정지됨') return isSellerSuspended(s);
+    if (filter === '신규') return s.isNew;
     return true;
   });
   const filteredCustomers = CUSTOMER_LIST.filter((c) => {
     if (filter === '활동 중') return !isCustomerSuspended(c);
     if (filter === '정지됨') return isCustomerSuspended(c);
+    if (filter === '신규') return c.isNew;
     return true;
   });
 
@@ -106,7 +108,7 @@ export default function AdminSellersPage() {
       {/* ── 통계 카드 ── */}
       {view === 'seller' ? (
         <StatsSection>
-          <StatCard>
+          <StatCard $active={filter === '전체'} onClick={() => setFilter('전체')}>
             <StatCardTop>
               <StatIconWrap $bg="rgba(30,41,59,0.08)"><SellersIcon /></StatIconWrap>
               <StatBadge $green>+2.4%</StatBadge>
@@ -115,7 +117,7 @@ export default function AdminSellersPage() {
             <StatValue>1,284</StatValue>
             <StatProgress $color="#1e293b" $width={100} />
           </StatCard>
-          <StatCard>
+          <StatCard $active={filter === '활동 중'} onClick={() => setFilter('활동 중')}>
             <StatCardTop>
               <StatIconWrap $bg="rgba(16,185,129,0.1)"><ActiveIcon /></StatIconWrap>
               <StatBadge $green>+4.2%</StatBadge>
@@ -124,7 +126,7 @@ export default function AdminSellersPage() {
             <StatValue>1,270</StatValue>
             <StatProgress $color="#10b981" $width={99} />
           </StatCard>
-          <StatCard>
+          <StatCard $active={filter === '정지됨'} onClick={() => setFilter('정지됨')}>
             <StatCardTop>
               <StatIconWrap $bg="rgba(239,68,68,0.08)"><StoppedIcon /></StatIconWrap>
               <StatBadge $red>-2.1%</StatBadge>
@@ -133,7 +135,7 @@ export default function AdminSellersPage() {
             <StatValue>14</StatValue>
             <StatProgress $color="#ef4444" $width={8} />
           </StatCard>
-          <StatCard>
+          <StatCard $active={filter === '신규'} onClick={() => setFilter('신규')}>
             <StatCardTop>
               <StatIconWrap $bg="rgba(245,158,11,0.1)"><NewSellerIcon /></StatIconWrap>
             </StatCardTop>
@@ -144,7 +146,7 @@ export default function AdminSellersPage() {
         </StatsSection>
       ) : (
         <StatsSection>
-          <StatCard>
+          <StatCard $active={filter === '전체'} onClick={() => setFilter('전체')}>
             <StatCardTop>
               <StatIconWrap $bg="rgba(59,130,246,0.1)"><SellersIcon /></StatIconWrap>
             </StatCardTop>
@@ -152,7 +154,7 @@ export default function AdminSellersPage() {
             <StatValue>8,420</StatValue>
             <StatProgress $color="#3b82f6" $width={100} />
           </StatCard>
-          <StatCard>
+          <StatCard $active={filter === '활동 중'} onClick={() => setFilter('활동 중')}>
             <StatCardTop>
               <StatIconWrap $bg="rgba(16,185,129,0.1)"><ActiveIcon /></StatIconWrap>
               <StatBadge $green>+3.1%</StatBadge>
@@ -161,7 +163,7 @@ export default function AdminSellersPage() {
             <StatValue>8,180</StatValue>
             <StatProgress $color="#10b981" $width={97} />
           </StatCard>
-          <StatCard>
+          <StatCard $active={filter === '정지됨'} onClick={() => setFilter('정지됨')}>
             <StatCardTop>
               <StatIconWrap $bg="rgba(239,68,68,0.08)"><StoppedIcon /></StatIconWrap>
               <StatBadge $red>-0.8%</StatBadge>
@@ -170,7 +172,7 @@ export default function AdminSellersPage() {
             <StatValue>240</StatValue>
             <StatProgress $color="#ef4444" $width={3} />
           </StatCard>
-          <StatCard>
+          <StatCard $active={filter === '신규'} onClick={() => setFilter('신규')}>
             <StatCardTop>
               <StatIconWrap $bg="rgba(245,158,11,0.1)"><NewSellerIcon /></StatIconWrap>
             </StatCardTop>
@@ -204,6 +206,7 @@ export default function AdminSellersPage() {
                 <TH $width="150px">연락처</TH>
                 <TH $width="110px">가입일</TH>
                 <TH $width="90px">거래 건수</TH>
+                <TH $width="60px">신규</TH>
                 <TH $width="80px">상태</TH>
                 <TH $width="90px">활동정지</TH>
               </TR>
@@ -227,6 +230,7 @@ export default function AdminSellersPage() {
                     <TD><PhoneText>{seller.phone}</PhoneText></TD>
                     <TD><DateText>{seller.joinedAt}</DateText></TD>
                     <TD><TransactionText>{seller.transactions.toLocaleString()}</TransactionText></TD>
+                    <TD>{seller.isNew && <NewBadge>NEW</NewBadge>}</TD>
                     <TD>
                       <StatusBadge $bg={sus ? '#fee2e2' : '#dcfce7'} $color={sus ? '#b91c1c' : '#15803d'}>
                         {sus ? '정지됨' : '활동 중'}
@@ -253,6 +257,7 @@ export default function AdminSellersPage() {
                 <TH $width="140px">전화번호</TH>
                 <TH $width="120px">가입일</TH>
                 <TH $width="90px">총 예약</TH>
+                <TH $width="60px">신규</TH>
                 <TH $width="80px">상태</TH>
                 <TH $width="90px">활동정지</TH>
               </TR>
@@ -273,6 +278,7 @@ export default function AdminSellersPage() {
                     <TD><PhoneText>{customer.phone}</PhoneText></TD>
                     <TD><DateText>{customer.joinDate}</DateText></TD>
                     <TD><TransactionText>{customer.resvCount}건</TransactionText></TD>
+                    <TD>{customer.isNew && <NewBadge>NEW</NewBadge>}</TD>
                     <TD>
                       <StatusBadge $bg={sus ? '#fee2e2' : '#dcfce7'} $color={sus ? '#b91c1c' : '#15803d'}>
                         {sus ? '정지됨' : '활성'}
@@ -465,14 +471,14 @@ const StatsSection = styled.div`
 
 const StatCard = styled.div`
   background: white;
-  border: 1px solid #e2e8f0;
+  border: 1px solid ${({ $active }) => ($active ? '#244c54' : '#e2e8f0')};
   border-radius: 10px;
   padding: 20px 22px 18px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: ${({ $active }) => ($active ? '0 0 0 3px rgba(36,76,84,0.1)' : '0 1px 2px rgba(0,0,0,0.05)')};
   display: flex;
   flex-direction: column;
   gap: 5px;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
   cursor: pointer;
   &:hover {
     transform: translateY(-2px);
@@ -613,6 +619,16 @@ const StatusBadge = styled.span`
   font-size: 11px; font-weight: 500;
   background: ${({ $bg }) => $bg};
   color: ${({ $color }) => $color};
+  white-space: nowrap;
+`;
+
+const NewBadge = styled.span`
+  display: inline-block;
+  padding: 2px 7px; border-radius: 999px;
+  font-size: 10px; font-weight: 700;
+  background: #fef3c7;
+  color: #b45309;
+  letter-spacing: 0.4px;
   white-space: nowrap;
 `;
 
