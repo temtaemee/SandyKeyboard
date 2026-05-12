@@ -21,20 +21,26 @@ public class OfficePictureEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     private OfficeEntity office;
 
-    @Column(name = "FILE_PATH", columnDefinition = "TEXT", nullable = false)
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String filePath;
 
-    @Column(name = "ORIGIN_NAME", columnDefinition = "TEXT", nullable = false)
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String originName;
 
-    @Column(name = "STORED_NAME", columnDefinition = "TEXT", nullable = false)
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String storedName;
 
-    @Column(name = "MAIN_YN", columnDefinition = "CHAR(1)", nullable = false)
+    @Column(columnDefinition = "CHAR(1)", nullable = false)
     private String mainYn; // 'Y' 또는 'N'
 
-    @Column(name = "SORT_ORDER", nullable = false)
+    @Column(nullable = false)
     private Integer sortOrder;
+
+    @Column(nullable = false)
+    private String contentType;
+
+    @Column(nullable = false)
+    private Long fileSize;
 
 
 

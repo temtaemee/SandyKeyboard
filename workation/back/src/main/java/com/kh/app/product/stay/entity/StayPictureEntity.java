@@ -41,6 +41,12 @@ public class StayPictureEntity {
     @Column(name = "category", nullable = false)
     private SpacePictureCategory category;
 
+    @Column(nullable = false)
+    private String contentType;
+
+    @Column(nullable = false)
+    private Long fileSize;
+
 
 
 }
