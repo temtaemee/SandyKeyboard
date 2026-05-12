@@ -10,12 +10,4 @@ public class SpaceApplyPermitReqDto {
     private Long id;
     private ApplyStatus applyStatus;
 
-    public SpaceApplyEntity toEntity() {
-        return SpaceApplyEntity.builder()
-                .id(id)
-                .applyStatus(applyStatus)
-                .build();
-    }
-
-
 }
