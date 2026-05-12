@@ -17,10 +17,10 @@ public class SpaceArcadeEntity {
 
     @JoinColumn(name = "SPACE_ID", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
-    private SpaceEntity spaceId;
+    private SpaceEntity space;
 
     @JoinColumn(name = "ARCADE", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
-    private ArcadeEntity arcadeId;
+    private ArcadeEntity arcade;
 
 }

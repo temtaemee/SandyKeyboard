@@ -20,7 +20,7 @@ public class StayExtraPriceEntity {
 
     @JoinColumn(name = "STAY_ID", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
-    private StayEntity stayId;
+    private StayEntity stay;
 
     @Column(nullable = false)
     private LocalDateTime startDate;

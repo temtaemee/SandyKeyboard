@@ -20,7 +20,7 @@ public class StayPictureEntity {
 
     @JoinColumn(nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
-    private StayEntity stayId;
+    private StayEntity stay;
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String filePath;

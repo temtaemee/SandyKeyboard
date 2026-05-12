@@ -18,7 +18,7 @@ public class SpacePictureEntity {
 
     @JoinColumn(name = "SPACE_ID", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
-    private SpaceEntity spaceId;
+    private SpaceEntity space;
 
     @Column(name = "FILE_PATH", columnDefinition = "TEXT", nullable = false)
     private String filePath;
@@ -36,8 +36,8 @@ public class SpacePictureEntity {
     private Integer sortOrder;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "CATEGORY", length = 100, nullable = false)
-    private SpacePictureEntity category; // 아까 만든 Enum 타입 사용
+    @Column(length = 100, nullable = false)
+    private SpacePictureCategory category;
 
 
 }

@@ -22,7 +22,7 @@ public class OfficeEntity extends BaseEntity {
 
     @JoinColumn(name = "SPACE_ID")
     @ManyToOne
-    private SpaceEntity spaceId;
+    private SpaceEntity space;
 
     @Column(length = 100 , nullable = false , unique = true)
     private String name;
