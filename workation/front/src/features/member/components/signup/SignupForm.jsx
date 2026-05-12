@@ -105,7 +105,7 @@ function SignupForm() {
         </InputWrapper>
 
         <AgreeArea>
-          <input type="checkbox" />
+          <input type="checkbox" required />
 
           <span>이용약관 및 개인정보처리방침에 동의합니다.</span>
         </AgreeArea>

@@ -9,7 +9,7 @@ public class MemberLoginReqDto {
     private String username;
     private String password;
 
-    public MemberEntity toEntity(){
+    public MemberEntity toMemberEntity(){
         return MemberEntity.builder()
                 .username(username)
                 .password(password)

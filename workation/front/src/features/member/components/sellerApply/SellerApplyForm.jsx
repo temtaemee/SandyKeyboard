@@ -1,12 +1,15 @@
-import { useState } from 'react';
+import axios from 'axios';
+import { useState, useEffect } from 'react'; // 1. useEffect 추가
 import styled from 'styled-components';
 
 function SellerApplyForm() {
+  const [banks, setBanks] = useState([]); // 2. banks 상태 변수 추가
   const [formData, setFormData] = useState({
     businessNumber: '',
     companyName: '',
     accountNumber: '',
-    bankName: '',
+    bankId: '', // 3. 백엔드 DTO(bankId)와 이름 맞춤
+    accountHolder: '', // 4. 백엔드 DTO(accountHolder)와 이름 맞춤
   });
 
   function handleChange(e) {
@@ -14,10 +17,44 @@ function SellerApplyForm() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   }
 
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken'); // 로컬스토리지에서 토큰 꺼내기
+
+    axios
+      .get('http://127.0.0.1:80/api/user/banks', {
+        headers: {
+          Authorization: `Bearer ${token}`, // 토큰을 실어줘야 "아, 너 유저구나!" 하고 통과시켜줌
+        },
+      })
+      .then((res) => {
+        setBanks(res.data);
+      })
+      .catch((err) => console.error('은행 목록 로딩 실패', err));
+  }, []);
+
   async function handleSubmit(e) {
     e.preventDefault();
-    console.log('판매자 신청 데이터:', formData);
-    // API 호출 로직 추가 (예: useSellerApply 훅 사용)
+
+    // 헤더에 토큰 실어서 보내기 (로컬스토리지 토큰 가정)
+    const token = localStorage.getItem('accessToken');
+
+    try {
+      const response = await axios.post(
+        'http://127.0.0.1:80/api/user/seller',
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (response.status === 201) {
+        alert('판매자 신청이 완료되었습니다!');
+        // 성공 시 페이지 이동 로직 추가
+      }
+    } catch (error) {
+      alert('신청 중 오류가 발생했습니다.');
+    }
   }
 
   return (
@@ -45,12 +82,15 @@ function SellerApplyForm() {
         </InputWrapper>
 
         <InputWrapper>
-          <Label>은행명</Label>
-          <Input
-            name="bankName"
-            placeholder="예: 국민은행"
-            onChange={handleChange}
-          />
+          <Label>정산 은행</Label>
+          <Select name="bankId" onChange={handleChange} required>
+            <option value="">은행을 선택해주세요</option>
+            {banks?.map((bank) => (
+              <option key={bank.bankId} value={bank.bankId}>
+                {bank.bankName}
+              </option>
+            ))}
+          </Select>
         </InputWrapper>
 
         <InputWrapper>
@@ -58,6 +98,16 @@ function SellerApplyForm() {
           <Input
             name="accountNumber"
             placeholder="'-' 제외하고 숫자만 입력"
+            onChange={handleChange}
+          />
+        </InputWrapper>
+
+        {/* 예금주 필드 추가 (DTO에 있으므로) */}
+        <InputWrapper>
+          <Label>예금주</Label>
+          <Input
+            name="accountHolder"
+            placeholder="성함을 입력하세요"
             onChange={handleChange}
           />
         </InputWrapper>
@@ -74,6 +124,23 @@ function SellerApplyForm() {
 }
 
 export default SellerApplyForm;
+
+// Select 전용 스타일 추가
+const Select = styled.select`
+  width: 100%;
+  height: 54px;
+  border: 1px solid #d6dde2;
+  border-radius: 12px;
+  padding: 0 16px;
+  font-size: 14px;
+  outline: none;
+  background-color: white;
+  &:focus {
+    border-color: #4d6c75;
+  }
+`;
+
+// ... 기존 Styled Components (Input, Label 등) 동일하게 유지
 
 // Styled Components (SignupForm에서 사용된 스타일 재활용)
 const Card = styled.section`
