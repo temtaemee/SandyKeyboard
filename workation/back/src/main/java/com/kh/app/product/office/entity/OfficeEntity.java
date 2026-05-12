@@ -2,6 +2,7 @@ package com.kh.app.product.office.entity;
 
 import com.kh.app.common.entity.BaseEntity;
 import com.kh.app.product.space.entity.SpaceEntity;
+import com.kh.app.product.stay.entity.StayOption;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -50,6 +51,10 @@ public class OfficeEntity extends BaseEntity {
 
     @Column()
     private int timePrice;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "office_type", nullable = false)
+    private OfficeType officeType;
 
 
 }
