@@ -1,7 +1,11 @@
 package com.kh.app.product.space.service;
 
+import com.kh.app.product.exception.ErrorCode;
+import com.kh.app.product.exception.ProductException;
 import com.kh.app.product.space.dto.request.SpaceInsertReqDto;
 import com.kh.app.product.space.dto.request.SpacePictureReqDto;
+import com.kh.app.product.space.dto.request.SpaceUpdateReqDto;
+import com.kh.app.product.space.dto.response.SpaceResDto;
 import com.kh.app.product.space.entity.ArcadeEntity;
 import com.kh.app.product.space.entity.SpaceArcadeEntity;
 import com.kh.app.product.space.entity.SpaceEntity;
@@ -25,6 +29,38 @@ public class SpaceService {
     private final SpaceRepository spaceRepository;
     private final SpaceArcadeRepository spaceArcadeRepository;
     private final SpacePictureRepository spacePictureRepository;
+
+    public List<SpaceResDto> selectAll() {
+        return spaceRepository.findAllByDelYn("N")
+                .stream()
+                .map(SpaceResDto::from)
+                .toList();
+    }
+
+    public SpaceResDto selectOne(Long id) {
+        SpaceEntity space = spaceRepository.findByIdAndDelYn(id, "N")
+                .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
+        return SpaceResDto.from(space);
+    }
+
+    @Transactional
+    public void update(Long id, SpaceUpdateReqDto dto) {
+        SpaceEntity space = spaceRepository.findByIdAndDelYn(id, "N")
+                .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
+        space.update(
+                dto.getName(), dto.getPhone(), dto.getEmail(),
+                dto.getSummary(), dto.getDescription(),
+                dto.getAddress1(), dto.getAddress2(),
+                dto.getLatitude(), dto.getLongitude(), dto.getArea()
+        );
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        SpaceEntity space = spaceRepository.findByIdAndDelYn(id, "N")
+                .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
+        space.delete();
+    }
 
     @Transactional
     public Long insert(SpaceInsertReqDto dto) {
