@@ -1,10 +1,25 @@
 // components/login/LoginForm.jsx
 import styled from 'styled-components';
 import SocialLoginButtons from './SocialLoginButtons';
-import { useNavigate } from 'react-router-dom';
+import useLogin from '../../hooks/useLogin';
+import { useState } from 'react';
 
 function LoginForm() {
-  const navi = useNavigate();
+  const { fetchLogin, navi } = useLogin();
+  const [vo, setVo] = useState({
+    username: '',
+    password: '',
+  });
+
+  function handleChange(e) {
+    const { name, value } = e.target;
+    setVo((prev) => ({ ...prev, [name]: value }));
+  }
+  function handleSubmit(e) {
+    e.preventDefault();
+    fetchLogin(vo);
+  }
+
   return (
     <Card>
       <TitleArea>
@@ -13,14 +28,19 @@ function LoginForm() {
         <SubTitle>몰입과 휴식이 공존하는 공간으로의 로그인</SubTitle>
       </TitleArea>
 
-      <Form>
+      <Form onSubmit={handleSubmit}>
         <InputWrapper>
-          <Label>이메일 주소</Label>
+          <Label>아이디</Label>
 
           <InputBox>
             <Icon>✉</Icon>
 
-            <Input type="email" placeholder="example@keyboard.com" />
+            <Input
+              type="text"
+              name="username"
+              placeholder="ID입력"
+              onChange={handleChange}
+            />
           </InputBox>
         </InputWrapper>
 
@@ -30,7 +50,12 @@ function LoginForm() {
           <InputBox>
             <Icon>🔒</Icon>
 
-            <Input type="password" placeholder="••••••••" />
+            <Input
+              type="password"
+              name="password"
+              placeholder="••••••••"
+              onChange={handleChange}
+            />
           </InputBox>
         </InputWrapper>
 
@@ -43,7 +68,7 @@ function LoginForm() {
           <FindPassword>비밀번호 찾기</FindPassword>
         </OptionArea>
 
-        <LoginButton>로그인 →</LoginButton>
+        <LoginButton type="submit">로그인 →</LoginButton>
       </Form>
 
       <Divider>
@@ -100,7 +125,7 @@ const SubTitle = styled.p`
   line-height: 1.6;
 `;
 
-const Form = styled.div`
+const Form = styled.form`
   margin-bottom: 32px;
 `;
 

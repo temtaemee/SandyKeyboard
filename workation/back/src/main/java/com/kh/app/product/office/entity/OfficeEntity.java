@@ -2,6 +2,7 @@ package com.kh.app.product.office.entity;
 
 import com.kh.app.common.entity.BaseEntity;
 import com.kh.app.product.space.entity.SpaceEntity;
+import com.kh.app.product.stay.entity.StayOption;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,7 +22,7 @@ public class OfficeEntity extends BaseEntity {
 
     @JoinColumn(name = "SPACE_ID")
     @ManyToOne
-    private SpaceEntity spaceId;
+    private SpaceEntity space;
 
     @Column(length = 100 , nullable = false , unique = true)
     private String name;
@@ -49,18 +50,15 @@ public class OfficeEntity extends BaseEntity {
     private LocalDateTime checkOutTime;
 
     @Column()
-    private int monPrice;
-    @Column()
-    private int tuePrice;
-    @Column()
-    private int wedPrice;
-    @Column()
-    private int thuPrice;
-    @Column()
-    private int friPrice;
-    @Column()
-    private int satPrice;
-    @Column()
-    private int sunPrice;
+    private int timePrice;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "office_type", nullable = false)
+    private OfficeType officeType;
+
+    public void changeVisibleYn(String visibleYn) {
+        this.visibleYn = visibleYn;
+    }
+
 
 }

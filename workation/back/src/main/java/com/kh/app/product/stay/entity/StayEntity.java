@@ -15,13 +15,16 @@ import java.time.LocalDateTime;
 @Getter
 public class StayEntity extends BaseEntity {
 
+
+
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @JoinColumn(name = "SPACE_ID")
     @ManyToOne
-    private SpaceEntity spaceId;
+    private SpaceEntity space;
 
     @Column(length = 100 , nullable = false , unique = true)
     private String name;
@@ -49,5 +52,23 @@ public class StayEntity extends BaseEntity {
     private LocalDateTime checkOutTime;
 
     @Column()
-    private int timePrice;
+    private int monPrice;
+    @Column()
+    private int tuePrice;
+    @Column()
+    private int wedPrice;
+    @Column()
+    private int thuPrice;
+    @Column()
+    private int friPrice;
+    @Column()
+    private int satPrice;
+    @Column()
+    private int sunPrice;
+    @Column()
+    private int holidayPrice;
+
+    public void changeVisibleYn(String visibleYn) {
+        this.visibleYn = visibleYn;
+    }
 }

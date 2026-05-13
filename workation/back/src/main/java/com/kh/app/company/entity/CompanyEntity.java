@@ -4,6 +4,8 @@ import com.kh.app.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "COMPANY")
 @Getter
@@ -25,13 +27,10 @@ public class CompanyEntity extends BaseEntity {
     @Column(name = "DEL_YN", length = 1, nullable = false)
     private String delYn;
 
+
     @PrePersist
     public void prePersist() {
-
-        super.prePersist();
-
-        if (this.delYn == null) {
-            this.delYn = "N";
-        }
+        delYn = "N";
+        createdAt = LocalDateTime.now();
     }
 }

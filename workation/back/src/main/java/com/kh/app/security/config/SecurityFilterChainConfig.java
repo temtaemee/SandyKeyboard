@@ -49,6 +49,11 @@ public class SecurityFilterChainConfig {
                                 .requestMatchers("/api/seller/**").hasAnyAuthority("SELLER", "ADMIN")
                                 .requestMatchers("/api/user/**").hasAnyAuthority("SELLER", "USER")
                                 .requestMatchers("/api/auth/**").authenticated()
+                                .requestMatchers(
+                                        "/swagger-ui/**",
+                                        "/v3/api-docs/**",
+                                        "/swagger-ui.html"
+                                ).permitAll()
                                 .anyRequest().authenticated()
         );
 

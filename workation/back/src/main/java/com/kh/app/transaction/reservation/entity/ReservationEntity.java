@@ -1,6 +1,7 @@
 package com.kh.app.transaction.reservation.entity;
 
 import com.kh.app.member.entity.MemberEntity;
+import com.kh.app.middle.coupon.entity.CouponEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -22,24 +23,21 @@ public class ReservationEntity {
     @JoinColumn(nullable = false)
     private MemberEntity member;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn
+    private CouponEntity coupon;
+
     //    @ManyToOne(fetch = FetchType.LAZY)
     //    @JoinColumn
-    //    private CouponEntity coupon;
-    //
-    //    @ManyToOne(fetch = FetchType.LAZY)
-    //    @JoinColumn(nullable = false)
     //    private StayEntity stay;
     //
     //    @ManyToOne(fetch = FetchType.LAZY)
-    //    @JoinColumn(nullable = false)
+    //    @JoinColumn
     //    private OfficeEntity office;
 ///  /////////////////////////////
-    private Long couponId;
 
-    @Column(nullable = false)
     private Long stayId;
 
-    @Column(nullable = false)
     private Long officeId;
     /// //////////////////////////////////////
 
@@ -75,18 +73,41 @@ public class ReservationEntity {
     @Builder.Default
     private String reviewYn = "N";
 
-    @Column(nullable = false, length = 50)
-    private String status;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private ReservationStatus status;
 
-    public void complete() {
-        this.status = "COMPLETED";
+    public void approve() {
+        this.status = ReservationStatus.APPROVED;
     }
 
     public void cancel() {
-        this.status = "CANCELLED";
+        this.status = ReservationStatus.CANCELLED;
     }
 
-    public void markReviewed() {
-        this.reviewYn = "Y";
+    public void reject() {
+        this.status = ReservationStatus.REJECTED;
+    }
+
+    public void complete() {
+        this.status = ReservationStatus.COMPLETED;
+    }
+
+
+    @PrePersist
+    private void prePersist() {
+
+        if (this.status == null) {
+            this.status = ReservationStatus.PENDING;
+        }
+
+        validateTarget();
+    }
+
+    @PreUpdate
+    private void validateTarget() {
+        if (stayId == null && officeId == null) {
+            throw new IllegalStateException("예약 대상이 없습니다.");
+        }
     }
 }

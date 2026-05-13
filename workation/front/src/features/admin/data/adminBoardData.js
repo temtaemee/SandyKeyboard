@@ -1,5 +1,8 @@
 // src/features/admin/data/adminBoardData.js
 
+/* ==========================================
+   [MOCK DATA] 서버 연결 시 삭제/대체 필요
+   ========================================== */
 export const BOARD_STAT_CARDS = [
   {
     id: 1,
@@ -19,8 +22,14 @@ export const BOARD_STAT_CARDS = [
   },
 ];
 
+/* ==========================================
+   [CONSTANTS] 서버 연결 후에도 유지 (UI 설정값)
+   ========================================== */
 export const BOARD_TABS = ['공지사항', 'FAQ', '리뷰', '이벤트', '쿠폰'];
 
+/* ==========================================
+   [MOCK DATA] 서버 연결 시 삭제/대체 필요
+   ========================================== */
 export const BOARD_POSTS = {
   공지사항: [
     {
@@ -174,6 +183,9 @@ export const BOARD_POSTS = {
   ],
 };
 
+/* ==========================================
+   [CONSTANTS] 서버 연결 후에도 유지 (UI 설정값)
+   ========================================== */
 export const POST_STATUS_MAP = {
   published: { label: '게시중',   bg: '#dcfce7', color: '#15803d' },
   ended:     { label: '게시종료', bg: '#f1f5f9', color: '#475569' },

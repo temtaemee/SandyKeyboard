@@ -25,10 +25,9 @@ api.interceptors.response.use(
     return response;
   }, //성공함수
   (error) => {
-    // if (error.response?.status === 401) {
-    //   localStorage.removeItem('accessToken');
-    //   // window.location.href = '/login';
-    // }
+    if (error.response?.status === 401) {
+      localStorage.removeItem('accessToken');
+    }
     return Promise.reject(error);
   } //실패함수
 );

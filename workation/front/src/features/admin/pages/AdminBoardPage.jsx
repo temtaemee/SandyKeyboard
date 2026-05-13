@@ -2,6 +2,12 @@
 import { useState } from 'react';
 import styled, { keyframes } from 'styled-components';
 import {
+  MessageSquare, Calendar, PlusCircle, HelpCircle, Star, Tag,
+  Filter, Paperclip, MapPin, Eye, EyeOff, Pencil, Trash2,
+  ChevronLeft as LucideChevronLeft, ChevronRight as LucideChevronRight,
+  ChevronsLeft, ChevronsRight,
+} from 'lucide-react';
+import {
   BOARD_STAT_CARDS,
   BOARD_TABS,
   BOARD_POSTS,
@@ -98,25 +104,25 @@ export default function AdminBoardPage() {
           <QuickRegisterTitle>콘텐츠 신규 등록</QuickRegisterTitle>
           <QuickRegisterGrid>
             <QuickBtn onClick={() => {}}>
-              <QuickBtnInner $variant="primary">
+              <QuickBtnInner >
                 <PlusCircleIcon />
                 공지사항
               </QuickBtnInner>
             </QuickBtn>
             <QuickBtn onClick={() => {}}>
-              <QuickBtnInner $variant="outline">
+              <QuickBtnInner >
                 <HelpSquareIcon />
                 FAQ
               </QuickBtnInner>
             </QuickBtn>
             <QuickBtn onClick={() => {}}>
-              <QuickBtnInner $variant="outline">
+              <QuickBtnInner >
                 <EventIcon />
                 이벤트
               </QuickBtnInner>
             </QuickBtn>
             <QuickBtn onClick={() => {}}>
-              <QuickBtnInner $variant="outline">
+              <QuickBtnInner >
                 <CouponIcon />
                 쿠폰
               </QuickBtnInner>
@@ -271,127 +277,26 @@ export default function AdminBoardPage() {
   );
 }
 
-/* ── SVG Icon Components ── */
-
-function ReviewIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-    </svg>
-  );
-}
-function CalendarIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="4" width="18" height="18" rx="2" />
-      <line x1="16" y1="2" x2="16" y2="6" />
-      <line x1="8" y1="2" x2="8" y2="6" />
-      <line x1="3" y1="10" x2="21" y2="10" />
-    </svg>
-  );
-}
-function PlusCircleIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-      <circle cx="12" cy="12" r="10" />
-      <line x1="12" y1="8" x2="12" y2="16" />
-      <line x1="8" y1="12" x2="16" y2="12" />
-    </svg>
-  );
-}
-function HelpSquareIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="18" height="18" rx="2" />
-      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-      <line x1="12" y1="17" x2="12.01" y2="17" />
-    </svg>
-  );
-}
-function EventIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-    </svg>
-  );
-}
-function CouponIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
-      <line x1="7" y1="7" x2="7.01" y2="7" />
-    </svg>
-  );
-}
-function FilterIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="4" y1="6" x2="20" y2="6" />
-      <line x1="8" y1="12" x2="16" y2="12" />
-      <line x1="11" y1="18" x2="13" y2="18" />
-    </svg>
-  );
-}
-function AttachIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-    </svg>
-  );
-}
+/* ── Icon Components ── */
+function ReviewIcon() { return <MessageSquare size={20} />; }
+function CalendarIcon() { return <Calendar size={20} />; }
+function PlusCircleIcon() { return <PlusCircle size={14} strokeWidth={2.5} />; }
+function HelpSquareIcon() { return <HelpCircle size={14} />; }
+function EventIcon() { return <Star size={14} />; }
+function CouponIcon() { return <Tag size={14} />; }
+function FilterIcon() { return <Filter size={14} color="#64748b" />; }
+function AttachIcon() { return <Paperclip size={12} color="#94a3b8" style={{ flexShrink: 0 }} />; }
 function PinSvg({ $pinned }) {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill={$pinned ? '#244c54' : 'none'} stroke={$pinned ? '#244c54' : '#94a3b8'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-      <circle cx="12" cy="10" r="3" />
-    </svg>
-  );
+  return <MapPin size={14} fill={$pinned ? '#244c54' : 'none'} color={$pinned ? '#244c54' : '#94a3b8'} />;
 }
-function EyeIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  );
-}
-function EyeOffIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-      <line x1="1" y1="1" x2="23" y2="23" />
-    </svg>
-  );
-}
-function EditIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-    </svg>
-  );
-}
-function TrashIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="3 6 5 6 21 6" />
-      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-      <path d="M10 11v6M14 11v6" />
-      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-    </svg>
-  );
-}
-function ChevronLeft() {
-  return <svg width="5" height="9" viewBox="0 0 6 10" fill="none" stroke="#475569" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="5 1 1 5 5 9" /></svg>;
-}
-function ChevronRight() {
-  return <svg width="5" height="9" viewBox="0 0 6 10" fill="none" stroke="#475569" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 1 5 5 1 9" /></svg>;
-}
-function DoubleChevronLeft() {
-  return <svg width="9" height="9" viewBox="0 0 12 10" fill="none" stroke="#475569" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="7 1 3 5 7 9" /><polyline points="11 1 7 5 11 9" /></svg>;
-}
-function DoubleChevronRight() {
-  return <svg width="9" height="9" viewBox="0 0 12 10" fill="none" stroke="#475569" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 1 5 5 1 9" /><polyline points="5 1 9 5 5 9" /></svg>;
+function EyeIcon() { return <Eye size={13} />; }
+function EyeOffIcon() { return <EyeOff size={13} />; }
+function EditIcon() { return <Pencil size={13} />; }
+function TrashIcon() { return <Trash2 size={13} />; }
+function ChevronLeft() { return <LucideChevronLeft size={14} color="#475569" strokeWidth={1.5} />; }
+function ChevronRight() { return <LucideChevronRight size={14} color="#475569" strokeWidth={1.5} />; }
+function DoubleChevronLeft() { return <ChevronsLeft size={14} color="#475569" strokeWidth={1.5} />; }
+function DoubleChevronRight() { return <ChevronsRight size={14} color="#475569" strokeWidth={1.5} />;
 }
 
 /* ── Styled Components ── */
@@ -418,13 +323,13 @@ const PageTitleGroup = styled.div`
 const PageTitle = styled.h1`
   font-size: 24px;
   font-weight: 500;
-  color: #0d1c2e;
+  color: ${({ theme }) => theme.colors.adminTextDark};
   letter-spacing: -0.24px;
   line-height: 1.33;
 `;
 const PageSub = styled.p`
   font-size: 14px;
-  color: #64748b;
+  color: ${({ theme }) => theme.colors.textMuted};
 `;
 
 /* 상단 3열 */
@@ -436,11 +341,11 @@ const TopSection = styled.div`
 `;
 
 const StatCard = styled.div`
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: ${({ theme }) => theme.colors.white};
+  border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 8px;
   padding: 24px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: ${({ theme }) => theme.shadows.card};
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -466,20 +371,20 @@ const StatIconWrap = styled.div`
 
 const StatLabel = styled.p`
   font-size: 12px;
-  color: #64748b;
+  color: ${({ theme }) => theme.colors.textMuted};
   margin-top: 4px;
 `;
 const StatValue = styled.p`
   font-size: 32px;
   font-weight: 700;
-  color: #0d1c2e;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: ${({ theme }) => theme.colors.adminTextDark};
+  font-family: ${({ theme }) => theme.fonts.number};
   letter-spacing: -0.5px;
   line-height: 1.2;
 `;
 const StatSubText = styled.p`
   font-size: 12px;
-  color: #64748b;
+  color: ${({ theme }) => theme.colors.textMuted};
   margin-top: 4px;
 `;
 const Strong = styled.span`
@@ -506,7 +411,7 @@ const ProgressBar = styled.div`
   flex: 1;
   height: 6px;
   border-radius: 999px;
-  background: #e2e8f0;
+  background: ${({ theme }) => theme.colors.border};
   position: relative;
   overflow: hidden;
 
@@ -516,23 +421,23 @@ const ProgressBar = styled.div`
     left: 0; top: 0;
     height: 100%;
     width: ${({ $width }) => $width}%;
-    background: #244c54;
+    background: ${({ theme }) => theme.colors.adminPrimary};
     border-radius: 999px;
   }
 `;
 const ProgressLabel = styled.span`
   font-size: 11px;
-  color: #94a3b8;
+  color: ${({ theme }) => theme.colors.textLight};
   white-space: nowrap;
 `;
 
 /* 콘텐츠 신규 등록 카드 */
 const QuickRegisterCard = styled.div`
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: ${({ theme }) => theme.colors.white};
+  border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 8px;
   padding: 20px 24px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: ${({ theme }) => theme.shadows.card};
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -540,7 +445,7 @@ const QuickRegisterCard = styled.div`
 const QuickRegisterTitle = styled.p`
   font-size: 13px;
   font-weight: 600;
-  color: #64748b;
+  color: ${({ theme }) => theme.colors.textMuted};
 `;
 const QuickRegisterGrid = styled.div`
   display: grid;
@@ -563,28 +468,23 @@ const QuickBtnInner = styled.div`
   transition: all 0.15s;
   cursor: pointer;
 
-  ${({ $variant }) =>
-    $variant === 'primary'
-      ? `
-    background: #244c54;
-    color: white;
-    &:hover { background: #3d646c; }
-  `
-      : `
-    background: white;
-    color: #334155;
-    border: 1px solid #e2e8f0;
-    &:hover { background: #f8fafc; }
-  `}
+  background: ${({ theme }) => theme.colors.white};
+  color: #334155;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  &:hover {
+    background: ${({ theme }) => theme.colors.adminPrimary};
+    color: ${({ theme }) => theme.colors.white};
+    border-color: ${({ theme }) => theme.colors.adminPrimary};
+  }
 `;
 
 /* 게시글 테이블 */
 const TableSection = styled.div`
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: ${({ theme }) => theme.colors.white};
+  border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: ${({ theme }) => theme.shadows.card};
 `;
 
 const TabRow = styled.div`
@@ -592,7 +492,7 @@ const TabRow = styled.div`
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
 `;
 const Tabs = styled.div`
   display: flex;
@@ -602,22 +502,22 @@ const Tab = styled.button`
   padding: 14px 18px;
   font-size: 14px;
   font-weight: ${({ $active }) => ($active ? '600' : '500')};
-  color: ${({ $active }) => ($active ? '#244c54' : '#64748b')};
-  border-bottom: 2px solid ${({ $active }) => ($active ? '#244c54' : 'transparent')};
+  color: ${({ $active, theme }) => ($active ? theme.colors.adminPrimary : theme.colors.textMuted)};
+  border-bottom: 2px solid ${({ $active, theme }) => ($active ? theme.colors.adminPrimary : 'transparent')};
   transition: all 0.15s;
   font-family: inherit;
-  &:hover { color: #244c54; }
+  &:hover { color: ${({ theme }) => theme.colors.adminPrimary}; }
 `;
 const FilterBtn = styled.button`
   width: 32px;
   height: 32px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background 0.15s;
-  &:hover { background: #f8fafc; }
+  &:hover { background: ${({ theme }) => theme.colors.bgSection}; }
 `;
 
 const Table = styled.table`
@@ -625,12 +525,12 @@ const Table = styled.table`
   border-collapse: collapse;
 `;
 const THead = styled.thead`
-  background: #f8fafc;
-  border-bottom: 1px solid #f1f5f9;
+  background: ${({ theme }) => theme.colors.bgSection};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
 `;
 const TBody = styled.tbody``;
 const TR = styled.tr`
-  border-top: ${({ $hoverable }) => ($hoverable ? '1px solid #f1f5f9' : 'none')};
+  border-top: ${({ $hoverable, theme }) => ($hoverable ? `1px solid ${theme.colors.borderLight}` : 'none')};
   background: ${({ $checked }) => ($checked ? '#f0fdf4' : 'transparent')};
   transition: background 0.1s;
   &:hover {
@@ -642,7 +542,7 @@ const TH = styled.th`
   text-align: left;
   font-size: 12px;
   font-weight: 600;
-  color: #64748b;
+  color: ${({ theme }) => theme.colors.textMuted};
   letter-spacing: 0.3px;
   width: ${({ $width }) => $width || 'auto'};
   white-space: nowrap;
@@ -657,7 +557,7 @@ const Checkbox = styled.input`
   height: 15px;
   border-radius: 4px;
   cursor: pointer;
-  accent-color: #244c54;
+  accent-color: ${({ theme }) => theme.colors.adminPrimary};
 `;
 
 const TitleCell = styled.div`
@@ -676,23 +576,23 @@ const FixedBadge = styled.span`
 `;
 const TitleText = styled.span`
   font-size: 13px;
-  color: ${({ $isDraft }) => ($isDraft ? '#94a3b8' : '#0d1c2e')};
+  color: ${({ $isDraft, theme }) => ($isDraft ? theme.colors.textLight : theme.colors.adminTextDark)};
   font-weight: 500;
   line-height: 1.4;
 `;
 const AuthorText = styled.span`
   font-size: 13px;
-  color: #475569;
+  color: ${({ theme }) => theme.colors.textMid};
 `;
 const DateText = styled.span`
   font-size: 12px;
-  color: #94a3b8;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: ${({ theme }) => theme.colors.textLight};
+  font-family: ${({ theme }) => theme.fonts.number};
 `;
 const ViewsText = styled.span`
   font-size: 12px;
-  color: #475569;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: ${({ theme }) => theme.colors.textMid};
+  font-family: ${({ theme }) => theme.fonts.number};
 `;
 const StatusBadge = styled.span`
   display: inline-block;
@@ -716,7 +616,7 @@ const PinBtn = styled.button`
   transition: background 0.15s;
   background: ${({ $pinned }) => ($pinned ? 'rgba(36,76,84,0.08)' : 'transparent')};
   &:hover {
-    background: ${({ $pinned }) => ($pinned ? 'rgba(36,76,84,0.14)' : '#f1f5f9')};
+    background: ${({ $pinned, theme }) => ($pinned ? 'rgba(36,76,84,0.14)' : theme.colors.borderLight)};
   }
 `;
 
@@ -726,13 +626,13 @@ const TableFooter = styled.div`
   align-items: center;
   justify-content: space-between;
   padding: 12px 24px;
-  background: #f8fafc;
-  border-top: 1px solid #f1f5f9;
+  background: ${({ theme }) => theme.colors.bgSection};
+  border-top: 1px solid ${({ theme }) => theme.colors.borderLight};
 `;
 const FooterInfo = styled.p`
   font-size: 12px;
-  color: #64748b;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: ${({ theme }) => theme.colors.textMuted};
+  font-family: ${({ theme }) => theme.fonts.number};
 `;
 const Pagination = styled.div`
   display: flex;
@@ -743,9 +643,9 @@ const PageBtn = styled.button`
   height: 28px;
   padding: 0 6px;
   border-radius: 4px;
-  border: ${({ $active }) => ($active ? 'none' : '1px solid #e2e8f0')};
-  background: ${({ $active }) => ($active ? '#244c54' : 'white')};
-  color: ${({ $active }) => ($active ? 'white' : '#475569')};
+  border: ${({ $active, theme }) => ($active ? 'none' : `1px solid ${theme.colors.border}`)};
+  background: ${({ $active, theme }) => ($active ? theme.colors.adminPrimary : theme.colors.white)};
+  color: ${({ $active, theme }) => ($active ? theme.colors.white : theme.colors.textMid)};
   font-size: 12px;
   font-weight: 600;
   display: flex;
@@ -754,9 +654,9 @@ const PageBtn = styled.button`
   gap: 1px;
   transition: all 0.15s;
   opacity: ${({ disabled }) => (disabled ? 0.35 : 1)};
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: ${({ theme }) => theme.fonts.number};
   &:hover:not(:disabled) {
-    background: ${({ $active }) => ($active ? '#244c54' : '#f8fafc')};
+    background: ${({ $active, theme }) => ($active ? theme.colors.adminPrimary : theme.colors.bgSection)};
   }
 `;
 

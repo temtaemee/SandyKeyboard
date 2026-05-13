@@ -16,6 +16,7 @@ import SignupPage from './features/member/pages/singup/SignupPage';
 import BoardRouter from './routes/BoardRouter';
 import ResvRouter from './routes/ResvRouter';
 import LoginPage from './features/member/pages/login/LoginPage';
+import MypageRouter from './routes/MypageRouter';
 
 export default function App() {
   return (
@@ -35,7 +36,7 @@ export default function App() {
           */}
 
           {/* 유저(User) 관련 라우트 - 팀원 <A:blank></A:blank> */}
-          <Route path="mypage/*" element={<UserRouter />} />
+          <Route path="mypage/*" element={<MypageRouter />} />
           <Route path="join" element={<SignupPage />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="find-id" element={<FindIdPage />} />

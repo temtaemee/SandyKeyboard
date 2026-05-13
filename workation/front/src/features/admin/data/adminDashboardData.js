@@ -1,5 +1,8 @@
 // src/features/admin/data/adminDashboardData.js
 
+/* ==========================================
+   [MOCK DATA] 서버 연결 시 삭제/대체 필요
+   ========================================== */
 export const ADMIN_STAT_CARDS = [
   {
     id: 1,
@@ -36,6 +39,21 @@ export const ADMIN_STAT_CARDS = [
 ];
 
 export const ADMIN_CHART_DATA = [
+  { month: '1월', height: 128 },
+  { month: '2월', height: 176 },
+  { month: '3월', height: 144 },
+  { month: '4월', height: 224, highlight: true },
+  { month: '5월', height: 192 },
+  { month: '6월', height: 240 },
+];
+
+export const ADMIN_CHART_DATA_12M = [
+  { month: '7월', height: 88 },
+  { month: '8월', height: 104 },
+  { month: '9월', height: 136 },
+  { month: '10월', height: 152 },
+  { month: '11월', height: 120 },
+  { month: '12월', height: 160 },
   { month: '1월', height: 128 },
   { month: '2월', height: 176 },
   { month: '3월', height: 144 },
@@ -102,6 +120,9 @@ export const RECENT_PAYMENTS = [
   },
 ];
 
+/* ==========================================
+   [CONSTANTS] 서버 연결 후에도 유지 (UI 설정값)
+   ========================================== */
 export const PAYMENT_STATUS_MAP = {
   paid: { label: '결제완료', bg: '#dcfce7', color: '#15803d' },
   pending: { label: '결제대기', bg: '#ffedd5', color: '#c2410c' },
@@ -110,7 +131,7 @@ export const PAYMENT_STATUS_MAP = {
 };
 
 export const ADMIN_NAV_ITEMS = [
-  { id: 'dashboard', label: '매출', path: '/admin/dashboard', icon: 'grid' },
+  { id: 'dashboard', label: '매출', path: '/admin/dashboard', icon: 'chart' },
   {
     id: 'reservations',
     label: '예약/기업 관리',
@@ -118,9 +139,9 @@ export const ADMIN_NAV_ITEMS = [
     icon: 'bookmark',
   },
   {
-    id: 'sellers',
-    label: '판매자 관리',
-    path: '/admin/sellers',
+    id: 'accounts',
+    label: '계정/판매자 관리',
+    path: '/admin/accounts',
     icon: 'users',
   },
   { id: 'spaces', label: '숙소 관리', path: '/admin/spaces', icon: 'home' },

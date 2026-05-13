@@ -1,18 +1,49 @@
 import { useState, useEffect } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import styled, { css } from 'styled-components';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import styled from 'styled-components';
 import { NAV_LINKS } from '../../data/homeData';
+import api from '../../../app/api/axios';
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const navi = useNavigate();
+  const location = useLocation(); // 경로 변경 감지를 위해 추가
+
+  const validateToken = async () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      setIsLoggedIn(false);
+      return;
+    }
+
+    try {
+      // 인터셉터가 토큰을 자동으로 실어주므로 경로만 적으면 됩니다.
+      await api.get('/user/banks');
+      setIsLoggedIn(true);
+    } catch (error) {
+      // 401/403 에러 발생 시 api.js 인터셉터가 이미 토큰을 지웠을 것이므로 상태만 변경
+      setIsLoggedIn(false);
+    }
+  };
 
   useEffect(() => {
+    // 1. 스크롤 이벤트
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
+
+    // 2. 초기 로드 시 검증
+    validateToken();
+
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [location.pathname]); // 페이지 이동 시마다 토큰 유효성 체크 (선택 사항)
+
+  const handleLogout = () => {
+    localStorage.removeItem('accessToken');
+    setIsLoggedIn(false);
+    navi('/');
+  };
 
   return (
     <Nav $scrolled={scrolled}>
@@ -20,7 +51,6 @@ export default function Header() {
         <Left>
           <Logo to="/">모래묻은 키보드</Logo>
         </Left>
-
         <Center>
           <Links>
             {NAV_LINKS.map((link) => (
@@ -30,16 +60,15 @@ export default function Header() {
             ))}
           </Links>
         </Center>
-
         <Right>
-          <LoginBtn
-            onClick={() => {
-              navi(`/login`);
-            }}
-          >
-            로그인
-          </LoginBtn>
-          <StartBtn>시작하기</StartBtn>
+          {isLoggedIn ? (
+            <>
+              <MyPageBtn onClick={() => navi('/mypage')}>마이페이지</MyPageBtn>
+              <LogoutBtn onClick={handleLogout}>로그아웃</LogoutBtn>
+            </>
+          ) : (
+            <LoginBtn onClick={() => navi('/login')}>로그인</LoginBtn>
+          )}
         </Right>
       </Inner>
     </Nav>
@@ -47,6 +76,32 @@ export default function Header() {
 }
 
 /* ── Styled Components ── */
+
+const LogoutBtn = styled.button`
+  padding: 8px 16px;
+  font-size: 14px;
+  color: #ef4444; /* 빨간색 톤으로 로그아웃 강조 */
+  cursor: pointer;
+  background: none;
+  border: none;
+  &:hover {
+    text-decoration: underline;
+  }
+`;
+
+const MyPageBtn = styled.button`
+  padding: 8px 20px;
+  font-size: 15px;
+  color: white;
+  background: #4d6c75;
+  border-radius: 20px;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.2s;
+  &:hover {
+    opacity: 0.9;
+  }
+`;
 
 const Nav = styled.nav`
   position: fixed;
@@ -65,31 +120,27 @@ const Nav = styled.nav`
 `;
 
 const Inner = styled.div`
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 0 32px;
+  max-width: 100%;
+  padding: 0 40px;
   height: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
 `;
 
 const Left = styled.div`
   display: flex;
   align-items: center;
-  flex: 1;
+  margin-right: 80px;
 `;
 
 const Center = styled.div`
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex: 1;
 `;
 
 const Logo = styled(NavLink)`
-  font-size: 20px;
-  font-weight: 500;
+  font-size: 24px;
+  font-weight: 700;
   background: ${({ theme }) => theme.gradients.logo};
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -100,7 +151,7 @@ const Logo = styled(NavLink)`
 const Links = styled.div`
   display: flex;
   align-items: center;
-  gap: 50px;
+  gap: 36px;
 `;
 
 const NavItem = styled(NavLink)`
@@ -128,11 +179,10 @@ const NavItem = styled(NavLink)`
 `;
 
 const Right = styled.div`
+  margin-left: auto;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 16px;
-  flex: 1;
+  gap: 14px;
 `;
 
 const LoginBtn = styled.button`

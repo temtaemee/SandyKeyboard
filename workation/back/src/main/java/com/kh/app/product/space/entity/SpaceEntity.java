@@ -53,11 +53,19 @@ public class SpaceEntity extends BaseEntity {
 
     @Column(nullable = false, length = 1)
     @Builder.Default
-    private String visibleYn = "Y";
+    private String visibleYn = "N"; //기본 visible = n -> 상품 심사 통과시 Y로 수정해서 해당 space에 대한 권한을 열어줌
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "area", nullable = false)
+    private Area area;
 
 
-    private Long applyId;//join
-    private Long areaId;//join
+    public void changeVisibleYn(String visibleYn) {
+        this.visibleYn = visibleYn;
+    }
+
+
+
 
 
 }

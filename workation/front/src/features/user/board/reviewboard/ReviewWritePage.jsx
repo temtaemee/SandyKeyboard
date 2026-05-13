@@ -9,18 +9,14 @@ export default function ReviewWritePage() {
   const [files, setFiles] = useState([]);
 
   function handleFileChange(e) {
-    const selected = [...e.target.files];
-    setFiles(selected);
+    setFiles([...e.target.files]);
   }
-
-  function handleRemoveFile(index) {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
+  function handleRemoveFile(i) {
+    setFiles((prev) => prev.filter((_, idx) => idx !== i));
   }
-
   function handleSubmit() {
     if (!title.trim()) return alert('제목을 입력해주세요.');
     if (!content.trim()) return alert('내용을 입력해주세요.');
-    console.log(title, content, files);
     navigate('/board/review/list');
   }
 
@@ -30,13 +26,11 @@ export default function ReviewWritePage() {
         <Row>
           <Label>제목</Label>
           <Input
-            type="text"
             placeholder="제목을 입력하세요"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
         </Row>
-
         <Row>
           <Label>내용</Label>
           <TextArea
@@ -45,7 +39,6 @@ export default function ReviewWritePage() {
             onChange={(e) => setContent(e.target.value)}
           />
         </Row>
-
         <Row>
           <Label>이미지 첨부</Label>
           <FileArea>
@@ -55,20 +48,17 @@ export default function ReviewWritePage() {
                 id="image-upload"
                 type="file"
                 multiple
-                accept="image/jpeg, image/png, image/gif, image/webp"
+                accept="image/jpeg,image/png,image/gif,image/webp"
                 onChange={handleFileChange}
               />
             </FileLabel>
             <FileHint>JPG, PNG, GIF, WEBP 파일만 첨부 가능합니다</FileHint>
-
             {files.length > 0 && (
               <FileList>
-                {files.map((file, index) => (
-                  <FileItem key={index}>
+                {files.map((file, i) => (
+                  <FileItem key={i}>
                     <FileName>🖼 {file.name}</FileName>
-                    <RemoveBtn onClick={() => handleRemoveFile(index)}>
-                      ✕
-                    </RemoveBtn>
+                    <RemoveBtn onClick={() => handleRemoveFile(i)}>✕</RemoveBtn>
                   </FileItem>
                 ))}
               </FileList>
@@ -90,7 +80,7 @@ export default function ReviewWritePage() {
 const Wrapper = styled.div``;
 
 const Board = styled.div`
-  border-top: 2px solid black;
+  border-top: 2px solid ${({ theme }) => theme.colors.textDark};
   margin-bottom: 32px;
 `;
 
@@ -98,7 +88,7 @@ const Row = styled.div`
   display: flex;
   align-items: flex-start;
   padding: 20px 10px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
   gap: 24px;
 `;
 
@@ -106,7 +96,8 @@ const Label = styled.div`
   width: 80px;
   flex-shrink: 0;
   font-weight: 600;
-  color: #333;
+  font-size: 14px;
+  color: ${({ theme }) => theme.colors.textMid};
   padding-top: 2px;
 `;
 
@@ -115,10 +106,11 @@ const Input = styled.input`
   border: none;
   outline: none;
   font-size: 15px;
-  color: #333;
-
+  color: ${({ theme }) => theme.colors.textDark};
+  font-family: ${({ theme }) => theme.fonts.base};
+  background: transparent;
   &::placeholder {
-    color: #bbb;
+    color: ${({ theme }) => theme.colors.textLight};
   }
 `;
 
@@ -127,13 +119,14 @@ const TextArea = styled.textarea`
   border: none;
   outline: none;
   font-size: 15px;
-  color: #333;
+  color: ${({ theme }) => theme.colors.textDark};
+  font-family: ${({ theme }) => theme.fonts.base};
+  background: transparent;
   resize: none;
   min-height: 200px;
   line-height: 1.7;
-
   &::placeholder {
-    color: #bbb;
+    color: ${({ theme }) => theme.colors.textLight};
   }
 `;
 
@@ -148,18 +141,20 @@ const FileLabel = styled.label`
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 20px;
-  border-radius: 999px;
-  border: 1px solid #e5e7eb;
-  background: white;
-  color: #333;
+  padding: 9px 20px;
+  border-radius: ${({ theme }) => theme.radius.full};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  background: ${({ theme }) => theme.colors.white};
+  color: ${({ theme }) => theme.colors.textMid};
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   width: fit-content;
-
+  transition: all 0.15s;
   &:hover {
-    background: #f3f4f6;
+    background: ${({ theme }) => theme.colors.accentBlue};
+    border-color: ${({ theme }) => theme.colors.primary};
+    color: ${({ theme }) => theme.colors.primary};
   }
 `;
 
@@ -169,7 +164,7 @@ const FileInput = styled.input`
 
 const FileHint = styled.div`
   font-size: 12px;
-  color: #bbb;
+  color: ${({ theme }) => theme.colors.textLight};
 `;
 
 const FileList = styled.div`
@@ -184,23 +179,23 @@ const FileItem = styled.div`
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  background: #f9fafb;
-  border-radius: 8px;
+  background: ${({ theme }) => theme.colors.bgSection};
+  border-radius: ${({ theme }) => theme.radius.sm};
+  border: 1px solid ${({ theme }) => theme.colors.borderLight};
 `;
 
 const FileName = styled.span`
   font-size: 13px;
-  color: #444;
+  color: ${({ theme }) => theme.colors.textMid};
 `;
 
 const RemoveBtn = styled.button`
   font-size: 12px;
-  color: #999;
-  cursor: pointer;
+  color: ${({ theme }) => theme.colors.textLight};
   background: none;
   border: none;
+  cursor: pointer;
   padding: 0 4px;
-
   &:hover {
     color: #ef4444;
   }
@@ -213,31 +208,31 @@ const ButtonGroup = styled.div`
 `;
 
 const CancelButton = styled.button`
-  padding: 12px 28px;
-  border-radius: 999px;
-  border: 1px solid #e5e7eb;
-  background: white;
-  color: #333;
+  padding: 11px 28px;
+  border-radius: ${({ theme }) => theme.radius.full};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  background: ${({ theme }) => theme.colors.white};
+  color: ${({ theme }) => theme.colors.textMid};
   font-weight: 600;
-  cursor: pointer;
   font-size: 14px;
-
+  cursor: pointer;
+  transition: all 0.15s;
   &:hover {
-    background: #f3f4f6;
+    background: ${({ theme }) => theme.colors.bgSection};
   }
 `;
 
 const SubmitButton = styled.button`
-  padding: 12px 28px;
-  border-radius: 999px;
+  padding: 11px 28px;
+  border-radius: ${({ theme }) => theme.radius.full};
   border: none;
-  background: black;
+  background: ${({ theme }) => theme.colors.primary};
   color: white;
   font-weight: 600;
-  cursor: pointer;
   font-size: 14px;
-
+  cursor: pointer;
+  transition: background 0.15s;
   &:hover {
-    background: #222;
+    background: ${({ theme }) => theme.colors.primaryLight};
   }
 `;

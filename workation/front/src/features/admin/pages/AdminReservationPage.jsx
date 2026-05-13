@@ -1,6 +1,7 @@
 // src/features/admin/pages/AdminReservationPage.jsx
 import { useState } from 'react';
 import styled from 'styled-components';
+import { Calendar, Building2, Search, ChevronLeft as LucideChevronLeft, ChevronRight as LucideChevronRight, ExternalLink, Users } from 'lucide-react';
 import {
   RESERVATION_STAT_CARDS,
   RESERVATION_LIST,
@@ -27,19 +28,30 @@ export default function AdminReservationPage() {
         </PageTitleGroup>
       </PageHeader>
 
-      {/* ── 상단: 통계 카드 2개 + 검색창 ── */}
+      {/* ── 상단: 통계 카드 2개 ── */}
       <TopSection>
-        {RESERVATION_STAT_CARDS.map((card) => (
+        {RESERVATION_STAT_CARDS.map((card, idx) => (
           <StatCard key={card.id}>
+            <StatCardTop>
+              <StatIconWrap
+                $bg={idx === 0 ? 'rgba(59,130,246,0.1)' : 'rgba(34,197,94,0.1)'}
+                $color={idx === 0 ? '#2563eb' : '#16a34a'}
+              >
+                {idx === 0 ? <CalendarIcon /> : <BuildingStatIcon />}
+              </StatIconWrap>
+              <StatBadge $color={card.badge.color}>{card.badge.text}</StatBadge>
+            </StatCardTop>
             <StatLabel>{card.label}</StatLabel>
             <StatValueRow>
               <StatValue>{card.value}</StatValue>
-              <StatBadge $color={card.badge.color}>{card.badge.text}</StatBadge>
             </StatValueRow>
           </StatCard>
         ))}
+      </TopSection>
 
-        <SearchCard>
+      {/* ── 예약 검색 ── */}
+      <ResvSearchRow>
+        <ResvSearchWrap>
           <SearchIconWrap>
             <SearchSvg />
           </SearchIconWrap>
@@ -48,8 +60,8 @@ export default function AdminReservationPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-        </SearchCard>
-      </TopSection>
+        </ResvSearchWrap>
+      </ResvSearchRow>
 
       {/* ── 중단: 예약 테이블 ── */}
       <TableSection>
@@ -199,8 +211,8 @@ export default function AdminReservationPage() {
             value={companyName}
             onChange={(e) => setCompanyName(e.target.value)}
           />
-          <RegisterBtn>
-            ▌▌▌▌▌ (Register)
+          <RegisterBtn onClick={() => { if (companyName.trim()) setCompanyName(''); }}>
+            등록하기
           </RegisterBtn>
         </QuickRegisterCard>
       </BottomSection>
@@ -209,57 +221,14 @@ export default function AdminReservationPage() {
 }
 
 /* ── Icon Components ── */
-function SearchSvg() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="11" cy="11" r="8" />
-      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-    </svg>
-  );
-}
-function ChevronLeft() {
-  return (
-    <svg width="5" height="9" viewBox="0 0 6 10" fill="none" stroke="#475569" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="5 1 1 5 5 9" />
-    </svg>
-  );
-}
-function ChevronRight() {
-  return (
-    <svg width="5" height="9" viewBox="0 0 6 10" fill="none" stroke="#475569" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="1 1 5 5 1 9" />
-    </svg>
-  );
-}
-function ExternalLinkIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-      <polyline points="15 3 21 3 21 9" />
-      <line x1="10" y1="14" x2="21" y2="3" />
-    </svg>
-  );
-}
-function BuildingIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="18" height="18" rx="2" />
-      <path d="M9 22V12h6v10" />
-      <path d="M9 7h1" /><path d="M14 7h1" />
-      <path d="M9 11h1" /><path d="M14 11h1" />
-    </svg>
-  );
-}
-function PartnerGroupIcon() {
-  return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </svg>
-  );
-}
+function CalendarIcon() { return <Calendar size={20} />; }
+function BuildingStatIcon() { return <Building2 size={20} />; }
+function SearchSvg() { return <Search size={14} color="#9ca3af" />; }
+function ChevronLeft() { return <LucideChevronLeft size={14} color="#475569" strokeWidth={1.5} />; }
+function ChevronRight() { return <LucideChevronRight size={14} color="#475569" strokeWidth={1.5} />; }
+function ExternalLinkIcon() { return <ExternalLink size={14} color="#64748b" />; }
+function BuildingIcon() { return <Building2 size={16} />; }
+function PartnerGroupIcon() { return <Users size={28} color="#3b82f6" strokeWidth={1.8} />; }
 
 /* ── Styled Components ── */
 
@@ -280,35 +249,74 @@ const PageTitleGroup = styled.div`
 const PageTitle = styled.h1`
   font-size: 24px;
   font-weight: 500;
-  color: #0d1c2e;
+  color: ${({ theme }) => theme.colors.adminTextDark};
   letter-spacing: -0.24px;
   line-height: 1.33;
 `;
 
 const PageSub = styled.p`
   font-size: 14px;
-  color: #64748b;
+  color: ${({ theme }) => theme.colors.textMuted};
 `;
 
-/* 상단 통계 + 검색 */
+/* 상단 통계 */
 const TopSection = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr 2fr;
+  grid-template-columns: 1fr 1fr;
   gap: 16px;
 `;
 
+/* 예약 검색 */
+const ResvSearchRow = styled.div`
+  display: flex;
+  justify-content: flex-end;
+`;
+
+const ResvSearchWrap = styled.div`
+  width: 320px;
+  background: ${({ theme }) => theme.colors.white};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 8px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: ${({ theme }) => theme.shadows.card};
+`;
+
 const StatCard = styled.div`
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: ${({ theme }) => theme.colors.white};
+  border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 8px;
   padding: 20px 24px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: ${({ theme }) => theme.shadows.card};
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
+
+const StatCardTop = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+`;
+
+const StatIconWrap = styled.div`
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: ${({ $bg }) => $bg};
+  color: ${({ $color }) => $color};
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;
 
 const StatLabel = styled.p`
   font-size: 12px;
-  color: #64748b;
-  margin-bottom: 8px;
+  color: ${({ theme }) => theme.colors.textMuted};
+  margin-bottom: 4px;
 `;
 
 const StatValueRow = styled.div`
@@ -320,8 +328,8 @@ const StatValueRow = styled.div`
 const StatValue = styled.p`
   font-size: 28px;
   font-weight: 700;
-  color: #0d1c2e;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: ${({ theme }) => theme.colors.adminTextDark};
+  font-family: ${({ theme }) => theme.fonts.number};
   letter-spacing: -0.5px;
 `;
 
@@ -353,33 +361,33 @@ const SearchInput = styled.input`
   border: none;
   outline: none;
   font-size: 14px;
-  color: #0d1c2e;
+  color: ${({ theme }) => theme.colors.adminTextDark};
   font-family: inherit;
   background: none;
 
   &::placeholder {
-    color: #9ca3af;
+    color: ${({ theme }) => theme.colors.textLight};
   }
 `;
 
 /* 예약 테이블 */
 const TableSection = styled.div`
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: ${({ theme }) => theme.colors.white};
+  border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: ${({ theme }) => theme.shadows.card};
 `;
 
 const TableTitleRow = styled.div`
   padding: 20px 24px 16px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
 `;
 
 const TableTitle = styled.h2`
   font-size: 16px;
   font-weight: 600;
-  color: #0d1c2e;
+  color: ${({ theme }) => theme.colors.adminTextDark};
 `;
 
 const Table = styled.table`
@@ -388,14 +396,14 @@ const Table = styled.table`
 `;
 
 const THead = styled.thead`
-  background: #f8fafc;
-  border-bottom: 1px solid #f1f5f9;
+  background: ${({ theme }) => theme.colors.bgSection};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
 `;
 
 const TBody = styled.tbody``;
 
 const TR = styled.tr`
-  border-top: ${({ $hoverable }) => ($hoverable ? '1px solid #f1f5f9' : 'none')};
+  border-top: ${({ $hoverable, theme }) => ($hoverable ? `1px solid ${theme.colors.borderLight}` : 'none')};
   transition: background 0.1s;
   &:hover {
     background: ${({ $hoverable }) => ($hoverable ? '#fafbfc' : 'transparent')};
@@ -407,7 +415,7 @@ const TH = styled.th`
   text-align: left;
   font-size: 12px;
   font-weight: 600;
-  color: #64748b;
+  color: ${({ theme }) => theme.colors.textMuted};
   letter-spacing: 0.4px;
   white-space: nowrap;
 `;
@@ -420,8 +428,8 @@ const TD = styled.td`
 const ResvId = styled.span`
   font-size: 13px;
   font-weight: 500;
-  color: #0f172a;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: ${({ theme }) => theme.colors.adminTextDark};
+  font-family: ${({ theme }) => theme.fonts.number};
 `;
 
 const CustomerCell = styled.div`
@@ -440,7 +448,7 @@ const CustomerAvatar = styled.div`
   justify-content: center;
   font-size: 12px;
   font-weight: 600;
-  color: #244c54;
+  color: ${({ theme }) => theme.colors.adminPrimary};
   flex-shrink: 0;
 `;
 
@@ -453,12 +461,12 @@ const CustomerInfo = styled.div`
 const CustomerName = styled.span`
   font-size: 13px;
   font-weight: 600;
-  color: #0d1c2e;
+  color: ${({ theme }) => theme.colors.adminTextDark};
 `;
 
 const CustomerEmail = styled.span`
   font-size: 11px;
-  color: #94a3b8;
+  color: ${({ theme }) => theme.colors.textLight};
 `;
 
 const SpaceName = styled.span`
@@ -468,8 +476,8 @@ const SpaceName = styled.span`
 
 const DateText = styled.span`
   font-size: 12px;
-  color: #64748b;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: ${({ theme }) => theme.colors.textMuted};
+  font-family: ${({ theme }) => theme.fonts.number};
   white-space: pre-line;
   line-height: 1.5;
 `;
@@ -477,8 +485,8 @@ const DateText = styled.span`
 const AmountText = styled.span`
   font-size: 13px;
   font-weight: 600;
-  color: #0d1c2e;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: ${({ theme }) => theme.colors.adminTextDark};
+  font-family: ${({ theme }) => theme.fonts.number};
 `;
 
 const StatusBadge = styled.span`
@@ -496,14 +504,14 @@ const TableFooter = styled.div`
   align-items: center;
   justify-content: space-between;
   padding: 12px 24px;
-  background: #f8fafc;
-  border-top: 1px solid #f1f5f9;
+  background: ${({ theme }) => theme.colors.bgSection};
+  border-top: 1px solid ${({ theme }) => theme.colors.borderLight};
 `;
 
 const FooterInfo = styled.p`
   font-size: 12px;
-  color: #64748b;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: ${({ theme }) => theme.colors.textMuted};
+  font-family: ${({ theme }) => theme.fonts.number};
 `;
 
 const Pagination = styled.div`
@@ -516,9 +524,9 @@ const PageBtn = styled.button`
   height: 28px;
   padding: 0 8px;
   border-radius: 4px;
-  border: ${({ $active }) => ($active ? 'none' : '1px solid #e2e8f0')};
-  background: ${({ $active }) => ($active ? '#244c54' : 'white')};
-  color: ${({ $active }) => ($active ? 'white' : '#475569')};
+  border: ${({ $active, theme }) => ($active ? 'none' : `1px solid ${theme.colors.border}`)};
+  background: ${({ $active, theme }) => ($active ? theme.colors.adminPrimary : theme.colors.white)};
+  color: ${({ $active, theme }) => ($active ? theme.colors.white : theme.colors.textMid)};
   font-size: 12px;
   font-weight: 600;
   display: flex;
@@ -526,9 +534,9 @@ const PageBtn = styled.button`
   justify-content: center;
   transition: all 0.15s;
   opacity: ${({ disabled }) => (disabled ? 0.4 : 1)};
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: ${({ theme }) => theme.fonts.number};
   &:hover:not(:disabled) {
-    background: ${({ $active }) => ($active ? '#244c54' : '#f8fafc')};
+    background: ${({ $active, theme }) => ($active ? theme.colors.adminPrimary : theme.colors.bgSection)};
   }
 `;
 
@@ -540,14 +548,14 @@ const PartnerSearchRow = styled.div`
 
 const PartnerSearchWrap = styled.div`
   width: 320px;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: ${({ theme }) => theme.colors.white};
+  border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 8px;
   padding: 10px 16px;
   display: flex;
   align-items: center;
   gap: 10px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: ${({ theme }) => theme.shadows.card};
 `;
 
 /* 하단 3열 */
@@ -559,11 +567,11 @@ const BottomSection = styled.div`
 
 /* 활성 파트너사 카드 */
 const ActivePartnerCard = styled.div`
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: ${({ theme }) => theme.colors.white};
+  border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 8px;
   padding: 28px 24px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: ${({ theme }) => theme.shadows.card};
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -582,14 +590,14 @@ const PartnerIconWrap = styled.div`
 
 const ActiveLabel = styled.p`
   font-size: 13px;
-  color: #64748b;
+  color: ${({ theme }) => theme.colors.textMuted};
 `;
 
 const ActiveCount = styled.p`
   font-size: 40px;
   font-weight: 700;
-  color: #0d1c2e;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: ${({ theme }) => theme.colors.adminTextDark};
+  font-family: ${({ theme }) => theme.fonts.number};
   line-height: 1.2;
   display: flex;
   align-items: baseline;
@@ -599,22 +607,22 @@ const ActiveCount = styled.p`
 const ActiveUnit = styled.span`
   font-size: 18px;
   font-weight: 500;
-  color: #475569;
+  color: ${({ theme }) => theme.colors.textMid};
 `;
 
 const ActiveDesc = styled.p`
   font-size: 12px;
-  color: #94a3b8;
+  color: ${({ theme }) => theme.colors.textLight};
   line-height: 1.6;
 `;
 
 /* 파트너사 목록 카드 */
 const PartnerListCard = styled.div`
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: ${({ theme }) => theme.colors.white};
+  border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 8px;
   padding: 20px 24px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: ${({ theme }) => theme.shadows.card};
 `;
 
 const PartnerListHeader = styled.div`
@@ -627,7 +635,7 @@ const PartnerListHeader = styled.div`
 const PartnerListTitle = styled.h3`
   font-size: 15px;
   font-weight: 600;
-  color: #0d1c2e;
+  color: ${({ theme }) => theme.colors.adminTextDark};
 `;
 
 const ExternalLinkBtn = styled.button`
@@ -638,7 +646,7 @@ const ExternalLinkBtn = styled.button`
   height: 28px;
   border-radius: 6px;
   transition: background 0.15s;
-  &:hover { background: #f1f5f9; }
+  &:hover { background: ${({ theme }) => theme.colors.borderLight}; }
 `;
 
 const PartnerList = styled.div`
@@ -652,7 +660,7 @@ const PartnerItem = styled.div`
   align-items: center;
   gap: 12px;
   padding: 12px;
-  border: 1px solid #f1f5f9;
+  border: 1px solid ${({ theme }) => theme.colors.borderLight};
   border-radius: 8px;
   background: #fafbfc;
 `;
@@ -679,12 +687,12 @@ const CompanyInfo = styled.div`
 const CompanyName = styled.span`
   font-size: 13px;
   font-weight: 600;
-  color: #0d1c2e;
+  color: ${({ theme }) => theme.colors.adminTextDark};
 `;
 
 const CompanyResvCount = styled.span`
   font-size: 11px;
-  color: #94a3b8;
+  color: ${({ theme }) => theme.colors.textLight};
 `;
 
 const ActiveBadge = styled.span`
@@ -698,11 +706,11 @@ const ActiveBadge = styled.span`
 
 /* 신규 기업 빠른 등록 */
 const QuickRegisterCard = styled.div`
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: ${({ theme }) => theme.colors.white};
+  border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 8px;
   padding: 20px 24px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: ${({ theme }) => theme.shadows.card};
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -711,40 +719,41 @@ const QuickRegisterCard = styled.div`
 const QuickRegisterTitle = styled.h3`
   font-size: 15px;
   font-weight: 600;
-  color: #0d1c2e;
+  color: ${({ theme }) => theme.colors.adminTextDark};
   margin-bottom: 4px;
 `;
 
 const FormLabel = styled.label`
   font-size: 12px;
-  color: #64748b;
+  color: ${({ theme }) => theme.colors.textMuted};
 `;
 
 const FormInput = styled.input`
   width: 100%;
   padding: 10px 14px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 8px;
   font-size: 13px;
-  color: #0d1c2e;
+  color: ${({ theme }) => theme.colors.adminTextDark};
   font-family: inherit;
   outline: none;
   transition: border-color 0.15s;
-
-  &::placeholder { color: #cbd5e1; }
-  &:focus { border-color: #244c54; }
+  box-sizing: border-box;
+  &::placeholder { color: ${({ theme }) => theme.colors.textLight}; }
+  &:focus { border-color: ${({ theme }) => theme.colors.adminPrimary}; }
 `;
 
 const RegisterBtn = styled.button`
   width: 100%;
   padding: 12px;
-  background: #1a3540;
-  color: white;
+  background: ${({ theme }) => theme.colors.adminPrimary};
+  color: ${({ theme }) => theme.colors.white};
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
   font-family: inherit;
   margin-top: 4px;
   transition: background 0.15s;
-  &:hover { background: #244c54; }
+  &:hover { background: ${({ theme }) => theme.colors.adminPrimaryLight}; }
 `;
+

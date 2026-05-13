@@ -1,5 +1,8 @@
 // src/features/admin/data/adminSellersData.js
 
+/* ==========================================
+   [MOCK DATA] 서버 연결 시 삭제/대체 필요
+   ========================================== */
 export const SELLERS_STAT_CARDS = [
   {
     id: 1,
@@ -39,6 +42,9 @@ export const SELLERS_STAT_CARDS = [
   },
 ];
 
+/* ==========================================
+   [CONSTANTS] 서버 연결 후에도 유지 (UI 설정값)
+   ========================================== */
 export const SELLER_STATUS_MAP = {
   active:  { label: '활동 중', bg: '#dcfce7', color: '#15803d' },
   stopped: { label: '정지됨',  bg: '#fee2e2', color: '#b91c1c' },
@@ -51,11 +57,15 @@ export const CATEGORY_ICONS = {
   '캠핑/글램핑': 'camping',
 };
 
+/* ==========================================
+   [MOCK DATA] 서버 연결 시 삭제/대체 필요
+   ========================================== */
 export const SELLERS_LIST = [
   {
     id: 'ST-20231024',
     name: '스테이 제주 본점',
-    category: '숙박/호텔',
+    sellerName: '김민준',
+    businessNo: '123-45-67890',
     phone: '010-1234-5678',
     joinedAt: '2023.10.24',
     transactions: 1420,
@@ -64,27 +74,30 @@ export const SELLERS_LIST = [
   {
     id: 'ST-20231102',
     name: '워케이션 웍스',
-    category: '공유오피스',
+    sellerName: '이서윤',
+    businessNo: '234-56-78901',
     phone: '02-987-6543',
     joinedAt: '2023.11.02',
     transactions: 856,
     status: 'active',
   },
   {
-    id: 'ST-20231115',
+    id: 'ST-20260315',
     name: '해변의 정원',
-    category: '카페/식음료',
+    sellerName: '박지후',
+    businessNo: '345-67-89012',
     phone: '010-5555-4444',
-    joinedAt: '2023.11.15',
+    joinedAt: '2026.03.15',
     transactions: 230,
     status: 'stopped',
   },
   {
-    id: 'ST-20231120',
+    id: 'ST-20260420',
     name: '포레스트 캠핑',
-    category: '캠핑/글램핑',
+    sellerName: '최수아',
+    businessNo: '456-78-90123',
     phone: '010-7777-8888',
-    joinedAt: '2023.11.20',
+    joinedAt: '2026.04.20',
     transactions: 45,
     status: 'active',
   },
