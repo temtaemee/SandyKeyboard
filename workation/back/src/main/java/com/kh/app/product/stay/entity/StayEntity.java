@@ -23,7 +23,7 @@ public class StayEntity extends BaseEntity {
     private Long id;
 
     @JoinColumn(name = "SPACE_ID")
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private SpaceEntity space;
 
     @Column(length = 100 , nullable = false , unique = true)

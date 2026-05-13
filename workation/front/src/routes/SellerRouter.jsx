@@ -15,8 +15,7 @@ export default function SellerRouter() {
     <Routes>
       {/* 예시: login */}
       <Route index element={<SellerDashboardPage />} />
-
-      {/* ↓ 여기에 추가적인 유저 관련 라우트를 작성하세요 */}
+      <Route path="spaces" element={<SellerHomePage />} /> {/* ← 추가 */}
     </Routes>
   );
 }

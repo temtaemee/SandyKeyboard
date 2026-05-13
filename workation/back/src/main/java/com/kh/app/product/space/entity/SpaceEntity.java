@@ -64,7 +64,19 @@ public class SpaceEntity extends BaseEntity {
         this.visibleYn = visibleYn;
     }
 
-
+    public void update(String name, String phone, String email, String summary, String description,
+                       String address1, String address2, BigDecimal latitude, BigDecimal longitude, Area area) {
+        this.name = name;
+        this.phone = phone;
+        this.email = email;
+        this.summary = summary;
+        this.description = description;
+        this.address1 = address1;
+        this.address2 = address2;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.area = area;
+    }
 
 
 
