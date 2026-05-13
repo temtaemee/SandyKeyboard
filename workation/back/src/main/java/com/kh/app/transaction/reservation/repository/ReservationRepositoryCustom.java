@@ -6,5 +6,6 @@ import java.util.Optional;
 
 public interface ReservationRepositoryCustom {
 
+
     Optional<ReservationEntity> getOneById(Long id);
 }

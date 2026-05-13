@@ -4,12 +4,17 @@ import com.kh.app.member.entity.MemberEntity;
 import com.kh.app.member.repository.MemberRepository;
 import com.kh.app.security.user.CustomUserDetails;
 import com.kh.app.transaction.reservation.dto.request.ReservationCreateReqDto;
+import com.kh.app.transaction.reservation.dto.response.ReservationResDto;
 import com.kh.app.transaction.reservation.entity.ReservationEntity;
 import com.kh.app.transaction.reservation.entity.ReserveFileEntity;
 import com.kh.app.transaction.reservation.repository.ReservationRepository;
 import com.kh.app.transaction.reservation.repository.ReserveFileRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,19 +34,13 @@ public class ReservationService {
 
     @Transactional
     public Long create(
-            CustomUserDetails userDetails,
+            String username,
             ReservationCreateReqDto dto,
             List<MultipartFile> files
     ) {
-
-
-
-        // 로그인 회원 조회
-        MemberEntity member = memberRepository
-                .findByUsername(userDetails.getUsername())
-                .orElseThrow(() ->
-                        new IllegalArgumentException("회원이 존재하지 않습니다.")
-                );
+        MemberEntity memberEntity = memberRepository
+                .findByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException("MEMBER NOT FOUND ........"));
 
         // 날짜 검증
         if (dto.getCheckinDate().isAfter(dto.getCheckoutDate())) {
@@ -66,7 +65,7 @@ public class ReservationService {
         // 예약 생성
         ReservationEntity reservation =
                 dto.toEntity(
-                        member,
+                        memberEntity,
                         null,
                         originalPrice,
                         discountAmount,
@@ -110,5 +109,25 @@ public class ReservationService {
         }
 
         return reservation.getId();
+    }
+
+    public Page<ReservationResDto> getList(
+            String username,
+            int pno
+    ) {
+
+        MemberEntity memberEntity = memberRepository
+                .findByUsername(username)
+                .orElseThrow(() ->
+                        new EntityNotFoundException(
+                                "MEMBER NOT FOUND"
+                        )
+                );
+
+        Pageable pageable = PageRequest.of(pno, 10);
+
+        return reservationRepository
+                .findByMember(memberEntity, pageable)
+                .map(ReservationResDto::from);
     }
 }
