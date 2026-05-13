@@ -130,4 +130,32 @@ public class ReservationService {
                 .findByMember(memberEntity, pageable)
                 .map(ReservationResDto::from);
     }
+
+    public ReservationResDto getOne(
+            Long id,
+            String username
+    ) {
+
+        MemberEntity memberEntity = memberRepository
+                .findByUsername(username)
+                .orElseThrow(() ->
+                        new EntityNotFoundException(
+                                "MEMBER NOT FOUND"
+                        )
+                );
+
+        ReservationEntity entity =
+                reservationRepository
+                        .findByIdAndMember(
+                                id,
+                                memberEntity
+                        )
+                        .orElseThrow(() ->
+                                new EntityNotFoundException(
+                                        "RESERVATION NOT FOUND"
+                                )
+                        );
+
+        return ReservationResDto.from(entity);
+    }
 }

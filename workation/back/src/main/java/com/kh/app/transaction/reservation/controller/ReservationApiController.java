@@ -37,7 +37,6 @@ public class ReservationApiController {
                 .body(reservationId);
     }
 
-/// ///////////////////////////////////////////////////////////////////////////////////////////////////
 
     @GetMapping("/user/reservation")
     public ResponseEntity<?> getReservations( @RequestParam(defaultValue = "0") int pno) {
@@ -48,4 +47,17 @@ public class ReservationApiController {
         return ResponseEntity.ok(dtoList);
 
     }
+
+    @GetMapping("/user/reservation/{id}")
+    public ResponseEntity<ReservationResDto> getOne(@PathVariable Long id){
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        ReservationResDto resDto =reservationService.getOne(id ,username);
+        return ResponseEntity.ok(resDto);
+    }
+
+
+
+
+
+
 }
