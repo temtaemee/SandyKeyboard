@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -157,5 +158,41 @@ public class ReservationService {
                         );
 
         return ReservationResDto.from(entity);
+    }
+    @Transactional
+    public void update(
+            Long id,
+            ReservationCreateReqDto reqDto,
+            String username
+    ) {
+
+        MemberEntity memberEntity = memberRepository
+                .findByUsername(username)
+                .orElseThrow(() ->
+                        new EntityNotFoundException(
+                                "MEMBER NOT FOUND"
+                        )
+                );
+
+        ReservationEntity entity =
+                reservationRepository
+                        .findById(id)
+                        .orElseThrow(() ->
+                                new EntityNotFoundException(
+                                        "RESERVATION NOT FOUND"
+                                )
+                        );
+
+        // 작성자 검증
+        if (!entity.getMember().getId()
+                .equals(memberEntity.getId())) {
+
+            throw new AccessDeniedException(
+                    "예약 수정 권한이 없습니다."
+            );
+        }
+
+        // 엔티티 수정
+        entity.update(reqDto);
     }
 }

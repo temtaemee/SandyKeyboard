@@ -24,13 +24,12 @@ public class ReservationApiController {
 
     @PostMapping("/user/reservation")
     public ResponseEntity<Long> create(
-
             @ModelAttribute("dto") ReservationCreateReqDto dto,
             @RequestParam(value = "files", required = false) List<MultipartFile> files
     ) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        Long reservationId = reservationService.create(username,dto, files);
+        Long reservationId = reservationService.create(username, dto, files);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -39,25 +38,29 @@ public class ReservationApiController {
 
 
     @GetMapping("/user/reservation")
-    public ResponseEntity<?> getReservations( @RequestParam(defaultValue = "0") int pno) {
+    public ResponseEntity<?> getReservations(@RequestParam(defaultValue = "0") int pno) {
 
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        Page<ReservationResDto> dtoList=reservationService.getList(username , pno);
+        Page<ReservationResDto> dtoList = reservationService.getList(username, pno);
 
         return ResponseEntity.ok(dtoList);
 
     }
 
     @GetMapping("/user/reservation/{id}")
-    public ResponseEntity<ReservationResDto> getOne(@PathVariable Long id){
+    public ResponseEntity<ReservationResDto> getOne(@PathVariable Long id) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        ReservationResDto resDto =reservationService.getOne(id ,username);
+        ReservationResDto resDto = reservationService.getOne(id, username);
         return ResponseEntity.ok(resDto);
     }
 
-
-
-
+    @PutMapping("/user/reservation/{id}")
+    public ResponseEntity<Object> update(@PathVariable Long id, @RequestBody ReservationCreateReqDto dto)
+    {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        reservationService.update(id ,dto ,username);
+        return ResponseEntity.ok().build();
+    }
 
 
 }
