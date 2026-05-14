@@ -2,21 +2,20 @@ package com.kh.app.transaction.reservation.dto.request;
 
 import com.kh.app.member.entity.MemberEntity;
 import com.kh.app.middle.coupon.entity.CouponEntity;
+import com.kh.app.product.office.entity.OfficeEntity;
+import com.kh.app.product.stay.entity.StayEntity;
 import com.kh.app.transaction.reservation.entity.ReservationEntity;
 import com.kh.app.transaction.reservation.entity.ReservationStatus;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+
 @Setter
 @Getter
 public class ReservationCreateReqDto {
 
     private Long couponId;
-
-    private Long stayId;
-
-    private Long officeId;
 
     private Integer guestCount;
 
@@ -33,6 +32,8 @@ public class ReservationCreateReqDto {
     public ReservationEntity toEntity(
             MemberEntity member,
             CouponEntity coupon,
+            StayEntity stay,
+            OfficeEntity office,
             Long originalPrice,
             Long discountAmount,
             Long totalPrice
@@ -41,8 +42,8 @@ public class ReservationCreateReqDto {
         return ReservationEntity.builder()
                 .member(member)
                 .coupon(coupon)
-                .stayId(stayId)
-                .officeId(officeId)
+                .stay(stay)
+                .office(office)
                 .guestCount(guestCount)
                 .reserverName(reserverName)
                 .checkinDate(checkinDate)

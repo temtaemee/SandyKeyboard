@@ -2,6 +2,7 @@ package com.kh.app.transaction.reservation.controller;
 
 import com.kh.app.transaction.reservation.dto.request.ReservationCreateReqDto;
 import com.kh.app.transaction.reservation.dto.response.ReservationResDto;
+import com.kh.app.transaction.reservation.entity.ProductType;
 import com.kh.app.transaction.reservation.service.ReservationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,14 +23,26 @@ public class ReservationApiController {
 
     private final ReservationService reservationService;
 
-    @PostMapping("/user/reservation")
+    @PostMapping("/{productType}/{productId}/reservation")
     public ResponseEntity<Long> create(
-            @ModelAttribute("dto") ReservationCreateReqDto dto,
-            @RequestParam(value = "files", required = false) List<MultipartFile> files
+            @PathVariable ProductType productType,
+            @PathVariable Long productId,
+            @ModelAttribute ReservationCreateReqDto dto,
+            @RequestParam(value = "files", required = false)
+            List<MultipartFile> files
     ) {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        Long reservationId = reservationService.create(username, dto, files);
+        String username = SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getName();
+
+        Long reservationId = reservationService.create(
+                username,
+                productType,
+                productId,
+                dto,
+                files
+        );
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)

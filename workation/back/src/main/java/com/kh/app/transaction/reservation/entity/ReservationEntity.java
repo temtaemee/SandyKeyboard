@@ -2,6 +2,8 @@ package com.kh.app.transaction.reservation.entity;
 
 import com.kh.app.member.entity.MemberEntity;
 import com.kh.app.middle.coupon.entity.CouponEntity;
+import com.kh.app.product.office.entity.OfficeEntity;
+import com.kh.app.product.stay.entity.StayEntity;
 import com.kh.app.transaction.reservation.dto.request.ReservationCreateReqDto;
 import jakarta.persistence.*;
 import lombok.*;
@@ -28,19 +30,14 @@ public class ReservationEntity {
     @JoinColumn
     private CouponEntity coupon;
 
-    //    @ManyToOne(fetch = FetchType.LAZY)
-    //    @JoinColumn
-    //    private StayEntity stay;
-    //
-    //    @ManyToOne(fetch = FetchType.LAZY)
-    //    @JoinColumn
-    //    private OfficeEntity office;
-///  /////////////////////////////
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn
+    private StayEntity stay;
 
-    private Long stayId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn
+    private OfficeEntity office;
 
-    private Long officeId;
-    /// //////////////////////////////////////
 
     @Column(nullable = false)
     private Integer guestCount;
@@ -97,6 +94,9 @@ public class ReservationEntity {
 
     @PrePersist
     private void prePersist() {
+        if (stay.getId() == null && office.getId() == null) {
+            throw new IllegalStateException("예약 대상이 없습니다.");
+        }
 
         if (this.status == null) {
             this.status = ReservationStatus.PENDING;
@@ -107,16 +107,16 @@ public class ReservationEntity {
 
     @PreUpdate
     private void validateTarget() {
-        if (stayId == null && officeId == null) {
+        if (stay.getId() == null && office.getId() == null) {
             throw new IllegalStateException("예약 대상이 없습니다.");
         }
     }
 
 
     public void update(ReservationCreateReqDto reqDto) {
-        this.reserverName=reqDto.getReserverName();
-        this.reserverPhone=reqDto.getReserverPhone();
-        this.reserverEmail=reqDto.getReserverEmail();
+        this.reserverName = reqDto.getReserverName();
+        this.reserverPhone = reqDto.getReserverPhone();
+        this.reserverEmail = reqDto.getReserverEmail();
 
     }
 }
