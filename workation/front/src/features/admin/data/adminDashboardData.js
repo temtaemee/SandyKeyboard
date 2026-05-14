@@ -3,6 +3,7 @@
 /* ==========================================
    [MOCK DATA] 서버 연결 시 삭제/대체 필요
    ========================================== */
+
 export const ADMIN_STAT_CARDS = [
   {
     id: 1,
@@ -120,37 +121,11 @@ export const RECENT_PAYMENTS = [
   },
 ];
 
-/* ==========================================
-   [CONSTANTS] 서버 연결 후에도 유지 (UI 설정값)
-   ========================================== */
-export const PAYMENT_STATUS_MAP = {
-  paid: { label: '결제완료', bg: '#dcfce7', color: '#15803d' },
-  pending: { label: '결제대기', bg: '#ffedd5', color: '#c2410c' },
-  refunded: { label: '환불완료', bg: '#fee2e2', color: '#b91c1c' },
-  shipping: { label: '배송중', bg: '#dbeafe', color: '#1d4ed8' },
-};
-
-export const ADMIN_NAV_ITEMS = [
-  { id: 'dashboard', label: '매출', path: '/admin/dashboard', icon: 'chart' },
-  {
-    id: 'reservations',
-    label: '예약/기업 관리',
-    path: '/admin/reservations',
-    icon: 'bookmark',
-  },
-  {
-    id: 'accounts',
-    label: '계정/판매자 관리',
-    path: '/admin/accounts',
-    icon: 'users',
-  },
-  { id: 'spaces', label: '숙소 관리', path: '/admin/spaces', icon: 'home' },
-  { id: 'board', label: '게시판 관리', path: '/admin/board', icon: 'file' },
-  { id: 'sales', label: '정산', path: '/admin/sales', icon: 'coin' },
+/* ── 알림 목데이터 ── */
+export const NOTIFICATIONS = [
+  { id: 1, type: 'warning', title: '긴급 정산 지연 건 발생', desc: 'ST-20231115 해변의 정원 — 3일 이상 지연 중', time: '방금 전', unread: true },
+  { id: 2, type: 'info', title: '신규 판매자 가입 승인 요청', desc: '포레스트 캠핑 외 2건 승인 대기 중입니다.', time: '12분 전', unread: true },
+  { id: 3, type: 'info', title: '이달 신규 고객 급증 알림', desc: '이번 달 신규 가입자가 342명으로 전달 대비 12% 증가했습니다.', time: '1시간 전', unread: true },
+  { id: 4, type: 'success', title: '숙소 승인 처리 완료', desc: '오션 브리즈 리조트 신규 등록이 승인되었습니다.', time: '3시간 전', unread: false },
+  { id: 5, type: 'info', title: '시스템 점검 예정 안내', desc: '2024.06.01 02:00 ~ 04:00 정기 점검이 예정되어 있습니다.', time: '어제', unread: false },
 ];
-
-export const STATUS_MAP = {
-  success: { label: '성공', bg: '#dcfce7', color: '#15803d' },
-  pending: { label: '대기', bg: '#ffedd5', color: '#c2410c' },
-  failed: { label: '실패', bg: '#fee2e2', color: '#b91c1c' },
-};

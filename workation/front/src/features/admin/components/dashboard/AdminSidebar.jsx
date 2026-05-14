@@ -1,7 +1,7 @@
 // src/features/admin/components/dashboard/AdminSidebar.jsx
 import { NavLink } from 'react-router-dom';
 import styled from 'styled-components';
-import { ADMIN_NAV_ITEMS } from '../../data/adminDashboardData';
+import { ADMIN_NAV_ITEMS } from '../../data/adminDashboardConstants';
 import { BarChart2, Home, Bookmark, Users, FileText, DollarSign, HelpCircle, LogOut, List } from 'lucide-react';
 
 const ICONS = {

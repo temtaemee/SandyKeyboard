@@ -3,13 +3,8 @@ import { useState } from 'react';
 import styled from 'styled-components';
 import { Search, Bell, X, Settings } from 'lucide-react';
 
-const NOTIFICATIONS = [
-  { id: 1, type: 'warning', title: '긴급 정산 지연 건 발생', desc: 'ST-20231115 해변의 정원 — 3일 이상 지연 중', time: '방금 전', unread: true },
-  { id: 2, type: 'info', title: '신규 판매자 가입 승인 요청', desc: '포레스트 캠핑 외 2건 승인 대기 중입니다.', time: '12분 전', unread: true },
-  { id: 3, type: 'info', title: '이달 신규 고객 급증 알림', desc: '이번 달 신규 가입자가 342명으로 전달 대비 12% 증가했습니다.', time: '1시간 전', unread: true },
-  { id: 4, type: 'success', title: '숙소 승인 처리 완료', desc: '오션 브리즈 리조트 신규 등록이 승인되었습니다.', time: '3시간 전', unread: false },
-  { id: 5, type: 'info', title: '시스템 점검 예정 안내', desc: '2024.06.01 02:00 ~ 04:00 정기 점검이 예정되어 있습니다.', time: '어제', unread: false },
-];
+import { NOTIFICATIONS } from '../../data/adminDashboardData';
+import { NOTIF_TYPE_COLOR } from '../../data/adminDashboardConstants';
 
 export default function AdminHeader() {
   const [search, setSearch] = useState('');
@@ -217,7 +212,7 @@ const AdminRole = styled.p`
 `;
 
 /* ── 알림 모달 ── */
-const NOTIF_TYPE_COLOR = { warning: '#ef4444', info: '#3b82f6', success: '#16a34a' };
+
 
 const NotifOverlay = styled.div`
   position: fixed;

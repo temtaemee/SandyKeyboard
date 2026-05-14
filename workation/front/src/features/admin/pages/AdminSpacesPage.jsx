@@ -4,15 +4,21 @@ import styled from 'styled-components';
 import { Home, CheckCircle, AlertTriangle, Filter, Trash2 } from 'lucide-react';
 import {
   SPACES_STAT_CARDS,
-  SPACES_STATUS_MAP,
   SPACES_LIST,
 } from '../data/adminSpacesData';
+import {
+  SPACES_STATUS_MAP,
+} from '../data/adminSpacesConstants';
+import usePagination from '../hooks/usePagination';
+import AdminPagination from '../components/common/AdminPagination';
+import StatusBadge from '../components/common/StatusBadge';
+import ConfirmModal from '../components/common/ConfirmModal';
 
 const TOTAL = 1284;
 const TOTAL_PAGES = 12;
 
 export default function AdminSpacesPage() {
-  const [currentPage, setCurrentPage] = useState(1);
+  const { currentPage, goToPage, goToPrev, goToNext } = usePagination();
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [spaces, setSpaces] = useState(SPACES_LIST);
 
@@ -142,68 +148,36 @@ export default function AdminSpacesPage() {
 
         {/* 페이지네이션 */}
         <TableFooter>
-          <PrevBtn
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-          >
-            &lt; 이전
-          </PrevBtn>
-          <Pagination>
-            {[1, 2, 3].map((p) => (
-              <PageBtn
-                key={p}
-                $active={currentPage === p}
-                onClick={() => setCurrentPage(p)}
-              >
-                {p}
-              </PageBtn>
-            ))}
-            <PageEllipsis>...</PageEllipsis>
-            <PageBtn
-              $active={currentPage === 12}
-              onClick={() => setCurrentPage(12)}
-            >
-              12
-            </PageBtn>
-          </Pagination>
-          <NextBtn
-            onClick={() => setCurrentPage((p) => Math.min(TOTAL_PAGES, p + 1))}
-            disabled={currentPage === TOTAL_PAGES}
-          >
-            다음 &gt;
-          </NextBtn>
+          <AdminPagination
+            currentPage={currentPage}
+            totalPages={TOTAL_PAGES}
+            onPageChange={goToPage}
+          />
         </TableFooter>
       </TableSection>
 
       {/* ── 삭제 확인 모달 ── */}
-      {deleteTargetId !== null && (
-        <ModalOverlay onClick={() => setDeleteTargetId(null)}>
-          <Modal onClick={(e) => e.stopPropagation()}>
-            <ModalTitle>숙소를 삭제하시겠습니까?</ModalTitle>
-            <ModalDesc>
-              삭제된 숙소는 복구할 수 없습니다.
-            </ModalDesc>
-            <ModalActions>
-              <ModalCancelBtn onClick={() => setDeleteTargetId(null)}>
-                취소
-              </ModalCancelBtn>
-              <ModalDeleteBtn onClick={handleDeleteConfirm}>
-                삭제
-              </ModalDeleteBtn>
-            </ModalActions>
-          </Modal>
-        </ModalOverlay>
-      )}
+      <ConfirmModal
+        isOpen={deleteTargetId !== null}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={handleDeleteConfirm}
+        title="숙소를 삭제하시겠습니까?"
+        description="삭제된 숙소는 복구할 수 없습니다."
+        isDanger={true}
+        confirmText="삭제"
+        icon={<TrashIcon size={24} color="#ef4444" />}
+      />
     </PageWrapper>
   );
 }
+
+function TrashIcon({ size = 14, color }) { return <Trash2 size={size} color={color} />; }
 
 /* ── Icon Components ── */
 function SpaceIcon() { return <Home size={20} />; }
 function CheckCircleIcon() { return <CheckCircle size={20} />; }
 function AlertIcon() { return <AlertTriangle size={20} />; }
 function FilterIcon() { return <Filter size={13} />; }
-function TrashIcon() { return <Trash2 size={14} />; }
 
 /* ── Styled Components ── */
 
@@ -438,17 +412,6 @@ const DateText = styled.span`
   font-family: 'Plus Jakarta Sans', sans-serif;
 `;
 
-const StatusBadge = styled.span`
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 500;
-  background: ${({ $bg }) => $bg};
-  color: ${({ $color }) => $color};
-  white-space: nowrap;
-`;
-
 const ActionGroup = styled.div`
   display: flex;
   align-items: center;
@@ -470,126 +433,11 @@ const IconBtn = styled.button`
   }
 `;
 
-/* 페이지네이션 */
+/* 페이지네이션 푸터 */
 const TableFooter = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
   padding: 16px 20px;
   border-top: 1px solid #f1f5f9;
   background: #f8fafc;
 `;
 
-const PrevBtn = styled.button`
-  font-size: 13px;
-  font-weight: 500;
-  color: ${({ disabled }) => (disabled ? '#cbd5e1' : '#475569')};
-  padding: 6px 12px;
-  border-radius: 6px;
-  border: 1px solid ${({ disabled }) => (disabled ? '#f1f5f9' : '#e2e8f0')};
-  background: white;
-  font-family: inherit;
-  transition: background 0.15s;
-  &:hover:not(:disabled) { background: #f8fafc; }
-`;
-
-const NextBtn = styled(PrevBtn)``;
-
-const Pagination = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 4px;
-`;
-
-const PageBtn = styled.button`
-  min-width: 32px;
-  height: 32px;
-  padding: 0 8px;
-  border-radius: 6px;
-  border: ${({ $active }) => ($active ? 'none' : '1px solid #e2e8f0')};
-  background: ${({ $active }) => ($active ? '#244c54' : 'white')};
-  color: ${({ $active }) => ($active ? 'white' : '#475569')};
-  font-size: 13px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  &:hover {
-    background: ${({ $active }) => ($active ? '#244c54' : '#f8fafc')};
-  }
-`;
-
-const PageEllipsis = styled.span`
-  font-size: 13px;
-  color: #94a3b8;
-  padding: 0 4px;
-`;
-
-/* 삭제 모달 */
-const ModalOverlay = styled.div`
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.35);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
-`;
-
-const Modal = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 32px 36px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-  min-width: 320px;
-`;
-
-const ModalTitle = styled.p`
-  font-size: 16px;
-  font-weight: 600;
-  color: #0d1c2e;
-`;
-
-const ModalDesc = styled.p`
-  font-size: 13px;
-  color: #94a3b8;
-  margin-bottom: 8px;
-`;
-
-const ModalActions = styled.div`
-  display: flex;
-  gap: 10px;
-`;
-
-const ModalCancelBtn = styled.button`
-  padding: 10px 24px;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  background: white;
-  color: #475569;
-  font-size: 13px;
-  font-weight: 600;
-  font-family: inherit;
-  transition: background 0.15s;
-  &:hover { background: #f8fafc; }
-`;
-
-const ModalDeleteBtn = styled.button`
-  padding: 10px 24px;
-  border-radius: 8px;
-  border: none;
-  background: #ef4444;
-  color: white;
-  font-size: 13px;
-  font-weight: 600;
-  font-family: inherit;
-  transition: background 0.15s;
-  &:hover { background: #dc2626; }
-`;
+/* 삭제 모달 관련 스타일 제거 */

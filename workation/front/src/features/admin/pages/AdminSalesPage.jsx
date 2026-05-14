@@ -8,9 +8,11 @@ import {
   TOP5_SETTLEMENTS,
   URGENT_ALERTS,
   PENDING_LIST,
+} from '../data/adminSalesData';
+import {
   SETTLEMENT_STATUS_MAP,
   APPROVAL_STATUS_MAP,
-} from '../data/adminSalesData';
+} from '../data/adminSalesConstants';
 
 const MAX_COUNT = Math.max(...MONTHLY_CHART_DATA.map((d) => d.count));
 
