@@ -18,12 +18,14 @@ import ResvRouter from './routes/ResvRouter';
 import LoginPage from './features/member/pages/login/LoginPage';
 import MypageRouter from './routes/MypageRouter';
 import SellerSelectionView from './features/member/pages/login/SellerSelectionView';
+import useAuth from './features/member/hooks/useAuth';
 
 export default function App() {
-  const user = {
-    isLoggedIn: true,
-    role: 'SELLER', // 'USER' 또는 'SELLER'
-  };
+  const { loading, isSeller } = useAuth();
+
+  if (loading) {
+    return null;
+  }
   return (
     <ThemeProvider theme={theme}>
       <GlobalStyle />
@@ -33,13 +35,7 @@ export default function App() {
           {/* 로그인 시 SELLER라면 선택 화면으로, 아니라면 일반 홈으로 */}
           <Route
             index
-            element={
-              user.isLoggedIn && user.role === 'SELLER' ? (
-                <SellerSelectionView />
-              ) : (
-                <HomePage />
-              )
-            }
+            element={isSeller ? <SellerSelectionView /> : <HomePage />}
           />
           {/* 메인 페이지 */}
           <Route path="/home" element={<HomePage />} />

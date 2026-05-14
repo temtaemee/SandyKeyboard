@@ -22,7 +22,7 @@ export default function Header() {
     }
 
     try {
-      const res = await api.get('/user/me');
+      const res = await api.get('/auth/me');
       setMemberInfo(res.data);
     } catch (error) {
       setMemberInfo(null);

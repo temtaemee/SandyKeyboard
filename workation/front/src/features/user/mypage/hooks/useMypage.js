@@ -8,7 +8,7 @@ function useMypage() {
     useEffect(() => {
         const fetchMemberInfo = async () => {
             try {
-                const res = await api.get('/user/me');
+                const res = await api.get('/auth/me');
                 console.log(res.data);
                 setMemberInfo(res.data);
             } catch (err) {

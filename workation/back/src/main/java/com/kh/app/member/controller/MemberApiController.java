@@ -47,7 +47,7 @@ public class MemberApiController {
         return ResponseEntity.ok(banks);
     }
 
-    @GetMapping("/user/me")
+    @GetMapping("/auth/me")
     public MemberMeRespDto getMyInfo(Authentication authentication) {
 
         String username = authentication.getName();
