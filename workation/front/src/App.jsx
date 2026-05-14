@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from 'styled-components';
 import { theme } from './styles/theme';
 import GlobalStyle from './styles/GlobalStyle';
@@ -17,16 +17,32 @@ import BoardRouter from './routes/BoardRouter';
 import ResvRouter from './routes/ResvRouter';
 import LoginPage from './features/member/pages/login/LoginPage';
 import MypageRouter from './routes/MypageRouter';
+import SellerSelectionView from './features/member/pages/login/SellerSelectionView';
 
 export default function App() {
+  const user = {
+    isLoggedIn: true,
+    role: 'SELLER', // 'USER' 또는 'SELLER'
+  };
   return (
     <ThemeProvider theme={theme}>
       <GlobalStyle />
       <Routes>
         {/* Layout이 Header + Outlet + Footer를 감쌈 (공통 레이아웃) */}
         <Route path="/" element={<Layout />}>
+          {/* 로그인 시 SELLER라면 선택 화면으로, 아니라면 일반 홈으로 */}
+          <Route
+            index
+            element={
+              user.isLoggedIn && user.role === 'SELLER' ? (
+                <SellerSelectionView />
+              ) : (
+                <HomePage />
+              )
+            }
+          />
           {/* 메인 페이지 */}
-          <Route index element={<HomePage />} />
+          <Route path="/home" element={<HomePage />} />
 
           {/* 
             [협업 가이드]

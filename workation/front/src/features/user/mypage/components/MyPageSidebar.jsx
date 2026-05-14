@@ -10,13 +10,11 @@ import {
   LogOut,
   Store,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import api from '../../../../app/api/axios';
-import { useNavigate } from 'react-router-dom';
-import useMypage from '../hooks/useMypage';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 function MyPageSidebar({ memberInfo }) {
   const navi = useNavigate();
+  const location = useLocation();
 
   const isSeller = memberInfo?.roleSet?.includes('SELLER');
   return (
@@ -24,27 +22,42 @@ function MyPageSidebar({ memberInfo }) {
       <MenuSection>
         <MenuTitle>마이페이지</MenuTitle>
 
-        <MenuItem active>
+        <MenuItem
+          active={location.pathname === '/mypage'}
+          onClick={() => navi('/mypage')}
+        >
           <User size={18} />
           <span>내 프로필</span>
         </MenuItem>
 
-        <MenuItem>
+        <MenuItem
+          active={location.pathname === '/mypage/reservation'}
+          onClick={() => navi('/mypage/reservation')}
+        >
           <ClipboardList size={18} />
           <span>예약 현황</span>
         </MenuItem>
 
-        <MenuItem>
+        <MenuItem
+          active={location.pathname.startsWith('/mypage/coupon')}
+          onClick={() => navi('/mypage/coupon')}
+        >
           <CreditCard size={18} />
           <span>쿠폰</span>
         </MenuItem>
 
-        <MenuItem>
+        <MenuItem
+          active={location.pathname.startsWith('/mypage/review')}
+          onClick={() => navi('/mypage/review')}
+        >
           <History size={18} />
           <span>나의 활동</span>
         </MenuItem>
 
-        <MenuItem>
+        <MenuItem
+          active={location.pathname.startsWith('/mypage/setting')}
+          onClick={() => navi('/mypage/setting')}
+        >
           <Settings size={18} />
           <span>환경 설정</span>
         </MenuItem>
@@ -124,20 +137,24 @@ const MenuTitle = styled.h2`
   margin-bottom: 26px;
 `;
 
-const MenuItem = styled.div`
+const MenuItem = styled.button`
+  width: 100%;
+  border: none;
+  background: ${({ active }) => (active ? '#eef5f6' : 'transparent')};
+
   display: flex;
   align-items: center;
   gap: 12px;
+
   height: 48px;
   padding: 0 14px;
   border-radius: 12px;
   margin-bottom: 8px;
+
   cursor: pointer;
   font-size: 14px;
 
   color: ${({ active }) => (active ? '#3f6971' : '#6b7280')};
-
-  background-color: ${({ active }) => (active ? '#eef5f6' : 'transparent')};
 
   font-weight: ${({ active }) => (active ? '600' : '400')};
 

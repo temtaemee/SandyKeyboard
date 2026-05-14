@@ -1,30 +1,31 @@
+import { ChevronDown } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import { NAV_LINKS } from '../../data/homeData';
 import api from '../../../app/api/axios';
+import NotificationBell from '../home/NotificationBell';
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [memberInfo, setMemberInfo] = useState(null);
 
   const navi = useNavigate();
   const location = useLocation(); // 경로 변경 감지를 위해 추가
 
   const validateToken = async () => {
     const token = localStorage.getItem('accessToken');
+
     if (!token) {
-      setIsLoggedIn(false);
+      setMemberInfo(null);
       return;
     }
 
     try {
-      // 인터셉터가 토큰을 자동으로 실어주므로 경로만 적으면 됩니다.
-      await api.get('/user/banks');
-      setIsLoggedIn(true);
+      const res = await api.get('/user/me');
+      setMemberInfo(res.data);
     } catch (error) {
-      // 401/403 에러 발생 시 api.js 인터셉터가 이미 토큰을 지웠을 것이므로 상태만 변경
-      setIsLoggedIn(false);
+      setMemberInfo(null);
     }
   };
 
@@ -41,15 +42,15 @@ export default function Header() {
 
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
-    setIsLoggedIn(false);
-    navi('/');
+    setMemberInfo(null);
+    navi('/home');
   };
 
   return (
     <Nav $scrolled={scrolled}>
       <Inner>
         <Left>
-          <Logo to="/">모래묻은 키보드</Logo>
+          <Logo to="/home">모래묻은 키보드</Logo>
         </Left>
         <Center>
           <Links>
@@ -61,10 +62,46 @@ export default function Header() {
           </Links>
         </Center>
         <Right>
-          {isLoggedIn ? (
+          {memberInfo ? (
             <>
-              <MyPageBtn onClick={() => navi('/mypage')}>마이페이지</MyPageBtn>
-              <LogoutBtn onClick={handleLogout}>로그아웃</LogoutBtn>
+              <NotificationBell />
+
+              <ProfileMenu>
+                <ProfileButton>
+                  <ProfileName>{memberInfo.name} 님</ProfileName>
+                  <ChevronDown size={16} />
+                </ProfileButton>
+
+                <DropdownMenu>
+                  <DropdownItem
+                    onClick={() => {
+                      navi('/mypage');
+                    }}
+                  >
+                    마이페이지
+                  </DropdownItem>
+
+                  <DropdownItem
+                    onClick={() => {
+                      navi('/mypage/reservation');
+                    }}
+                  >
+                    예약 내역
+                  </DropdownItem>
+
+                  <DropdownItem
+                    onClick={() => {
+                      navi('/mypage/coupon');
+                    }}
+                  >
+                    쿠폰함
+                  </DropdownItem>
+
+                  <DropdownDivider />
+
+                  <LogoutItem onClick={handleLogout}>로그아웃</LogoutItem>
+                </DropdownMenu>
+              </ProfileMenu>
             </>
           ) : (
             <LoginBtn onClick={() => navi('/login')}>로그인</LoginBtn>
@@ -76,32 +113,6 @@ export default function Header() {
 }
 
 /* ── Styled Components ── */
-
-const LogoutBtn = styled.button`
-  padding: 8px 16px;
-  font-size: 14px;
-  color: #ef4444; /* 빨간색 톤으로 로그아웃 강조 */
-  cursor: pointer;
-  background: none;
-  border: none;
-  &:hover {
-    text-decoration: underline;
-  }
-`;
-
-const MyPageBtn = styled.button`
-  padding: 8px 20px;
-  font-size: 15px;
-  color: white;
-  background: #4d6c75;
-  border-radius: 20px;
-  cursor: pointer;
-  border: none;
-  transition: opacity 0.2s;
-  &:hover {
-    opacity: 0.9;
-  }
-`;
 
 const Nav = styled.nav`
   position: fixed;
@@ -196,21 +207,103 @@ const LoginBtn = styled.button`
     background: ${({ theme }) => theme.colors.borderLight};
   }
 `;
+const ProfileMenu = styled.div`
+  position: relative;
 
-const StartBtn = styled.button`
-  padding: 10px 24px;
-  font-size: 16px;
+  &:hover > div:last-child {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+`;
+
+const ProfileButton = styled.button`
+  height: 42px;
+  padding: 0 18px;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  border: none;
+  border-radius: 999px;
+
+  background-color: #4d6c75;
   color: white;
-  background: ${({ theme }) => theme.colors.primary};
-  border-radius: ${({ theme }) => theme.radius.full};
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
-  white-space: nowrap;
-  transition:
-    background 0.2s,
-    transform 0.1s;
+
+  cursor: pointer;
+
+  transition: background-color 0.2s;
 
   &:hover {
-    background: ${({ theme }) => theme.colors.primaryLight};
-    transform: translateY(-1px);
+    background-color: #3f6971;
+  }
+`;
+
+const ProfileName = styled.span`
+  font-size: 14px;
+  font-weight: 600;
+`;
+
+const DropdownMenu = styled.div`
+  position: absolute;
+  top: 54px;
+  right: 0;
+
+  width: 220px;
+
+  background-color: white;
+  border-radius: 20px;
+
+  padding: 10px;
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+
+  transition: all 0.2s ease;
+
+  z-index: 999;
+`;
+
+const DropdownItem = styled.button`
+  width: 100%;
+  height: 46px;
+
+  border: none;
+  border-radius: 14px;
+
+  background: none;
+
+  display: flex;
+  align-items: center;
+
+  padding: 0 14px;
+
+  font-size: 14px;
+  color: #4b5563;
+
+  cursor: pointer;
+
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #f3f6f8;
+  }
+`;
+
+const DropdownDivider = styled.div`
+  height: 1px;
+  background-color: #edf1f4;
+  margin: 8px 0;
+`;
+
+const LogoutItem = styled(DropdownItem)`
+  color: #ef4444;
+
+  &:hover {
+    background-color: #fef2f2;
   }
 `;
