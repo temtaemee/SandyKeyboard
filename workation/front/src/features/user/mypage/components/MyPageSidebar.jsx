@@ -13,16 +13,11 @@ import {
 import { useEffect, useState } from 'react';
 import api from '../../../../app/api/axios';
 import { useNavigate } from 'react-router-dom';
+import useMypage from '../hooks/useMypage';
 
-function MyPageSidebar() {
+function MyPageSidebar({ memberInfo }) {
   const navi = useNavigate();
-  const [memberInfo, setMemberInfo] = useState(null);
-  useEffect(() => {
-    api.get('/user/me').then((res) => {
-      console.log(res.data);
-      setMemberInfo(res.data);
-    });
-  }, []);
+
   const isSeller = memberInfo?.roleSet?.includes('SELLER');
   return (
     <Sidebar>
@@ -41,7 +36,7 @@ function MyPageSidebar() {
 
         <MenuItem>
           <CreditCard size={18} />
-          <span>포인트/쿠폰</span>
+          <span>쿠폰</span>
         </MenuItem>
 
         <MenuItem>
@@ -78,12 +73,21 @@ function MyPageSidebar() {
           <span>고객센터</span>
         </BottomItem>
 
-        <BottomItem>
+        <BottomItem
+          onClick={() => {
+            navi(`/board/support/notice`);
+          }}
+        >
           <Megaphone size={16} />
           <span>공지사항</span>
         </BottomItem>
 
-        <BottomItem>
+        <BottomItem
+          onClick={() => {
+            localStorage.removeItem('accessToken');
+            window.location.replace('/');
+          }}
+        >
           <LogOut size={16} />
           <span>로그아웃</span>
         </BottomItem>
@@ -96,12 +100,20 @@ export default MyPageSidebar;
 
 const Sidebar = styled.aside`
   width: 240px;
+  min-width: 240px;
+  flex-shrink: 0;
+
   background-color: white;
   border-right: 1px solid #edf1f4;
   padding: 40px 24px;
+
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+
+  @media (max-width: 1024px) {
+    display: none;
+  }
 `;
 
 const MenuSection = styled.div``;

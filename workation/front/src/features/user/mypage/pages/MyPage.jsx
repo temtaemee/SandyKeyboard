@@ -16,58 +16,93 @@ import {
   MapPin,
 } from 'lucide-react';
 import MyPageSidebar from '../components/MyPageSidebar';
+import useMypage from '../hooks/useMypage';
 
 function MyPage() {
+  const { memberInfo, loading } = useMypage();
+  console.log(memberInfo);
+  const formatDate = (dateString) => {
+    return dateString.slice(0, 10);
+  };
+
+  if (loading) {
+    return <div>로딩중...</div>;
+  }
   return (
     <Container>
       {/* 사이드바 */}
-      <MyPageSidebar />
+      <MyPageSidebar memberInfo={memberInfo} />
 
       {/* 메인 */}
       <Main>
         <PageTitle>마이페이지</PageTitle>
-        <PageDesc>김워커 님의 워케이션 여정을 관리하세요.</PageDesc>
+        <PageDesc>{memberInfo?.name} 님의 워케이션 여정을 관리하세요.</PageDesc>
 
         {/* 프로필 영역 */}
         <TopSection>
           <ProfileCard>
             <ProfileLeft>
-              <ProfileImage
-                src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400"
-                alt=""
-              />
+              <AvatarBox>
+                <LaptopEmoji>💻</LaptopEmoji>
+              </AvatarBox>
 
               <ProfileInfo>
-                <UserName>김워커</UserName>
+                <UserName>{memberInfo?.name}</UserName>
+
+                <UserSubTitle>Remote Explorer</UserSubTitle>
 
                 <BadgeArea>
                   <GradeBadge>SHORELINE GOLD</GradeBadge>
-                  <JoinDate>2023.08.15</JoinDate>
+                  <JoinDate>{formatDate(memberInfo?.joinDate)} 가입</JoinDate>
                 </BadgeArea>
+
+                <StatRow>
+                  <StatItem>
+                    <strong>12일</strong>
+                    <span>올해 워케이션</span>
+                  </StatItem>
+
+                  <StatItem>
+                    <strong>5곳</strong>
+                    <span>방문 지역</span>
+                  </StatItem>
+
+                  <StatItem>
+                    <strong>2건</strong>
+                    <span>예정 예약</span>
+                  </StatItem>
+                </StatRow>
               </ProfileInfo>
             </ProfileLeft>
-
-            <PointBox>
-              <PointLabel>보유 포인트</PointLabel>
-              <PointValue>42,500 P</PointValue>
-              <PointLink>내역 보기 →</PointLink>
-            </PointBox>
           </ProfileCard>
 
           <RightQuickMenu>
             <QuickCard>
               <Image size={20} />
-              <span>나의 리뷰</span>
+              <QuickText>
+                <strong>나의 리뷰</strong>
+                <span>작성한 리뷰 보기</span>
+              </QuickText>
             </QuickCard>
 
             <QuickCard>
               <Heart size={20} />
-              <span>찜한 숙소</span>
+              <QuickText>
+                <strong>찜한 숙소</strong>
+                <span>저장한 공간 확인</span>
+              </QuickText>
             </QuickCard>
 
             <WideCard>
-              <Wallet size={20} />
-              <span>결제 수단 관리</span>
+              <CouponLeft>
+                <Wallet size={20} />
+
+                <div>
+                  <strong>사용 가능한 쿠폰 3장</strong>
+                  <p>이번 달 프로모션 쿠폰 포함</p>
+                </div>
+              </CouponLeft>
+
               <ChevronRight size={18} />
             </WideCard>
           </RightQuickMenu>
@@ -145,17 +180,6 @@ function MyPage() {
               <ChevronRight size={18} />
             </HistoryItem>
           </HistoryCard>
-
-          <PointCard>
-            <CardTitle>포인트로 더 특별하게</CardTitle>
-
-            <PointText>
-              김워커 님은 현재 5,000P만 모으면 Ocean Platinum 등급으로
-              승급됩니다!
-            </PointText>
-
-            <PrimaryButton small>포인트 적립 보러가기</PrimaryButton>
-          </PointCard>
         </BottomSection>
       </Main>
     </Container>
@@ -244,21 +268,28 @@ const TopSection = styled.div`
   display: flex;
   gap: 24px;
   margin-bottom: 30px;
+
+  @media (max-width: 1200px) {
+    flex-direction: column;
+  }
 `;
 
 const ProfileCard = styled.div`
   flex: 1;
   background-color: white;
   border-radius: 28px;
-  padding: 30px;
-  display: flex;
-  justify-content: space-between;
+  padding: 36px;
 `;
 
 const ProfileLeft = styled.div`
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 28px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 `;
 
 const ProfileImage = styled.img`
@@ -267,24 +298,52 @@ const ProfileImage = styled.img`
   border-radius: 50%;
   object-fit: cover;
 `;
+const AvatarBox = styled.div`
+  width: 110px;
+  height: 110px;
+  border-radius: 28px;
 
-const ProfileInfo = styled.div``;
+  background: linear-gradient(135deg, #d9ecef, #eef5f6);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+`;
+
+const LaptopEmoji = styled.div`
+  font-size: 42px;
+`;
+
+const ProfileInfo = styled.div`
+  flex: 1;
+`;
 
 const UserName = styled.h2`
-  font-size: 28px;
-  margin-bottom: 10px;
+  font-size: 32px;
+  margin-bottom: 8px;
+  color: #374151;
+`;
+
+const UserSubTitle = styled.div`
+  font-size: 15px;
+  color: #94a3b8;
+  margin-bottom: 18px;
 `;
 
 const BadgeArea = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
 `;
 
 const GradeBadge = styled.div`
   background-color: #f5e6b5;
   color: #8a6d1f;
-  padding: 6px 12px;
+  padding: 6px 14px;
   border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
@@ -300,6 +359,110 @@ const PointBox = styled.div`
   background-color: #f8fbfc;
   border-radius: 20px;
   padding: 24px;
+`;
+
+const StatRow = styled.div`
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+`;
+
+const StatItem = styled.div`
+  min-width: 120px;
+  padding: 18px;
+  border-radius: 18px;
+  background-color: #f8fafb;
+
+  strong {
+    display: block;
+    font-size: 24px;
+    color: #3f6971;
+    margin-bottom: 6px;
+  }
+
+  span {
+    font-size: 13px;
+    color: #64748b;
+  }
+`;
+
+const RightQuickMenu = styled.div`
+  width: 320px;
+
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+
+  @media (max-width: 1200px) {
+    width: 100%;
+  }
+`;
+
+const QuickCard = styled.div`
+  background-color: white;
+  border-radius: 22px;
+  padding: 20px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+
+  color: #5f6b73;
+
+  cursor: pointer;
+  transition: 0.2s;
+
+  &:hover {
+    transform: translateY(-3px);
+  }
+`;
+
+const QuickText = styled.div`
+  strong {
+    display: block;
+    font-size: 15px;
+    margin-bottom: 6px;
+    color: #374151;
+  }
+
+  span {
+    font-size: 13px;
+    color: #94a3b8;
+  }
+`;
+
+const WideCard = styled.div`
+  grid-column: span 2;
+
+  background-color: white;
+  border-radius: 22px;
+  padding: 22px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  color: #5f6b73;
+
+  cursor: pointer;
+`;
+
+const CouponLeft = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  strong {
+    display: block;
+    margin-bottom: 6px;
+    color: #374151;
+  }
+
+  p {
+    font-size: 13px;
+    color: #94a3b8;
+  }
 `;
 
 const PointLabel = styled.div`
@@ -318,36 +481,6 @@ const PointValue = styled.div`
 const PointLink = styled.div`
   font-size: 13px;
   color: #6b7280;
-`;
-
-const RightQuickMenu = styled.div`
-  width: 260px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-`;
-
-const QuickCard = styled.div`
-  background-color: white;
-  border-radius: 22px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-  color: #5f6b73;
-`;
-
-const WideCard = styled.div`
-  grid-column: span 2;
-  background-color: white;
-  border-radius: 22px;
-  height: 80px;
-  padding: 0 24px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: #5f6b73;
 `;
 
 const ReservationSection = styled.section`

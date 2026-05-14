@@ -66,11 +66,20 @@ public class MemberService {
 
         MemberEntity member = memberRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("회원 없음"));
-
+        MemberProfileEntity memberProfile = member.getProfile();
+        String companyName = null;
+        if (memberProfile.getCompany() != null){
+            companyName = memberProfile.getCompany().getCompanyName();
+        }
         return MemberMeRespDto.builder()
                 .memberId(member.getId())
+                .joinDate(member.getCreatedAt())
                 .username(member.getUsername())
                 .roleSet(member.getRoleSet())
+                .name(memberProfile.getName())
+                .phone(memberProfile.getPhone())
+                .email(memberProfile.getEmail())
+                .companyName(companyName)
                 .build();
     }
 
