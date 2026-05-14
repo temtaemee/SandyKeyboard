@@ -2,6 +2,7 @@ package com.kh.app.transaction.reservation.entity;
 
 import com.kh.app.member.entity.MemberEntity;
 import com.kh.app.middle.coupon.entity.CouponEntity;
+import com.kh.app.transaction.reservation.dto.request.ReservationCreateReqDto;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -109,5 +110,13 @@ public class ReservationEntity {
         if (stayId == null && officeId == null) {
             throw new IllegalStateException("예약 대상이 없습니다.");
         }
+    }
+
+
+    public void update(ReservationCreateReqDto reqDto) {
+        this.reserverName=reqDto.getReserverName();
+        this.reserverPhone=reqDto.getReserverPhone();
+        this.reserverEmail=reqDto.getReserverEmail();
+
     }
 }
