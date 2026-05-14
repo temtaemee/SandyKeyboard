@@ -21,12 +21,13 @@ public class SpaceApplyEntity extends BaseEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "MEMBER_ID")
-    private MemberEntity seller;
-
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "SPACE_ID")
     private SpaceEntity space;
+
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "MEMBER_ID")
+    private MemberEntity seller;
 
     @Column(length = 20, nullable = false)
     @Builder.Default
