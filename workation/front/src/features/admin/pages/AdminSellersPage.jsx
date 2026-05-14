@@ -10,6 +10,10 @@ import {
   SELLER_STATUS_MAP,
   SELLERS_LIST,
 } from '../data/adminSellersData';
+import usePagination from '../hooks/usePagination';
+import AdminPagination from '../components/common/AdminPagination';
+import StatusBadge from '../components/common/StatusBadge';
+import ConfirmModal from '../components/common/ConfirmModal';
 
 const TOTAL_PAGES = 3;
 const FILTER_TABS = ['전체', '활동 중', '정지됨', '신규'];
@@ -38,7 +42,7 @@ const isNewMember = (dateStr) => {
 export default function AdminSellersPage() {
   const [view, setView] = useState('customer'); // 'customer' | 'seller'
   const [filter, setFilter] = useState('전체');
-  const [currentPage, setCurrentPage] = useState(1);
+  const { currentPage, goToPage, goToPrev, goToNext, reset: resetPage } = usePagination();
 
   /* 판매자 토글 */
   const [sellerSuspended, setSellerSuspended] = useState(() => {
@@ -75,7 +79,7 @@ export default function AdminSellersPage() {
   const handleViewChange = (v) => {
     setView(v);
     setFilter('전체');
-    setCurrentPage(1);
+    resetPage();
   };
 
   /* 필터링 */
@@ -314,17 +318,12 @@ export default function AdminSellersPage() {
           <FooterInfo>
             SHOWING 1-{view === 'seller' ? filteredSellers.length : filteredCustomers.length} OF {TOTAL.toLocaleString()} ENTRIES
           </FooterInfo>
-          <Pagination>
-            <PageBtn onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1}>
-              <ChevronLeft />
-            </PageBtn>
-            {[1, 2, 3].map((p) => (
-              <PageBtn key={p} $active={currentPage === p} onClick={() => setCurrentPage(p)}>{p}</PageBtn>
-            ))}
-            <PageBtn onClick={() => setCurrentPage((p) => Math.min(TOTAL_PAGES, p + 1))} disabled={currentPage === TOTAL_PAGES}>
-              <ChevronRight />
-            </PageBtn>
-          </Pagination>
+          <AdminPagination
+            currentPage={currentPage}
+            totalPages={TOTAL_PAGES}
+            onPageChange={goToPage}
+          />
+          <div style={{ width: '200px' }} /> {/* 우측 밸런스를 위한 더미 공간 */}
         </TableFooter>
       </TableSection>
 
@@ -334,30 +333,20 @@ export default function AdminSellersPage() {
       </PageFooter>
 
       {/* ── 활동정지 확인 모달 ── */}
-      {confirmTarget && (
-        <ModalOverlay onClick={() => setConfirmTarget(null)}>
-          <Modal onClick={(e) => e.stopPropagation()}>
-            <ModalIcon $suspend={confirmTarget.willSuspend}>
-              {confirmTarget.willSuspend ? <SuspendModalIcon /> : <ResumeModalIcon />}
-            </ModalIcon>
-            <ModalTitle>
-              {confirmTarget.willSuspend ? '활동정지 처리' : '활동 재개'}
-            </ModalTitle>
-            <ModalDesc>
-              <strong>{confirmTarget.name}</strong> 계정을{' '}
-              {confirmTarget.willSuspend
-                ? '활동정지 처리하시겠습니까? 해당 계정은 서비스 이용이 제한됩니다.'
-                : '활동 재개하시겠습니까? 해당 계정의 서비스 이용이 복구됩니다.'}
-            </ModalDesc>
-            <ModalActions>
-              <ModalCancelBtn onClick={() => setConfirmTarget(null)}>취소</ModalCancelBtn>
-              <ModalConfirmBtn $danger={confirmTarget.willSuspend} onClick={handleConfirm}>
-                {confirmTarget.willSuspend ? '정지하기' : '재개하기'}
-              </ModalConfirmBtn>
-            </ModalActions>
-          </Modal>
-        </ModalOverlay>
-      )}
+      <ConfirmModal
+        isOpen={confirmTarget !== null}
+        onClose={() => setConfirmTarget(null)}
+        onConfirm={handleConfirm}
+        title={confirmTarget?.willSuspend ? '활동정지 처리' : '활동 재개'}
+        description={
+          confirmTarget 
+            ? `${confirmTarget.name} 계정을 ${confirmTarget.willSuspend ? '활동정지 처리하시겠습니까? 해당 계정은 서비스 이용이 제한됩니다.' : '활동 재개하시겠습니까? 해당 계정의 서비스 이용이 복구됩니다.'}`
+            : ''
+        }
+        isDanger={confirmTarget?.willSuspend}
+        confirmText={confirmTarget?.willSuspend ? '정지하기' : '재개하기'}
+        icon={confirmTarget?.willSuspend ? <SuspendModalIcon /> : <ResumeModalIcon />}
+      />
     </PageWrapper>
   );
 }
@@ -375,7 +364,6 @@ function SellersIcon() { return <Users size={18} color="#1e293b" />; }
 function ActiveIcon() { return <CheckCircle size={18} color="#10b981" />; }
 function StoppedIcon() { return <XCircle size={18} color="#ef4444" />; }
 function NewSellerIcon() { return <UserPlus size={18} color="#f59e0b" />; }
-function SuspendModalIcon() { return <XCircle size={28} color="#ef4444" />; }
 function ResumeModalIcon() { return <CheckCircle size={28} color="#16a34a" />; }
 function SellerSvg({ active }) { return <Briefcase size={14} color={active ? '#244c54' : '#94a3b8'} />; }
 function CustomerSvg({ active }) { return <User size={14} color={active ? '#244c54' : '#94a3b8'} />; }
@@ -583,15 +571,6 @@ const Avatar = styled.div`
 `;
 const EmailText = styled.span`font-size: 12px; color: #64748b;`;
 
-const StatusBadge = styled.span`
-  display: inline-block;
-  padding: 4px 10px; border-radius: 999px;
-  font-size: 11px; font-weight: 500;
-  background: ${({ $bg }) => $bg};
-  color: ${({ $color }) => $color};
-  white-space: nowrap;
-`;
-
 const NewBadge = styled.span`
   display: inline-block;
   padding: 2px 7px; border-radius: 999px;
@@ -626,30 +605,22 @@ const ToggleLabel = styled.span`
   min-width: 24px;
 `;
 
-/* 페이지네이션 */
+/* 페이지네이션 푸터 */
 const TableFooter = styled.div`
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 14px 24px;
-  background: #f8fafc; border-top: 1px solid #f1f5f9;
+  background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
 `;
+
 const FooterInfo = styled.p`
-  font-size: 11px; font-weight: 600;
-  color: #94a3b8; letter-spacing: 0.5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
   font-family: 'Plus Jakarta Sans', sans-serif;
-`;
-const Pagination = styled.div`display: flex; gap: 4px;`;
-const PageBtn = styled.button`
-  min-width: 30px; height: 30px; padding: 0 8px;
-  border-radius: 6px;
-  border: ${({ $active }) => ($active ? 'none' : '1px solid #e2e8f0')};
-  background: ${({ $active }) => ($active ? '#244c54' : 'white')};
-  color: ${({ $active }) => ($active ? 'white' : '#475569')};
-  font-size: 12px; font-weight: 600;
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.15s;
-  opacity: ${({ disabled }) => (disabled ? 0.35 : 1)};
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  &:hover:not(:disabled) { background: ${({ $active }) => ($active ? '#244c54' : '#f8fafc')}; }
 `;
 
 /* 하단 Footer */
@@ -657,44 +628,4 @@ const PageFooter = styled.div`display: flex; align-items: center; justify-conten
 const FooterLeft = styled.p`font-size: 10px; letter-spacing: 0.8px; color: #94a3b8; text-transform: uppercase; font-family: 'Plus Jakarta Sans', sans-serif;`;
 const FooterRight = styled.p`font-size: 10px; color: #94a3b8; font-family: 'Plus Jakarta Sans', sans-serif;`;
 
-/* 확인 모달 */
-const ModalOverlay = styled.div`
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.4);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 100;
-`;
-const Modal = styled.div`
-  background: white;
-  border-radius: 16px;
-  padding: 32px 28px 24px;
-  width: 360px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-  display: flex; flex-direction: column; align-items: center;
-  gap: 12px;
-  text-align: center;
-`;
-const ModalIcon = styled.div`
-  width: 56px; height: 56px; border-radius: 50%;
-  background: ${({ $suspend }) => ($suspend ? '#fff1f1' : '#f0fdf4')};
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 4px;
-`;
-const ModalTitle = styled.h3`font-size: 18px; font-weight: 700; color: #0d1c2e;`;
-const ModalDesc = styled.p`font-size: 14px; color: #64748b; line-height: 1.6;`;
-const ModalActions = styled.div`display: flex; gap: 10px; margin-top: 8px; width: 100%;`;
-const ModalCancelBtn = styled.button`
-  flex: 1; padding: 12px;
-  border: 1px solid #e2e8f0; border-radius: 8px;
-  font-size: 14px; font-weight: 600; color: #475569;
-  font-family: inherit; transition: background 0.15s;
-  &:hover { background: #f8fafc; }
-`;
-const ModalConfirmBtn = styled.button`
-  flex: 1; padding: 12px;
-  border-radius: 8px;
-  font-size: 14px; font-weight: 600; color: white;
-  font-family: inherit; transition: opacity 0.15s;
-  background: ${({ $danger }) => ($danger ? '#ef4444' : '#16a34a')};
-  &:hover { opacity: 0.85; }
-`;
+/* 확인 모달 스타일 제거 */

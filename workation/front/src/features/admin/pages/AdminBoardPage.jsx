@@ -13,6 +13,9 @@ import {
   BOARD_POSTS,
   POST_STATUS_MAP,
 } from '../data/adminBoardData';
+import usePagination from '../hooks/usePagination';
+import AdminPagination from '../components/common/AdminPagination';
+import StatusBadge from '../components/common/StatusBadge';
 
 const TOTAL = 124;
 const TOTAL_PAGES = 3;
@@ -28,7 +31,7 @@ export default function AdminBoardPage() {
     );
     return ids;
   });
-  const [currentPage, setCurrentPage] = useState(1);
+  const { currentPage, goToPage, goToPrev, goToNext, reset: resetPage } = usePagination();
 
   const posts = BOARD_POSTS[activeTab] || [];
   const allIds = posts.map((p) => p.id);
@@ -58,7 +61,7 @@ export default function AdminBoardPage() {
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setCheckedIds([]);
-    setCurrentPage(1);
+    resetPage();
   };
 
   return (
@@ -226,25 +229,12 @@ export default function AdminBoardPage() {
           <FooterInfo>
             ‖ {TOTAL}개 &nbsp;‖&nbsp; 1-10 &nbsp;‖
           </FooterInfo>
-          <Pagination>
-            <PageBtn onClick={() => setCurrentPage(1)} disabled={currentPage === 1}>
-              <DoubleChevronLeft />
-            </PageBtn>
-            <PageBtn onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1}>
-              <ChevronLeft />
-            </PageBtn>
-            {[1, 2, 3].map((p) => (
-              <PageBtn key={p} $active={currentPage === p} onClick={() => setCurrentPage(p)}>
-                {p}
-              </PageBtn>
-            ))}
-            <PageBtn onClick={() => setCurrentPage((p) => Math.min(TOTAL_PAGES, p + 1))} disabled={currentPage === TOTAL_PAGES}>
-              <ChevronRight />
-            </PageBtn>
-            <PageBtn onClick={() => setCurrentPage(TOTAL_PAGES)} disabled={currentPage === TOTAL_PAGES}>
-              <DoubleChevronRight />
-            </PageBtn>
-          </Pagination>
+          <AdminPagination
+            currentPage={currentPage}
+            totalPages={TOTAL_PAGES}
+            onPageChange={goToPage}
+          />
+          <div style={{ width: '120px' }} />
         </TableFooter>
       </TableSection>
 
@@ -594,16 +584,6 @@ const ViewsText = styled.span`
   color: ${({ theme }) => theme.colors.textMid};
   font-family: ${({ theme }) => theme.fonts.number};
 `;
-const StatusBadge = styled.span`
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 500;
-  background: ${({ $bg }) => $bg};
-  color: ${({ $color }) => $color};
-  white-space: nowrap;
-`;
 
 /* 핀 버튼 */
 const PinBtn = styled.button`
@@ -620,7 +600,7 @@ const PinBtn = styled.button`
   }
 `;
 
-/* 테이블 푸터 */
+/* 페이지네이션 푸터 */
 const TableFooter = styled.div`
   display: flex;
   align-items: center;
@@ -629,35 +609,11 @@ const TableFooter = styled.div`
   background: ${({ theme }) => theme.colors.bgSection};
   border-top: 1px solid ${({ theme }) => theme.colors.borderLight};
 `;
+
 const FooterInfo = styled.p`
   font-size: 12px;
   color: ${({ theme }) => theme.colors.textMuted};
   font-family: ${({ theme }) => theme.fonts.number};
-`;
-const Pagination = styled.div`
-  display: flex;
-  gap: 4px;
-`;
-const PageBtn = styled.button`
-  min-width: 28px;
-  height: 28px;
-  padding: 0 6px;
-  border-radius: 4px;
-  border: ${({ $active, theme }) => ($active ? 'none' : `1px solid ${theme.colors.border}`)};
-  background: ${({ $active, theme }) => ($active ? theme.colors.adminPrimary : theme.colors.white)};
-  color: ${({ $active, theme }) => ($active ? theme.colors.white : theme.colors.textMid)};
-  font-size: 12px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1px;
-  transition: all 0.15s;
-  opacity: ${({ disabled }) => (disabled ? 0.35 : 1)};
-  font-family: ${({ theme }) => theme.fonts.number};
-  &:hover:not(:disabled) {
-    background: ${({ $active, theme }) => ($active ? theme.colors.adminPrimary : theme.colors.bgSection)};
-  }
 `;
 
 /* 액션 바 */

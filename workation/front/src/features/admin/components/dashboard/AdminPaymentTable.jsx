@@ -2,6 +2,8 @@
 import { useState } from 'react';
 import styled from 'styled-components';
 import { ChevronLeft as LucideChevronLeft, ChevronRight as LucideChevronRight, Filter } from 'lucide-react';
+import AdminPagination from '../common/AdminPagination';
+import StatusBadge from '../common/StatusBadge';
 import { RECENT_PAYMENTS, PAYMENT_STATUS_MAP } from '../../data/adminDashboardData';
 
 const TOTAL = 2401;
@@ -59,29 +61,12 @@ export default function AdminPaymentTable() {
 
       <TableFooter>
         <FooterInfo>총 {TOTAL.toLocaleString()}개</FooterInfo>
-        <Pagination>
-          <PageBtn
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-          >
-            <ChevronLeft />
-          </PageBtn>
-          {[1, 2, 3].map((page) => (
-            <PageBtn
-              key={page}
-              $active={currentPage === page}
-              onClick={() => setCurrentPage(page)}
-            >
-              {page}
-            </PageBtn>
-          ))}
-          <PageBtn
-            onClick={() => setCurrentPage((p) => Math.min(TOTAL_PAGES, p + 1))}
-            disabled={currentPage === TOTAL_PAGES}
-          >
-            <ChevronRight />
-          </PageBtn>
-        </Pagination>
+        <AdminPagination
+          currentPage={currentPage}
+          totalPages={TOTAL_PAGES}
+          onPageChange={setCurrentPage}
+        />
+        <div style={{ width: '80px' }} />
       </TableFooter>
     </TableSection>
   );
@@ -222,16 +207,9 @@ const DateText = styled.span`
   font-family: 'Plus Jakarta Sans', sans-serif;
 `;
 
-const StatusBadge = styled.span`
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 500;
-  background: ${({ $bg }) => $bg};
-  color: ${({ $color }) => $color};
-`;
 
+
+/* 페이지네이션 푸터 */
 const TableFooter = styled.div`
   display: flex;
   align-items: center;
@@ -247,32 +225,4 @@ const FooterInfo = styled.p`
   color: #64748b;
   letter-spacing: 0.6px;
   font-family: 'Plus Jakarta Sans', sans-serif;
-`;
-
-const Pagination = styled.div`
-  display: flex;
-  gap: 4px;
-`;
-
-const PageBtn = styled.button`
-  min-width: 28px;
-  height: 28px;
-  padding: 0 8px;
-  border-radius: 2px;
-  border: ${({ $active }) => ($active ? 'none' : '1px solid #e2e8f0')};
-  background: ${({ $active }) => ($active ? '#244c54' : 'white')};
-  color: ${({ $active }) => ($active ? 'white' : '#475569')};
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  opacity: ${({ disabled }) => (disabled ? 0.4 : 1)};
-
-  &:hover:not(:disabled) {
-    background: ${({ $active }) => ($active ? '#244c54' : '#f8fafc')};
-  }
 `;

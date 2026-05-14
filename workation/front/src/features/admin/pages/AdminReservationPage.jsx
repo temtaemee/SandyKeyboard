@@ -8,6 +8,9 @@ import {
   RESERVATION_STATUS_MAP,
   PARTNER_COMPANIES,
 } from '../data/adminReservationData';
+import usePagination from '../hooks/usePagination';
+import AdminPagination from '../components/common/AdminPagination';
+import StatusBadge from '../components/common/StatusBadge';
 
 const TOTAL = 1284;
 const TOTAL_PAGES = 3;
@@ -16,7 +19,7 @@ export default function AdminReservationPage() {
   const [search, setSearch] = useState('');
   const [partnerSearch, setPartnerSearch] = useState('');
   const [companyName, setCompanyName] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
+  const { currentPage, goToPage, goToPrev, goToNext } = usePagination();
 
   return (
     <PageWrapper>
@@ -123,29 +126,12 @@ export default function AdminReservationPage() {
           <FooterInfo>
             {TOTAL.toLocaleString()}건 &nbsp;‖&nbsp; 1-10 &nbsp;‖
           </FooterInfo>
-          <Pagination>
-            <PageBtn
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-            >
-              <ChevronLeft />
-            </PageBtn>
-            {[1, 2, 3].map((p) => (
-              <PageBtn
-                key={p}
-                $active={currentPage === p}
-                onClick={() => setCurrentPage(p)}
-              >
-                {p}
-              </PageBtn>
-            ))}
-            <PageBtn
-              onClick={() => setCurrentPage((p) => Math.min(TOTAL_PAGES, p + 1))}
-              disabled={currentPage === TOTAL_PAGES}
-            >
-              <ChevronRight />
-            </PageBtn>
-          </Pagination>
+          <AdminPagination
+            currentPage={currentPage}
+            totalPages={TOTAL_PAGES}
+            onPageChange={goToPage}
+          />
+          <div style={{ width: '120px' }} />
         </TableFooter>
       </TableSection>
 
@@ -489,16 +475,9 @@ const AmountText = styled.span`
   font-family: ${({ theme }) => theme.fonts.number};
 `;
 
-const StatusBadge = styled.span`
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 500;
-  background: ${({ $bg }) => $bg};
-  color: ${({ $color }) => $color};
-`;
 
+
+/* 페이지네이션 푸터 */
 const TableFooter = styled.div`
   display: flex;
   align-items: center;
@@ -512,32 +491,6 @@ const FooterInfo = styled.p`
   font-size: 12px;
   color: ${({ theme }) => theme.colors.textMuted};
   font-family: ${({ theme }) => theme.fonts.number};
-`;
-
-const Pagination = styled.div`
-  display: flex;
-  gap: 4px;
-`;
-
-const PageBtn = styled.button`
-  min-width: 28px;
-  height: 28px;
-  padding: 0 8px;
-  border-radius: 4px;
-  border: ${({ $active, theme }) => ($active ? 'none' : `1px solid ${theme.colors.border}`)};
-  background: ${({ $active, theme }) => ($active ? theme.colors.adminPrimary : theme.colors.white)};
-  color: ${({ $active, theme }) => ($active ? theme.colors.white : theme.colors.textMid)};
-  font-size: 12px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s;
-  opacity: ${({ disabled }) => (disabled ? 0.4 : 1)};
-  font-family: ${({ theme }) => theme.fonts.number};
-  &:hover:not(:disabled) {
-    background: ${({ $active, theme }) => ($active ? theme.colors.adminPrimary : theme.colors.bgSection)};
-  }
 `;
 
 /* 파트너 검색 */
