@@ -4,8 +4,15 @@ import { useNoticeList } from '../hooks/useNoticeList';
 
 export default function NoticePage() {
   const navigate = useNavigate();
+
   const { notices, loading, currentPage, setCurrentPage, totalPages } =
     useNoticeList();
+
+  // 상단 고정 공지 3개
+  const fixedNotices = notices.slice(0, 3);
+
+  // 일반 게시글
+  const normalNotices = notices.slice(3);
 
   if (loading) return <Empty>불러오는 중...</Empty>;
 
@@ -24,13 +31,39 @@ export default function NoticePage() {
           <ColDate>날짜</ColDate>
         </HeaderRow>
 
-        {notices.map((item, idx) => (
-          <Row
+        {/* 상단 고정 공지 */}
+        {fixedNotices.map((item, idx) => (
+          <PinnedRow
             key={item.id}
             onClick={() => navigate(`/board/support/notice/${item.id}`)}
           >
             <ColNum>{currentPage * 10 + idx + 1}</ColNum>
+
+            <ColTitle>
+              <TitleWrap>
+                <NoticeBadge>공지</NoticeBadge>
+                <PinnedTitle>{item.title}</PinnedTitle>
+              </TitleWrap>
+            </ColTitle>
+
+            <ColDate>
+              {item.createdAt
+                ? new Date(item.createdAt).toLocaleDateString('ko-KR')
+                : ''}
+            </ColDate>
+          </PinnedRow>
+        ))}
+
+        {/* 일반 게시글 */}
+        {normalNotices.map((item, idx) => (
+          <Row
+            key={item.id}
+            onClick={() => navigate(`/board/support/notice/${item.id}`)}
+          >
+            <ColNum>{currentPage * 10 + fixedNotices.length + idx + 1}</ColNum>
+
             <ColTitle>{item.title}</ColTitle>
+
             <ColDate>
               {item.createdAt
                 ? new Date(item.createdAt).toLocaleDateString('ko-KR')
@@ -50,6 +83,7 @@ export default function NoticePage() {
           >
             ‹
           </PageBtn>
+
           {Array.from({ length: totalPages }, (_, i) => (
             <PageBtn
               key={i}
@@ -59,6 +93,7 @@ export default function NoticePage() {
               {i + 1}
             </PageBtn>
           ))}
+
           <PageBtn
             onClick={() => setCurrentPage((p) => p + 1)}
             disabled={currentPage === totalPages - 1}
@@ -72,11 +107,13 @@ export default function NoticePage() {
 }
 
 const Wrapper = styled.div``;
+
 const TopRow = styled.div`
   display: flex;
   justify-content: flex-end;
   margin-bottom: 16px;
 `;
+
 const WriteButton = styled.button`
   padding: 9px 22px;
   border-radius: ${({ theme }) => theme.radius.full};
@@ -87,13 +124,16 @@ const WriteButton = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s;
+
   &:hover {
     background: ${({ theme }) => theme.colors.primaryLight};
   }
 `;
+
 const Board = styled.div`
   border-top: 2px solid ${({ theme }) => theme.colors.textDark};
 `;
+
 const HeaderRow = styled.div`
   display: flex;
   padding: 14px 10px;
@@ -102,6 +142,7 @@ const HeaderRow = styled.div`
   font-size: 14px;
   font-weight: 600;
 `;
+
 const Row = styled.div`
   display: flex;
   align-items: center;
@@ -109,22 +150,47 @@ const Row = styled.div`
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
   cursor: pointer;
   transition: background 0.12s;
+
   &:hover {
     background: ${({ theme }) => theme.colors.bgSection};
   }
 `;
+
+const PinnedRow = styled(Row)`
+  background: ${({ theme }) => theme.colors.bgSection};
+`;
+
+const TitleWrap = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const PinnedTitle = styled.span`
+  font-weight: 600;
+`;
+
+const NoticeBadge = styled.span`
+  padding: 3px 8px;
+  border-radius: 10px;
+  background: ${({ theme }) => theme.colors.primary};
+  color: white;
+  font-size: 12px;
+`;
+
 const ColNum = styled.div`
   width: 60px;
   flex-shrink: 0;
   color: ${({ theme }) => theme.colors.textLight};
   font-size: 14px;
 `;
+
 const ColTitle = styled.div`
   flex: 1;
   font-size: 15px;
   color: ${({ theme }) => theme.colors.textDark};
-  font-weight: 500;
 `;
+
 const ColDate = styled.div`
   width: 100px;
   flex-shrink: 0;
@@ -132,12 +198,14 @@ const ColDate = styled.div`
   font-size: 14px;
   text-align: right;
 `;
+
 const Empty = styled.div`
   padding: 48px 0;
   text-align: center;
   color: ${({ theme }) => theme.colors.textLight};
   font-size: 15px;
 `;
+
 const Pagination = styled.div`
   display: flex;
   justify-content: center;
@@ -145,6 +213,7 @@ const Pagination = styled.div`
   gap: 6px;
   margin-top: 32px;
 `;
+
 const PageBtn = styled.button`
   width: 36px;
   height: 36px;
@@ -152,20 +221,18 @@ const PageBtn = styled.button`
   border: 1px solid
     ${({ $active, theme }) =>
       $active ? theme.colors.primary : theme.colors.border};
+
   background: ${({ $active, theme }) =>
     $active ? theme.colors.primary : theme.colors.white};
+
   color: ${({ $active, theme }) => ($active ? 'white' : theme.colors.textMid)};
+
   font-size: 14px;
   font-weight: ${({ $active }) => ($active ? '700' : '400')};
+
   cursor: pointer;
-  transition: all 0.15s;
-  &:hover:not(:disabled) {
-    background: ${({ $active, theme }) =>
-      $active ? theme.colors.primary : theme.colors.bgSection};
-    border-color: ${({ theme }) => theme.colors.primary};
-  }
+
   &:disabled {
     opacity: 0.3;
-    cursor: default;
   }
 `;
