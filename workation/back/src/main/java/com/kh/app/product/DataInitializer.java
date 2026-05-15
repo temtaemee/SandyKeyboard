@@ -27,6 +27,11 @@ public class DataInitializer implements CommandLineRunner {
     @Transactional
     public void run(String... args) {
 
+        if (spaceRepository.count() > 0) {
+            log.info("[DataInitializer] 기존 데이터 존재 — 더미 데이터 삽입 스킵 (Space {}건)", spaceRepository.count());
+            return;
+        }
+
         log.info("[DataInitializer] 더미 데이터 삽입 시작");
 
         SpaceEntity jeju = spaceRepository.save(SpaceEntity.builder()
