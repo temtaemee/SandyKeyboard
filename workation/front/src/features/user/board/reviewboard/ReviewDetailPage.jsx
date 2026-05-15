@@ -1,13 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import {
-  createComment,
-  deleteComment,
-  deleteReview,
-  getComments,
-  getReviewDetail,
-} from '../api/Reviewapi';
+import { useReviewDetail } from '../hooks/useReviewDetail';
 
 function StarRating({ rating, onChange }) {
   const [hovered, setHovered] = useState(0);
@@ -33,26 +27,24 @@ export default function ReviewDetailPage() {
   const { reviewId } = useParams();
   const navigate = useNavigate();
 
-  const [review, setReview] = useState(null);
-  const [comments, setComments] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  const [commentInput, setCommentInput] = useState('');
-  const [commentRating, setCommentRating] = useState(5);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [deleteCommentId, setDeleteCommentId] = useState(null);
-  const [lightboxIdx, setLightboxIdx] = useState(null);
-
-  // 상세 + 댓글 로드
-  useEffect(() => {
-    Promise.all([getReviewDetail(reviewId), getComments(reviewId)])
-      .then(([reviewData, commentData]) => {
-        setReview(reviewData);
-        setComments(commentData);
-      })
-      .catch((err) => console.error(err))
-      .finally(() => setLoading(false));
-  }, [reviewId]);
+  const {
+    review,
+    comments,
+    loading,
+    commentInput,
+    setCommentInput,
+    commentRating,
+    setCommentRating,
+    showConfirm,
+    setShowConfirm,
+    deleteCommentId,
+    setDeleteCommentId,
+    lightboxIdx,
+    setLightboxIdx,
+    handleDelete,
+    handleCommentSubmit,
+    handleCommentDelete,
+  } = useReviewDetail(reviewId);
 
   if (loading)
     return (
@@ -67,55 +59,10 @@ export default function ReviewDetailPage() {
       </Wrapper>
     );
 
-  // 후기 삭제
-  async function handleDelete() {
-    try {
-      await deleteReview(reviewId);
-      setShowConfirm(false);
-      navigate('/board/review/list');
-    } catch (err) {
-      console.error(err);
-      alert('삭제에 실패했습니다.');
-    }
-  }
-
-  // 댓글 등록
-  async function handleCommentSubmit() {
-    if (!commentInput.trim()) return;
-    try {
-      await createComment(reviewId, {
-        content: commentInput,
-        rating: commentRating,
-        ownerYn: 'N',
-      });
-      // 등록 후 댓글 목록 새로고침
-      const updated = await getComments(reviewId);
-      setComments(updated);
-      setCommentInput('');
-      setCommentRating(5);
-    } catch (err) {
-      console.error(err);
-      alert('댓글 등록에 실패했습니다.');
-    }
-  }
-
-  // 댓글 삭제
-  async function handleCommentDelete(commentId) {
-    try {
-      await deleteComment(reviewId, commentId);
-      setComments((prev) => prev.filter((c) => c.id !== commentId));
-      setDeleteCommentId(null);
-    } catch (err) {
-      console.error(err);
-      alert('댓글 삭제에 실패했습니다.');
-    }
-  }
-
   const images = review.images ?? [];
 
   return (
     <Wrapper>
-      {/* 헤더 */}
       <Header>
         <HeaderLeft>
           <StarRating rating={review.rating} />
@@ -137,12 +84,10 @@ export default function ReviewDetailPage() {
         </ActionButtons>
       </Header>
 
-      {/* 사진 그리드 */}
       {images.length > 0 && (
         <ImageGrid>
           {images.slice(0, 4).map((img, i) => (
             <ImageItem key={img.id} onClick={() => setLightboxIdx(i)}>
-              {/* S3 연동 시: src={`${S3_BASE_URL}/${img.s3Key}`} */}
               <img src={img.s3Key} alt={img.originalFileName} />
               {i === 3 && images.length > 4 && (
                 <MoreOverlay>+{images.length - 4}</MoreOverlay>
@@ -154,17 +99,14 @@ export default function ReviewDetailPage() {
 
       {review.tag && <TagLine>{review.tag}</TagLine>}
       <Body>{review.content}</Body>
-
       <BackButton onClick={() => navigate('/board/review/list')}>
         ← 목록으로
       </BackButton>
 
-      {/* 댓글 섹션 */}
       <CommentSection>
         <CommentTitle>
           댓글 <CommentCount>{comments.length}</CommentCount>
         </CommentTitle>
-
         <CommentList>
           {comments.map((c) => (
             <CommentItem key={c.id} $isOwner={c.ownerYn === 'Y'}>
@@ -172,26 +114,21 @@ export default function ReviewDetailPage() {
                 <CommentWriter $isOwner={c.ownerYn === 'Y'}>
                   {c.writer}
                 </CommentWriter>
-
                 {c.ownerYn !== 'Y' && c.rating && (
                   <StarRating rating={c.rating} />
                 )}
-
                 <CommentRight>
                   <CommentDate>
                     {new Date(c.createdAt).toLocaleDateString('ko-KR')}
                   </CommentDate>
-
                   <CommentDeleteBtn onClick={() => setDeleteCommentId(c.id)}>
                     삭제
                   </CommentDeleteBtn>
                 </CommentRight>
               </CommentTop>
-
               <CommentBody>{c.content}</CommentBody>
             </CommentItem>
           ))}
-
           {comments.length === 0 && (
             <EmptyComment>첫 번째 댓글을 남겨보세요 💬</EmptyComment>
           )}
@@ -221,7 +158,6 @@ export default function ReviewDetailPage() {
         </CommentInputBox>
       </CommentSection>
 
-      {/* 라이트박스 */}
       {lightboxIdx !== null && (
         <Overlay onClick={() => setLightboxIdx(null)}>
           <LightboxImg
@@ -253,7 +189,6 @@ export default function ReviewDetailPage() {
         </Overlay>
       )}
 
-      {/* 후기 삭제 모달 */}
       {showConfirm && (
         <ModalOverlay>
           <Modal>
@@ -268,7 +203,6 @@ export default function ReviewDetailPage() {
         </ModalOverlay>
       )}
 
-      {/* 댓글 삭제 모달 */}
       {deleteCommentId && (
         <ModalOverlay>
           <Modal>
@@ -288,7 +222,6 @@ export default function ReviewDetailPage() {
   );
 }
 
-/* ── Styled Components ── */
 const Wrapper = styled.div``;
 const Header = styled.div`
   display: flex;
@@ -462,6 +395,12 @@ const CommentWriter = styled.span`
   color: ${({ $isOwner, theme }) =>
     $isOwner ? theme.colors.primary : theme.colors.textDark};
 `;
+const CommentRight = styled.div`
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
 const CommentDate = styled.span`
   font-size: 13px;
   color: ${({ theme }) => theme.colors.textLight};
@@ -479,7 +418,6 @@ const CommentDeleteBtn = styled.button`
   border: none;
   cursor: pointer;
   padding: 0;
-
   &:hover {
     color: #ef4444;
   }
@@ -641,11 +579,4 @@ const ModalDelete = styled.button`
   &:hover {
     background: #dc2626;
   }
-`;
-
-const CommentRight = styled.div`
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 10px;
 `;

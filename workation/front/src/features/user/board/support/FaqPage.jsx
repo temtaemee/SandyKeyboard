@@ -1,107 +1,29 @@
-import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { getFaqList, createFaq, updateFaq, deleteFaq } from '../api/Supportapi';
-
-const TEMP_MEMBER_ID = 1;
-const PAGE_SIZE = 10;
+import { useFaq } from '../hooks/useFaq';
 
 export default function FaqPage() {
-  const [faqList, setFaqList] = useState([]);
-  const [openId, setOpenId] = useState(null);
-  const [currentPage, setCurrentPage] = useState(0); // 0-based
-
-  const [showForm, setShowForm] = useState(false);
-  const [editTarget, setEditTarget] = useState(null);
-  const [formQ, setFormQ] = useState('');
-  const [formA, setFormA] = useState('');
-  const [deleteId, setDeleteId] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-
-  // 목록 전체 조회 (FAQ는 전체를 받아 프론트에서 페이징)
-  useEffect(() => {
-    getFaqList()
-      .then(setFaqList)
-      .catch((err) => console.error('FAQ 목록 조회 실패', err));
-  }, []);
-
-  // 현재 페이지에 보여줄 항목
-  const totalPages = Math.max(1, Math.ceil(faqList.length / PAGE_SIZE));
-  const pagedList = faqList.slice(
-    currentPage * PAGE_SIZE,
-    (currentPage + 1) * PAGE_SIZE
-  );
-
-  // 페이지 변경 시 열려있는 항목 닫기
-  function handlePageChange(page) {
-    setCurrentPage(page);
-    setOpenId(null);
-  }
-
-  function openWrite() {
-    setEditTarget(null);
-    setFormQ('');
-    setFormA('');
-    setShowForm(true);
-  }
-
-  function openEdit(faq) {
-    setEditTarget(faq);
-    setFormQ(faq.question);
-    setFormA(faq.answer);
-    setShowForm(true);
-  }
-
-  async function handleFormSubmit() {
-    if (!formQ.trim()) return alert('질문을 입력해주세요.');
-    if (!formA.trim()) return alert('답변을 입력해주세요.');
-
-    try {
-      setSubmitting(true);
-      if (editTarget) {
-        await updateFaq(editTarget.id, { question: formQ, answer: formA });
-        setFaqList((prev) =>
-          prev.map((f) =>
-            f.id === editTarget.id
-              ? { ...f, question: formQ, answer: formA }
-              : f
-          )
-        );
-      } else {
-        await createFaq({
-          memberId: TEMP_MEMBER_ID,
-          question: formQ,
-          answer: formA,
-        });
-        const updated = await getFaqList();
-        setFaqList(updated);
-        // 등록 후 마지막 페이지로 이동
-        const newTotal = Math.max(1, Math.ceil(updated.length / PAGE_SIZE));
-        setCurrentPage(newTotal - 1);
-      }
-      setShowForm(false);
-    } catch (err) {
-      console.error('FAQ 저장 실패', err);
-      alert('저장에 실패했습니다.');
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  async function handleDelete() {
-    try {
-      await deleteFaq(deleteId);
-      const updated = faqList.filter((f) => f.id !== deleteId);
-      setFaqList(updated);
-      if (openId === deleteId) setOpenId(null);
-      setDeleteId(null);
-      // 삭제 후 현재 페이지가 범위를 벗어나면 앞 페이지로
-      const newTotal = Math.max(1, Math.ceil(updated.length / PAGE_SIZE));
-      if (currentPage >= newTotal) setCurrentPage(newTotal - 1);
-    } catch (err) {
-      console.error('FAQ 삭제 실패', err);
-      alert('삭제에 실패했습니다.');
-    }
-  }
+  const {
+    pagedList,
+    openId,
+    setOpenId,
+    currentPage,
+    totalPages,
+    showForm,
+    setShowForm,
+    editTarget,
+    formQ,
+    setFormQ,
+    formA,
+    setFormA,
+    deleteId,
+    setDeleteId,
+    submitting,
+    handlePageChange,
+    openWrite,
+    openEdit,
+    handleFormSubmit,
+    handleDelete,
+  } = useFaq();
 
   return (
     <Wrapper>
@@ -127,7 +49,6 @@ export default function FaqPage() {
                 </ItemDeleteBtn>
               </ItemButtons>
             </QuestionRow>
-
             {openId === faq.id && (
               <Answer>
                 <ABadge>A</ABadge>
@@ -136,10 +57,9 @@ export default function FaqPage() {
             )}
           </Item>
         ))}
-        {faqList.length === 0 && <Empty>등록된 FAQ가 없습니다.</Empty>}
+        {pagedList.length === 0 && <Empty>등록된 FAQ가 없습니다.</Empty>}
       </Board>
 
-      {/* 페이지네이션 */}
       {totalPages > 1 && (
         <Pagination>
           <PageBtn
@@ -166,7 +86,6 @@ export default function FaqPage() {
         </Pagination>
       )}
 
-      {/* 글쓰기/수정 모달 */}
       {showForm && (
         <Overlay>
           <FormModal>
@@ -197,7 +116,6 @@ export default function FaqPage() {
         </Overlay>
       )}
 
-      {/* 삭제 확인 모달 */}
       {deleteId && (
         <Overlay>
           <Modal>
@@ -213,7 +131,6 @@ export default function FaqPage() {
   );
 }
 
-/* ── Styled Components ── */
 const Wrapper = styled.div``;
 const TopRow = styled.div`
   display: flex;
@@ -348,7 +265,6 @@ const Empty = styled.div`
   color: ${({ theme }) => theme.colors.textLight};
   font-size: 15px;
 `;
-
 const Pagination = styled.div`
   display: flex;
   justify-content: center;
@@ -380,7 +296,6 @@ const PageBtn = styled.button`
     cursor: default;
   }
 `;
-
 const Overlay = styled.div`
   position: fixed;
   inset: 0;

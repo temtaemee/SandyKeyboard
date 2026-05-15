@@ -1,70 +1,22 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { createNotice, updateNotice, getNoticeDetail } from '../api/Supportapi';
-
-// TODO: 로그인 연동 후 실제 memberId로 교체
-const TEMP_MEMBER_ID = 1;
+import { useNoticeWrite } from '../hooks/useNoticeWrite';
 
 export default function NoticeWritePage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-
-  // URL에 ?id=123 이 있으면 수정 모드 (리뷰와 동일한 패턴)
-  const editId = searchParams.get('id');
-  const isEdit = !!editId;
-
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [files, setFiles] = useState([]); // 새로 첨부할 파일
-  const [submitting, setSubmitting] = useState(false);
-  const [loadingEdit, setLoadingEdit] = useState(isEdit);
-
-  // 수정 모드: 기존 데이터 불러오기
-  useEffect(() => {
-    if (!isEdit) return;
-    getNoticeDetail(editId)
-      .then((data) => {
-        setTitle(data.title ?? '');
-        setContent(data.content ?? '');
-      })
-      .catch((err) => {
-        console.error('수정할 공지를 불러오지 못했습니다.', err);
-        alert('공지 정보를 불러오지 못했습니다.');
-        navigate('/board/support/notice');
-      })
-      .finally(() => setLoadingEdit(false));
-  }, [editId]);
-
-  function handleFileChange(e) {
-    setFiles((prev) => [...prev, ...e.target.files]);
-    e.target.value = '';
-  }
-  function handleRemoveFile(i) {
-    setFiles((prev) => prev.filter((_, idx) => idx !== i));
-  }
-
-  async function handleSubmit() {
-    if (!title.trim()) return alert('제목을 입력해주세요.');
-    if (!content.trim()) return alert('내용을 입력해주세요.');
-
-    try {
-      setSubmitting(true);
-      if (isEdit) {
-        // 수정  PUT /api/board/notice/{id}  — JSON (백엔드 수정 API는 파일 미지원)
-        await updateNotice(editId, { title, content });
-      } else {
-        // 등록  POST /api/board/notice  — multipart/form-data
-        await createNotice({ memberId: TEMP_MEMBER_ID, title, content }, files);
-      }
-      navigate('/board/support/notice');
-    } catch (err) {
-      console.error('공지 저장 실패', err);
-      alert(isEdit ? '수정에 실패했습니다.' : '등록에 실패했습니다.');
-    } finally {
-      setSubmitting(false);
-    }
-  }
+  const {
+    isEdit,
+    title,
+    setTitle,
+    content,
+    setContent,
+    files,
+    submitting,
+    loadingEdit,
+    handleFileChange,
+    handleRemoveFile,
+    handleSubmit,
+  } = useNoticeWrite();
 
   if (loadingEdit)
     return (
@@ -84,7 +36,6 @@ export default function NoticeWritePage() {
             onChange={(e) => setTitle(e.target.value)}
           />
         </Row>
-
         <Row $alignTop>
           <Label>내용</Label>
           <TextArea
@@ -94,7 +45,6 @@ export default function NoticeWritePage() {
           />
         </Row>
 
-        {/* 파일 첨부 — 수정 모드에서는 숨김 (백엔드 수정 API 파일 미지원) */}
         {!isEdit && (
           <Row $alignTop>
             <Label>파일 첨부</Label>
@@ -144,7 +94,6 @@ export default function NoticeWritePage() {
   );
 }
 
-/* ── Styled Components (기존 유지) ── */
 const Wrapper = styled.div``;
 const Board = styled.div`
   border-top: 2px solid ${({ theme }) => theme.colors.textDark};

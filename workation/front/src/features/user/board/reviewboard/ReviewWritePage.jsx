@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { createReview, updateReview, getReviewDetail } from '../api/Reviewapi';
+import { useReviewWrite } from '../hooks/useReviewWrite';
 
 function StarRating({ rating, onChange }) {
   const [hovered, setHovered] = useState(0);
@@ -24,85 +24,26 @@ function StarRating({ rating, onChange }) {
 
 export default function ReviewWritePage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-
-  // URL에 ?id=123 이 있으면 수정 모드
-  const editId = searchParams.get('id');
-  const isEdit = !!editId;
-
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [tag, setTag] = useState('');
-  const [rating, setRating] = useState(5);
-  const [images, setImages] = useState([]); // 새로 첨부할 이미지: { file, previewUrl }[]
-  const [existingImages, setExistingImages] = useState([]); // 기존 이미지 (수정 모드)
-  const [submitting, setSubmitting] = useState(false);
-  const [loadingEdit, setLoadingEdit] = useState(isEdit);
-
-  // 수정 모드일 때 기존 데이터 불러오기
-  useEffect(() => {
-    if (!isEdit) return;
-    getReviewDetail(editId)
-      .then((data) => {
-        setTitle(data.title ?? '');
-        setContent(data.content ?? '');
-        setTag(data.tag ?? '');
-        setRating(data.rating ?? 5);
-        setExistingImages(data.images ?? []);
-      })
-      .catch((err) => {
-        console.error('수정할 후기를 불러오지 못했습니다.', err);
-        alert('후기 정보를 불러오지 못했습니다.');
-        navigate('/board/review/list');
-      })
-      .finally(() => setLoadingEdit(false));
-  }, [editId]);
-
-  function handleFileChange(e) {
-    [...e.target.files].forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (ev) =>
-        setImages((prev) => [...prev, { file, previewUrl: ev.target.result }]);
-      reader.readAsDataURL(file);
-    });
-    e.target.value = '';
-  }
-
-  function handleRemoveNewImage(i) {
-    setImages((prev) => prev.filter((_, idx) => idx !== i));
-  }
-
-  // 기존 이미지 제거 (수정 모드: UI에서만 제거 표시, 새 이미지 업로드 시 백엔드에서 교체됨)
-  function handleRemoveExistingImage(i) {
-    setExistingImages((prev) => prev.filter((_, idx) => idx !== i));
-  }
-
-  const totalImageCount = existingImages.length + images.length;
-
-  async function handleSubmit() {
-    if (!title.trim()) return alert('제목을 입력해주세요.');
-    if (!content.trim()) return alert('내용을 입력해주세요.');
-    if (rating === 0) return alert('별점을 선택해주세요.');
-
-    try {
-      setSubmitting(true);
-      const dto = { title, content, tag, rating };
-      const imageFiles = images.map((img) => img.file);
-
-      if (isEdit) {
-        await updateReview(editId, dto, imageFiles);
-      } else {
-        await createReview(dto, imageFiles);
-      }
-
-      navigate('/board/review/list');
-    } catch (err) {
-      console.error(err);
-      alert(isEdit ? '수정에 실패했습니다.' : '등록에 실패했습니다.');
-    } finally {
-      setSubmitting(false);
-    }
-  }
+  const {
+    isEdit,
+    title,
+    setTitle,
+    content,
+    setContent,
+    tag,
+    setTag,
+    rating,
+    setRating,
+    images,
+    existingImages,
+    totalImageCount,
+    submitting,
+    loadingEdit,
+    handleFileChange,
+    handleRemoveNewImage,
+    handleRemoveExistingImage,
+    handleSubmit,
+  } = useReviewWrite();
 
   if (loadingEdit)
     return (
@@ -113,11 +54,8 @@ export default function ReviewWritePage() {
 
   return (
     <Wrapper>
-      {/* 수정/등록 타이틀 표시 */}
       <PageTitle>{isEdit ? '후기 수정' : '후기 등록'}</PageTitle>
-
       <Board>
-        {/* 제목 */}
         <Row>
           <Label>제목</Label>
           <Input
@@ -126,14 +64,10 @@ export default function ReviewWritePage() {
             onChange={(e) => setTitle(e.target.value)}
           />
         </Row>
-
-        {/* 별점 */}
         <Row>
           <Label>별점</Label>
           <StarRating rating={rating} onChange={setRating} />
         </Row>
-
-        {/* 태그 */}
         <Row>
           <Label>한줄 태그</Label>
           <Input
@@ -142,8 +76,6 @@ export default function ReviewWritePage() {
             onChange={(e) => setTag(e.target.value)}
           />
         </Row>
-
-        {/* 내용 */}
         <Row $alignTop>
           <Label>내용</Label>
           <TextArea
@@ -152,8 +84,6 @@ export default function ReviewWritePage() {
             onChange={(e) => setContent(e.target.value)}
           />
         </Row>
-
-        {/* 이미지 첨부 */}
         <Row $alignTop>
           <Label>이미지</Label>
           <FileArea>
@@ -163,9 +93,7 @@ export default function ReviewWritePage() {
                 <span> · 새 이미지를 추가하면 기존 이미지가 교체됩니다</span>
               )}
             </FileHint>
-
             <PreviewGrid>
-              {/* 기존 이미지 (수정 모드) */}
               {existingImages.map((img, i) => (
                 <PreviewItem key={`existing-${img.id}`}>
                   <PreviewImg src={img.s3Key} alt={img.originalFileName} />
@@ -175,8 +103,6 @@ export default function ReviewWritePage() {
                   </RemoveOverlay>
                 </PreviewItem>
               ))}
-
-              {/* 새로 추가할 이미지 */}
               {images.map((img, i) => (
                 <PreviewItem key={`new-${i}`}>
                   <PreviewImg src={img.previewUrl} alt={`새 이미지 ${i + 1}`} />
@@ -186,8 +112,6 @@ export default function ReviewWritePage() {
                   </RemoveOverlay>
                 </PreviewItem>
               ))}
-
-              {/* 추가 버튼 */}
               {totalImageCount < 10 && (
                 <AddButton htmlFor="review-image-upload">
                   <AddIcon>📷</AddIcon>
@@ -205,7 +129,6 @@ export default function ReviewWritePage() {
           </FileArea>
         </Row>
       </Board>
-
       <ButtonGroup>
         <CancelButton onClick={() => navigate('/board/review/list')}>
           취소
@@ -224,16 +147,13 @@ export default function ReviewWritePage() {
   );
 }
 
-/* ── Styled Components ── */
 const Wrapper = styled.div``;
-
 const PageTitle = styled.h2`
   font-size: 20px;
   font-weight: 700;
   color: ${({ theme }) => theme.colors.textDark};
   margin-bottom: 20px;
 `;
-
 const Board = styled.div`
   border-top: 2px solid ${({ theme }) => theme.colors.textDark};
   margin-bottom: 32px;
@@ -305,7 +225,6 @@ const PreviewGrid = styled.div`
   flex-wrap: wrap;
   gap: 10px;
 `;
-
 const PreviewItem = styled.div`
   width: 100px;
   height: 100px;
