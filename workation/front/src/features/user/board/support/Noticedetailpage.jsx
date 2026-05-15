@@ -1,38 +1,12 @@
-import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { getNoticeDetail, deleteNotice } from '../api/Supportapi';
+import { useNoticeDetail } from '../hooks/useNoticeDetail';
 
 export default function NoticeDetailPage() {
   const { noticeId } = useParams();
   const navigate = useNavigate();
-
-  const [notice, setNotice] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [showConfirm, setShowConfirm] = useState(false);
-
-  // 상세 조회  GET /api/board/notice/{id}
-  useEffect(() => {
-    getNoticeDetail(noticeId)
-      .then(setNotice)
-      .catch((err) => {
-        console.error('공지 상세 조회 실패', err);
-        setNotice(null);
-      })
-      .finally(() => setLoading(false));
-  }, [noticeId]);
-
-  // 삭제  DELETE /api/board/notice/{id}
-  async function handleDelete() {
-    try {
-      await deleteNotice(noticeId);
-      setShowConfirm(false);
-      navigate('/board/support/notice');
-    } catch (err) {
-      console.error('공지 삭제 실패', err);
-      alert('삭제에 실패했습니다.');
-    }
-  }
+  const { notice, loading, showConfirm, setShowConfirm, handleDelete } =
+    useNoticeDetail(noticeId);
 
   if (loading)
     return (
@@ -50,7 +24,6 @@ export default function NoticeDetailPage() {
   return (
     <Wrapper>
       <DetailTitle>{notice.title}</DetailTitle>
-
       <Meta>
         <MetaItem>
           <MetaLabel>작성자</MetaLabel>
@@ -65,11 +38,9 @@ export default function NoticeDetailPage() {
           </MetaValue>
         </MetaItem>
       </Meta>
-
       <Divider />
       <Body>{notice.content}</Body>
 
-      {/* 첨부파일: 백엔드 NoticeRespDto.files[] */}
       {notice.files && notice.files.length > 0 && (
         <FileSection>
           <FileTitle>첨부파일</FileTitle>
@@ -78,7 +49,6 @@ export default function NoticeDetailPage() {
               <FileItem key={file.id}>
                 <FileIcon>📎</FileIcon>
                 <FileName>{file.originalFileName}</FileName>
-                {/* S3 연동 전: 다운로드 기능 미지원 */}
                 <DownloadBtn
                   onClick={() => alert(`${file.originalFileName} 다운로드`)}
                 >
@@ -95,7 +65,6 @@ export default function NoticeDetailPage() {
           ← 목록으로
         </BackButton>
         <RightButtons>
-          {/* 리뷰와 동일하게 ?id= 쿼리파라미터로 수정 모드 전달 */}
           <EditButton
             onClick={() =>
               navigate(`/board/support/notice/write?id=${noticeId}`)
@@ -124,7 +93,6 @@ export default function NoticeDetailPage() {
   );
 }
 
-/* ── Styled Components (기존 유지) ── */
 const Wrapper = styled.div``;
 const DetailTitle = styled.h2`
   font-size: 24px;
