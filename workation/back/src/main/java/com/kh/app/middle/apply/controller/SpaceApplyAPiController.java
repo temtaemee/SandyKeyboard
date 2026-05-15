@@ -25,9 +25,8 @@ public class SpaceApplyAPiController {
 
     // 리스트 불러오기
     @GetMapping("/seller/spaces/list")
-    public ResponseEntity<Object> getApplyList(@RequestParam(defaultValue = "0") int pno) {
+    public void getApplyList(@RequestParam(defaultValue = "0") int pno) {
         spaceApplyService.getApplyList(pno);
-        return ResponseEntity.ok();
     }
 
     // 심사
@@ -37,7 +36,7 @@ public class SpaceApplyAPiController {
             @RequestBody SpaceApplyPermitReqDto dto  // status만 담겨있음
     ) {
 //         applyId로 SPACE_APPLY 조회 → spaceId는 서비스에서 꺼냄
-        spaceApplyService.create(applyId, dto);
+//        spaceApplyService.create(applyId, dto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
