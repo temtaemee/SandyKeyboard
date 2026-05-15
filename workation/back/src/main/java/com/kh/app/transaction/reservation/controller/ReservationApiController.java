@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -27,14 +28,13 @@ public class ReservationApiController {
     public ResponseEntity<Long> create(
             @PathVariable ProductType productType,
             @PathVariable Long productId,
-            @ModelAttribute ReservationCreateReqDto dto,
-            @RequestParam(value = "files", required = false)
+            @AuthenticationPrincipal String username,
+            @RequestPart ReservationCreateReqDto dto,
+            @RequestPart(value = "files", required = false)
             List<MultipartFile> files
     ) {
 
-        String username = SecurityContextHolder.getContext()
-                .getAuthentication()
-                .getName();
+
 
         Long reservationId = reservationService.create(
                 username,
