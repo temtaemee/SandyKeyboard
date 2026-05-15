@@ -10,7 +10,7 @@ import java.nio.channels.FileChannel;
 import java.util.Optional;
 
 public interface ReservationRepository extends JpaRepository<ReservationEntity, Long>, ReservationRepositoryCustom {
-    Page<ReservationEntity> findByMember(
+    Page<ReservationEntity> findByMemberOrderByIdDesc(
             MemberEntity member,
             Pageable pageable
     );
@@ -19,4 +19,5 @@ public interface ReservationRepository extends JpaRepository<ReservationEntity, 
             Long id,
             MemberEntity member
     );
+
 }
