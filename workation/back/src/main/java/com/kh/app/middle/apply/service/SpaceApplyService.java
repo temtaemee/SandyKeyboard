@@ -7,6 +7,9 @@ import com.kh.app.middle.apply.dto.req.SpaceApplyReqDto;
 import com.kh.app.middle.apply.dto.resp.SpaceApplyRespDto;
 import com.kh.app.middle.apply.entity.SpaceApplyEntity;
 import com.kh.app.middle.apply.repository.SpaceApplyRepository;
+import com.kh.app.notification.dto.request.NotificationCreateReqDto;
+import com.kh.app.notification.entity.NotificationType;
+import com.kh.app.notification.service.NotificationService;
 import com.kh.app.product.space.entity.SpaceEntity;
 import com.kh.app.product.space.repository.SpaceRepository;
 import com.kh.app.security.user.CustomUserDetails;
@@ -30,6 +33,7 @@ public class SpaceApplyService {
     private final SpaceApplyRepository spaceApplyRepository;
     private final MemberRepository memberRepository;
     private final SpaceRepository spaceRepository;
+    private final NotificationService notificationService;
 
     //등록 심사 신청
     @Transactional
@@ -79,13 +83,34 @@ public class SpaceApplyService {
 
 
         if(dto.getApplyStatus().equals("A")){
-            //승인ㅔ
+            //승인
             apply.update(dto);
             // 노출여부 변경필요
 
+            //알림
+            notificationService.createNotification(
+                    NotificationCreateReqDto.builder()
+                            .memberId(apply.getSeller().getId())
+                            .type(NotificationType.SPACE_APPROVED)
+                            .content("공간 등록 심사가 승인되었습니다.")
+                            .redirectUrl("/mypage/spaces")
+                            .referenceId(apply.getId())
+                            .build()
+            );
         }else if(dto.getApplyStatus().equals("R")){
             //거절
             apply.update(dto);
+
+            //알림
+            notificationService.createNotification(
+                    NotificationCreateReqDto.builder()
+                            .memberId(apply.getSeller().getId())
+                            .type(NotificationType.SPACE_REJECTED)
+                            .content("공간 등록 심사가 반려되었습니다.")
+                            .redirectUrl("/mypage/spaces")
+                            .referenceId(apply.getId())
+                            .build()
+            );
         }
 
     }
