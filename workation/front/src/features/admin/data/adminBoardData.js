@@ -65,16 +65,6 @@ export const BOARD_POSTS = {
       views: 542,
       status: 'published',
     },
-    {
-      id: 5,
-      isFixed: false,
-      title: '[임시저장] 멤버십 혜택 업그레이드 예정 공지',
-      hasAttachment: false,
-      author: '관리자',
-      date: '2024.05.10',
-      views: 0,
-      status: 'draft',
-    },
   ],
   FAQ: [
     {
@@ -140,16 +130,6 @@ export const BOARD_POSTS = {
       date: '2024.05.01',
       views: 4320,
       status: 'published',
-    },
-    {
-      id: 12,
-      isFixed: false,
-      title: '6월 제주 신규 오픈 기념 이벤트',
-      hasAttachment: true,
-      author: '마케팅팀',
-      date: '2024.04.28',
-      views: 1230,
-      status: 'draft',
     },
   ],
   쿠폰: [

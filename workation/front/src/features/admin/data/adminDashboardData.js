@@ -117,7 +117,7 @@ export const RECENT_PAYMENTS = [
     product: '마운틴 뷰 빌라',
     amount: '₩312,000',
     datetime: '2023.05.20 09:40',
-    status: 'shipping',
+    status: 'paid',
   },
 ];
 

@@ -10,5 +10,5 @@ import java.nio.channels.FileChannel;
 public interface SpaceApplyRepositoryCustom {
     boolean existsPendingApply(Long id, Long spaceId);
 
-    Page<SpaceApplyEntity> getList(Pageable pageable);
+    Page<SpaceApplyEntity> getList(Pageable pageable, Long memberId, boolean isAdmin);
 }

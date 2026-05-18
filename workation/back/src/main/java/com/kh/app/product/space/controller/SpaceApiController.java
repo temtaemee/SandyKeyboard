@@ -14,8 +14,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -98,11 +100,11 @@ public class SpaceApiController {
             @ApiResponse(responseCode = "500", description = "서버 오류",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Long> insert(
-            @Valid @RequestBody SpaceInsertReqDto reqDto
+            @Valid @RequestPart("dto") SpaceInsertReqDto reqDto,
+            @RequestPart(name = "files", required = false) List<MultipartFile> files
     ) {
-        Long id = spaceService.insert(reqDto);
-        return ResponseEntity.ok(id);
+        return ResponseEntity.ok(spaceService.insert(reqDto, files));
     }
 }

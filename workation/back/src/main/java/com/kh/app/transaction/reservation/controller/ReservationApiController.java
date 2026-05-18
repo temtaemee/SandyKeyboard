@@ -10,10 +10,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -23,25 +23,26 @@ import java.util.List;
 public class ReservationApiController {
 
     private final ReservationService reservationService;
-
-    @PostMapping("/{productType}/{productId}/reservation")
+          //stay랑 office 완성후 사용
+//  @PostMapping("/user/{productType}/{productId}/reservation")
+    @PostMapping("/user/reservation")
     public ResponseEntity<Long> create(
-            @PathVariable ProductType productType,
-            @PathVariable Long productId,
-            @AuthenticationPrincipal String username,
-            @RequestPart ReservationCreateReqDto dto,
-            @RequestPart(value = "files", required = false)
-            List<MultipartFile> files
-    ) {
+            //stay랑 office 완성후 사용
+//            @PathVariable ProductType productType,
+//            @PathVariable Long productId,
+            @AuthenticationPrincipal(expression = "username") String username,
+            @RequestPart(name = "data") ReservationCreateReqDto dto,
+            @RequestPart(name = "fileList", required = false) List<MultipartFile> fileList
+    ) throws IOException {
 
-
+        log.info("dto = {}", dto.getCheckinDate());
 
         Long reservationId = reservationService.create(
                 username,
-                productType,
-                productId,
+//                productType,
+//                productId,
                 dto,
-                files
+                fileList
         );
 
         return ResponseEntity
@@ -51,9 +52,9 @@ public class ReservationApiController {
 
 
     @GetMapping("/user/reservation")
-    public ResponseEntity<?> getReservations(@RequestParam(defaultValue = "0") int pno) {
+    public ResponseEntity<?> getReservations(@RequestParam(defaultValue = "0") int pno,@AuthenticationPrincipal(expression = "username") String username) {
 
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+
         Page<ReservationResDto> dtoList = reservationService.getList(username, pno);
 
         return ResponseEntity.ok(dtoList);
@@ -61,19 +62,20 @@ public class ReservationApiController {
     }
 
     @GetMapping("/user/reservation/{id}")
-    public ResponseEntity<ReservationResDto> getOne(@PathVariable Long id) {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+    public ResponseEntity<ReservationResDto> getOne(@PathVariable Long id,@AuthenticationPrincipal(expression = "username") String username) {
+
         ReservationResDto resDto = reservationService.getOne(id, username);
         return ResponseEntity.ok(resDto);
     }
 
     @PutMapping("/user/reservation/{id}")
-    public ResponseEntity<Object> update(@PathVariable Long id, @RequestBody ReservationCreateReqDto dto)
+    public ResponseEntity<Object> update(@PathVariable Long id, @RequestBody ReservationCreateReqDto dto,@AuthenticationPrincipal(expression = "username") String username)
     {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+
         reservationService.update(id ,dto ,username);
         return ResponseEntity.ok().build();
     }
+
 
 
 }

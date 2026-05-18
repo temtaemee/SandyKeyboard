@@ -1,6 +1,5 @@
 import styled from 'styled-components';
 import { Store } from 'lucide-react';
-import StatusBadge from '../common/StatusBadge';
 import { isNewMember } from '../../data/adminSellersConstants';
 
 export default function SellersTable({ sellers, isSuspended, onToggleClick }) {
@@ -15,7 +14,6 @@ export default function SellersTable({ sellers, isSuspended, onToggleClick }) {
           <TH $width="110px">가입일</TH>
           <TH $width="90px">거래 건수</TH>
           <TH $width="60px">신규</TH>
-          <TH $width="80px">상태</TH>
           <TH $width="90px">활동정지</TH>
         </TR>
       </THead>
@@ -39,11 +37,6 @@ export default function SellersTable({ sellers, isSuspended, onToggleClick }) {
               <TD><DateText>{seller.joinedAt}</DateText></TD>
               <TD><TransactionText>{seller.transactions.toLocaleString()}</TransactionText></TD>
               <TD>{isNewMember(seller.joinedAt) && <NewBadge>NEW</NewBadge>}</TD>
-              <TD>
-                <StatusBadge $bg={sus ? '#fee2e2' : '#dcfce7'} $color={sus ? '#b91c1c' : '#15803d'}>
-                  {sus ? '정지됨' : '활동 중'}
-                </StatusBadge>
-              </TD>
               <TD>
                 <ToggleRow onClick={() => onToggleClick(seller, sus)}>
                   <ToggleTrack $on={sus}><ToggleThumb $on={sus} /></ToggleTrack>

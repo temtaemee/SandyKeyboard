@@ -43,7 +43,7 @@ public class ReservationEntity {
     private Integer guestCount;
 
     @Column(nullable = false, length = 100)
-    private String reserverName;
+    private String primaryGuestName;
 
     @Column(nullable = false)
     private LocalDateTime checkinDate;
@@ -52,10 +52,10 @@ public class ReservationEntity {
     private LocalDateTime checkoutDate;
 
     @Column(nullable = false, length = 11)
-    private String reserverPhone;
+    private String primaryGuestPhone;
 
     @Column(nullable = false, length = 255)
-    private String reserverEmail;
+    private String primaryGuestEmail;
 
     @Column(nullable = false)
     private Long originalPrice;
@@ -71,9 +71,13 @@ public class ReservationEntity {
     @Builder.Default
     private String reviewYn = "N";
 
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private ReservationStatus status;
+    @Builder.Default
+    private ReservationStatus status = ReservationStatus.PENDING;
 
     public void approve() {
         this.status = ReservationStatus.APPROVED;
@@ -91,32 +95,55 @@ public class ReservationEntity {
         this.status = ReservationStatus.COMPLETED;
     }
 
+    public void expire() {this.status = ReservationStatus.EXPIRED;}
+
 
     @PrePersist
     private void prePersist() {
-        if (stay.getId() == null && office.getId() == null) {
-            throw new IllegalStateException("예약 대상이 없습니다.");
-        }
+//        if (stay.getId() == null && office.getId() == null) {
+//            throw new IllegalStateException("예약 대상이 없습니다.");
+//        }
+//
+//        if (this.status == null) {
+//            this.status = ReservationStatus.PENDING;
+//        }
 
+        // 임시 테스트용
         if (this.status == null) {
             this.status = ReservationStatus.PENDING;
         }
-
-        validateTarget();
+        this.createdAt = LocalDateTime.now();
+//        validateTarget();
     }
 
     @PreUpdate
     private void validateTarget() {
-        if (stay.getId() == null && office.getId() == null) {
+
+        boolean hasStay = stay != null;
+        boolean hasOffice = office != null;
+        //임시 테스트용
+        if (this.status == null) {
+            this.status = ReservationStatus.PENDING;
+        }
+
+        if (!hasStay && !hasOffice) {
             throw new IllegalStateException("예약 대상이 없습니다.");
+        }
+
+        if (hasStay && hasOffice) {
+            throw new IllegalStateException("숙소와 오피스를 동시에 예약할 수 없습니다.");
         }
     }
 
 
+
+
+
+
     public void update(ReservationCreateReqDto reqDto) {
-        this.reserverName = reqDto.getReserverName();
-        this.reserverPhone = reqDto.getReserverPhone();
-        this.reserverEmail = reqDto.getReserverEmail();
+        this.primaryGuestName = reqDto.getPrimaryGuestName();
+        this.primaryGuestPhone = reqDto.getPrimaryGuestPhone();
+        this.primaryGuestEmail = reqDto.getPrimaryGuestEmail();
 
     }
 }

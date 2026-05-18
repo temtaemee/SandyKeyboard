@@ -14,15 +14,20 @@ function ReservationInsertPage() {
 
   const [vo, setVo] = useState({
     couponId: '',
-    stayId: '',
-    officeId: '',
     guestCount: 1,
-    reserverName: '',
+    primaryGuestName: '',
     checkinDate: '',
     checkoutDate: '',
-    reserverPhone: '',
-    reserverEmail: '',
+    primaryGuestPhone: '',
+    primaryGuestEmail: '',
   });
+
+  // URL 용
+  const [productType, setProductType] = useState('STAY');
+  const [productId, setProductId] = useState(1);
+
+  // 첨부파일
+  const [fileList, setFileList] = useState([]);
 
   // input 변경
   function handleChange(e) {
@@ -30,6 +35,11 @@ function ReservationInsertPage() {
       ...vo,
       [e.target.name]: e.target.value,
     });
+  }
+
+  // 파일 변경
+  function handleFileChange(e) {
+    setFileList([...e.target.files]);
   }
 
   // 예약 등록
@@ -41,10 +51,20 @@ function ReservationInsertPage() {
 
       const formData = new FormData();
 
-      Object.keys(vo).forEach((key) => {
-        formData.append(key, vo[key]);
+      // dto 를 JSON Blob 으로 전송
+      formData.append(
+        'data',
+        new Blob([JSON.stringify(vo)], {
+          type: 'application/json',
+        })
+      );
+
+      // 파일 추가
+      fileList.forEach((file) => {
+        formData.append('fileList', file);
       });
 
+      // stay,office 완성후 넣기 productType, productId,
       const resp = await createReservation(formData);
 
       alert('예약 성공');
@@ -81,26 +101,6 @@ function ReservationInsertPage() {
         <div>
           <input
             type="number"
-            name="stayId"
-            placeholder="숙소 ID"
-            value={vo.stayId}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div>
-          <input
-            type="number"
-            name="officeId"
-            placeholder="오피스 ID"
-            value={vo.officeId}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div>
-          <input
-            type="number"
             name="guestCount"
             placeholder="인원 수"
             value={vo.guestCount}
@@ -111,15 +111,16 @@ function ReservationInsertPage() {
         <div>
           <input
             type="text"
-            name="reserverName"
-            placeholder="예약자 이름"
-            value={vo.reserverName}
+            name="primaryGuestName"
+            placeholder="대표투숙객 이름"
+            value={vo.primaryGuestName}
             onChange={handleChange}
           />
         </div>
 
         <div>
           <label>체크인 날짜</label>
+
           <input
             type="datetime-local"
             name="checkinDate"
@@ -130,6 +131,7 @@ function ReservationInsertPage() {
 
         <div>
           <label>체크아웃 날짜</label>
+
           <input
             type="datetime-local"
             name="checkoutDate"
@@ -141,9 +143,9 @@ function ReservationInsertPage() {
         <div>
           <input
             type="text"
-            name="reserverPhone"
-            placeholder="예약자 전화번호"
-            value={vo.reserverPhone}
+            name="primaryGuestPhone"
+            placeholder="대표투숙객 전화번호"
+            value={vo.primaryGuestPhone}
             onChange={handleChange}
           />
         </div>
@@ -151,10 +153,22 @@ function ReservationInsertPage() {
         <div>
           <input
             type="email"
-            name="reserverEmail"
-            placeholder="예약자 이메일"
-            value={vo.reserverEmail}
+            name="primaryGuestEmail"
+            placeholder="대표투숙객 이메일"
+            value={vo.primaryGuestEmail}
             onChange={handleChange}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="file-input">파일첨부</label>
+          <input
+            id="file-input"
+            type="file"
+            name="f"
+            multiple
+            onChange={handleFileChange}
+            style={{ display: 'none' }}
           />
         </div>
 

@@ -20,6 +20,12 @@ public enum ErrorCode {
     DUPLICATE_PRODUCT_NAME(4009, "SPACE-4009", "동일한 상품명이 존재합니다.", HttpStatus.CONFLICT),
     INVALID_PRICE(4010, "SPACE-4010", "금액 정보가 올바르지 않습니다.", HttpStatus.BAD_REQUEST),
 
+    // STAY
+    STAY_NOT_FOUND(5001, "STAY-5001", "존재하지 않는 숙소입니다.", HttpStatus.NOT_FOUND),
+
+    // OFFICE
+    OFFICE_NOT_FOUND(6001, "OFFICE-6001", "존재하지 않는 오피스입니다.", HttpStatus.NOT_FOUND),
+
     // FILE
     FILE_UPLOAD_FAILED(8001, "FILE-8001", "파일 업로드에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_FILE_TYPE(8002, "FILE-8002", "허용되지 않는 파일 형식입니다.", HttpStatus.BAD_REQUEST),

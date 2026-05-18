@@ -1,7 +1,14 @@
 // src/features/admin/pages/AdminSalesPage.jsx
 import { useState } from 'react';
 import styled from 'styled-components';
-import { Wallet, Receipt, Percent, TrendingUp, AlertTriangle, Filter } from 'lucide-react';
+import {
+  Wallet,
+  Receipt,
+  Percent,
+  TrendingUp,
+  AlertTriangle,
+  Filter,
+} from 'lucide-react';
 import {
   SALES_STAT_CARDS,
   MONTHLY_CHART_DATA,
@@ -13,6 +20,7 @@ import {
   SETTLEMENT_STATUS_MAP,
   APPROVAL_STATUS_MAP,
 } from '../data/adminSalesConstants';
+import StatusBadge from '../components/common/StatusBadge';
 
 const MAX_COUNT = Math.max(...MONTHLY_CHART_DATA.map((d) => d.count));
 
@@ -90,8 +98,8 @@ export default function AdminSalesPage() {
             ))}
           </BarArea>
           <ChartFooterText>
-            이번 달 정산 건수는 전달 대비 <Strong>12%</Strong>{' '}
-            <TrendInline /> 했습니다.
+            이번 달 정산 건수는 전달 대비 <Strong>12%</Strong> <TrendInline />{' '}
+            했습니다.
           </ChartFooterText>
         </ChartCard>
 
@@ -137,7 +145,8 @@ export default function AdminSalesPage() {
             ))}
           </AlertList>
           <AlertFooterNote>
-            ※ 모든 지연 항목은 24시간 이내에 처리되어야 합니다. 긴급 도움이 필요한 경우 기술 지원팀에 문의하세요.
+            ※ 모든 지연 항목은 24시간 이내에 처리되어야 합니다. 긴급 도움이
+            필요한 경우 기술 지원팀에 문의하세요.
           </AlertFooterNote>
         </AlertCard>
       </MidSection>
@@ -211,20 +220,65 @@ export default function AdminSalesPage() {
 }
 
 /* ── Icon Components ── */
-function WalletIcon() { return <Wallet size={20} />; }
-function ReceiptIcon() { return <Receipt size={20} />; }
-function PercentIcon() { return <Percent size={20} />; }
-function TrendUp() { return <TrendingUp size={14} color="#16a34a" />; }
+function WalletIcon() {
+  return <Wallet size={20} />;
+}
+function ReceiptIcon() {
+  return <Receipt size={20} />;
+}
+function PercentIcon() {
+  return <Percent size={20} />;
+}
+function TrendUp() {
+  return <TrendingUp size={14} color="#16a34a" />;
+}
 function TrendInline() {
-  return <TrendingUp size={12} color="#16a34a" style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 2 }} />;
+  return (
+    <TrendingUp
+      size={12}
+      color="#16a34a"
+      style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 2 }}
+    />
+  );
 }
-function AlertDiamondIcon() { return <AlertTriangle size={16} color="#ef4444" />; }
+function AlertDiamondIcon() {
+  return <AlertTriangle size={16} color="#ef4444" />;
+}
 function DateDot() {
-  return <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#94a3b8', display: 'inline-block', marginRight: 4, verticalAlign: 'middle' }} />;
+  return (
+    <span
+      style={{
+        width: 6,
+        height: 6,
+        borderRadius: '50%',
+        background: '#94a3b8',
+        display: 'inline-block',
+        marginRight: 4,
+        verticalAlign: 'middle',
+      }}
+    />
+  );
 }
-function PinIconSmall() { return <Filter size={12} color="#94a3b8" />; }
+function PinIconSmall() {
+  return <Filter size={12} color="#94a3b8" />;
+}
 function RowDotIcon() {
-  return <span style={{ display: 'flex', gap: 2 }}>{[0,1].map(i => <span key={i} style={{ width: 3, height: 3, borderRadius: '50%', background: '#cbd5e1', display: 'block' }} />)}</span>;
+  return (
+    <span style={{ display: 'flex', gap: 2 }}>
+      {[0, 1].map((i) => (
+        <span
+          key={i}
+          style={{
+            width: 3,
+            height: 3,
+            borderRadius: '50%',
+            background: '#cbd5e1',
+            display: 'block',
+          }}
+        />
+      ))}
+    </span>
+  );
 }
 
 /* ── Styled Components ── */
@@ -394,14 +448,16 @@ const BarWrap = styled.div`
 const Bar = styled.div`
   width: 100%;
   height: ${({ $height }) => $height}%;
-  background: ${({ $highlight, theme }) => ($highlight ? theme.colors.adminPrimary : theme.colors.border)};
+  background: ${({ $highlight, theme }) =>
+    $highlight ? theme.colors.adminPrimary : theme.colors.border};
   border-radius: 4px 4px 0 0;
   transition: background 0.2s;
 `;
 
 const BarLabel = styled.span`
   font-size: 11px;
-  color: ${({ $highlight, theme }) => ($highlight ? theme.colors.adminPrimary : theme.colors.textLight)};
+  color: ${({ $highlight, theme }) =>
+    $highlight ? theme.colors.adminPrimary : theme.colors.textLight};
   font-weight: ${({ $highlight }) => ($highlight ? '700' : '500')};
 `;
 
@@ -486,7 +542,7 @@ const AlertCard = styled.div`
   border: 1px solid #fecaca;
   border-radius: 8px;
   padding: 20px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -517,7 +573,8 @@ const AlertList = styled.div`
 
 const AlertItem = styled.div`
   background: ${({ theme }) => theme.colors.white};
-  border: 1px solid ${({ $urgent, theme }) => ($urgent ? '#fca5a5' : theme.colors.border)};
+  border: 1px solid
+    ${({ $urgent, theme }) => ($urgent ? '#fca5a5' : theme.colors.border)};
   border-radius: 6px;
   padding: 12px 14px;
   display: flex;
@@ -543,12 +600,16 @@ const AlertActionBtn = styled.button`
   font-weight: 600;
   padding: 3px 8px;
   border-radius: 4px;
-  border: 1px solid ${({ $dark, theme }) => ($dark ? '#1e293b' : theme.colors.border)};
+  border: 1px solid
+    ${({ $dark, theme }) => ($dark ? '#1e293b' : theme.colors.border)};
   background: ${({ $dark, theme }) => ($dark ? '#1e293b' : theme.colors.white)};
-  color: ${({ $dark, theme }) => ($dark ? theme.colors.white : theme.colors.textMid)};
+  color: ${({ $dark, theme }) =>
+    $dark ? theme.colors.white : theme.colors.textMid};
   font-family: inherit;
   transition: opacity 0.15s;
-  &:hover { opacity: 0.8; }
+  &:hover {
+    opacity: 0.8;
+  }
 `;
 
 const AlertDesc = styled.p`
@@ -605,7 +666,8 @@ const PTHead = styled.thead`
 const PTBody = styled.tbody``;
 
 const PTR = styled.tr`
-  border-top: ${({ $hoverable, theme }) => ($hoverable ? `1px solid ${theme.colors.borderLight}` : 'none')};
+  border-top: ${({ $hoverable, theme }) =>
+    $hoverable ? `1px solid ${theme.colors.borderLight}` : 'none'};
   transition: background 0.1s;
   &:hover {
     background: ${({ $hoverable }) => ($hoverable ? '#fafbfc' : 'transparent')};
@@ -653,16 +715,16 @@ const AmountCell = styled.span`
   font-family: ${({ theme }) => theme.fonts.number};
 `;
 
-const StatusBadge = styled.span`
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 500;
-  background: ${({ $bg }) => $bg};
-  color: ${({ $color }) => $color};
-  white-space: nowrap;
-`;
+// const StatusBadge = styled.span`
+//   display: inline-block;
+//   padding: 4px 10px;
+//   border-radius: 999px;
+//   font-size: 11px;
+//   font-weight: 500;
+//   background: ${({ $bg }) => $bg};
+//   color: ${({ $color }) => $color};
+//   white-space: nowrap;
+// `;
 
 const ApprovalBtn = styled.button`
   padding: 5px 14px;
@@ -673,7 +735,9 @@ const ApprovalBtn = styled.button`
   color: ${({ $color }) => $color};
   font-family: inherit;
   transition: opacity 0.15s;
-  &:hover { opacity: 0.85; }
+  &:hover {
+    opacity: 0.85;
+  }
 `;
 
 const ViewAllRow = styled.div`
@@ -693,5 +757,7 @@ const ViewAllBtn = styled.button`
   background: ${({ theme }) => theme.colors.white};
   font-family: inherit;
   transition: background 0.15s;
-  &:hover { background: ${({ theme }) => theme.colors.bgSection}; }
+  &:hover {
+    background: ${({ theme }) => theme.colors.bgSection};
+  }
 `;

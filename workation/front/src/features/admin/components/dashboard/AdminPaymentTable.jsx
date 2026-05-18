@@ -1,7 +1,7 @@
 // src/features/admin/components/dashboard/AdminPaymentTable.jsx
 import { useState } from 'react';
 import styled from 'styled-components';
-import { ChevronLeft as LucideChevronLeft, ChevronRight as LucideChevronRight, Filter } from 'lucide-react';
+import { Filter } from 'lucide-react';
 import AdminPagination from '../common/AdminPagination';
 import StatusBadge from '../common/StatusBadge';
 import { RECENT_PAYMENTS } from '../../data/adminDashboardData';
@@ -73,8 +73,7 @@ export default function AdminPaymentTable() {
   );
 }
 
-function ChevronLeft() { return <LucideChevronLeft size={14} color="#475569" strokeWidth={1.5} />; }
-function ChevronRight() { return <LucideChevronRight size={14} color="#475569" strokeWidth={1.5} />; }
+
 function FilterIcon() { return <Filter size={14} color="#64748b" />; }
 
 /* ── Styled Components ── */

@@ -5,8 +5,6 @@ import com.kh.app.product.space.entity.SpaceEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
-
 @Entity
 @Table(name = "OFFICE")
 @Builder
@@ -23,7 +21,7 @@ public class OfficeEntity extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     private SpaceEntity space;
 
-    @Column(length = 100 , nullable = false , unique = true)
+    @Column(length = 100, nullable = false, unique = true)
     private String name;
 
     @Column(nullable = false)
@@ -43,12 +41,6 @@ public class OfficeEntity extends BaseEntity {
     private String visibleYn = "Y";
 
     @Column(nullable = false)
-    private LocalDateTime checkInTime;
-
-    @Column(nullable = false)
-    private LocalDateTime checkOutTime;
-
-    @Column()
     private int timePrice;
 
     @Enumerated(EnumType.STRING)
@@ -59,5 +51,15 @@ public class OfficeEntity extends BaseEntity {
         this.visibleYn = visibleYn;
     }
 
-
+    public void update(String name, String summary, String description,
+                       int capacity, int maxCapa,
+                       int timePrice, OfficeType officeType) {
+        this.name = name;
+        this.summary = summary;
+        this.description = description;
+        this.capacity = capacity;
+        this.maxCapa = maxCapa;
+        this.timePrice = timePrice;
+        this.officeType = officeType;
+    }
 }

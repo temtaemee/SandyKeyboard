@@ -24,6 +24,7 @@ export function useReviewDetail(reviewId) {
   useEffect(() => {
     Promise.all([getReviewDetail(reviewId), getComments(reviewId)])
       .then(([reviewData, commentData]) => {
+        console.log('댓글 데이터:', commentData); // ← 이거 추가
         setReview(reviewData);
         setComments(commentData);
       })

@@ -4,6 +4,7 @@ import com.kh.app.member.entity.MemberEntity;
 import com.kh.app.middle.apply.entity.SpaceApplyEntity;
 import com.kh.app.product.space.entity.SpaceEntity;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
 public class SpaceApplyReqDto {

@@ -1,5 +1,6 @@
 package com.kh.app.transaction.reservation.service;
 
+import com.kh.app.aws.service.S3Service;
 import com.kh.app.member.entity.MemberEntity;
 import com.kh.app.member.repository.MemberRepository;
 import com.kh.app.middle.coupon.entity.CouponEntity;
@@ -23,8 +24,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +36,7 @@ public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final ReserveFileRepository reserveFileRepository;
     private final MemberRepository memberRepository;
+    private final S3Service s3Service;
 
     // TODO
     // stay 기능 완성 후 추가 예정
@@ -49,13 +51,13 @@ public class ReservationService {
     // private final CouponRepository couponRepository;
 
     @Transactional
-    public Long create(
+    public Long create (
             String username,
-            ProductType productType,
-            Long productId,
+//            ProductType productType,
+//            Long productId,
             ReservationCreateReqDto dto,
-            List<MultipartFile> files
-    ) {
+            List<MultipartFile> fileList
+    )throws IOException {
 
         MemberEntity memberEntity = memberRepository
                 .findByUsername(username)
@@ -81,34 +83,34 @@ public class ReservationService {
 
         Long originalPrice = 0L;
 
-        switch (productType) {
-
-            // TODO
-            // 실제 숙소 조회 및 날짜별 가격 계산 필요
-            case STAY -> {
-
-                // 임시 가격
-                originalPrice = 100000L;
-
-                log.info(
-                        "임시 STAY 예약 처리 : productId={}",
-                        productId
-                );
-            }
-
-            // TODO
-            // 실제 오피스 조회 및 시간별 가격 계산 필요
-            case OFFICE -> {
-
-                // 임시 가격
-                originalPrice = 50000L;
-
-                log.info(
-                        "임시 OFFICE 예약 처리 : productId={}",
-                        productId
-                );
-            }
-        }
+//        switch (productType) {
+//
+//            // TODO
+//            // 실제 숙소 조회 및 날짜별 가격 계산 필요
+//            case STAY -> {
+//
+//                // 임시 가격
+//                originalPrice = 100000L;
+//
+//                log.info(
+//                        "임시 STAY 예약 처리 : productId={}",
+//                        productId
+//                );
+//            }
+//
+//            // TODO
+//            // 실제 오피스 조회 및 시간별 가격 계산 필요
+//            case OFFICE -> {
+//
+//                // 임시 가격
+//                originalPrice = 50000L;
+//
+//                log.info(
+//                        "임시 OFFICE 예약 처리 : productId={}",
+//                        productId
+//                );
+//            }
+//        }
 
         // TODO
         // coupon 기능 완성 후 실제 할인 정책 적용 예정
@@ -152,42 +154,40 @@ public class ReservationService {
 
         reservationRepository.save(reservation);
 
-        // 첨부파일 저장
-        if (files != null && !files.isEmpty()) {
 
-            for (MultipartFile file : files) {
 
-                if (file.isEmpty()) {
-                    continue;
-                }
 
-                String originalFileName =
-                        file.getOriginalFilename();
+        // 파일 업로드
+        if (fileList != null && !fileList.isEmpty()) {
 
-                // TODO
-                // 실제 S3 업로드 처리 필요
-
-                String s3Key =
-                        "reservation/" + UUID.randomUUID();
-
-                ReserveFileEntity reserveFile =
-                        ReserveFileEntity.builder()
-                                .reservationEntity(reservation)
-                                .originalFileName(originalFileName)
-                                .s3Key(s3Key)
-                                .build();
-
-                reserveFileRepository.save(reserveFile);
+            for (MultipartFile file : fileList) {
 
                 log.info(
-                        "예약 첨부파일 저장 완료 : {}",
-                        originalFileName
+                        "[예약 첨부파일 업로드 시작] 파일명 : {}",
+                        file.getOriginalFilename()
+                );
+
+                String s3Key =
+                        s3Service.upload(file, "reservation");
+
+                reserveFileRepository.save(
+                        ReserveFileEntity.from(
+                                reservation,
+                                file,
+                                s3Key
+                        )
+                );
+
+                log.info(
+                        "[예약 첨부파일 업로드 완료] s3Key : {}",
+                        s3Key
                 );
             }
         }
 
         return reservation.getId();
     }
+    /// ///////////////////////////////////////////////////////////////////////////////////////
 
     public Page<ReservationResDto> getList(
             String username,
@@ -206,7 +206,7 @@ public class ReservationService {
                 PageRequest.of(pno, 10);
 
         return reservationRepository
-                .findByMember(memberEntity, pageable)
+                .findByMemberOrderByIdDesc(memberEntity, pageable)
                 .map(ReservationResDto::from);
     }
 

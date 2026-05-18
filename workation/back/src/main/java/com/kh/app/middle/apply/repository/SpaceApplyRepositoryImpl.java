@@ -19,9 +19,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SpaceApplyRepositoryImpl implements SpaceApplyRepositoryCustom{
 
-    private final QSpaceApplyEntity q = QSpaceApplyEntity.spaceApplyEntity;
-    private final QMemberEntity m = QMemberEntity.memberEntity;
-    private final QSpaceEntity s = QSpaceEntity.spaceEntity;
+    private final static QSpaceApplyEntity q = QSpaceApplyEntity.spaceApplyEntity;
+    private final static QMemberEntity m = QMemberEntity.memberEntity;
+    private final static QSpaceEntity s = QSpaceEntity.spaceEntity;
     private final JPAQueryFactory queryFactory;
 
     @Override
@@ -42,11 +42,14 @@ public class SpaceApplyRepositoryImpl implements SpaceApplyRepositoryCustom{
 
     //목록조회
     @Override
-    public Page<SpaceApplyEntity> getList(Pageable pageable) {
+    public Page<SpaceApplyEntity> getList(Pageable pageable, Long memberId, boolean isAdmin) {
         List<SpaceApplyEntity> applyList = queryFactory
                 .selectFrom(q)
                 .join(q.seller, m).fetchJoin()
                 .join(q.space, s).fetchJoin()
+                .where(
+                        isAdmin ? null : q.seller.id.eq(memberId)
+                )
                 .orderBy(q.id.desc())
                 .offset(pageable.getOffset()) // 몇 번째 데이터부터 가져올지
                 .limit(pageable.getPageSize()) // 몇 개 가져올지
@@ -55,6 +58,9 @@ public class SpaceApplyRepositoryImpl implements SpaceApplyRepositoryCustom{
         Long total = queryFactory
                 .select(q.count())
                 .from(q)
+                .where(
+                        isAdmin ? null : q.seller.id.eq(memberId)
+                )
                 .fetchOne();
 
         return new PageImpl<>(applyList, pageable, total);

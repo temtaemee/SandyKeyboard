@@ -9,6 +9,9 @@ import com.kh.app.transaction.reservation.entity.ReservationStatus;
 import lombok.Getter;
 import lombok.Setter;
 
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import java.time.LocalDateTime;
 
 @Setter
@@ -19,15 +22,17 @@ public class ReservationCreateReqDto {
 
     private Integer guestCount;
 
-    private String reserverName;
+    private String primaryGuestName;
 
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     private LocalDateTime checkinDate;
 
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     private LocalDateTime checkoutDate;
 
-    private String reserverPhone;
+    private String primaryGuestPhone;
 
-    private String reserverEmail;
+    private String primaryGuestEmail;
 
     public ReservationEntity toEntity(
             MemberEntity member,
@@ -45,11 +50,11 @@ public class ReservationCreateReqDto {
                 .stay(stay)
                 .office(office)
                 .guestCount(guestCount)
-                .reserverName(reserverName)
+                .primaryGuestName(primaryGuestName)
                 .checkinDate(checkinDate)
                 .checkoutDate(checkoutDate)
-                .reserverPhone(reserverPhone)
-                .reserverEmail(reserverEmail)
+                .primaryGuestPhone(primaryGuestPhone)
+                .primaryGuestEmail(primaryGuestEmail)
                 .originalPrice(originalPrice)
                 .discountAmount(discountAmount)
                 .totalPrice(totalPrice)

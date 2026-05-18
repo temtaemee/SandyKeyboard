@@ -1,7 +1,6 @@
 // src/features/admin/components/dashboard/AdminActivityTable.jsx
 import { useState } from 'react';
 import styled from 'styled-components';
-import { ChevronLeft as LucideChevronLeft, ChevronRight as LucideChevronRight } from 'lucide-react';
 import AdminPagination from '../common/AdminPagination';
 import StatusBadge from '../common/StatusBadge';
 import { ADMIN_ACTIVITY_LOGS } from '../../data/adminDashboardData';
@@ -87,8 +86,7 @@ export default function AdminActivityTable() {
   );
 }
 
-function ChevronLeft() { return <LucideChevronLeft size={14} color="#475569" strokeWidth={1.5} />; }
-function ChevronRight() { return <LucideChevronRight size={14} color="#475569" strokeWidth={1.5} />; }
+
 
 /* ── Styled Components ── */
 

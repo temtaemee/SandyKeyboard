@@ -15,6 +15,7 @@ export function useReviewWrite() {
   const [rating, setRating] = useState(5);
   const [images, setImages] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
+  const [deletedImageIds, setDeletedImageIds] = useState([]); // 삭제된 기존 이미지 ID 목록
   const [submitting, setSubmitting] = useState(false);
   const [loadingEdit, setLoadingEdit] = useState(isEdit);
 
@@ -51,6 +52,11 @@ export function useReviewWrite() {
   }
 
   function handleRemoveExistingImage(i) {
+    const removed = existingImages[i];
+    // 삭제된 이미지 ID 목록에 추가
+    if (removed?.id) {
+      setDeletedImageIds((prev) => [...prev, removed.id]);
+    }
     setExistingImages((prev) => prev.filter((_, idx) => idx !== i));
   }
 
@@ -65,7 +71,8 @@ export function useReviewWrite() {
       const imageFiles = images.map((img) => img.file);
 
       if (isEdit) {
-        await updateReview(editId, dto, imageFiles);
+        // 삭제된 이미지 ID 목록도 함께 전송
+        await updateReview(editId, dto, imageFiles, deletedImageIds);
       } else {
         await createReview(dto, imageFiles);
       }
@@ -83,10 +90,14 @@ export function useReviewWrite() {
 
   return {
     isEdit,
-    title, setTitle,
-    content, setContent,
-    tag, setTag,
-    rating, setRating,
+    title,
+    setTitle,
+    content,
+    setContent,
+    tag,
+    setTag,
+    rating,
+    setRating,
     images,
     existingImages,
     totalImageCount,
