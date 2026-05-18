@@ -20,7 +20,6 @@ import { SELLERS_LIST, CUSTOMER_LIST } from '../data/adminSellersData';
 import {
   SELLER_STATUS_MAP,
   TOTAL_PAGES,
-  FILTER_TABS,
   AVATAR_COLORS,
   isNewMember,
 } from '../data/adminSellersConstants';
@@ -158,17 +157,6 @@ export default function AdminSellersPage() {
           <TableTitle>
             {view === 'seller' ? '전체 판매자 목록' : '전체 고객 목록'}
           </TableTitle>
-          <FilterTabs>
-            {FILTER_TABS.map((tab) => (
-              <FilterTab
-                key={tab}
-                $active={filter === tab}
-                onClick={() => setFilter(tab)}
-              >
-                {tab}
-              </FilterTab>
-            ))}
-          </FilterTabs>
         </TableHeader>
 
         {view === 'seller' ? (
@@ -377,23 +365,3 @@ const TableTitle = styled.h2`
   color: #0d1c2e;
 `;
 
-const FilterTabs = styled.div`
-  display: flex;
-  gap: 6px;
-`;
-
-const FilterTab = styled.button`
-  padding: 6px 14px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  font-family: inherit;
-  border: 1px solid ${({ $active }) => ($active ? '#244c54' : '#e2e8f0')};
-  background: ${({ $active }) => ($active ? '#244c54' : 'white')};
-  color: ${({ $active }) => ($active ? 'white' : '#64748b')};
-  transition: all 0.15s;
-  cursor: pointer;
-  &:hover {
-    background: ${({ $active }) => ($active ? '#3d646c' : '#f8fafc')};
-  }
-`;

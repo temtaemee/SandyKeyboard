@@ -1,32 +1,21 @@
 import { Bell } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import styled, { keyframes } from 'styled-components';
+import { useNotification } from '../../hooks/useNotification';
+import { useNavigate } from 'react-router-dom';
 
 function NotificationBell() {
+  const {
+    notificationList,
+    handleReadNotification,
+    handleReadAllNotification,
+  } = useNotification();
   const dropdownRef = useRef();
-
+  const navi = useNavigate();
   const [open, setOpen] = useState(false);
 
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      message: '예약이 확정되었습니다.',
-      isRead: false,
-    },
-    {
-      id: 2,
-      message: '새로운 쿠폰이 발급되었습니다.',
-      isRead: false,
-    },
-    {
-      id: 3,
-      message: '리뷰 작성 시 추가 혜택을 받을 수 있어요.',
-      isRead: true,
-    },
-  ]);
-
   // 읽지 않은 알림 존재 여부
-  const hasUnread = notifications.some((n) => !n.isRead);
+  const hasUnread = notificationList.some((n) => !n.read);
 
   // 바깥 클릭 시 닫기
   useEffect(() => {
@@ -42,23 +31,6 @@ function NotificationBell() {
       document.removeEventListener('mousedown', handleOutsideClick);
     };
   }, []);
-
-  // 알림 클릭 시 읽음 처리
-  const handleReadNotification = (id) => {
-    setNotifications((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, isRead: true } : item))
-    );
-  };
-
-  // 전체 읽음 처리
-  const handleReadAll = () => {
-    setNotifications((prev) =>
-      prev.map((item) => ({
-        ...item,
-        isRead: true,
-      }))
-    );
-  };
 
   return (
     <Wrapper ref={dropdownRef}>
@@ -76,24 +48,29 @@ function NotificationBell() {
           <DropdownHeader>
             <DropdownTitle>알림</DropdownTitle>
 
-            {notifications.length > 0 && (
-              <ReadAllButton onClick={handleReadAll}>모두 읽음</ReadAllButton>
+            {notificationList.length > 0 && (
+              <ReadAllButton onClick={handleReadAllNotification}>
+                모두 읽음
+              </ReadAllButton>
             )}
           </DropdownHeader>
 
           <NotificationList>
-            {notifications.length === 0 ? (
+            {notificationList.length === 0 ? (
               <EmptyMessage>새로운 알림이 없습니다</EmptyMessage>
             ) : (
-              notifications.map((item) => (
+              notificationList.map((item) => (
                 <NotificationItem
                   key={item.id}
-                  $isRead={item.isRead}
-                  onClick={() => handleReadNotification(item.id)}
+                  $read={item.read}
+                  onClick={async () => {
+                    await handleReadNotification(item.id);
+                    navi(`${item.redirectUrl}`);
+                  }}
                 >
-                  {!item.isRead && <UnreadDot />}
+                  {!item.read && <UnreadDot />}
 
-                  <Message>{item.message}</Message>
+                  <Message>{item.content}</Message>
                 </NotificationItem>
               ))
             )}
@@ -228,7 +205,7 @@ const NotificationItem = styled.div`
 
   cursor: pointer;
 
-  background-color: ${({ $isRead }) => ($isRead ? 'white' : '#f8fbfc')};
+  background-color: ${({ $read }) => ($read ? 'white' : '#f8fbfc')};
 
   transition: background-color 0.2s;
 

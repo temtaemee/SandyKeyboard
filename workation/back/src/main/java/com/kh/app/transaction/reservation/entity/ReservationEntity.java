@@ -94,23 +94,42 @@ public class ReservationEntity {
 
     @PrePersist
     private void prePersist() {
-        if (stay.getId() == null && office.getId() == null) {
-            throw new IllegalStateException("예약 대상이 없습니다.");
-        }
+//        if (stay.getId() == null && office.getId() == null) {
+//            throw new IllegalStateException("예약 대상이 없습니다.");
+//        }
+//
+//        if (this.status == null) {
+//            this.status = ReservationStatus.PENDING;
+//        }
 
+        // 임시 테스트용
         if (this.status == null) {
             this.status = ReservationStatus.PENDING;
         }
 
-        validateTarget();
+//        validateTarget();
     }
 
     @PreUpdate
     private void validateTarget() {
-        if (stay.getId() == null && office.getId() == null) {
+
+        boolean hasStay = stay != null;
+        boolean hasOffice = office != null;
+        //임시 테스트용
+        if (this.status == null) {
+            this.status = ReservationStatus.PENDING;
+        }
+
+        if (!hasStay && !hasOffice) {
             throw new IllegalStateException("예약 대상이 없습니다.");
         }
+
+        if (hasStay && hasOffice) {
+            throw new IllegalStateException("숙소와 오피스를 동시에 예약할 수 없습니다.");
+        }
     }
+
+
 
 
     public void update(ReservationCreateReqDto reqDto) {

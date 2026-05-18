@@ -8,7 +8,6 @@ export const PAYMENT_STATUS_MAP = {
   paid: { label: '결제완료', bg: '#dcfce7', color: '#15803d' },
   pending: { label: '결제대기', bg: '#ffedd5', color: '#c2410c' },
   refunded: { label: '환불완료', bg: '#fee2e2', color: '#b91c1c' },
-  shipping: { label: '배송중', bg: '#dbeafe', color: '#1d4ed8' },
 };
 
 export const NOTIF_TYPE_COLOR = { warning: '#ef4444', info: '#3b82f6', success: '#16a34a' };

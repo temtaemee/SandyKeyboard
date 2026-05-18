@@ -1,5 +1,4 @@
 import styled from 'styled-components';
-import StatusBadge from '../common/StatusBadge';
 import { AVATAR_COLORS, isNewMember } from '../../data/adminSellersConstants';
 
 export default function CustomersTable({ customers, isSuspended, onToggleClick }) {
@@ -14,7 +13,6 @@ export default function CustomersTable({ customers, isSuspended, onToggleClick }
           <TH $width="120px">가입일</TH>
           <TH $width="90px">총 예약</TH>
           <TH $width="60px">신규</TH>
-          <TH $width="80px">상태</TH>
           <TH $width="90px">활동정지</TH>
         </TR>
       </THead>
@@ -35,11 +33,6 @@ export default function CustomersTable({ customers, isSuspended, onToggleClick }
               <TD><DateText>{customer.joinDate}</DateText></TD>
               <TD><TransactionText>{customer.resvCount}건</TransactionText></TD>
               <TD>{isNewMember(customer.joinDate) && <NewBadge>NEW</NewBadge>}</TD>
-              <TD>
-                <StatusBadge $bg={sus ? '#fee2e2' : '#dcfce7'} $color={sus ? '#b91c1c' : '#15803d'}>
-                  {sus ? '정지됨' : '활성'}
-                </StatusBadge>
-              </TD>
               <TD>
                 <ToggleRow onClick={() => onToggleClick(customer, sus)}>
                   <ToggleTrack $on={sus}><ToggleThumb $on={sus} /></ToggleTrack>
