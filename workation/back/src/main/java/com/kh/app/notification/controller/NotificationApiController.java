@@ -21,7 +21,7 @@ public class NotificationApiController {
     private final NotificationService notificationService;
 
     @PostMapping
-    public String testCreate() {
+    public String  testCreate() {
 
         NotificationCreateReqDto dto = NotificationCreateReqDto.builder()
                 .memberId(1L) //알림 받을 멤버id 번호 Long타입 변수로 처리하면 L안붙여도 됩니다!
@@ -33,7 +33,7 @@ public class NotificationApiController {
 
         notificationService.createNotification(dto);
 
-        return "ok";
+        return "알림 생성 완료! 사용시 리턴은 굳이 복사 안해가셔도 됩니다.";
     }
 
     @GetMapping

@@ -1,7 +1,11 @@
 package com.kh.app.member.service;
 
+import com.kh.app.common.dto.PageRespDto;
 import com.kh.app.member.dto.request.MemberJoinReqDto;
+import com.kh.app.member.dto.request.MemberSearchCondDto;
 import com.kh.app.member.dto.request.SellerApplyReqDto;
+import com.kh.app.member.dto.request.SellerSearchCondDto;
+import com.kh.app.member.dto.response.MemberListRespDto;
 import com.kh.app.member.dto.response.MemberMeRespDto;
 import com.kh.app.member.entity.*;
 import com.kh.app.member.repository.BankRepository;
@@ -13,6 +17,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @Transactional(readOnly = true)
@@ -84,4 +90,38 @@ public class MemberService {
     }
 
 
+    public PageRespDto<MemberListRespDto> searchMembers(MemberSearchCondDto dto) {
+
+        List<MemberListRespDto> list = memberRepository.searchMembers(dto);
+
+        long totalCount = memberRepository.countMembers(dto);
+
+        int totalPage =
+                (int) Math.ceil((double) totalCount / dto.getSize());
+
+        return PageRespDto.<MemberListRespDto>builder()
+                .content(list)
+                .currentPage(dto.getPage())
+                .size(dto.getSize())
+                .totalCount(totalCount)
+                .totalPage(totalPage)
+                .build();
+    }
+
+    public PageRespDto<MemberListRespDto> searchSellers(SellerSearchCondDto dto) {
+        List<MemberListRespDto> list = memberRepository.searchSellers(dto);
+
+        long totalCount = memberRepository.countSellers(dto);
+
+        int totalPage =
+                (int) Math.ceil((double) totalCount / dto.getSize());
+
+        return PageRespDto.<MemberListRespDto>builder()
+                .content(list)
+                .currentPage(dto.getPage())
+                .size(dto.getSize())
+                .totalCount(totalCount)
+                .totalPage(totalPage)
+                .build();
+    }
 }

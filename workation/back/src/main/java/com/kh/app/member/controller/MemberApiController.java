@@ -1,10 +1,13 @@
 package com.kh.app.member.controller;
 
+import com.kh.app.common.dto.PageRespDto;
 import com.kh.app.member.dto.request.MemberJoinReqDto;
+import com.kh.app.member.dto.request.MemberSearchCondDto;
 import com.kh.app.member.dto.request.SellerApplyReqDto;
+import com.kh.app.member.dto.request.SellerSearchCondDto;
 import com.kh.app.member.dto.response.BankRespDto;
+import com.kh.app.member.dto.response.MemberListRespDto;
 import com.kh.app.member.dto.response.MemberMeRespDto;
-import com.kh.app.member.entity.BankEntity;
 import com.kh.app.member.repository.BankRepository;
 import com.kh.app.member.service.MemberService;
 import com.kh.app.security.user.CustomUserDetails;
@@ -49,13 +52,21 @@ public class MemberApiController {
 
     @GetMapping("/auth/me")
     public MemberMeRespDto getMyInfo(Authentication authentication) {
-
         String username = authentication.getName();
-
         return memberService.getMyInfo(username);
     }
 
+    @GetMapping("/admin/member/list")
+    public ResponseEntity<PageRespDto<MemberListRespDto>> searchMembers(MemberSearchCondDto dto) {
+        PageRespDto<MemberListRespDto> result = memberService.searchMembers(dto);
+        return ResponseEntity.ok(result);
+    }
 
+    @GetMapping("/admin/seller/list")
+    public ResponseEntity<PageRespDto<MemberListRespDto>> searchSellers(SellerSearchCondDto dto){
+        PageRespDto<MemberListRespDto> result = memberService.searchSellers(dto);
+        return ResponseEntity.ok(result);
+    }
 
 
 
