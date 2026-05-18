@@ -22,9 +22,10 @@ public class CouponService {
     //쿠폰등록
     @Transactional
     public void create(CouponCreateDto couponCreateDto) {
+        // 
         LocalDateTime couponExiredDate = updateExpriedDate(couponCreateDto.getExpriedDate());
         String couponCode = generateCouponCode(couponCreateDto.getDiscountRate(), couponExiredDate);
-        CouponEntity entity = couponCreateDto.toEntity(couponCode);
+        CouponEntity entity = couponCreateDto.toEntity(couponCode, couponExiredDate);
         couponRepository.save(entity);
     }
 
