@@ -14,6 +14,7 @@ import ReviewWritePage from '../features/user/board/reviewboard/ReviewWritePage'
 
 // 이벤트
 import EventPage from '../features/user/board/event/EventPage';
+import ReviewDetailPage from '../features/user/board/reviewboard/ReviewDetailPage';
 
 function BoardRouter() {
   return (
@@ -32,6 +33,8 @@ function BoardRouter() {
         <Route index element={<Navigate to="list" replace />} />
         <Route path="list" element={<ReviewListPage />} />
         <Route path="write" element={<ReviewWritePage />} />
+        <Route path="detail/:reviewId" element={<ReviewDetailPage />} />{' '}
+        {/* 이거 추가! */}
       </Route>
 
       {/* 이벤트 */}
