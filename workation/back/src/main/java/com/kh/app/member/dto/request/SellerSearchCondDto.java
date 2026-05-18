@@ -10,6 +10,6 @@ import lombok.Setter;
 public class SellerSearchCondDto extends PageReqDto {
 
     private String keyword;
-    private String sellerStatus;
+    private String status;
 
 }
