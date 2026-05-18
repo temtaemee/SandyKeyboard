@@ -5,7 +5,7 @@ import com.kh.app.product.space.entity.SpaceEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Entity
 @Table(name = "STAY")
@@ -46,10 +46,10 @@ public class StayEntity extends BaseEntity {
     private String visibleYn = "Y";
 
     @Column(nullable = false)
-    private LocalDateTime checkInTime;
+    private LocalTime checkInTime;
 
     @Column(nullable = false)
-    private LocalDateTime checkOutTime;
+    private LocalTime checkOutTime;
 
     @Column()
     private int monPrice;
@@ -70,5 +70,27 @@ public class StayEntity extends BaseEntity {
 
     public void changeVisibleYn(String visibleYn) {
         this.visibleYn = visibleYn;
+    }
+
+    public void update(String name, String summary, String description,
+                       int capacity, int maxCapa,
+                       LocalTime checkInTime, LocalTime checkOutTime,
+                       int monPrice, int tuePrice, int wedPrice, int thuPrice,
+                       int friPrice, int satPrice, int sunPrice, int holidayPrice) {
+        this.name = name;
+        this.summary = summary;
+        this.description = description;
+        this.capacity = capacity;
+        this.maxCapa = maxCapa;
+        this.checkInTime = checkInTime;
+        this.checkOutTime = checkOutTime;
+        this.monPrice = monPrice;
+        this.tuePrice = tuePrice;
+        this.wedPrice = wedPrice;
+        this.thuPrice = thuPrice;
+        this.friPrice = friPrice;
+        this.satPrice = satPrice;
+        this.sunPrice = sunPrice;
+        this.holidayPrice = holidayPrice;
     }
 }

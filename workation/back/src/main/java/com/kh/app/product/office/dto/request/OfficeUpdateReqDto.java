@@ -1,9 +1,7 @@
 package com.kh.app.product.office.dto.request;
 
-import com.kh.app.product.office.entity.OfficeEntity;
 import com.kh.app.product.office.entity.OfficeOption;
 import com.kh.app.product.office.entity.OfficeType;
-import com.kh.app.product.space.entity.SpaceEntity;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -14,10 +12,7 @@ import java.util.List;
 
 @Getter
 @Setter
-public class OfficeInsertReqDto {
-
-    @NotNull
-    private Long spaceId;
+public class OfficeUpdateReqDto {
 
     @NotBlank
     private String name;
@@ -44,18 +39,4 @@ public class OfficeInsertReqDto {
     private OfficeType officeType;
 
     private List<OfficeOption> optionList;
-
-    public OfficeEntity toEntity(SpaceEntity space) {
-        return OfficeEntity.builder()
-                .space(space)
-                .name(name)
-                .summary(summary)
-                .description(description)
-                .capacity(capacity)
-                .maxCapa(maxCapa)
-                .timePrice(timePrice)
-                .officeType(officeType)
-                .visibleYn("Y")
-                .build();
-    }
 }

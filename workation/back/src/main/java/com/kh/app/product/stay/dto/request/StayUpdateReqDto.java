@@ -1,7 +1,5 @@
 package com.kh.app.product.stay.dto.request;
 
-import com.kh.app.product.space.entity.SpaceEntity;
-import com.kh.app.product.stay.entity.StayEntity;
 import com.kh.app.product.stay.entity.StayOption;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -14,10 +12,7 @@ import java.util.List;
 
 @Getter
 @Setter
-public class StayInsertReqDto {
-
-    @NotNull
-    private Long spaceId;
+public class StayUpdateReqDto {
 
     @NotBlank
     private String name;
@@ -52,28 +47,4 @@ public class StayInsertReqDto {
     @NotNull @Min(0) private Integer holidayPrice;
 
     private List<StayOption> optionList;
-
-    private List<StayExtraPriceReqDto> extraPriceList;
-
-    public StayEntity toEntity(SpaceEntity space) {
-        return StayEntity.builder()
-                .space(space)
-                .name(name)
-                .summary(summary)
-                .description(description)
-                .capacity(capacity)
-                .maxCapa(maxCapa)
-                .checkInTime(checkInTime)
-                .checkOutTime(checkOutTime)
-                .monPrice(monPrice)
-                .tuePrice(tuePrice)
-                .wedPrice(wedPrice)
-                .thuPrice(thuPrice)
-                .friPrice(friPrice)
-                .satPrice(satPrice)
-                .sunPrice(sunPrice)
-                .holidayPrice(holidayPrice)
-                .visibleYn("Y")
-                .build();
-    }
 }
