@@ -7,6 +7,7 @@ import {
   getComments,
   createComment,
   deleteComment,
+  getImageUrl,
 } from '../api/Reviewapi';
 
 /* ── 별점 표시 ── */
@@ -192,7 +193,7 @@ function ReviewCard({ review, onDelete, onEdit }) {
   const [needsMore, setNeedsMore] = useState(false);
   const contentRef = useRef(null);
 
-  const imageUrls = review.images?.map((img) => img.s3Key) ?? [];
+  const imageUrls = review.images?.map((img) => getImageUrl(img.s3Key)) ?? [];
 
   useEffect(() => {
     if (!contentRef.current) return;
@@ -535,29 +536,20 @@ const DateText = styled.span`
 
 const ImageGrid = styled.div`
   display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3px;
   margin-bottom: 14px;
   border-radius: ${({ theme }) => theme.radius.md};
   overflow: hidden;
-  gap: 3px;
-  ${({ $count }) => {
-    if ($count === 1) return 'grid-template-columns: 1fr;';
-    if ($count === 2) return 'grid-template-columns: 1fr 1fr;';
-    if ($count === 3)
-      return `
-      grid-template-columns: 2fr 1fr;
-      grid-template-rows: 1fr 1fr;
-      & > *:first-child { grid-row: span 2; }
-    `;
-    return 'grid-template-columns: 1fr 1fr 1fr 1fr;';
-  }}
 `;
 
 const ImageItem = styled.div`
   position: relative;
   overflow: hidden;
-  aspect-ratio: ${({ $single }) => ($single ? '16/9' : '4/3')};
+  aspect-ratio: 1 / 1;
   cursor: pointer;
   background: ${({ theme }) => theme.colors.bgSection};
+
   img {
     width: 100%;
     height: 100%;
@@ -565,6 +557,7 @@ const ImageItem = styled.div`
     transition: transform 0.2s;
     display: block;
   }
+
   &:hover img {
     transform: scale(1.03);
   }

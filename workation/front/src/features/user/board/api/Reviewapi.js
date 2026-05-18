@@ -12,9 +12,13 @@ const getAuthConfig = () => {
   };
 };
 
+export const getImageUrl = (s3Key) => {
+  if (!s3Key) return '';
+  if (s3Key.startsWith('http')) return s3Key;
+  return `https://finalproject-s3-bucket-243050855199-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/${s3Key}`;
+};
+
 // 목록 조회 (페이징)
-// 백엔드: GET /api/public/board/review?page=0
-// 응답: { content: [...], totalPages, totalElements, ... }
 export const getReviewList = (page = 0) =>
   axios.get(PUBLIC_BASE, { params: { page } }).then((res) => res.data);
 
@@ -37,8 +41,8 @@ export const createReview = (dto, imageFiles) => {
     .then((res) => res.data);
 };
 
-// 수정
-export const updateReview = (id, dto, imageFiles) => {
+// 수정 — deletedImageIds(삭제할 기존 이미지 ID 배열) 추가
+export const updateReview = (id, dto, imageFiles, deletedImageIds = []) => {
   const formData = new FormData();
   formData.append(
     'dto',
@@ -47,9 +51,15 @@ export const updateReview = (id, dto, imageFiles) => {
   if (imageFiles?.length) {
     imageFiles.forEach((file) => formData.append('images', file));
   }
+  // 삭제할 이미지 ID 목록 전송
+  if (deletedImageIds?.length) {
+    deletedImageIds.forEach((imgId) =>
+      formData.append('deletedImageIds', imgId)
+    );
+  }
   return axios
     .put(`${USER_BASE}/${id}`, formData, getAuthConfig())
-    .then((res) => res.data); 
+    .then((res) => res.data);
 };
 
 // 삭제

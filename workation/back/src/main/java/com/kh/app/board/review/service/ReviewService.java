@@ -1,5 +1,6 @@
 package com.kh.app.board.review.service;
 
+import com.kh.app.aws.service.S3Service;
 import com.kh.app.board.review.dto.request.CommentCreateReqDto;
 import com.kh.app.board.review.dto.request.ReviewCreateReqDto;
 import com.kh.app.board.review.dto.request.ReviewUpdateReqDto;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @Service
@@ -35,8 +37,8 @@ public class ReviewService {
     private final ReviewImageRepository reviewImageRepository;
     private final CommentRepository commentRepository;
     private final MemberRepository memberRepository;
+    private final S3Service s3Service;
 
-    // 목록 조회 (페이징: 한 페이지에 10개, 이미지 포함)
     @Transactional(readOnly = true)
     public Page<ReviewListRespDto> findAll(int page) {
         Pageable pageable = PageRequest.of(page, 10);
@@ -48,7 +50,6 @@ public class ReviewService {
                 });
     }
 
-    // 상세 조회 (수정 페이지에서 기존 데이터 불러올 때 사용)
     @Transactional(readOnly = true)
     public ReviewRespDto findById(Long id) {
         ReviewEntity review = reviewRepository.findByIdAndDelYn(id, "N")
@@ -57,7 +58,6 @@ public class ReviewService {
         return ReviewRespDto.from(review, images);
     }
 
-    // 등록
     public Long create(ReviewCreateReqDto dto, List<MultipartFile> images, Long memberId) {
         MemberEntity member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("member not found"));
@@ -67,45 +67,58 @@ public class ReviewService {
 
         if (images != null && !images.isEmpty()) {
             for (MultipartFile image : images) {
-                ReviewImageEntity reviewImage = ReviewImageEntity.builder()
-                        .review(review)
-                        .originalFileName(image.getOriginalFilename())
-                        .s3Key(image.getOriginalFilename()) // S3 연동 시 실제 key로 교체
-                        .build();
-                reviewImageRepository.save(reviewImage);
+                try {
+                    String s3Key = s3Service.upload(image, "review");
+                    ReviewImageEntity reviewImage = ReviewImageEntity.builder()
+                            .review(review)
+                            .originalFileName(image.getOriginalFilename())
+                            .s3Key(s3Key)
+                            .build();
+                    reviewImageRepository.save(reviewImage);
+                } catch (IOException e) {
+                    throw new RuntimeException("이미지 업로드에 실패했습니다.", e);
+                }
             }
         }
         return review.getId();
     }
 
-    // 수정
-    public void update(Long id, ReviewUpdateReqDto dto, List<MultipartFile> images) {
+    public void update(Long id, ReviewUpdateReqDto dto, List<MultipartFile> images, List<Long> deletedImageIds) {
         ReviewEntity review = reviewRepository.findByIdAndDelYn(id, "N")
                 .orElseThrow(() -> new IllegalArgumentException("후기를 찾을 수 없습니다."));
         review.update(dto.getTitle(), dto.getContent(), dto.getTag(), dto.getRating());
 
+        // 삭제 요청된 기존 이미지 소프트 삭제
+        if (deletedImageIds != null && !deletedImageIds.isEmpty()) {
+            deletedImageIds.forEach(imageId ->
+                    reviewImageRepository.findById(imageId)
+                            .ifPresent(ReviewImageEntity::delete)
+            );
+        }
+
+        // 새 이미지 추가
         if (images != null && !images.isEmpty()) {
-            reviewImageRepository.findAllByReviewIdAndDelYn(id, "N")
-                    .forEach(ReviewImageEntity::delete);
             for (MultipartFile image : images) {
-                ReviewImageEntity reviewImage = ReviewImageEntity.builder()
-                        .review(review)
-                        .originalFileName(image.getOriginalFilename())
-                        .s3Key(image.getOriginalFilename())
-                        .build();
-                reviewImageRepository.save(reviewImage);
+                try {
+                    String s3Key = s3Service.upload(image, "review");
+                    ReviewImageEntity reviewImage = ReviewImageEntity.builder()
+                            .review(review)
+                            .originalFileName(image.getOriginalFilename())
+                            .s3Key(s3Key)
+                            .build();
+                    reviewImageRepository.save(reviewImage);
+                } catch (IOException e) {
+                    throw new RuntimeException("이미지 업로드에 실패했습니다.", e);
+                }
             }
         }
     }
 
-    // 삭제 (소프트 삭제)
     public void delete(Long id) {
         ReviewEntity review = reviewRepository.findByIdAndDelYn(id, "N")
                 .orElseThrow(() -> new IllegalArgumentException("후기를 찾을 수 없습니다."));
         review.delete();
     }
-
-    // ── 댓글 ──────────────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
     public List<CommentRespDto> findComments(Long reviewId) {

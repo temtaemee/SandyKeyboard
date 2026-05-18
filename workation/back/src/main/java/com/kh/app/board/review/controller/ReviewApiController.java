@@ -30,8 +30,6 @@ public class ReviewApiController {
     // 공개 조회 API
     // ─────────────────────────────────────────
 
-    // 목록 조회 (페이징)
-    // GET /api/public/board/review?page=0
     @GetMapping("/api/public/board/review")
     public ResponseEntity<Page<ReviewListRespDto>> findAll(
             @RequestParam(defaultValue = "0") int page
@@ -69,9 +67,10 @@ public class ReviewApiController {
             @PathVariable Long id,
             @RequestPart("dto") ReviewUpdateReqDto dto,
             @RequestPart(value = "images", required = false) List<MultipartFile> images,
+            @RequestParam(value = "deletedImageIds", required = false) List<Long> deletedImageIds,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        reviewService.update(id, dto, images);
+        reviewService.update(id, dto, images, deletedImageIds);
         return ResponseEntity.ok().build();
     }
 
