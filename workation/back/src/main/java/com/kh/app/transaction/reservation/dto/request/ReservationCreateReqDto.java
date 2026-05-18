@@ -58,7 +58,7 @@ public class ReservationCreateReqDto {
                 .originalPrice(originalPrice)
                 .discountAmount(discountAmount)
                 .totalPrice(totalPrice)
-                .status(ReservationStatus.PENDING)
+                .status(ReservationStatus.REQUESTED)
                 .build();
     }
 }

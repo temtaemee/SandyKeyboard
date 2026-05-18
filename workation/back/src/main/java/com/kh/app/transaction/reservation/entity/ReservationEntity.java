@@ -77,10 +77,10 @@ public class ReservationEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     @Builder.Default
-    private ReservationStatus status = ReservationStatus.PENDING;
+    private ReservationStatus status = ReservationStatus.REQUESTED;
 
     public void approve() {
-        this.status = ReservationStatus.APPROVED;
+        this.status = ReservationStatus.REVIEW_APPROVED;
     }
 
     public void cancel() {
@@ -95,7 +95,6 @@ public class ReservationEntity {
         this.status = ReservationStatus.COMPLETED;
     }
 
-    public void expire() {this.status = ReservationStatus.EXPIRED;}
 
 
     @PrePersist
@@ -110,7 +109,7 @@ public class ReservationEntity {
 
         // 임시 테스트용
         if (this.status == null) {
-            this.status = ReservationStatus.PENDING;
+            this.status = ReservationStatus.REQUESTED;
         }
         this.createdAt = LocalDateTime.now();
 //        validateTarget();
@@ -123,7 +122,7 @@ public class ReservationEntity {
         boolean hasOffice = office != null;
         //임시 테스트용
         if (this.status == null) {
-            this.status = ReservationStatus.PENDING;
+            this.status = ReservationStatus.REQUESTED;
         }
 
         if (!hasStay && !hasOffice) {
