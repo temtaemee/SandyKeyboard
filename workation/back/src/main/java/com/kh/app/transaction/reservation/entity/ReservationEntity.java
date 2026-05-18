@@ -43,7 +43,7 @@ public class ReservationEntity {
     private Integer guestCount;
 
     @Column(nullable = false, length = 100)
-    private String reserverName;
+    private String primaryGuestName;
 
     @Column(nullable = false)
     private LocalDateTime checkinDate;
@@ -52,10 +52,10 @@ public class ReservationEntity {
     private LocalDateTime checkoutDate;
 
     @Column(nullable = false, length = 11)
-    private String reserverPhone;
+    private String primaryGuestPhone;
 
     @Column(nullable = false, length = 255)
-    private String reserverEmail;
+    private String primaryGuestEmail;
 
     @Column(nullable = false)
     private Long originalPrice;
@@ -133,9 +133,9 @@ public class ReservationEntity {
 
 
     public void update(ReservationCreateReqDto reqDto) {
-        this.reserverName = reqDto.getReserverName();
-        this.reserverPhone = reqDto.getReserverPhone();
-        this.reserverEmail = reqDto.getReserverEmail();
+        this.primaryGuestName = reqDto.getPrimaryGuestName();
+        this.primaryGuestPhone = reqDto.getPrimaryGuestPhone();
+        this.primaryGuestEmail = reqDto.getPrimaryGuestEmail();
 
     }
 }

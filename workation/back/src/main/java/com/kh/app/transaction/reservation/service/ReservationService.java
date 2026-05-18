@@ -53,8 +53,8 @@ public class ReservationService {
     @Transactional
     public Long create (
             String username,
-            ProductType productType,
-            Long productId,
+//            ProductType productType,
+//            Long productId,
             ReservationCreateReqDto dto,
             List<MultipartFile> fileList
     )throws IOException {
@@ -83,34 +83,34 @@ public class ReservationService {
 
         Long originalPrice = 0L;
 
-        switch (productType) {
-
-            // TODO
-            // 실제 숙소 조회 및 날짜별 가격 계산 필요
-            case STAY -> {
-
-                // 임시 가격
-                originalPrice = 100000L;
-
-                log.info(
-                        "임시 STAY 예약 처리 : productId={}",
-                        productId
-                );
-            }
-
-            // TODO
-            // 실제 오피스 조회 및 시간별 가격 계산 필요
-            case OFFICE -> {
-
-                // 임시 가격
-                originalPrice = 50000L;
-
-                log.info(
-                        "임시 OFFICE 예약 처리 : productId={}",
-                        productId
-                );
-            }
-        }
+//        switch (productType) {
+//
+//            // TODO
+//            // 실제 숙소 조회 및 날짜별 가격 계산 필요
+//            case STAY -> {
+//
+//                // 임시 가격
+//                originalPrice = 100000L;
+//
+//                log.info(
+//                        "임시 STAY 예약 처리 : productId={}",
+//                        productId
+//                );
+//            }
+//
+//            // TODO
+//            // 실제 오피스 조회 및 시간별 가격 계산 필요
+//            case OFFICE -> {
+//
+//                // 임시 가격
+//                originalPrice = 50000L;
+//
+//                log.info(
+//                        "임시 OFFICE 예약 처리 : productId={}",
+//                        productId
+//                );
+//            }
+//        }
 
         // TODO
         // coupon 기능 완성 후 실제 할인 정책 적용 예정

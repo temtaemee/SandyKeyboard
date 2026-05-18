@@ -11,40 +11,93 @@ import java.time.LocalDateTime;
 public class ReservationResDto {
 
     private Long id;
+
     private Long memberId;
+
     private Long stayId;
+
     private Long officeId;
 
     private Integer guestCount;
-    private String reserverName;
+
+    private String primaryGuestName;
 
     private LocalDateTime checkinDate;
+
     private LocalDateTime checkoutDate;
 
-    private String reserverPhone;
-    private String reserverEmail;
+    private String primaryGuestPhone;
+
+    private String primaryGuestEmail;
 
     private Long totalPrice;
 
+    // enum name
     private String status;
+
+    // 한글 라벨
+    private String statusLabel;
 
     public static ReservationResDto from(
             ReservationEntity entity
     ) {
 
         return ReservationResDto.builder()
+
                 .id(entity.getId())
-                .memberId(entity.getMember().getId())
-                .stayId(entity.getStay().getId())
-                .officeId(entity.getOffice().getId())
-                .guestCount(entity.getGuestCount())
-                .reserverName(entity.getReserverName())
-                .checkinDate(entity.getCheckinDate())
-                .checkoutDate(entity.getCheckoutDate())
-                .reserverPhone(entity.getReserverPhone())
-                .reserverEmail(entity.getReserverEmail())
-                .totalPrice(entity.getTotalPrice())
-                .status(entity.getStatus().name())
+
+                .memberId(
+                        entity.getMember().getId()
+                )
+
+                .stayId(
+                        entity.getStay() != null
+                                ? entity.getStay().getId()
+                                : null
+                )
+
+                .officeId(
+                        entity.getOffice() != null
+                                ? entity.getOffice().getId()
+                                : null
+                )
+
+                .guestCount(
+                        entity.getGuestCount()
+                )
+
+                .primaryGuestName(
+                        entity.getPrimaryGuestName()
+                )
+
+                .checkinDate(
+                        entity.getCheckinDate()
+                )
+
+                .checkoutDate(
+                        entity.getCheckoutDate()
+                )
+
+                .primaryGuestPhone(
+                        entity.getPrimaryGuestPhone()
+                )
+
+                .primaryGuestEmail(
+                        entity.getPrimaryGuestEmail()
+                )
+
+                .totalPrice(
+                        entity.getTotalPrice()
+                )
+
+                .status(
+                        entity.getStatus().name()
+                )
+
+                .statusLabel(
+                        entity.getStatus().getLabel()
+                )
+
                 .build();
     }
 }
