@@ -35,7 +35,7 @@ public class CouponEntity extends BaseEntity {
 
 
 
-    public void update(CouponCreateDto dto){
+    public void update(CouponCreateDto dto, LocalDateTime couponExiredDate){
         if(dto.getCouponName() != null){
             couponName = dto.getCouponName();
         }
@@ -45,8 +45,8 @@ public class CouponEntity extends BaseEntity {
         if(dto.getRemainQty() != null){
             remainQty = dto.getRemainQty();
         }
-        if(dto.getExpriedDate() != null){
-            expriedDate = dto.getExpriedDate();
+        if(couponExiredDate != null){
+            expriedDate = couponExiredDate;
         }
     }
 

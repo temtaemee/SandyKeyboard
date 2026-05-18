@@ -22,9 +22,11 @@ public class CouponService {
     //쿠폰등록
     @Transactional
     public void create(CouponCreateDto couponCreateDto) {
-        // 
+        //쿠폰 만료일자 계산
         LocalDateTime couponExiredDate = updateExpriedDate(couponCreateDto.getExpriedDate());
+        //쿠폰코드 생성
         String couponCode = generateCouponCode(couponCreateDto.getDiscountRate(), couponExiredDate);
+
         CouponEntity entity = couponCreateDto.toEntity(couponCode, couponExiredDate);
         couponRepository.save(entity);
     }
@@ -51,7 +53,8 @@ public class CouponService {
     //쿠폰 수정
     @Transactional
     public void update(Long couponId, CouponCreateDto couponCreateDto) {
+        LocalDateTime couponExiredDate = updateExpriedDate(couponCreateDto.getExpriedDate());
         CouponEntity entity = couponRepository.findById(couponId).orElseThrow(EntityNotFoundException::new);
-        entity.update(couponCreateDto);
+        entity.update(couponCreateDto, couponExiredDate);
     }
 }
