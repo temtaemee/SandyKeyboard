@@ -6,85 +6,85 @@ export default function SellersStatCards({ view, filter, onFilterChange }) {
     <StatsSection>
       <StatCard $active={filter === '전체'} onClick={() => onFilterChange('전체')}>
         <StatCardTop>
-          <StatIconWrap $bg="rgba(30,41,59,0.08)"><SellersIcon /></StatIconWrap>
-          <StatBadge $green>+2.4%</StatBadge>
+          <StatIconWrap $bg={filter === '전체' ? 'rgba(255,255,255,0.2)' : 'rgba(30,41,59,0.08)'}><SellersIcon $active={filter === '전체'} /></StatIconWrap>
+          <StatBadge $green $active={filter === '전체'}>+2.4%</StatBadge>
         </StatCardTop>
-        <StatLabel>전체 판매자</StatLabel>
-        <StatValue>1,284</StatValue>
-        <StatProgress $color="#1e293b" $width={100} />
+        <StatLabel $active={filter === '전체'}>전체 판매자</StatLabel>
+        <StatValue $active={filter === '전체'}>1,284</StatValue>
+        <StatProgress $color={filter === '전체' ? 'rgba(255,255,255,0.6)' : '#1e293b'} $width={100} />
       </StatCard>
       <StatCard $active={filter === '활동 중'} onClick={() => onFilterChange('활동 중')}>
         <StatCardTop>
-          <StatIconWrap $bg="rgba(16,185,129,0.1)"><ActiveIcon /></StatIconWrap>
-          <StatBadge $green>+4.2%</StatBadge>
+          <StatIconWrap $bg={filter === '활동 중' ? 'rgba(255,255,255,0.2)' : 'rgba(16,185,129,0.1)'}><ActiveIcon $active={filter === '활동 중'} /></StatIconWrap>
+          <StatBadge $green $active={filter === '활동 중'}>+4.2%</StatBadge>
         </StatCardTop>
-        <StatLabel>활동 중</StatLabel>
-        <StatValue>1,270</StatValue>
-        <StatProgress $color="#10b981" $width={99} />
+        <StatLabel $active={filter === '활동 중'}>활동 중</StatLabel>
+        <StatValue $active={filter === '활동 중'}>1,270</StatValue>
+        <StatProgress $color={filter === '활동 중' ? 'rgba(255,255,255,0.6)' : '#10b981'} $width={99} />
       </StatCard>
       <StatCard $active={filter === '정지됨'} onClick={() => onFilterChange('정지됨')}>
         <StatCardTop>
-          <StatIconWrap $bg="rgba(239,68,68,0.08)"><StoppedIcon /></StatIconWrap>
-          <StatBadge $red>-2.1%</StatBadge>
+          <StatIconWrap $bg={filter === '정지됨' ? 'rgba(255,255,255,0.2)' : 'rgba(239,68,68,0.08)'}><StoppedIcon $active={filter === '정지됨'} /></StatIconWrap>
+          <StatBadge $red $active={filter === '정지됨'}>-2.1%</StatBadge>
         </StatCardTop>
-        <StatLabel>정지됨</StatLabel>
-        <StatValue>14</StatValue>
-        <StatProgress $color="#ef4444" $width={8} />
+        <StatLabel $active={filter === '정지됨'}>정지됨</StatLabel>
+        <StatValue $active={filter === '정지됨'}>14</StatValue>
+        <StatProgress $color={filter === '정지됨' ? 'rgba(255,255,255,0.6)' : '#ef4444'} $width={8} />
       </StatCard>
       <StatCard $active={filter === '신규'} onClick={() => onFilterChange('신규')}>
         <StatCardTop>
-          <StatIconWrap $bg="rgba(245,158,11,0.1)"><NewSellerIcon /></StatIconWrap>
+          <StatIconWrap $bg={filter === '신규' ? 'rgba(255,255,255,0.2)' : 'rgba(245,158,11,0.1)'}><NewSellerIcon $active={filter === '신규'} /></StatIconWrap>
         </StatCardTop>
-        <StatLabel>이달 신규</StatLabel>
-        <StatValue>156</StatValue>
-        <StatProgress $color="#f59e0b" $width={30} />
+        <StatLabel $active={filter === '신규'}>이달 신규</StatLabel>
+        <StatValue $active={filter === '신규'}>156</StatValue>
+        <StatProgress $color={filter === '신규' ? 'rgba(255,255,255,0.6)' : '#f59e0b'} $width={30} />
       </StatCard>
     </StatsSection>
   ) : (
     <StatsSection>
       <StatCard $active={filter === '전체'} onClick={() => onFilterChange('전체')}>
         <StatCardTop>
-          <StatIconWrap $bg="rgba(59,130,246,0.1)"><SellersIcon /></StatIconWrap>
+          <StatIconWrap $bg={filter === '전체' ? 'rgba(255,255,255,0.2)' : 'rgba(59,130,246,0.1)'}><SellersIcon $active={filter === '전체'} /></StatIconWrap>
         </StatCardTop>
-        <StatLabel>전체 고객</StatLabel>
-        <StatValue>8,420</StatValue>
-        <StatProgress $color="#3b82f6" $width={100} />
+        <StatLabel $active={filter === '전체'}>전체 고객</StatLabel>
+        <StatValue $active={filter === '전체'}>8,420</StatValue>
+        <StatProgress $color={filter === '전체' ? 'rgba(255,255,255,0.6)' : '#3b82f6'} $width={100} />
       </StatCard>
       <StatCard $active={filter === '활동 중'} onClick={() => onFilterChange('활동 중')}>
         <StatCardTop>
-          <StatIconWrap $bg="rgba(16,185,129,0.1)"><ActiveIcon /></StatIconWrap>
-          <StatBadge $green>+3.1%</StatBadge>
+          <StatIconWrap $bg={filter === '활동 중' ? 'rgba(255,255,255,0.2)' : 'rgba(16,185,129,0.1)'}><ActiveIcon $active={filter === '활동 중'} /></StatIconWrap>
+          <StatBadge $green $active={filter === '활동 중'}>+3.1%</StatBadge>
         </StatCardTop>
-        <StatLabel>활성 고객</StatLabel>
-        <StatValue>8,180</StatValue>
-        <StatProgress $color="#10b981" $width={97} />
+        <StatLabel $active={filter === '활동 중'}>활성 고객</StatLabel>
+        <StatValue $active={filter === '활동 중'}>8,180</StatValue>
+        <StatProgress $color={filter === '활동 중' ? 'rgba(255,255,255,0.6)' : '#10b981'} $width={97} />
       </StatCard>
       <StatCard $active={filter === '정지됨'} onClick={() => onFilterChange('정지됨')}>
         <StatCardTop>
-          <StatIconWrap $bg="rgba(239,68,68,0.08)"><StoppedIcon /></StatIconWrap>
-          <StatBadge $red>-0.8%</StatBadge>
+          <StatIconWrap $bg={filter === '정지됨' ? 'rgba(255,255,255,0.2)' : 'rgba(239,68,68,0.08)'}><StoppedIcon $active={filter === '정지됨'} /></StatIconWrap>
+          <StatBadge $red $active={filter === '정지됨'}>-0.8%</StatBadge>
         </StatCardTop>
-        <StatLabel>활동정지</StatLabel>
-        <StatValue>240</StatValue>
-        <StatProgress $color="#ef4444" $width={3} />
+        <StatLabel $active={filter === '정지됨'}>활동정지</StatLabel>
+        <StatValue $active={filter === '정지됨'}>240</StatValue>
+        <StatProgress $color={filter === '정지됨' ? 'rgba(255,255,255,0.6)' : '#ef4444'} $width={3} />
       </StatCard>
       <StatCard $active={filter === '신규'} onClick={() => onFilterChange('신규')}>
         <StatCardTop>
-          <StatIconWrap $bg="rgba(245,158,11,0.1)"><NewSellerIcon /></StatIconWrap>
+          <StatIconWrap $bg={filter === '신규' ? 'rgba(255,255,255,0.2)' : 'rgba(245,158,11,0.1)'}><NewSellerIcon $active={filter === '신규'} /></StatIconWrap>
         </StatCardTop>
-        <StatLabel>이달 신규</StatLabel>
-        <StatValue>342</StatValue>
-        <StatProgress $color="#f59e0b" $width={25} />
+        <StatLabel $active={filter === '신규'}>이달 신규</StatLabel>
+        <StatValue $active={filter === '신규'}>342</StatValue>
+        <StatProgress $color={filter === '신규' ? 'rgba(255,255,255,0.6)' : '#f59e0b'} $width={25} />
       </StatCard>
     </StatsSection>
   );
 }
 
 /* ── Icons ── */
-function SellersIcon() { return <Users size={18} color="#1e293b" />; }
-function ActiveIcon() { return <CheckCircle size={18} color="#10b981" />; }
-function StoppedIcon() { return <XCircle size={18} color="#ef4444" />; }
-function NewSellerIcon() { return <UserPlus size={18} color="#f59e0b" />; }
+function SellersIcon({ $active }) { return <Users size={18} color={$active ? '#ffffff' : '#1e293b'} />; }
+function ActiveIcon({ $active }) { return <CheckCircle size={18} color={$active ? '#ffffff' : '#10b981'} />; }
+function StoppedIcon({ $active }) { return <XCircle size={18} color={$active ? '#ffffff' : '#ef4444'} />; }
+function NewSellerIcon({ $active }) { return <UserPlus size={18} color={$active ? '#ffffff' : '#f59e0b'} />; }
 
 /* ── Styled Components ── */
 const StatsSection = styled.div`
@@ -94,19 +94,19 @@ const StatsSection = styled.div`
 `;
 
 const StatCard = styled.div`
-  background: white;
-  border: 1px solid ${({ $active }) => ($active ? '#244c54' : '#e2e8f0')};
+  background: ${({ $active }) => ($active ? 'linear-gradient(135deg, #244c54 0%, #2d6470 100%)' : 'white')};
+  border: 2px solid ${({ $active }) => ($active ? '#244c54' : '#e2e8f0')};
   border-radius: 10px;
   padding: 20px 22px 18px;
-  box-shadow: ${({ $active }) => ($active ? '0 0 0 3px rgba(36,76,84,0.1)' : '0 1px 2px rgba(0,0,0,0.05)')};
+  box-shadow: ${({ $active }) => ($active ? '0 6px 20px rgba(36,76,84,0.35)' : '0 1px 2px rgba(0,0,0,0.05)')};
   display: flex;
   flex-direction: column;
   gap: 5px;
-  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s, background 0.2s;
   cursor: pointer;
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    box-shadow: ${({ $active }) => ($active ? '0 8px 24px rgba(36,76,84,0.4)' : '0 4px 12px rgba(0,0,0,0.1)')};
   }
 `;
 
@@ -127,13 +127,21 @@ const StatIconWrap = styled.div`
 const StatBadge = styled.span`
   font-size: 11px; font-weight: 700;
   padding: 3px 8px; border-radius: 999px;
-  background: ${({ $green, $red }) => $green ? '#f0fdf4' : $red ? '#fff1f1' : '#f8fafc'};
-  color: ${({ $green, $red }) => $green ? '#16a34a' : $red ? '#dc2626' : '#64748b'};
+  background: ${({ $green, $red, $active }) =>
+    $active ? 'rgba(255,255,255,0.2)' :
+    $green ? '#f0fdf4' : $red ? '#fff1f1' : '#f8fafc'};
+  color: ${({ $green, $red, $active }) =>
+    $active ? '#ffffff' :
+    $green ? '#16a34a' : $red ? '#dc2626' : '#64748b'};
 `;
 
-const StatLabel = styled.p`font-size: 12px; color: #64748b;`;
+const StatLabel = styled.p`
+  font-size: 12px;
+  color: ${({ $active }) => ($active ? 'rgba(255,255,255,0.75)' : '#64748b')};
+`;
 const StatValue = styled.p`
-  font-size: 30px; font-weight: 700; color: #0d1c2e;
+  font-size: 30px; font-weight: 700;
+  color: ${({ $active }) => ($active ? '#ffffff' : '#0d1c2e')};
   font-family: 'Plus Jakarta Sans', sans-serif;
   letter-spacing: -0.5px; line-height: 1.2;
 `;

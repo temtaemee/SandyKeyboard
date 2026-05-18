@@ -1,40 +1,17 @@
 // src/features/admin/pages/AdminSpacesPage.jsx
 import { useState } from 'react';
 import styled from 'styled-components';
-import { Home, CheckCircle, AlertTriangle, Filter, EyeOff, X } from 'lucide-react';
+import { Home, CheckCircle, AlertTriangle, Search, EyeOff, X } from 'lucide-react';
 import {
-  SPACES_STAT_CARDS,
+  SPACES_TOTAL,
+  SPACES_TOTAL_PAGES,
   SPACES_LIST,
+  PENDING_SPACES,
 } from '../data/adminSpacesData';
 import usePagination from '../hooks/usePagination';
 import AdminPagination from '../components/common/AdminPagination';
 import ConfirmModal from '../components/common/ConfirmModal';
 
-const TOTAL = 1284;
-const TOTAL_PAGES = 12;
-
-const INITIAL_PENDING = [
-  {
-    id: 101,
-    name: '남해 힐링 펜션',
-    location: '경상남도 남해군',
-    seller: '남해바다사랑',
-    price: '₩120,000',
-    registeredAt: '2023.11.20',
-    thumbnail: 'https://images.unsplash.com/photo-1587061949409-02df41d5e562?w=80&h=60&fit=crop',
-    status: 'pending'
-  },
-  {
-    id: 102,
-    name: '부산 해운대 요트 스테이',
-    location: '부산광역시 해운대구',
-    seller: '요트클럽부산',
-    price: '₩450,000',
-    registeredAt: '2023.11.21',
-    thumbnail: 'https://images.unsplash.com/photo-1544376798-89aa6b82c6cd?w=80&h=60&fit=crop',
-    status: 'pending'
-  }
-];
 
 export default function AdminSpacesPage() {
   const { currentPage, goToPage } = usePagination();
@@ -43,13 +20,26 @@ export default function AdminSpacesPage() {
   const [blindConfirmTarget, setBlindConfirmTarget] = useState(null);
 
   // 승인 대기 / 거절 관련 상태
-  const [pendingSpaces, setPendingSpaces] = useState(INITIAL_PENDING);
+  const [pendingSpaces, setPendingSpaces] = useState(PENDING_SPACES);
   const [rejectedSpaces, setRejectedSpaces] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalTab, setModalTab] = useState('pending'); // 'pending' | 'rejected'
   const [selectedIds, setSelectedIds] = useState([]);
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('전체');
+
   const isBlinded = (space) => blindedIds[space.id] ?? false;
+
+  const filteredSpaces = spaces.filter((space) => {
+    const matchesSearch = space.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const blinded = isBlinded(space);
+    const matchesStatus =
+      statusFilter === '전체' ? true :
+      statusFilter === '공개' ? !blinded :
+      blinded;
+    return matchesSearch && matchesStatus;
+  });
 
   const handleBlindClick = (space) => {
     setBlindConfirmTarget({ id: space.id, name: space.name, willBlind: !isBlinded(space) });
@@ -124,7 +114,7 @@ export default function AdminSpacesPage() {
             <StatIconWrap $bg="rgba(59,130,246,0.1)" $color="#2563eb">
               <CheckCircleIcon />
             </StatIconWrap>
-            <StatBadge $color="blue">{Math.round((spaces.length / TOTAL) * 100)}% 운영 중</StatBadge>
+            <StatBadge $color="blue">{Math.round((spaces.length / SPACES_TOTAL) * 100)}% 운영 중</StatBadge>
           </StatCardTop>
           <StatLabel>운영 중인 숙소</StatLabel>
           <StatValue>{spaces.length.toLocaleString()}</StatValue>
@@ -146,12 +136,32 @@ export default function AdminSpacesPage() {
       <TableSection>
         <Toolbar>
           <ToolbarLeft>
-            <FilterBtn>
-              <FilterIcon />
-              필터
-            </FilterBtn>
+            <SearchWrap>
+              <SearchIconWrap><Search size={14} color="#94a3b8" /></SearchIconWrap>
+              <SearchInput
+                type="text"
+                placeholder="숙소 이름 검색..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <ClearBtn onClick={() => setSearchQuery('')}>
+                  <X size={13} color="#94a3b8" />
+                </ClearBtn>
+              )}
+            </SearchWrap>
           </ToolbarLeft>
-          <TotalText>전체 {TOTAL.toLocaleString()}개 중 1-10 표시</TotalText>
+          <StatusFilterGroup>
+            {['전체', '공개', '비공개'].map((s) => (
+              <StatusFilterBtn
+                key={s}
+                $active={statusFilter === s}
+                onClick={() => setStatusFilter(s)}
+              >
+                {s}
+              </StatusFilterBtn>
+            ))}
+          </StatusFilterGroup>
         </Toolbar>
 
         <Table>
@@ -165,7 +175,9 @@ export default function AdminSpacesPage() {
             </TR>
           </THead>
           <TBody>
-            {spaces.map((space) => {
+            {filteredSpaces.length === 0 ? (
+                <TR><TD colSpan={5}><EmptyTableState>검색 결과가 없습니다.</EmptyTableState></TD></TR>
+            ) : filteredSpaces.map((space) => {
               const blinded = isBlinded(space);
               return (
                 <TR key={space.id} $hoverable>
@@ -198,7 +210,7 @@ export default function AdminSpacesPage() {
         <TableFooter>
           <AdminPagination
             currentPage={currentPage}
-            totalPages={TOTAL_PAGES}
+            totalPages={SPACES_TOTAL_PAGES}
             onPageChange={goToPage}
           />
         </TableFooter>
@@ -308,7 +320,6 @@ export default function AdminSpacesPage() {
 function SpaceIcon() { return <Home size={20} />; }
 function CheckCircleIcon() { return <CheckCircle size={20} />; }
 function AlertIcon() { return <AlertTriangle size={20} />; }
-function FilterIcon() { return <Filter size={13} />; }
 
 /* ── Styled Components ── */
 
@@ -432,20 +443,68 @@ const ToolbarLeft = styled.div`
   gap: 8px;
 `;
 
-const FilterBtn = styled.button`
+const SearchWrap = styled.div`
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
+`;
+
+const SearchIconWrap = styled.div`
+  position: absolute;
+  left: 10px;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+`;
+
+const SearchInput = styled.input`
+  width: 220px;
+  padding: 7px 32px 7px 32px;
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   font-size: 13px;
-  font-weight: 500;
-  color: #475569;
+  color: #0d1c2e;
   font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  &::placeholder { color: #94a3b8; }
+  &:focus {
+    outline: none;
+    border-color: #244c54;
+    box-shadow: 0 0 0 3px rgba(36,76,84,0.08);
+  }
+`;
+
+const ClearBtn = styled.button`
+  position: absolute;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  border-radius: 4px;
   transition: background 0.15s;
-  &:hover { background: #f8fafc; }
+  &:hover { background: #f1f5f9; }
+`;
+
+const StatusFilterGroup = styled.div`
+  display: flex;
+  gap: 4px;
+`;
+
+const StatusFilterBtn = styled.button`
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  border: 1px solid ${({ $active }) => ($active ? '#244c54' : '#e2e8f0')};
+  background: ${({ $active }) => ($active ? '#244c54' : 'white')};
+  color: ${({ $active }) => ($active ? 'white' : '#475569')};
+  transition: all 0.15s;
+  &:hover {
+    background: ${({ $active }) => ($active ? '#1d3d44' : '#f8fafc')};
+    border-color: ${({ $active }) => ($active ? '#1d3d44' : '#cbd5e1')};
+  }
 `;
 
 const TotalText = styled.p`
@@ -578,6 +637,13 @@ const ToggleLabel = styled.span`
   font-weight: 500;
   color: ${({ $on }) => ($on ? '#dc2626' : '#16a34a')};
   min-width: 40px;
+`;
+
+const EmptyTableState = styled.div`
+  padding: 48px 0;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 14px;
 `;
 
 const TableFooter = styled.div`

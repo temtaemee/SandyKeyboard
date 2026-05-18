@@ -1,6 +1,7 @@
 package com.kh.app.middle.coupon.entity;
 
 import com.kh.app.common.entity.BaseEntity;
+import com.kh.app.middle.coupon.dto.request.CouponCreateDto;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -22,7 +23,7 @@ public class CouponEntity extends BaseEntity {
     @Column(length = 100 , nullable = false)
     private String couponName;
     @Column(nullable = false)
-    private Integer discountValue;
+    private Integer discountRate;
     @Column(nullable = false)
     private Integer remainQty;
 
@@ -31,4 +32,24 @@ public class CouponEntity extends BaseEntity {
     private CouponStatus couponStatus = CouponStatus.A;
 
     private LocalDateTime expriedDate;
+
+
+
+    public void update(CouponCreateDto dto){
+        if(dto.getCouponName() != null){
+            couponName = dto.getCouponName();
+        }
+        if(dto.getDiscountRate() != null){
+            discountRate = dto.getDiscountRate();
+        }
+        if(dto.getRemainQty() != null){
+            remainQty = dto.getRemainQty();
+        }
+        if(dto.getExpriedDate() != null){
+            expriedDate = dto.getExpriedDate();
+        }
+    }
+
+
+
 }

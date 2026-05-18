@@ -1,9 +1,9 @@
 // src/features/admin/pages/AdminBoardPage.jsx
 import { useState } from 'react';
-import styled, { keyframes } from 'styled-components';
+import styled from 'styled-components';
 import {
   MessageSquare, Calendar, PlusCircle, HelpCircle, Star, Tag,
-  Filter, Paperclip, MapPin, Eye, EyeOff, Pencil, Trash2,
+  Paperclip, MapPin, Pencil, Trash2, X,
   ChevronLeft as LucideChevronLeft, ChevronRight as LucideChevronRight,
   ChevronsLeft, ChevronsRight,
 } from 'lucide-react';
@@ -20,53 +20,50 @@ const TOTAL_PAGES = 3;
 
 export default function AdminBoardPage() {
   const [activeTab, setActiveTab] = useState('공지사항');
-  const [checkedIds, setCheckedIds] = useState([]);
   const [pinnedIds, setPinnedIds] = useState(() => {
-    // 초기 고정 상태: isFixed=true 인 항목들
     const ids = [];
     Object.values(BOARD_POSTS).forEach((posts) =>
-      posts.forEach((p) => {
-        if (p.isFixed) ids.push(p.id);
-      })
+      posts.forEach((p) => { if (p.isFixed) ids.push(p.id); })
     );
     return ids;
   });
 
-  const { currentPage, goToPage, goToPrev, goToNext, reset: resetPage } = usePagination();
+  const { currentPage, goToPage, reset: resetPage } = usePagination();
 
   const posts = BOARD_POSTS[activeTab] || [];
-  const allIds = posts.map((p) => p.id);
-  const allChecked = allIds.length > 0 && allIds.every((id) => checkedIds.includes(id));
-  const selectedCount = checkedIds.filter((id) => allIds.includes(id)).length;
 
-  const handleAllCheck = () => {
-    if (allChecked) {
-      setCheckedIds((prev) => prev.filter((id) => !allIds.includes(id)));
-    } else {
-      setCheckedIds((prev) => [...new Set([...prev, ...allIds])]);
-    }
+  // 신규 등록 모달
+  const [registerModal, setRegisterModal] = useState(null); // null | '공지사항' | 'FAQ' | '이벤트' | '쿠폰'
+  const [formData, setFormData] = useState({});
+
+  const openRegisterModal = (type) => {
+    setRegisterModal(type);
+    setFormData({});
   };
 
-  const handleCheck = (id) => {
-    setCheckedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    );
+  const closeRegisterModal = () => {
+    setRegisterModal(null);
+    setFormData({});
   };
 
-  // 핀 토글
-  const togglePin = (id) => {
+  const handleFormChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleRegisterSubmit = () => {
+    // TODO: 서버 연동 시 API 호출
+    console.log(`[${registerModal}] 등록:`, formData);
+    closeRegisterModal();
+  };
+
+  const handlePin = (id) => {
     setPinnedIds((prev) =>
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
   };
 
-  const handlePin = (id) => {
-    togglePin(id);
-  };
-
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    setCheckedIds([]);
     resetPage();
   };
 
@@ -112,26 +109,26 @@ export default function AdminBoardPage() {
         <QuickRegisterCard>
           <QuickRegisterTitle>콘텐츠 신규 등록</QuickRegisterTitle>
           <QuickRegisterGrid>
-            <QuickBtn onClick={() => {}}>
-              <QuickBtnInner >
+            <QuickBtn onClick={() => openRegisterModal('공지사항')}>
+              <QuickBtnInner>
                 <PlusCircleIcon />
                 공지사항
               </QuickBtnInner>
             </QuickBtn>
-            <QuickBtn onClick={() => {}}>
-              <QuickBtnInner >
+            <QuickBtn onClick={() => openRegisterModal('FAQ')}>
+              <QuickBtnInner>
                 <HelpSquareIcon />
                 FAQ
               </QuickBtnInner>
             </QuickBtn>
-            <QuickBtn onClick={() => {}}>
-              <QuickBtnInner >
+            <QuickBtn onClick={() => openRegisterModal('이벤트')}>
+              <QuickBtnInner>
                 <EventIcon />
                 이벤트
               </QuickBtnInner>
             </QuickBtn>
-            <QuickBtn onClick={() => {}}>
-              <QuickBtnInner >
+            <QuickBtn onClick={() => openRegisterModal('쿠폰')}>
+              <QuickBtnInner>
                 <CouponIcon />
                 쿠폰
               </QuickBtnInner>
@@ -155,62 +152,48 @@ export default function AdminBoardPage() {
               </Tab>
             ))}
           </Tabs>
-          <FilterBtn>
-            <FilterIcon />
-          </FilterBtn>
         </TabRow>
 
         <Table>
           <THead>
             <TR>
-              <TH $width="48px">
-                <Checkbox
-                  type="checkbox"
-                  checked={allChecked}
-                  onChange={handleAllCheck}
-                />
-              </TH>
               <TH $width="280px">제목</TH>
               <TH $width="160px">작성자</TH>
               <TH $width="150px">등록일</TH>
-              <TH $width="80px">관리</TH>
+              <TH $width="120px">관리</TH>
             </TR>
           </THead>
           <TBody>
             {posts.map((post) => {
-              const checked = checkedIds.includes(post.id);
               const pinned = pinnedIds.includes(post.id);
 
               return (
-                <TR key={post.id} $hoverable $checked={checked}>
-                  <TD>
-                    <Checkbox
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => handleCheck(post.id)}
-                    />
-                  </TD>
+                <TR key={post.id} $hoverable>
                   <TD>
                     <TitleCell>
                       {post.isFixed && <FixedBadge>필독</FixedBadge>}
-                      <TitleText>
-                        {post.title}
-                      </TitleText>
-                      {post.hasAttachment && (
-                        <AttachIcon />
-                      )}
+                      <TitleText>{post.title}</TitleText>
+                      {post.hasAttachment && <AttachIcon />}
                     </TitleCell>
                   </TD>
                   <TD><AuthorText>{post.author}</AuthorText></TD>
                   <TD><DateText>{post.date}</DateText></TD>
                   <TD>
-                    <PinBtn
-                      $pinned={pinned}
-                      onClick={() => handlePin(post.id)}
-                      title={pinned ? '고정 해제' : '고정'}
-                    >
-                      <PinSvg $pinned={pinned} />
-                    </PinBtn>
+                    <RowActions>
+                      <PinBtn
+                        $pinned={pinned}
+                        onClick={() => handlePin(post.id)}
+                        title={pinned ? '고정 해제' : '고정'}
+                      >
+                        <PinSvg $pinned={pinned} />
+                      </PinBtn>
+                      <RowActionBtn onClick={() => {}} title="수정">
+                        <Pencil size={14} color="#475569" />
+                      </RowActionBtn>
+                      <RowActionBtn $danger onClick={() => {}} title="삭제">
+                        <Trash2 size={14} color="#ef4444" />
+                      </RowActionBtn>
+                    </RowActions>
                   </TD>
                 </TR>
               );
@@ -232,30 +215,91 @@ export default function AdminBoardPage() {
         </TableFooter>
       </TableSection>
 
-      {/* ── 선택 항목 액션 바 (체크된 항목 1개 이상일 때만) ── */}
-      {selectedCount > 0 && (
-        <ActionBar>
-          <ActionBarInner>
-            <ActionCount>{selectedCount}개 항목 선택됨</ActionCount>
-            <ActionDivider />
-            <ActionBtn onClick={() => {}}>
-              <EyeIcon />
-              공개 전환
-            </ActionBtn>
-            <ActionBtn onClick={() => {}}>
-              <EyeOffIcon />
-              비공개 전환
-            </ActionBtn>
-            <ActionBtn onClick={() => {}}>
-              <EditIcon />
-              수정
-            </ActionBtn>
-            <ActionBtn $danger onClick={() => setCheckedIds([])}>
-              <TrashIcon />
-              삭제
-            </ActionBtn>
-          </ActionBarInner>
-        </ActionBar>
+      {/* ── 신규 등록 모달 ── */}
+      {registerModal && (
+        <ModalOverlay onClick={closeRegisterModal}>
+          <ModalContent onClick={(e) => e.stopPropagation()}>
+            <ModalHeader>
+              <ModalTitle>{registerModal} 등록</ModalTitle>
+              <ModalCloseBtn onClick={closeRegisterModal}><X size={18} /></ModalCloseBtn>
+            </ModalHeader>
+
+            <ModalBody>
+              {registerModal === '쿠폰' ? (
+                <>
+                  <FieldGroup>
+                    <FieldLabel>쿠폰 이름</FieldLabel>
+                    <FieldInput
+                      placeholder="쿠폰 이름을 입력하세요"
+                      value={formData.name || ''}
+                      onChange={(e) => handleFormChange('name', e.target.value)}
+                    />
+                  </FieldGroup>
+                  <FieldRow>
+                    <FieldGroup>
+                      <FieldLabel>할인율 (%)</FieldLabel>
+                      <FieldInput
+                        type="number"
+                        min={1}
+                        max={100}
+                        placeholder="예: 10"
+                        value={formData.discountRate || ''}
+                        onChange={(e) => handleFormChange('discountRate', e.target.value)}
+                      />
+                    </FieldGroup>
+                    <FieldGroup>
+                      <FieldLabel>수량</FieldLabel>
+                      <FieldInput
+                        type="number"
+                        min={1}
+                        placeholder="예: 100"
+                        value={formData.quantity || ''}
+                        onChange={(e) => handleFormChange('quantity', e.target.value)}
+                      />
+                    </FieldGroup>
+                  </FieldRow>
+                  <FieldGroup>
+                    <FieldLabel>유효 기간 (일)</FieldLabel>
+                    <FieldInputWithUnit>
+                      <FieldInput
+                        type="number"
+                        min={1}
+                        placeholder="예: 30"
+                        value={formData.validDays || ''}
+                        onChange={(e) => handleFormChange('validDays', e.target.value)}
+                      />
+                      <FieldUnit>일</FieldUnit>
+                    </FieldInputWithUnit>
+                  </FieldGroup>
+                </>
+              ) : (
+                <>
+                  <FieldGroup>
+                    <FieldLabel>제목</FieldLabel>
+                    <FieldInput
+                      placeholder="제목을 입력하세요"
+                      value={formData.title || ''}
+                      onChange={(e) => handleFormChange('title', e.target.value)}
+                    />
+                  </FieldGroup>
+                  <FieldGroup>
+                    <FieldLabel>내용</FieldLabel>
+                    <FieldTextarea
+                      placeholder="내용을 입력하세요"
+                      value={formData.content || ''}
+                      onChange={(e) => handleFormChange('content', e.target.value)}
+                    />
+                  </FieldGroup>
+                </>
+              )}
+            </ModalBody>
+
+            <ModalFooter>
+              <CancelBtn onClick={closeRegisterModal}>취소</CancelBtn>
+              <SubmitBtn onClick={handleRegisterSubmit}>등록</SubmitBtn>
+            </ModalFooter>
+          </ModalContent>
+        </ModalOverlay>
       )}
     </PageWrapper>
   );
@@ -268,34 +312,21 @@ function PlusCircleIcon() { return <PlusCircle size={14} strokeWidth={2.5} />; }
 function HelpSquareIcon() { return <HelpCircle size={14} />; }
 function EventIcon() { return <Star size={14} />; }
 function CouponIcon() { return <Tag size={14} />; }
-function FilterIcon() { return <Filter size={14} color="#64748b" />; }
 function AttachIcon() { return <Paperclip size={12} color="#94a3b8" style={{ flexShrink: 0 }} />; }
 function PinSvg({ $pinned }) {
   return <MapPin size={14} fill={$pinned ? '#244c54' : 'none'} color={$pinned ? '#244c54' : '#94a3b8'} />;
 }
-function EyeIcon() { return <Eye size={13} />; }
-function EyeOffIcon() { return <EyeOff size={13} />; }
-function EditIcon() { return <Pencil size={13} />; }
-function TrashIcon() { return <Trash2 size={13} />; }
 function ChevronLeft() { return <LucideChevronLeft size={14} color="#475569" strokeWidth={1.5} />; }
 function ChevronRight() { return <LucideChevronRight size={14} color="#475569" strokeWidth={1.5} />; }
 function DoubleChevronLeft() { return <ChevronsLeft size={14} color="#475569" strokeWidth={1.5} />; }
-function DoubleChevronRight() { return <ChevronsRight size={14} color="#475569" strokeWidth={1.5} />;
-}
+function DoubleChevronRight() { return <ChevronsRight size={14} color="#475569" strokeWidth={1.5} />; }
 
 /* ── Styled Components ── */
-
-const slideUp = keyframes`
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
-`;
 
 const PageWrapper = styled.div`
   display: flex;
   flex-direction: column;
   gap: 24px;
-  position: relative;
-  padding-bottom: 80px;
 `;
 
 const PageHeader = styled.div``;
@@ -492,17 +523,6 @@ const Tab = styled.button`
   font-family: inherit;
   &:hover { color: ${({ theme }) => theme.colors.adminPrimary}; }
 `;
-const FilterBtn = styled.button`
-  width: 32px;
-  height: 32px;
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s;
-  &:hover { background: ${({ theme }) => theme.colors.bgSection}; }
-`;
 
 const Table = styled.table`
   width: 100%;
@@ -515,10 +535,9 @@ const THead = styled.thead`
 const TBody = styled.tbody``;
 const TR = styled.tr`
   border-top: ${({ $hoverable, theme }) => ($hoverable ? `1px solid ${theme.colors.borderLight}` : 'none')};
-  background: ${({ $checked }) => ($checked ? '#f0fdf4' : 'transparent')};
   transition: background 0.1s;
   &:hover {
-    background: ${({ $checked }) => ($checked ? '#dcfce7' : '#fafbfc')};
+    background: ${({ $hoverable }) => ($hoverable ? '#fafbfc' : 'transparent')};
   }
 `;
 const TH = styled.th`
@@ -534,14 +553,6 @@ const TH = styled.th`
 const TD = styled.td`
   padding: 14px 20px;
   vertical-align: middle;
-`;
-
-const Checkbox = styled.input`
-  width: 15px;
-  height: 15px;
-  border-radius: 4px;
-  cursor: pointer;
-  accent-color: ${({ theme }) => theme.colors.adminPrimary};
 `;
 
 const TitleCell = styled.div`
@@ -604,51 +615,174 @@ const FooterInfo = styled.p`
   font-family: ${({ theme }) => theme.fonts.number};
 `;
 
-/* 액션 바 */
-const ActionBar = styled.div`
-  position: fixed;
-  bottom: 32px;
-  left: 50%;
-  transform: translateX(-10%);
-  z-index: 100;
-  animation: ${slideUp} 0.2s ease;
-`;
-const ActionBarInner = styled.div`
+const RowActions = styled.div`
   display: flex;
   align-items: center;
   gap: 4px;
-  background: #1e293b;
-  border-radius: 12px;
-  padding: 10px 16px;
-  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.25), 0 8px 10px -6px rgba(0,0,0,0.1);
 `;
-const ActionCount = styled.span`
-  font-size: 13px;
-  font-weight: 500;
-  color: #e2e8f0;
-  white-space: nowrap;
-  padding-right: 4px;
-`;
-const ActionDivider = styled.div`
-  width: 1px;
-  height: 18px;
-  background: #334155;
-  margin: 0 8px;
-`;
-const ActionBtn = styled.button`
+
+const RowActionBtn = styled.button`
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  &:hover {
+    background: ${({ $danger }) => ($danger ? 'rgba(239,68,68,0.08)' : theme => theme.colors?.borderLight || '#f1f5f9')};
+  }
+`;
+
+/* ── 신규 등록 모달 ── */
+const ModalOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const ModalContent = styled.div`
+  background: white;
+  width: 480px;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e2e8f0;
+`;
+
+const ModalTitle = styled.h2`
+  font-size: 16px;
+  font-weight: 600;
+  color: #0d1c2e;
+`;
+
+const ModalCloseBtn = styled.button`
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s;
+  &:hover { color: #475569; }
+`;
+
+const ModalBody = styled.div`
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`;
+
+const FieldGroup = styled.div`
+  display: flex;
+  flex-direction: column;
   gap: 6px;
-  padding: 6px 12px;
+  flex: 1;
+`;
+
+const FieldRow = styled.div`
+  display: flex;
+  gap: 12px;
+`;
+
+const FieldLabel = styled.label`
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+`;
+
+const FieldInputWithUnit = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
+  & > input { width: 100%; padding-right: 36px; }
+`;
+
+const FieldUnit = styled.span`
+  position: absolute;
+  right: 12px;
+  font-size: 13px;
+  color: #64748b;
+  pointer-events: none;
+`;
+
+const FieldInput = styled.input`
+  padding: 9px 12px;
+  border: 1px solid #e2e8f0;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #0d1c2e;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  &::placeholder { color: #94a3b8; }
+  &:focus {
+    outline: none;
+    border-color: #244c54;
+    box-shadow: 0 0 0 3px rgba(36,76,84,0.08);
+  }
+`;
+
+const FieldTextarea = styled.textarea`
+  padding: 9px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #0d1c2e;
+  resize: vertical;
+  min-height: 120px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  &::placeholder { color: #94a3b8; }
+  &:focus {
+    outline: none;
+    border-color: #244c54;
+    box-shadow: 0 0 0 3px rgba(36,76,84,0.08);
+  }
+`;
+
+const ModalFooter = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+`;
+
+const CancelBtn = styled.button`
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-size: 13px;
   font-weight: 500;
   font-family: inherit;
-  color: ${({ $danger }) => ($danger ? '#fca5a5' : '#cbd5e1')};
-  transition: background 0.15s, color 0.15s;
-  white-space: nowrap;
-  &:hover {
-    background: ${({ $danger }) => ($danger ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.08)')};
-    color: ${({ $danger }) => ($danger ? '#f87171' : 'white')};
-  }
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #475569;
+  transition: background 0.15s;
+  &:hover { background: #f1f5f9; }
+`;
+
+const SubmitBtn = styled.button`
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  background: #244c54;
+  color: white;
+  border: 1px solid #244c54;
+  transition: background 0.15s;
+  &:hover { background: #1d3d44; }
 `;

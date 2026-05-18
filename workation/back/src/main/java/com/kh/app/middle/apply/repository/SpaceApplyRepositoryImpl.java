@@ -41,6 +41,7 @@ public class SpaceApplyRepositoryImpl implements SpaceApplyRepositoryCustom{
     }
 
     //목록조회
+    // 계정 권한에 따라 보이는것 다름
     @Override
     public Page<SpaceApplyEntity> getList(Pageable pageable, Long memberId, boolean isAdmin) {
         List<SpaceApplyEntity> applyList = queryFactory

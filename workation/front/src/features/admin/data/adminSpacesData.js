@@ -4,27 +4,29 @@
    [MOCK DATA] 서버 연결 시 삭제/대체 필요
    ========================================== */
 
-export const SPACES_STAT_CARDS = [
+export const SPACES_TOTAL = 1284;
+export const SPACES_TOTAL_PAGES = 12;
+
+export const PENDING_SPACES = [
   {
-    id: 1,
-    label: '전체 숙소 수',
-    value: '1,284',
-    badge: { text: '+12%', color: 'green' },
-    icon: 'space',
+    id: 101,
+    name: '남해 힐링 펜션',
+    location: '경상남도 남해군',
+    seller: '남해바다사랑',
+    price: '₩120,000',
+    registeredAt: '2023.11.20',
+    thumbnail: 'https://images.unsplash.com/photo-1587061949409-02df41d5e562?w=80&h=60&fit=crop',
+    status: 'pending',
   },
   {
-    id: 2,
-    label: '운영 중인 숙소',
-    value: '1,182',
-    badge: { text: '92% 운영 중', color: 'blue' },
-    icon: 'check',
-  },
-  {
-    id: 3,
-    label: '승인 대기 중',
-    value: '24',
-    badge: { text: '조치 필요', color: 'orange' },
-    icon: 'alert',
+    id: 102,
+    name: '부산 해운대 요트 스테이',
+    location: '부산광역시 해운대구',
+    seller: '요트클럽부산',
+    price: '₩450,000',
+    registeredAt: '2023.11.21',
+    thumbnail: 'https://images.unsplash.com/photo-1544376798-89aa6b82c6cd?w=80&h=60&fit=crop',
+    status: 'pending',
   },
 ];
 
