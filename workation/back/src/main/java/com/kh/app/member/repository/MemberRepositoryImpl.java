@@ -84,7 +84,7 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
                 .where(
                         member.seller.isNotNull(),
                         keywordLike(dto.getKeyword()),
-                        statusEq(dto.getSellerStatus())
+                        statusEq(dto.getStatus())
                 )
                 .orderBy(member.createdAt.desc())
                 .offset(dto.getOffset())
@@ -101,7 +101,7 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
                 .where(
                         member.seller.isNotNull(),
                         keywordLike(dto.getKeyword()),
-                        statusEq(dto.getSellerStatus())
+                        statusEq(dto.getStatus())
                 )
                 .fetchOne();
         return count == null ? 0 : count;
