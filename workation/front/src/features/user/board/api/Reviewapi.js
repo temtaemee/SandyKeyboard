@@ -49,7 +49,7 @@ export const updateReview = (id, dto, imageFiles) => {
   }
   return axios
     .put(`${USER_BASE}/${id}`, formData, getAuthConfig())
-    .then((res) => res.data);
+    .then((res) => res.data); 
 };
 
 // 삭제
