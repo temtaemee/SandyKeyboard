@@ -43,3 +43,21 @@ export async function searchSellers(params) {
 //   keyword: "user",
 //   status: MEMBER_STATUS.ACTIVE,
 // });
+// ===== 관리자 회원 상세조회 =====
+export async function getMemberDetail(memberId) {
+    const resp = await api.get(`/admin/member/${memberId}`);
+    return resp.data;
+}
+
+// ===== 관리자 회원 밴 =====
+// 가져간 resp.status값이 200이면 잘 처리된것
+export async function banMember(memberId) {
+    const resp = await api.patch(`/admin/member/${memberId}/ban`);
+    return resp;
+}
+// ===== 관리자 회원 밴 해제=====
+export async function unbanMember(memberId) {
+    const resp = await api.patch(`/admin/member/${memberId}/unban`);
+    return resp;
+}
+

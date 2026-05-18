@@ -13,20 +13,15 @@ import java.util.List;
 public class MemberRespDto {
 
     private Long id;
-
     private String username;
-
     private String name;
-
     private String phone;
-
     private String email;
-
     private List<String> roles;
-
     private String banYn;
-
     private LocalDateTime createdAt;
+    private LocalDateTime deletedAt;
+    private boolean seller;
 
     public static MemberRespDto from(
             MemberEntity member,
@@ -49,6 +44,8 @@ public class MemberRespDto {
                 )
                 .banYn(member.getBanYn())
                 .createdAt(member.getCreatedAt())
+                .deletedAt(member.getDeletedAt())
+                .seller(member.getSeller()!=null)
                 .build();
     }
 }

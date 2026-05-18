@@ -8,6 +8,7 @@ import com.kh.app.member.dto.request.SellerSearchCondDto;
 import com.kh.app.member.dto.response.BankRespDto;
 import com.kh.app.member.dto.response.MemberListRespDto;
 import com.kh.app.member.dto.response.MemberMeRespDto;
+import com.kh.app.member.dto.response.MemberRespDto;
 import com.kh.app.member.repository.BankRepository;
 import com.kh.app.member.service.MemberService;
 import com.kh.app.security.user.CustomUserDetails;
@@ -67,6 +68,24 @@ public class MemberApiController {
         PageRespDto<MemberListRespDto> result = memberService.searchSellers(dto);
         return ResponseEntity.ok(result);
     }
+
+    @GetMapping("/admin/member/{memberId}")
+    public ResponseEntity<MemberRespDto> getMemberDetail(@PathVariable Long memberId){
+        MemberRespDto memberRespDto = memberService.getMemberDetail(memberId);
+        return ResponseEntity.ok(memberRespDto);
+    }
+
+    @PatchMapping("/admin/member/{memberId}/ban")
+    public ResponseEntity<Void> banMember(@PathVariable Long memberId){
+        memberService.banMember(memberId);
+        return ResponseEntity.ok().build();
+    }
+    @PatchMapping("/admin/member/{memberId}/unban")
+    public ResponseEntity<Void> unbanMember(@PathVariable Long memberId){
+        memberService.unbanMember(memberId);
+        return ResponseEntity.ok().build();
+    }
+
 
 
 

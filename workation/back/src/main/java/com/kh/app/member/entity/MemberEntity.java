@@ -73,5 +73,8 @@ public class MemberEntity{
     }
 
 
+    public void unban() {
+        this.banYn = "N";
+    }
 }
 
