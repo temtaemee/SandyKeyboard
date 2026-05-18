@@ -71,9 +71,13 @@ public class ReservationEntity {
     @Builder.Default
     private String reviewYn = "N";
 
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private ReservationStatus status;
+    @Builder.Default
+    private ReservationStatus status = ReservationStatus.PENDING;
 
     public void approve() {
         this.status = ReservationStatus.APPROVED;
@@ -91,6 +95,8 @@ public class ReservationEntity {
         this.status = ReservationStatus.COMPLETED;
     }
 
+    public void expire() {this.status = ReservationStatus.EXPIRED;}
+
 
     @PrePersist
     private void prePersist() {
@@ -106,7 +112,7 @@ public class ReservationEntity {
         if (this.status == null) {
             this.status = ReservationStatus.PENDING;
         }
-
+        this.createdAt = LocalDateTime.now();
 //        validateTarget();
     }
 
@@ -128,6 +134,8 @@ public class ReservationEntity {
             throw new IllegalStateException("숙소와 오피스를 동시에 예약할 수 없습니다.");
         }
     }
+
+
 
 
 

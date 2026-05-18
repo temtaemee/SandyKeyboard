@@ -2,11 +2,14 @@ package com.kh.app.transaction.reservation.repository;
 
 import com.kh.app.member.entity.MemberEntity;
 import com.kh.app.transaction.reservation.entity.ReservationEntity;
+import com.kh.app.transaction.reservation.entity.ReservationStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.nio.channels.FileChannel;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface ReservationRepository extends JpaRepository<ReservationEntity, Long>, ReservationRepositoryCustom {
@@ -18,6 +21,12 @@ public interface ReservationRepository extends JpaRepository<ReservationEntity, 
     Optional<ReservationEntity> findByIdAndMember(
             Long id,
             MemberEntity member
+    );
+
+    List<ReservationEntity>
+    findByStatusAndCreatedAtBefore(
+            ReservationStatus status,
+            LocalDateTime time
     );
 
 }
