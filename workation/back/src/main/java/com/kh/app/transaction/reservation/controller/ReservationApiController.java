@@ -23,20 +23,24 @@ import java.util.List;
 public class ReservationApiController {
 
     private final ReservationService reservationService;
-
-    @PostMapping("/user/{productType}/{productId}/reservation")
+          //stay랑 office 완성후 사용
+//  @PostMapping("/user/{productType}/{productId}/reservation")
+    @PostMapping("/user/reservation")
     public ResponseEntity<Long> create(
-            @PathVariable ProductType productType,
-            @PathVariable Long productId,
+            //stay랑 office 완성후 사용
+//            @PathVariable ProductType productType,
+//            @PathVariable Long productId,
             @AuthenticationPrincipal(expression = "username") String username,
             @RequestPart(name = "data") ReservationCreateReqDto dto,
             @RequestPart(name = "fileList", required = false) List<MultipartFile> fileList
     ) throws IOException {
 
+        log.info("dto = {}", dto.getCheckinDate());
+
         Long reservationId = reservationService.create(
                 username,
-                productType,
-                productId,
+//                productType,
+//                productId,
                 dto,
                 fileList
         );
