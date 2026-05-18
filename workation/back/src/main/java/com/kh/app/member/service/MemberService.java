@@ -7,6 +7,7 @@ import com.kh.app.member.dto.request.SellerApplyReqDto;
 import com.kh.app.member.dto.request.SellerSearchCondDto;
 import com.kh.app.member.dto.response.MemberListRespDto;
 import com.kh.app.member.dto.response.MemberMeRespDto;
+import com.kh.app.member.dto.response.MemberRespDto;
 import com.kh.app.member.entity.*;
 import com.kh.app.member.repository.BankRepository;
 import com.kh.app.member.repository.MemberRepository;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional(readOnly = true)
@@ -123,5 +125,27 @@ public class MemberService {
                 .totalCount(totalCount)
                 .totalPage(totalPage)
                 .build();
+    }
+
+    public MemberRespDto getMemberDetail(Long id) {
+        MemberEntity member = memberRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("회원 없음"));
+        MemberProfileEntity profile = member.getProfile();
+        return MemberRespDto.from(
+                member,
+                profile.getName(),
+                profile.getPhone(),
+                profile.getEmail()
+        );
+    }
+
+    @Transactional
+    public void banMember(Long id) {
+        MemberEntity member = memberRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("회원 없음"));
+        if ("Y".equals(member.getBanYn())) {
+            throw new RuntimeException("이미 정지된 회원");
+        }
+        member.ban();
     }
 }
