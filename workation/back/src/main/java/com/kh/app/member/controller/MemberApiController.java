@@ -111,6 +111,24 @@ public class MemberApiController {
 
         return ResponseEntity.ok(result);
     }
+    @PostMapping("/guest/send-email-code")
+    public void sendEmailCode(@RequestBody FindPasswordReqDto dto ){
+        memberService.sendEmailCode(dto);
+    }
+    @PostMapping("/guest/verify-email-code")
+    public ResponseEntity<Object> verifyEmailCode(
+            @RequestBody VerifyEmailCodeReqDto dto
+    ) {
+        memberService.verifyEmailCode(dto);
+        return ResponseEntity.ok().build();
+    }
+    @PatchMapping("/guest/reset-password")
+    public ResponseEntity<Object> resetPassword(
+            @RequestBody ResetPasswordReqDto dto
+    ) {
+        memberService.resetPassword(dto);
+        return ResponseEntity.ok().build();
+    }
 
 
 

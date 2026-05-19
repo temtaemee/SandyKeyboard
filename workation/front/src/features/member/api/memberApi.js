@@ -26,6 +26,24 @@ export async function findUsername(vo) {
     return resp.data;
 }
 
+//비밀번호 찾기 스텝1 인증코드 이메일발송
+export async function sendEmailCode(vo) {
+    const resp = await api.post(`/guest/send-email-code`, vo)
+    return resp.data;
+}
+
+//비밀번호 찾기 스텝2 인증코드 확인
+export async function verifyCode(vo) {
+    const resp = await api.post(`/guest/verify-email-code`, vo)
+    return resp.data;
+}
+
+export async function resetPassword(vo) {
+    console.log(vo);
+
+    const resp = await api.patch(`/guest/reset-password`, vo)
+    return resp.data;
+}
 
 
 

@@ -11,14 +11,18 @@ import com.kh.app.member.repository.BankRepository;
 import com.kh.app.member.repository.MemberRepository;
 import com.kh.app.member.repository.ProfileRepository;
 import com.kh.app.member.repository.SellerRepository;
+import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @Transactional(readOnly = true)
@@ -30,6 +34,10 @@ public class MemberService {
     private final ProfileRepository profileRepository;
     private final SellerRepository sellerRepository;
     private final BankRepository bankRepository;
+    private final JavaMailSender mailSender;
+    private final Map<String, String> authCodeStore
+            = new ConcurrentHashMap<>();
+    private final Set<String> verifiedEmailSet = new HashSet<>();
 
     @Transactional
     public void join(MemberJoinReqDto dto) {
@@ -209,4 +217,88 @@ public class MemberService {
                 .build();
 
     }
+
+    public void sendEmailCode(FindPasswordReqDto dto) {
+        profileRepository.findByMemberUsernameAndEmail(dto.getUsername(), dto.getEmail())
+                .orElseThrow(() -> new RuntimeException("회원 없음"));
+
+        String code = String.valueOf((int)((Math.random() * 900000) + 100000));
+
+        // 1. MimeMessage 객체 생성
+        MimeMessage message = mailSender.createMimeMessage();
+
+        try {
+            // 2. MimeMessageHelper를 이용해 편리하게 세팅 (true는 멀티파트/첨부파일 사용 여부)
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setTo(dto.getEmail());
+            helper.setSubject("[모래묻은키보드] 비밀번호 재설정 인증코드");
+
+            // 3. HTML 문자열 작성
+            String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px;'>"
+                    + "<h2>[모래묻은키보드] 비밀번호 재설정</h2>"
+                    + "<p>안녕하세요. 요청하신 비밀번호 재설정 인증코드입니다.</p>"
+                    + "<div style='background-color: #f9f9f9; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; color: #4A90E2; letter-spacing: 5px;'>"
+                    +     code
+                    + "</div>"
+                    + "<p style='color: #888; font-size: 12px; margin-top: 20px;'>본 인증코드는 비밀번호 재설정 페이지에서만 사용 가능합니다.</p>"
+                    + "</div>";
+
+            // 4. 핵심: 두 번째 인자에 true를 넣어야 HTML로 렌더링됩니다!
+            helper.setText(htmlContent, true);
+
+        } catch (Exception e) {
+            log.error("메일 생성 중 에러 발생", e);
+            throw new RuntimeException("메일 발송 실패");
+        }
+
+        authCodeStore.put(dto.getEmail(), code);
+
+        // 5. 메일 발송
+        mailSender.send(message);
+    }
+
+    public void verifyEmailCode(
+            VerifyEmailCodeReqDto dto
+    ) {
+        String savedCode =
+                authCodeStore.get(dto.getEmail());
+        if (savedCode == null) {
+            throw new RuntimeException("인증코드 없음");
+        }
+        if (!savedCode.equals(dto.getCode())) {
+            throw new RuntimeException("인증코드 불일치");
+        }
+        verifiedEmailSet.add(dto.getEmail());
+    }
+
+    @Transactional
+    public void resetPassword(ResetPasswordReqDto dto) {
+        // 1. 인증 여부 체크
+        if (!verifiedEmailSet.contains(dto.getEmail())) {
+            throw new RuntimeException("인증되지 않은 사용자");
+        }
+        // 2. 비밀번호 확인
+        if (!dto.getNewPassword()
+                .equals(dto.getNewPasswordCheck())) {
+            throw new RuntimeException("비밀번호 불일치");
+        }
+        // 3. 회원 조회 (email → profile → member)
+        MemberProfileEntity profile =
+                profileRepository
+                        .findByEmail(dto.getEmail())
+                        .orElseThrow();
+        MemberEntity member = profile.getMember();
+
+        // 4. 비밀번호 변경
+        String encoded =
+                passwordEncoder.encode(dto.getNewPassword());
+
+        member.changePassword(encoded);
+
+        // 5. 인증 상태 제거 (1회성)
+        verifiedEmailSet.remove(dto.getEmail());
+    }
+
+
 }
