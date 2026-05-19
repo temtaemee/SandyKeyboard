@@ -1,26 +1,58 @@
+// src/features/reservation/hooks/useReservationInsert.js
+
 import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 
-import {
-  setLoading,
-  setReservationList,
-  setError,
-} from '../store/reservationSlice';
+import { createReservation } from '../api/reservationApi';
+import { setError, setLoading } from '../store/reservationSlice';
 
-import { getReservationList } from '../api/reservationApi';
-import store from './../../../../app/store/store';
+export default function useReservationInsert() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
-const dispatch = useDispatch();
+  async function insertReservation(stayId, vo, fileList) {
+    try {
+      dispatch(setLoading(true));
 
-async function fetchReservationList() {
-  try {
-    dispatch(setLoading(true));
+      const formData = new FormData();
 
-    const resp = await getReservationList(0);
+      // dto JSON
+      formData.append(
+        'data',
+        new Blob([JSON.stringify(vo)], {
+          type: 'application/json',
+        })
+      );
 
-    dispatch(setReservationList(resp.data));
-  } catch (error) {
-    dispatch(setError(error.response.data));
-  } finally {
-    dispatch(setLoading(false));
+      // 파일 추가
+      fileList.forEach((file) => {
+        formData.append('fileList', file);
+      });
+
+      // API 호출
+      const resp = await createReservation(stayId, formData);
+
+      alert('예약 성공');
+
+      console.log(resp.data);
+
+      navigate('/');
+
+      return resp.data;
+    } catch (error) {
+      console.error(error);
+
+      dispatch(setError(error.response?.data));
+
+      alert('예약 실패');
+
+      throw error;
+    } finally {
+      dispatch(setLoading(false));
+    }
   }
+
+  return {
+    insertReservation,
+  };
 }

@@ -1,16 +1,15 @@
 // src/features/reservation/pages/ReservationInsertPage.jsx
 
 import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import styled from 'styled-components';
 
-import { createReservation } from '../api/reservationApi';
-
-import { setError, setLoading } from '../store/reservationSlice';
+import useReservationInsert from '../hooks/useReservationInsert';
 
 function ReservationInsertPage() {
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
+  const { stayId } = useParams();
+
+  const { insertReservation } = useReservationInsert();
 
   const [vo, setVo] = useState({
     couponId: '',
@@ -20,16 +19,13 @@ function ReservationInsertPage() {
     checkoutDate: '',
     primaryGuestPhone: '',
     primaryGuestEmail: '',
+    refundBankName: '',
+    refundAccountNumber: '',
+    refundAccountHolder: '',
   });
 
-  // URL 용
-  const [productType, setProductType] = useState('STAY');
-  const [productId, setProductId] = useState(1);
-
-  // 첨부파일
   const [fileList, setFileList] = useState([]);
 
-  // input 변경
   function handleChange(e) {
     setVo({
       ...vo,
@@ -37,147 +33,329 @@ function ReservationInsertPage() {
     });
   }
 
-  // 파일 변경
   function handleFileChange(e) {
     setFileList([...e.target.files]);
   }
 
-  // 예약 등록
   async function handleSubmit(e) {
     e.preventDefault();
 
-    try {
-      dispatch(setLoading(true));
-
-      const formData = new FormData();
-
-      // dto 를 JSON Blob 으로 전송
-      formData.append(
-        'data',
-        new Blob([JSON.stringify(vo)], {
-          type: 'application/json',
-        })
-      );
-
-      // 파일 추가
-      fileList.forEach((file) => {
-        formData.append('fileList', file);
-      });
-
-      // stay,office 완성후 넣기 productType, productId,
-      const resp = await createReservation(formData);
-
-      alert('예약 성공');
-
-      console.log(resp.data);
-
-      navigate('/');
-    } catch (error) {
-      console.error(error);
-
-      dispatch(setError(error.response?.data));
-
-      alert('예약 실패');
-    } finally {
-      dispatch(setLoading(false));
-    }
+    await insertReservation(stayId, vo, fileList);
   }
 
   return (
-    <div>
-      <h1>예약하기</h1>
+    <Wrapper>
+      <Container>
+        <Title>예약 / 결제</Title>
 
-      <form onSubmit={handleSubmit}>
-        <div>
-          <input
-            type="number"
-            name="couponId"
-            placeholder="쿠폰 ID"
-            value={vo.couponId}
-            onChange={handleChange}
-          />
-        </div>
+        <StyledForm onSubmit={handleSubmit}>
+          {/* 예약 정보 */}
+          <Section>
+            <SectionTitle>예약 정보</SectionTitle>
 
-        <div>
-          <input
-            type="number"
-            name="guestCount"
-            placeholder="인원 수"
-            value={vo.guestCount}
-            onChange={handleChange}
-          />
-        </div>
+            <InputGroup>
+              <Label>쿠폰 ID</Label>
 
-        <div>
-          <input
-            type="text"
-            name="primaryGuestName"
-            placeholder="대표투숙객 이름"
-            value={vo.primaryGuestName}
-            onChange={handleChange}
-          />
-        </div>
+              <Input
+                type="number"
+                name="couponId"
+                placeholder="쿠폰 ID 입력"
+                value={vo.couponId}
+                onChange={handleChange}
+              />
+            </InputGroup>
 
-        <div>
-          <label>체크인 날짜</label>
+            <InputGroup>
+              <Label>인원 수</Label>
 
-          <input
-            type="datetime-local"
-            name="checkinDate"
-            value={vo.checkinDate}
-            onChange={handleChange}
-          />
-        </div>
+              <Input
+                type="number"
+                name="guestCount"
+                placeholder="인원 수 입력"
+                value={vo.guestCount}
+                onChange={handleChange}
+              />
+            </InputGroup>
 
-        <div>
-          <label>체크아웃 날짜</label>
+            <InputGroup>
+              <Label>대표 예약자 이름</Label>
 
-          <input
-            type="datetime-local"
-            name="checkoutDate"
-            value={vo.checkoutDate}
-            onChange={handleChange}
-          />
-        </div>
+              <Input
+                type="text"
+                name="primaryGuestName"
+                placeholder="이름 입력"
+                value={vo.primaryGuestName}
+                onChange={handleChange}
+              />
+            </InputGroup>
 
-        <div>
-          <input
-            type="text"
-            name="primaryGuestPhone"
-            placeholder="대표투숙객 전화번호"
-            value={vo.primaryGuestPhone}
-            onChange={handleChange}
-          />
-        </div>
+            <Row>
+              <InputGroup>
+                <Label>체크인 날짜</Label>
 
-        <div>
-          <input
-            type="email"
-            name="primaryGuestEmail"
-            placeholder="대표투숙객 이메일"
-            value={vo.primaryGuestEmail}
-            onChange={handleChange}
-          />
-        </div>
+                <Input
+                  type="datetime-local"
+                  name="checkinDate"
+                  value={vo.checkinDate}
+                  onChange={handleChange}
+                />
+              </InputGroup>
 
-        <div>
-          <label htmlFor="file-input">파일첨부</label>
-          <input
-            id="file-input"
-            type="file"
-            name="f"
-            multiple
-            onChange={handleFileChange}
-            style={{ display: 'none' }}
-          />
-        </div>
+              <InputGroup>
+                <Label>체크아웃 날짜</Label>
 
-        <div>
-          <button type="submit">예약하기</button>
-        </div>
-      </form>
-    </div>
+                <Input
+                  type="datetime-local"
+                  name="checkoutDate"
+                  value={vo.checkoutDate}
+                  onChange={handleChange}
+                />
+              </InputGroup>
+            </Row>
+
+            <InputGroup>
+              <Label>전화번호</Label>
+
+              <Input
+                type="text"
+                name="primaryGuestPhone"
+                placeholder="010-0000-0000"
+                value={vo.primaryGuestPhone}
+                onChange={handleChange}
+              />
+            </InputGroup>
+
+            <InputGroup>
+              <Label>이메일</Label>
+
+              <Input
+                type="email"
+                name="primaryGuestEmail"
+                placeholder="example@email.com"
+                value={vo.primaryGuestEmail}
+                onChange={handleChange}
+              />
+            </InputGroup>
+          </Section>
+
+          {/* 환불 계좌 */}
+          <Section>
+            <SectionTitle>환불 계좌 정보</SectionTitle>
+
+            <InputGroup>
+              <Label>은행명</Label>
+
+              <Input
+                type="text"
+                name="refundBankName"
+                placeholder="은행명 입력"
+                value={vo.refundBankName}
+                onChange={handleChange}
+              />
+            </InputGroup>
+
+            <InputGroup>
+              <Label>계좌번호</Label>
+
+              <Input
+                type="text"
+                name="refundAccountNumber"
+                placeholder="계좌번호 입력"
+                value={vo.refundAccountNumber}
+                onChange={handleChange}
+              />
+            </InputGroup>
+
+            <InputGroup>
+              <Label>예금주명</Label>
+
+              <Input
+                type="text"
+                name="refundAccountHolder"
+                placeholder="예금주명 입력"
+                value={vo.refundAccountHolder}
+                onChange={handleChange}
+              />
+            </InputGroup>
+          </Section>
+
+          {/* 파일 */}
+          <Section>
+            <SectionTitle>첨부 파일</SectionTitle>
+
+            <FileBox>
+              <FileLabel htmlFor="file-input">파일 선택</FileLabel>
+
+              <FileInput
+                id="file-input"
+                type="file"
+                multiple
+                onChange={handleFileChange}
+              />
+
+              <FileText>
+                {fileList.length > 0
+                  ? `${fileList.length}개 파일 선택됨`
+                  : '선택된 파일 없음'}
+              </FileText>
+            </FileBox>
+          </Section>
+
+          <SubmitButton type="submit">결제하기</SubmitButton>
+        </StyledForm>
+      </Container>
+    </Wrapper>
   );
 }
 
 export default ReservationInsertPage;
+
+/* ========================= */
+/* styled-components */
+/* ========================= */
+
+const Wrapper = styled.div`
+  width: 100%;
+  min-height: 100vh;
+  padding: 80px 20px;
+  background: ${({ theme }) => theme.colors.bg};
+`;
+
+const Container = styled.div`
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  background: ${({ theme }) => theme.colors.white};
+  border-radius: ${({ theme }) => theme.radius.lg};
+  padding: 48px;
+  box-shadow: ${({ theme }) => theme.shadows.card};
+`;
+
+const Title = styled.h1`
+  font-size: 36px;
+  font-weight: 700;
+  color: ${({ theme }) => theme.colors.textDark};
+  margin-bottom: 40px;
+`;
+
+const StyledForm = styled.form`
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+`;
+
+const Section = styled.section`
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
+`;
+
+const SectionTitle = styled.h2`
+  font-size: 22px;
+  font-weight: 700;
+  color: ${({ theme }) => theme.colors.textDark};
+`;
+
+const Row = styled.div`
+  display: flex;
+  gap: 20px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
+`;
+
+const InputGroup = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const Label = styled.label`
+  font-size: 14px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.textMid};
+`;
+
+const Input = styled.input`
+  width: 100%;
+  height: 54px;
+  padding: 0 16px;
+
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.radius.md};
+
+  background: ${({ theme }) => theme.colors.white};
+
+  font-size: 15px;
+  color: ${({ theme }) => theme.colors.textDark};
+
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.colors.primary};
+    box-shadow: 0 0 0 4px rgba(44, 100, 128, 0.12);
+  }
+
+  &::placeholder {
+    color: ${({ theme }) => theme.colors.textLight};
+  }
+`;
+
+const FileBox = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+`;
+
+const FileLabel = styled.label`
+  width: fit-content;
+
+  padding: 12px 20px;
+
+  border-radius: ${({ theme }) => theme.radius.full};
+
+  background: ${({ theme }) => theme.gradients.hero};
+
+  font-size: 14px;
+  font-weight: 600;
+
+  color: ${({ theme }) => theme.colors.textDark};
+
+  cursor: pointer;
+`;
+
+const FileInput = styled.input`
+  display: none;
+`;
+
+const FileText = styled.p`
+  font-size: 14px;
+  color: ${({ theme }) => theme.colors.textMuted};
+`;
+
+const SubmitButton = styled.button`
+  width: 100%;
+  height: 60px;
+
+  border-radius: ${({ theme }) => theme.radius.full};
+
+  background: ${({ theme }) => theme.colors.primary};
+
+  color: ${({ theme }) => theme.colors.white};
+
+  font-size: 17px;
+  font-weight: 700;
+
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.primaryLight};
+    transform: translateY(-2px);
+    box-shadow: ${({ theme }) => theme.shadows.cardHover};
+  }
+`;

@@ -23,13 +23,10 @@ import java.util.List;
 public class ReservationApiController {
 
     private final ReservationService reservationService;
-          //stay랑 office 완성후 사용
-//  @PostMapping("/user/{productType}/{productId}/reservation")
-    @PostMapping("/user/reservation")
+          //stay 완성후 사용
+  @PostMapping("/user/reservation/{stayId}")
     public ResponseEntity<Long> create(
-            //stay랑 office 완성후 사용
-//            @PathVariable ProductType productType,
-//            @PathVariable Long productId,
+            @PathVariable Long stayId,
             @AuthenticationPrincipal(expression = "username") String username,
             @RequestPart(name = "data") ReservationCreateReqDto dto,
             @RequestPart(name = "fileList", required = false) List<MultipartFile> fileList
@@ -39,8 +36,7 @@ public class ReservationApiController {
 
         Long reservationId = reservationService.create(
                 username,
-//                productType,
-//                productId,
+                stayId,
                 dto,
                 fileList
         );
@@ -51,30 +47,6 @@ public class ReservationApiController {
     }
 
 
-    @GetMapping("/user/reservation")
-    public ResponseEntity<?> getReservations(@RequestParam(defaultValue = "0") int pno,@AuthenticationPrincipal(expression = "username") String username) {
-
-
-        Page<ReservationResDto> dtoList = reservationService.getList(username, pno);
-
-        return ResponseEntity.ok(dtoList);
-
-    }
-
-    @GetMapping("/user/reservation/{id}")
-    public ResponseEntity<ReservationResDto> getOne(@PathVariable Long id,@AuthenticationPrincipal(expression = "username") String username) {
-
-        ReservationResDto resDto = reservationService.getOne(id, username);
-        return ResponseEntity.ok(resDto);
-    }
-
-    @PutMapping("/user/reservation/{id}")
-    public ResponseEntity<Object> update(@PathVariable Long id, @RequestBody ReservationCreateReqDto dto,@AuthenticationPrincipal(expression = "username") String username)
-    {
-
-        reservationService.update(id ,dto ,username);
-        return ResponseEntity.ok().build();
-    }
 
 
 

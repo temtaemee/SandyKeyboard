@@ -4,11 +4,8 @@ import com.kh.app.aws.service.S3Service;
 import com.kh.app.member.entity.MemberEntity;
 import com.kh.app.member.repository.MemberRepository;
 import com.kh.app.middle.coupon.entity.CouponEntity;
-import com.kh.app.product.office.entity.OfficeEntity;
 import com.kh.app.product.stay.entity.StayEntity;
 import com.kh.app.transaction.reservation.dto.request.ReservationCreateReqDto;
-import com.kh.app.transaction.reservation.dto.response.ReservationResDto;
-import com.kh.app.transaction.reservation.entity.ProductType;
 import com.kh.app.transaction.reservation.entity.ReservationEntity;
 import com.kh.app.transaction.reservation.entity.ReserveFileEntity;
 import com.kh.app.transaction.reservation.repository.ReservationRepository;
@@ -16,10 +13,6 @@ import com.kh.app.transaction.reservation.repository.ReserveFileRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -43,22 +36,18 @@ public class ReservationService {
     // private final StayRepository stayRepository;
 
     // TODO
-    // office 기능 완성 후 추가 예정
-    // private final OfficeRepository officeRepository;
-
-    // TODO
     // coupon 기능 완성 후 추가 예정
     // private final CouponRepository couponRepository;
 
     @Transactional
-    public Long create (
+    public Long create(
             String username,
-//            ProductType productType,
-//            Long productId,
+            Long stayId,
             ReservationCreateReqDto dto,
             List<MultipartFile> fileList
-    )throws IOException {
+    ) throws IOException {
 
+        // 회원 조회
         MemberEntity memberEntity = memberRepository
                 .findByUsername(username)
                 .orElseThrow(() ->
@@ -76,46 +65,28 @@ public class ReservationService {
         }
 
         // TODO
-        // stay / office 기능 완성 후 실제 엔티티 연결 예정
+        // stay 기능 완성 후 실제 DB 조회 및 존재 검증 필요
+        StayEntity stay = StayEntity.builder()
+                .id(stayId)
+                .build();
 
-        StayEntity stay = null;
-        OfficeEntity office = null;
+        log.info(
+                "[임시 예약 생성] stayId={}",
+                stayId
+        );
+        log.info(
+                "[임시 예약 생성] stayId={}",
+                stayId
+        );
 
-        Long originalPrice = 0L;
-
-//        switch (productType) {
-//
-//            // TODO
-//            // 실제 숙소 조회 및 날짜별 가격 계산 필요
-//            case STAY -> {
-//
-//                // 임시 가격
-//                originalPrice = 100000L;
-//
-//                log.info(
-//                        "임시 STAY 예약 처리 : productId={}",
-//                        productId
-//                );
-//            }
-//
-//            // TODO
-//            // 실제 오피스 조회 및 시간별 가격 계산 필요
-//            case OFFICE -> {
-//
-//                // 임시 가격
-//                originalPrice = 50000L;
-//
-//                log.info(
-//                        "임시 OFFICE 예약 처리 : productId={}",
-//                        productId
-//                );
-//            }
-//        }
+        // TODO
+        // 실제 숙소 가격 정책 연결 예정
+        Long originalPrice = 100000L;
 
         // TODO
         // coupon 기능 완성 후 실제 할인 정책 적용 예정
-
         CouponEntity coupon = null;
+
         Long discountAmount = 0L;
 
         /*
@@ -128,6 +99,7 @@ public class ReservationService {
                             )
                     );
 
+            // 임시 할인 금액
             discountAmount = 10000L;
 
             if (discountAmount > originalPrice) {
@@ -146,16 +118,12 @@ public class ReservationService {
                         memberEntity,
                         coupon,
                         stay,
-                        office,
                         originalPrice,
                         discountAmount,
                         totalPrice
                 );
 
         reservationRepository.save(reservation);
-
-
-
 
         // 파일 업로드
         if (fileList != null && !fileList.isEmpty()) {
@@ -186,92 +154,5 @@ public class ReservationService {
         }
 
         return reservation.getId();
-    }
-    /// ///////////////////////////////////////////////////////////////////////////////////////
-
-    public Page<ReservationResDto> getList(
-            String username,
-            int pno
-    ) {
-
-        MemberEntity memberEntity = memberRepository
-                .findByUsername(username)
-                .orElseThrow(() ->
-                        new EntityNotFoundException(
-                                "MEMBER NOT FOUND"
-                        )
-                );
-
-        Pageable pageable =
-                PageRequest.of(pno, 10);
-
-        return reservationRepository
-                .findByMemberOrderByIdDesc(memberEntity, pageable)
-                .map(ReservationResDto::from);
-    }
-
-    public ReservationResDto getOne(
-            Long id,
-            String username
-    ) {
-
-        MemberEntity memberEntity = memberRepository
-                .findByUsername(username)
-                .orElseThrow(() ->
-                        new EntityNotFoundException(
-                                "MEMBER NOT FOUND"
-                        )
-                );
-
-        ReservationEntity entity =
-                reservationRepository
-                        .findByIdAndMember(
-                                id,
-                                memberEntity
-                        )
-                        .orElseThrow(() ->
-                                new EntityNotFoundException(
-                                        "RESERVATION NOT FOUND"
-                                )
-                        );
-
-        return ReservationResDto.from(entity);
-    }
-
-    @Transactional
-    public void update(
-            Long id,
-            ReservationCreateReqDto reqDto,
-            String username
-    ) {
-
-        MemberEntity memberEntity = memberRepository
-                .findByUsername(username)
-                .orElseThrow(() ->
-                        new EntityNotFoundException(
-                                "MEMBER NOT FOUND"
-                        )
-                );
-
-        ReservationEntity entity =
-                reservationRepository
-                        .findById(id)
-                        .orElseThrow(() ->
-                                new EntityNotFoundException(
-                                        "RESERVATION NOT FOUND"
-                                )
-                        );
-
-        // 작성자 검증
-        if (!entity.getMember().getId()
-                .equals(memberEntity.getId())) {
-
-            throw new AccessDeniedException(
-                    "예약 수정 권한이 없습니다."
-            );
-        }
-
-        // 엔티티 수정
-        entity.update(reqDto);
     }
 }

@@ -1,8 +1,29 @@
 import styled from 'styled-components';
 import { Bell, ShieldCheck, Globe, UserCog } from 'lucide-react';
 import MyPageSidebar from '../components/MyPageSidebar';
+import MemberEditForm from '../components/MemberEditForm';
+import { useState } from 'react';
+import PasswordEditForm from '../components/PasswordEditForm';
+import { deleteAccount } from '../api/mypageApi';
 
 function MySettingPage() {
+  const [editMode, setEditMode] = useState(false);
+  const [passwordEditMode, setPasswordEditMode] = useState(false);
+  async function accountDelete() {
+    try {
+      const result = confirm('정말 탈퇴하시겠습니까?');
+      if (!result) {
+        return;
+      }
+      await deleteAccount();
+      alert('회원탈퇴 성공');
+      localStorage.removeItem('accessToken');
+      location.href = '/';
+    } catch (error) {
+      console.error(error);
+      alert('회원탈퇴 실패했습니다.');
+    }
+  }
   return (
     <Container>
       <MyPageSidebar />
@@ -20,17 +41,23 @@ function MySettingPage() {
               회원 정보
             </SectionTitle>
 
-            <SettingRow>
-              <SettingInfo>
-                <SettingLabel>회원 정보 수정</SettingLabel>
+            {editMode ? (
+              <MemberEditForm setEditMode={setEditMode} />
+            ) : (
+              <SettingRow>
+                <SettingInfo>
+                  <SettingLabel>회원 정보 수정</SettingLabel>
 
-                <SettingDesc>
-                  이름, 연락처, 기업 정보 등을 수정할 수 있습니다.
-                </SettingDesc>
-              </SettingInfo>
+                  <SettingDesc>
+                    이름, 연락처, 기업 정보 등을 수정할 수 있습니다.
+                  </SettingDesc>
+                </SettingInfo>
 
-              <PrimaryButton>정보 수정</PrimaryButton>
-            </SettingRow>
+                <PrimaryButton onClick={() => setEditMode(true)}>
+                  정보 수정
+                </PrimaryButton>
+              </SettingRow>
+            )}
           </SectionCard>
 
           {/* 알림 설정 */}
@@ -74,25 +101,37 @@ function MySettingPage() {
               계정 보안
             </SectionTitle>
 
-            <SecurityBox>
-              <SecurityInfo>
-                <SecurityTitle>비밀번호 변경</SecurityTitle>
+            {passwordEditMode ? (
+              <PasswordEditForm setPasswordEditMode={setPasswordEditMode} />
+            ) : (
+              <>
+                <SecurityBox>
+                  <SecurityInfo>
+                    <SecurityTitle>비밀번호 변경</SecurityTitle>
 
-                <SecurityDesc>마지막 변경 : 3개월 전</SecurityDesc>
-              </SecurityInfo>
+                    <SecurityDesc>마지막 변경 : 3개월 전</SecurityDesc>
+                  </SecurityInfo>
 
-              <OutlineButton>변경하기</OutlineButton>
-            </SecurityBox>
+                  <OutlineButton
+                    onClick={() => {
+                      setPasswordEditMode(true);
+                    }}
+                  >
+                    변경하기
+                  </OutlineButton>
+                </SecurityBox>
 
-            <SecurityBox>
-              <SecurityInfo>
-                <SecurityTitle>2단계 인증 설정</SecurityTitle>
+                <SecurityBox>
+                  <SecurityInfo>
+                    <SecurityTitle>2단계 인증 설정</SecurityTitle>
 
-                <SecurityDesc>계정 보안을 더욱 강화합니다.</SecurityDesc>
-              </SecurityInfo>
+                    <SecurityDesc>계정 보안을 더욱 강화합니다.</SecurityDesc>
+                  </SecurityInfo>
 
-              <PrimaryButton>설정하기</PrimaryButton>
-            </SecurityBox>
+                  <PrimaryButton>설정하기</PrimaryButton>
+                </SecurityBox>
+              </>
+            )}
           </SectionCard>
 
           {/* 언어 */}
@@ -119,7 +158,7 @@ function MySettingPage() {
               탈퇴 시 예약 기록 및 일부 데이터가 삭제될 수 있습니다.
             </DangerDesc>
 
-            <DangerButton>회원 탈퇴하기</DangerButton>
+            <DangerButton onClick={accountDelete}>회원 탈퇴하기</DangerButton>
           </DangerSection>
         </ContentWrapper>
       </Main>

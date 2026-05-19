@@ -1,16 +1,18 @@
 package com.kh.app.member.dto.request;
 
+import com.kh.app.product.space.entity.Area;
 import lombok.Getter;
+import lombok.Setter;
 
+@Setter
 @Getter
 public class MemberUpdateReqDto {
 
-    private String password;
-
     private String name;
-
     private String phone;
-
     private String email;
+    private Area preferredArea;
+
+
 
 }

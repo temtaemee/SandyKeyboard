@@ -1,10 +1,7 @@
 package com.kh.app.member.controller;
 
 import com.kh.app.common.dto.PageRespDto;
-import com.kh.app.member.dto.request.MemberJoinReqDto;
-import com.kh.app.member.dto.request.MemberSearchCondDto;
-import com.kh.app.member.dto.request.SellerApplyReqDto;
-import com.kh.app.member.dto.request.SellerSearchCondDto;
+import com.kh.app.member.dto.request.*;
 import com.kh.app.member.dto.response.BankRespDto;
 import com.kh.app.member.dto.response.MemberListRespDto;
 import com.kh.app.member.dto.response.MemberMeRespDto;
@@ -86,6 +83,27 @@ public class MemberApiController {
         return ResponseEntity.ok().build();
     }
 
+    @PutMapping("/user/member")
+    public ResponseEntity<Object> editMyInfo(@AuthenticationPrincipal(expression = "memberId") Long memberId , @RequestBody MemberUpdateReqDto dto){
+        memberService.editMyInfo(memberId,dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/user/member")
+    public ResponseEntity<Object> updatePassword(@AuthenticationPrincipal(expression = "memberId") Long memberId,
+                                                 @RequestBody MemberPasswordUpdateReqDto dto,
+                                                 Authentication authentication
+                                                 ){
+        memberService.updatePassword(memberId,dto);
+        System.out.println(authentication.getAuthorities());
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/user/member")
+    public ResponseEntity<Object> deleteAccount(@AuthenticationPrincipal(expression = "memberId") Long memberId){
+        memberService.deleteAccount(memberId);
+        return ResponseEntity.ok().build();
+    }
 
 
 
