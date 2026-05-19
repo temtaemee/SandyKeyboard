@@ -19,6 +19,24 @@ export async function join(vo) {
     return resp;
 }
 
+// id찾기
+
+export async function findUsername(vo) {
+    const resp = await api.post(`/guest/find-username`, vo)
+    return resp.data;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 // ===== 관리자 회원 목록 조회 =====
 export async function searchMembers(params) {
     const resp = await api.get(`/admin/member/list`, {
@@ -60,4 +78,6 @@ export async function unbanMember(memberId) {
     const resp = await api.patch(`/admin/member/${memberId}/unban`);
     return resp;
 }
+
+
 

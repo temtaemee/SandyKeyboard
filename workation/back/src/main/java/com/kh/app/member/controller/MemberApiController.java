@@ -2,10 +2,7 @@ package com.kh.app.member.controller;
 
 import com.kh.app.common.dto.PageRespDto;
 import com.kh.app.member.dto.request.*;
-import com.kh.app.member.dto.response.BankRespDto;
-import com.kh.app.member.dto.response.MemberListRespDto;
-import com.kh.app.member.dto.response.MemberMeRespDto;
-import com.kh.app.member.dto.response.MemberRespDto;
+import com.kh.app.member.dto.response.*;
 import com.kh.app.member.repository.BankRepository;
 import com.kh.app.member.service.MemberService;
 import com.kh.app.security.user.CustomUserDetails;
@@ -103,6 +100,16 @@ public class MemberApiController {
     public ResponseEntity<Object> deleteAccount(@AuthenticationPrincipal(expression = "memberId") Long memberId){
         memberService.deleteAccount(memberId);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/guest/find-username")
+    public ResponseEntity<FindUsernameRespDto> findUsername(
+            @RequestBody FindUsernameReqDto dto
+    ) {
+        FindUsernameRespDto result =
+                memberService.findUsername(dto);
+
+        return ResponseEntity.ok(result);
     }
 
 
