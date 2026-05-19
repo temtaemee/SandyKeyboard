@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.util.List;
 
 @Service
@@ -33,54 +34,104 @@ public class NoticeService {
 
     // 목록 조회 (페이징: 한 페이지 10개)
     public Page<NoticeListRespDto> findAll(int page) {
+
         Pageable pageable = PageRequest.of(page, 10);
-        return noticeRepository.findAllByDelYnOrderByCreatedAtDesc("N", pageable)
+
+        return noticeRepository
+                .findAllByDelYnOrderByCreatedAtDesc("N", pageable)
                 .map(NoticeListRespDto::from);
     }
 
     // 상세 조회
     public NoticeRespDto findById(Long id) {
-        NoticeEntity notice = noticeRepository.findByIdAndDelYn(id, "N")
-                .orElseThrow(() -> new IllegalArgumentException("공지사항을 찾을 수 없습니다."));
-        List<NoticeFileEntity> files = noticeFileRepository.findAllByNoticeIdAndDelYn(id, "N");
+
+        NoticeEntity notice = noticeRepository
+                .findByIdAndDelYn(id, "N")
+                .orElseThrow(() ->
+                        new IllegalArgumentException("공지사항을 찾을 수 없습니다."));
+
+        List<NoticeFileEntity> files =
+                noticeFileRepository.findAllByNoticeIdAndDelYn(id, "N");
+
         return NoticeRespDto.from(notice, files);
     }
 
     // 등록
     @Transactional
     public Long create(NoticeCreateReqDto dto, List<MultipartFile> files) {
+
         MemberEntity member = memberRepository.findById(dto.getMemberId())
-                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+                .orElseThrow(() ->
+                        new IllegalArgumentException("회원을 찾을 수 없습니다."));
 
         NoticeEntity notice = dto.toEntity(member);
+
         noticeRepository.save(notice);
 
         if (files != null && !files.isEmpty()) {
+
+            String uploadDir = "C:/upload/";
+
+            File dir = new File(uploadDir);
+
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+
             for (MultipartFile file : files) {
-                NoticeFileEntity noticeFile = NoticeFileEntity.builder()
-                        .notice(notice)
-                        .originalFileName(file.getOriginalFilename())
-                        .s3Key(file.getOriginalFilename()) // S3 연동 시 실제 key로 교체
-                        .build();
-                noticeFileRepository.save(noticeFile);
+
+                try {
+
+                    String originalName = file.getOriginalFilename();
+
+                    String savedName =
+                            System.currentTimeMillis() + "_" + originalName;
+
+                    File dest = new File(uploadDir + savedName);
+
+                    file.transferTo(dest);
+
+                    NoticeFileEntity noticeFile = NoticeFileEntity.builder()
+                            .notice(notice)
+                            .originalFileName(originalName)
+                            .s3Key(savedName)
+                            .build();
+
+                    noticeFileRepository.save(noticeFile);
+
+                } catch (Exception e) {
+
+                    log.error("파일 저장 실패", e);
+
+                    throw new RuntimeException("파일 저장 실패");
+                }
             }
         }
+
         return notice.getId();
     }
 
     // 수정
     @Transactional
     public void update(Long id, NoticeUpdateReqDto dto) {
-        NoticeEntity notice = noticeRepository.findByIdAndDelYn(id, "N")
-                .orElseThrow(() -> new IllegalArgumentException("공지사항을 찾을 수 없습니다."));
+
+        NoticeEntity notice = noticeRepository
+                .findByIdAndDelYn(id, "N")
+                .orElseThrow(() ->
+                        new IllegalArgumentException("공지사항을 찾을 수 없습니다."));
+
         notice.update(dto.getTitle(), dto.getContent());
     }
 
     // 삭제 (소프트 삭제)
     @Transactional
     public void delete(Long id) {
-        NoticeEntity notice = noticeRepository.findByIdAndDelYn(id, "N")
-                .orElseThrow(() -> new IllegalArgumentException("공지사항을 찾을 수 없습니다."));
+
+        NoticeEntity notice = noticeRepository
+                .findByIdAndDelYn(id, "N")
+                .orElseThrow(() ->
+                        new IllegalArgumentException("공지사항을 찾을 수 없습니다."));
+
         notice.delete();
     }
 }
