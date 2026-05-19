@@ -48,6 +48,15 @@ public class MemberCouponEntity extends BaseEntity {
         return "Y".equals(usedYn);
     }
 
+    // 중복여부
+    public boolean isDuplicate(String code) {
+        if( couponId.getCouponCode() != null && couponId.getCouponCode().equals(code) ) {
+            return true;
+        }
+        return false;
+    }
+
+
 
 
 

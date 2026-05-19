@@ -66,15 +66,11 @@ public class CouponApiController {
 
     //멤버쿠폰 삭제
     @DeleteMapping("/admin/memberCoupon")
-    public void deleteMemberCoupon(){
-
+    public ResponseEntity<Object> deleteMemberCoupon(@RequestBody MemberCouponReqDto reqDto){
+        couponService.deleteMemberCoupon(reqDto);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
-    //멤버쿠폰 수정
-    @PutMapping("/admin/memberCoupon")
-    public void updateMemberCoupon(){
-
-    }
 
     //멤버쿠폰 조회
     @GetMapping("/user/memberCoupon")
@@ -84,7 +80,9 @@ public class CouponApiController {
 
     //유저가 멤버쿠폰 사용
     @PutMapping("/user/memberCoupon")
-    public void useMemberCoupon(){
-
+    public ResponseEntity<Object> useMemberCoupon(@RequestBody Long memberCouponId){
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        couponService.useMemberCoupon(username, memberCouponId);
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }
