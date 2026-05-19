@@ -7,13 +7,26 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum ReservationStatus {
 
+    // 예약 생성
+    PENDING("예약 대기"),
 
-    REQUESTED("예약신청"),
-    REVIEW_APPROVED("심사승인"),
-    PAYMENT_COMPLETED("예약완료"),//결제완료후
-    CANCELLED("예약취소"),
-    REJECTED("예약거절"),
-    COMPLETED("이용완료");
+    // 결제 완료
+    PAYMENT_COMPLETED("결제 완료"),
+
+    // 판매자 승인
+    RESERVED("예약 확정"),
+
+    // 사용자 취소
+    USER_CANCELLED("사용자 취소"),
+
+    // 판매자 취소
+    SELLER_CANCELLED("판매자 취소"),
+
+    // 환불 완료
+    REFUND_COMPLETED("환불 완료"),
+
+    // 이용 완료
+    COMPLETED("이용 완료");
 
     private final String label;
 }

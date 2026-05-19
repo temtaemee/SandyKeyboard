@@ -56,12 +56,6 @@ public class ReservationResDto {
                                 : null
                 )
 
-                .officeId(
-                        entity.getOffice() != null
-                                ? entity.getOffice().getId()
-                                : null
-                )
-
                 .guestCount(
                         entity.getGuestCount()
                 )

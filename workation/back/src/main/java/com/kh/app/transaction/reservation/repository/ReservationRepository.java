@@ -23,10 +23,7 @@ public interface ReservationRepository extends JpaRepository<ReservationEntity, 
             MemberEntity member
     );
 
-    List<ReservationEntity>
-    findByStatusAndCreatedAtBefore(
-            ReservationStatus status,
-            LocalDateTime time
-    );
+
+
 
 }
