@@ -2,12 +2,7 @@ diff a/workation/back/src/main/resources/application.properties b/workation/back
 @@ -13,6 +13,11 @@
   logging.level.org.hibernate.SQL=DEBUG
   logging.level.org.hibernate.orm.jdbc.bind=TRACE
-  
-++<<<<<<< HEAD
-++=======
-+ 
-+ 
-++>>>>>>> ddb9324 (refac : application.properties 수정 / 영욱)
+
   
   ## config(jpa??? ????)
   #mybatis.configuration.map-underscore-to-camel-case=true
