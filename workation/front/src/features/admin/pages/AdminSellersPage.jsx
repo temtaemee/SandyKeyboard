@@ -35,6 +35,12 @@ import AdminSearchInput from '../components/common/AdminSearchInput';
 import SellersStatCards from '../components/dashboard/SellersStatCards';
 import SellersTable from '../components/dashboard/SellersTable';
 import CustomersTable from '../components/dashboard/CustomersTable';
+import {
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseBtn,
+} from '../components/common/AdminModal.styles'; // 모달 공통 스타일
 
 export default function AdminSellersPage() {
   const [view, setView] = useState('customer'); // 'customer' | 'seller'
@@ -269,8 +275,10 @@ export default function AdminSellersPage() {
       {/* ── 고객 상세 모달 ── */}
       {selectedCustomer && (
         <ModalOverlay onClick={handleCloseCustomerModal}>
-          <ModalContent onClick={(e) => e.stopPropagation()}>
-            <ModalHeader>
+          {/* max-height: 90vh — 쿠폰 목록이 길어질 수 있어서 스크롤 허용 */}
+          <ModalContent $width="520px" $maxHeight="90vh" onClick={(e) => e.stopPropagation()}>
+            {/* $align="flex-start": 제목이 ID 배지 + 이름 두 줄 구조라 상단 정렬 */}
+            <ModalHeader $align="flex-start" $gap="12px">
               <ModalTitleGroup>
                 <ModalIdBadge>{selectedCustomer.id}</ModalIdBadge>
                 <ModalTitle>{selectedCustomer.name}</ModalTitle>
@@ -517,36 +525,8 @@ const TableTitle = styled.h2`
   color: #0d1c2e;
 `;
 
-/* ── 고객 상세 모달 ── */
-const ModalOverlay = styled.div`
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.4);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const ModalContent = styled.div`
-  background: white;
-  width: 520px;
-  border-radius: 12px;
-  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.15);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  max-height: 90vh;
-`;
-
-const ModalHeader = styled.div`
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e2e8f0;
-  gap: 12px;
-`;
+/* ── 고객 상세 모달: ModalOverlay / ModalContent / ModalHeader / ModalCloseBtn 은
+   components/common/AdminModal.styles.js 에서 공통 import ── */
 
 const ModalTitleGroup = styled.div`
   display: flex;
@@ -571,15 +551,6 @@ const ModalTitle = styled.h2`
   color: #0d1c2e;
 `;
 
-const ModalCloseBtn = styled.button`
-  color: #94a3b8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: color 0.15s;
-  &:hover { color: #475569; }
-`;
 
 const ModalBody = styled.div`
   padding: 20px 24px;

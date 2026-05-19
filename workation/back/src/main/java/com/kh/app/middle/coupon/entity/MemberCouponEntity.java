@@ -33,7 +33,10 @@ public class MemberCouponEntity extends BaseEntity {
 //    private PaymentEntity paymentId;
     private Long paymentId;
 
-    private String usedYn;
+    @Column(length = 1, nullable = false)
+    @Builder.Default
+    private String usedYn = "N";
+
     private LocalDateTime usedAt;
 
     // 쿠폰 사용

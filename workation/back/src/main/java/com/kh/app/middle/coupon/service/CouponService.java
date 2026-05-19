@@ -5,6 +5,7 @@ import com.kh.app.member.repository.MemberRepository;
 import com.kh.app.middle.coupon.dto.request.CouponCreateDto;
 import com.kh.app.middle.coupon.dto.request.MemberCouponReqDto;
 import com.kh.app.middle.coupon.dto.response.CouponRespDto;
+import com.kh.app.middle.coupon.dto.response.MemberCouponRespDto;
 import com.kh.app.middle.coupon.entity.CouponEntity;
 import com.kh.app.middle.coupon.entity.MemberCouponEntity;
 import com.kh.app.middle.coupon.repository.CouponRepository;
@@ -89,6 +90,10 @@ public class CouponService {
                 .couponId(coupon)
                 .build();
 
+        if(memberCouponEntity.isDuplicate(coupon.getCouponCode())){
+            throw new IllegalStateException("[COUPON-7006] 이미 발급받은 쿠폰입니다.");
+        }
+
         memberCouponRepository.save(memberCouponEntity);
     }
 
@@ -103,6 +108,10 @@ public class CouponService {
                 .member(member)
                 .couponId(coupon)
                 .build();
+
+        if(memberCouponEntity.isDuplicate(coupon.getCouponCode())){
+            throw new IllegalStateException("[COUPON-7006] 이미 발급받은 쿠폰입니다.");
+        }
 
         memberCouponRepository.save(memberCouponEntity);
     }
@@ -133,5 +142,13 @@ public class CouponService {
         //쿠폰 사용처리
         memberCouponEntity.useCoupon();
 
+    }
+
+    //멤버가 본인 보유 쿠폰 조회
+    public Page<MemberCouponRespDto> getCouponList(String username, int pno) {
+            MemberEntity memberEntity = memberRepository.findByUsernameAndDeletedAtIsNull(username).orElseThrow(EntityNotFoundException::new);
+
+            Pageable pageable = PageRequest.of(pno, 10);
+            return memberCouponRepository.getCouponList(memberEntity.getId(), pageable).map(MemberCouponRespDto::from);
     }
 }

@@ -4,6 +4,7 @@
    [MOCK DATA] 서버 연결 시 삭제/대체 필요
    ========================================== */
 
+// ─ 기존 데이터 (AdminStatCards 등에서 progressColor/progress/badge 목적으로 사용) ─
 export const SELLERS_STAT_CARDS = [
   {
     id: 1,
@@ -34,13 +35,32 @@ export const SELLERS_STAT_CARDS = [
   },
   {
     id: 4,
-    label: '이달 신규',
+    label: '신규 고객',
     value: '156',
     badge: null,
     icon: 'new',
     progressColor: '#f59e0b',
     progress: 12,
   },
+];
+
+// ─ SellersStatCards 컴포넌트용 카드 데이터 ────────────────────────────────
+// filterKey: 클릭 시 적용되는 필터 값 (AdminSellersPage의 filter state와 일치)
+// icon     : 'sellers' | 'active' | 'stopped' | 'new'
+// iconBg   : 비활성 상태의 아이콘 배경색
+
+export const SELLER_STAT_CARDS = [
+  { filterKey: '전체',   label: '전체 판매자', value: '1,284', icon: 'sellers', iconBg: 'rgba(30,41,59,0.08)'   },
+  { filterKey: '활동 중', label: '활동 중',    value: '1,270', icon: 'active',  iconBg: 'rgba(16,185,129,0.1)'  },
+  { filterKey: '정지됨', label: '정지됨',     value: '14',    icon: 'stopped', iconBg: 'rgba(239,68,68,0.08)'   },
+  { filterKey: '신규',   label: '신규 고객',  value: '156',   icon: 'new',     iconBg: 'rgba(245,158,11,0.1)'   },
+];
+
+export const CUSTOMER_STAT_CARDS = [
+  { filterKey: '전체',   label: '전체 고객', value: '8,420', icon: 'sellers', iconBg: 'rgba(59,130,246,0.1)'   },
+  { filterKey: '활동 중', label: '활성 고객', value: '8,180', icon: 'active',  iconBg: 'rgba(16,185,129,0.1)'   },
+  { filterKey: '정지됨', label: '활동정지',  value: '240',   icon: 'stopped', iconBg: 'rgba(239,68,68,0.08)'    },
+  { filterKey: '신규',   label: '신규 고객', value: '342',   icon: 'new',     iconBg: 'rgba(245,158,11,0.1)'    },
 ];
 
 export const SELLERS_LIST = [

@@ -25,6 +25,12 @@ import usePagination from '../hooks/usePagination';
 import AdminPagination from '../components/common/AdminPagination';
 import AdminSearchInput from '../components/common/AdminSearchInput';
 import ConfirmModal from '../components/common/ConfirmModal';
+import {
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseBtn,
+} from '../components/common/AdminModal.styles'; // 모달 공통 스타일
 
 const TOTAL = 124;
 const TOTAL_PAGES = 3;
@@ -362,8 +368,9 @@ export default function AdminBoardPage() {
       {/* ── 상세보기 모달 ── */}
       {detailPost && (
         <ModalOverlay onClick={() => setDetailPost(null)}>
-          <ModalContent onClick={(e) => e.stopPropagation()}>
-            <ModalHeader>
+          <ModalContent $width="520px" onClick={(e) => e.stopPropagation()}>
+            {/* $align="flex-start": 제목이 배지+텍스트 두 줄 구조라 상단 정렬 */}
+            <ModalHeader $align="flex-start" $gap="12px">
               <ModalTitleGroup>
                 <ModalTabBadge>{activeTab}</ModalTabBadge>
                 <ModalTitle>{detailPost.title}</ModalTitle>
@@ -432,7 +439,7 @@ export default function AdminBoardPage() {
       {/* ── 신규 등록 / 수정 모달 ── */}
       {registerModal && (
         <ModalOverlay onClick={closeRegisterModal}>
-          <ModalContent onClick={(e) => e.stopPropagation()}>
+          <ModalContent $width="520px" onClick={(e) => e.stopPropagation()}>
             <ModalHeader>
               <ModalTitle>
                 {editingPost
@@ -902,35 +909,8 @@ const RowActions = styled.div`
   gap: 4px;
 `;
 
-/* ── 모달 공통 ── */
-const ModalOverlay = styled.div`
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const ModalContent = styled.div`
-  background: white;
-  width: 520px;
-  border-radius: 12px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-`;
-
-const ModalHeader = styled.div`
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e2e8f0;
-  gap: 12px;
-`;
+/* ── 모달: ModalOverlay / ModalContent / ModalHeader / ModalCloseBtn 은
+   components/common/AdminModal.styles.js 에서 공통 import ── */
 
 const ModalTitleGroup = styled.div`
   display: flex;
@@ -958,17 +938,6 @@ const ModalTitle = styled.h2`
   word-break: break-word;
 `;
 
-const ModalCloseBtn = styled.button`
-  color: #94a3b8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: color 0.15s;
-  &:hover {
-    color: #475569;
-  }
-`;
 
 const ModalBody = styled.div`
   padding: 24px;

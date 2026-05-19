@@ -1,5 +1,6 @@
 import styled from 'styled-components';
 import { AVATAR_COLORS, isNewMember } from '../../data/adminSellersConstants';
+import Toggle from '../common/Toggle'; // 활성/정지 토글 공통 컴포넌트
 
 export default function CustomersTable({ customers, isSuspended, onToggleClick, onRowClick }) {
   return (
@@ -34,10 +35,13 @@ export default function CustomersTable({ customers, isSuspended, onToggleClick, 
               <TD><TransactionText>{customer.resvCount}건</TransactionText></TD>
               <TD>{isNewMember(customer.joinDate) && <NewBadge>NEW</NewBadge>}</TD>
               <TD>
-                <ToggleRow onClick={(e) => { e.stopPropagation(); onToggleClick(customer, sus); }}>
-                  <ToggleTrack $on={sus}><ToggleThumb $on={sus} /></ToggleTrack>
-                  <ToggleLabel $on={sus}>{sus ? '정지' : '활성'}</ToggleLabel>
-                </ToggleRow>
+                {/* 행 클릭(모달 열기)과 토글 클릭이 겹치지 않도록 stopPropagation */}
+                <Toggle
+                  on={sus}
+                  onClick={(e) => { e.stopPropagation(); onToggleClick(customer, sus); }}
+                  onLabel="정지"
+                  offLabel="활성"
+                />
               </TD>
             </TR>
           );
@@ -92,25 +96,4 @@ const NewBadge = styled.span`
   white-space: nowrap;
 `;
 
-const ToggleRow = styled.div`
-  display: flex; align-items: center; gap: 8px;
-  cursor: pointer; user-select: none;
-`;
-const ToggleTrack = styled.div`
-  width: 40px; height: 22px; border-radius: 999px;
-  background: ${({ $on }) => ($on ? '#ef4444' : '#22c55e')};
-  position: relative; transition: background 0.2s; flex-shrink: 0;
-`;
-const ToggleThumb = styled.div`
-  position: absolute; top: 3px;
-  left: ${({ $on }) => ($on ? '21px' : '3px')};
-  width: 16px; height: 16px; border-radius: 50%;
-  background: white;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-  transition: left 0.2s;
-`;
-const ToggleLabel = styled.span`
-  font-size: 12px; font-weight: 500;
-  color: ${({ $on }) => ($on ? '#dc2626' : '#16a34a')};
-  min-width: 24px;
-`;
+// Toggle 스타일은 components/common/Toggle.jsx 에서 관리
