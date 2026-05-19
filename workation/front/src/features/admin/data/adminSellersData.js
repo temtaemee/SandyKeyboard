@@ -86,6 +86,43 @@ export const SELLERS_LIST = [
   },
 ];
 
+/* ── 발급 가능 쿠폰 템플릿 ── */
+export const COUPON_TEMPLATES = [
+  { id: 'TPL-01', title: '첫 예약 10% 할인', discount: '10%', validDays: 30 },
+  { id: 'TPL-02', title: '주중 숙박 ₩50,000 할인', discount: '₩50,000', validDays: 60 },
+  { id: 'TPL-03', title: '제주 지역 한정 15% 할인', discount: '15%', validDays: 45 },
+  { id: 'TPL-04', title: '신규 가입 웰컴 쿠폰', discount: '20%', validDays: 14 },
+  { id: 'TPL-05', title: '재방문 감사 ₩30,000 할인', discount: '₩30,000', validDays: 90 },
+];
+
+/* ── 고객별 보유 쿠폰 목데이터 ── */
+let couponSeq = 100;
+function makeCoupon(title, discount, issuedAt, expireAt) {
+  return { id: `CPN-${++couponSeq}`, title, discount, issuedAt, expireAt };
+}
+export const CUSTOMER_COUPONS = {
+  'USR-001': [
+    makeCoupon('첫 예약 10% 할인', '10%', '2026.01.05', '2026.06.30'),
+    makeCoupon('주중 숙박 ₩50,000 할인', '₩50,000', '2026.03.12', '2026.07.15'),
+  ],
+  'USR-002': [
+    makeCoupon('신규 가입 웰컴 쿠폰', '20%', '2026.04.25', '2026.05.09'),
+  ],
+  'USR-003': [],
+  'USR-004': [
+    makeCoupon('재방문 감사 ₩30,000 할인', '₩30,000', '2026.02.20', '2026.08.20'),
+    makeCoupon('제주 지역 한정 15% 할인', '15%', '2026.04.01', '2026.08.01'),
+  ],
+  'USR-005': [],
+  'USR-006': [
+    makeCoupon('신규 가입 웰컴 쿠폰', '20%', '2026.03.10', '2026.03.24'),
+  ],
+  'USR-007': [],
+  'USR-008': [
+    makeCoupon('첫 예약 10% 할인', '10%', '2026.05.01', '2026.05.31'),
+  ],
+};
+
 /* ── 고객 계정 목데이터 ── */
 export const CUSTOMER_LIST = [
   { id: 'USR-001', name: '강다은', email: 'daeun.kang@example.com', phone: '010-1111-2222', joinDate: '2023-02-10', resvCount: 14, status: 'active' },
