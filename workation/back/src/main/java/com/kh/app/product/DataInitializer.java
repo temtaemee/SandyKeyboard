@@ -44,7 +44,7 @@ public class DataInitializer implements CommandLineRunner {
                 .address2("123-45")
                 .latitude(new BigDecimal("33.2500000"))
                 .longitude(new BigDecimal("126.5600000"))
-                .area(Area.jeju)
+                .area(Area.JEJU)
                 .visibleYn("Y")
                 .build());
 
@@ -58,7 +58,7 @@ public class DataInitializer implements CommandLineRunner {
                 .address2("456-78")
                 .latitude(new BigDecimal("38.2070000"))
                 .longitude(new BigDecimal("128.5910000"))
-                .area(Area.gangwon)
+                .area(Area.GANGWON)
                 .visibleYn("Y")
                 .build());
 
@@ -72,7 +72,7 @@ public class DataInitializer implements CommandLineRunner {
                 .address2("테헤란로 123")
                 .latitude(new BigDecimal("37.5000000"))
                 .longitude(new BigDecimal("127.0300000"))
-                .area(Area.soeul)
+                .area(Area.SEOUL)
                 .visibleYn("Y")
                 .build());
 
@@ -86,7 +86,7 @@ public class DataInitializer implements CommandLineRunner {
                 .address2("해운대해변로 200")
                 .latitude(new BigDecimal("35.1587000"))
                 .longitude(new BigDecimal("129.1605000"))
-                .area(Area.gyeongnam)
+                .area(Area.GYEONGNAM)
                 .visibleYn("Y")
                 .build());
 
@@ -100,7 +100,7 @@ public class DataInitializer implements CommandLineRunner {
                 .address2("소길리 99")
                 .latitude(new BigDecimal("33.4300000"))
                 .longitude(new BigDecimal("126.3500000"))
-                .area(Area.jeju)
+                .area(Area.JEJU)
                 .visibleYn("N")
                 .build());
 
