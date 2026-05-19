@@ -2,6 +2,7 @@ package com.kh.app.member.service;
 
 import com.kh.app.common.dto.PageRespDto;
 import com.kh.app.member.dto.request.*;
+import com.kh.app.member.dto.response.FindUsernameRespDto;
 import com.kh.app.member.dto.response.MemberListRespDto;
 import com.kh.app.member.dto.response.MemberMeRespDto;
 import com.kh.app.member.dto.response.MemberRespDto;
@@ -190,5 +191,22 @@ public class MemberService {
     public void deleteAccount(Long memberId) {
         MemberEntity member = memberRepository.findById(memberId).orElseThrow(() -> new RuntimeException("회원 없음"));
         member.delete();
+    }
+
+    public FindUsernameRespDto findUsername(FindUsernameReqDto dto) {
+        MemberProfileEntity profile =
+                profileRepository
+                        .findByNameAndEmail(
+                                dto.getName(),
+                                dto.getEmail()
+                        )
+                        .orElseThrow();
+
+        return FindUsernameRespDto.builder()
+                .username(
+                        profile.getMember().getUsername()
+                )
+                .build();
+
     }
 }
