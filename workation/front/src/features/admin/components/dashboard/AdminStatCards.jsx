@@ -1,7 +1,7 @@
 // src/features/admin/components/dashboard/AdminStatCards.jsx
 import styled from 'styled-components';
 import { ADMIN_STAT_CARDS } from '../../data/adminDashboardData';
-import { STAT_ICON_BG, STAT_BADGE_STYLE } from '../../data/adminDashboardConstants';
+import { STAT_ICON_BG } from '../../data/adminDashboardConstants';
 import { DollarSign, Home, Calendar, Users } from 'lucide-react';
 
 const ICONS = {
@@ -19,9 +19,6 @@ export default function AdminStatCards() {
         <Card key={card.id}>
           <CardTop>
             <IconBg $bg={STAT_ICON_BG[card.icon]}>{ICONS[card.icon]}</IconBg>
-            <Badge $bg={STAT_BADGE_STYLE[card.badge.color].bg} $color={STAT_BADGE_STYLE[card.badge.color].color}>
-              {card.badge.text}
-            </Badge>
           </CardTop>
           <CardLabel>{card.label}</CardLabel>
           <CardValue>{card.value}</CardValue>
@@ -73,14 +70,6 @@ const IconBg = styled.div`
   justify-content: center;
 `;
 
-const Badge = styled.span`
-  padding: 4px 8px;
-  border-radius: 2px;
-  font-size: 11px;
-  font-weight: 700;
-  background: ${({ $bg }) => $bg};
-  color: ${({ $color }) => $color};
-`;
 
 const CardLabel = styled.p`
   font-size: 12px;

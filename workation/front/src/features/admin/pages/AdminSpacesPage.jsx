@@ -104,7 +104,6 @@ export default function AdminSpacesPage() {
             <StatIconWrap $bg="rgba(34,197,94,0.1)" $color="#16a34a">
               <SpaceIcon />
             </StatIconWrap>
-            <StatBadge $color="green">+12%</StatBadge>
           </StatCardTop>
           <StatLabel>전체 숙소 수</StatLabel>
           <StatValue>1,284</StatValue>
@@ -115,7 +114,6 @@ export default function AdminSpacesPage() {
             <StatIconWrap $bg="rgba(59,130,246,0.1)" $color="#2563eb">
               <CheckCircleIcon />
             </StatIconWrap>
-            <StatBadge $color="blue">{Math.round((spaces.length / SPACES_TOTAL) * 100)}% 운영 중</StatBadge>
           </StatCardTop>
           <StatLabel>운영 중인 숙소</StatLabel>
           <StatValue>{spaces.length.toLocaleString()}</StatValue>
@@ -126,7 +124,6 @@ export default function AdminSpacesPage() {
             <StatIconWrap $bg="rgba(249,115,22,0.1)" $color="#ea580c">
               <AlertIcon />
             </StatIconWrap>
-            <StatBadge $color="orange">조치 필요</StatBadge>
           </StatCardTop>
           <StatLabel>승인 대기 중</StatLabel>
           <StatValue>{pendingSpaces.length}</StatValue>
@@ -379,21 +376,6 @@ const StatIconWrap = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-`;
-
-const BADGE_COLORS = {
-  green:  { bg: '#f0fdf4', color: '#16a34a' },
-  blue:   { bg: '#eff6ff', color: '#2563eb' },
-  orange: { bg: '#fff7ed', color: '#ea580c' },
-};
-
-const StatBadge = styled.span`
-  font-size: 11px;
-  font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: ${({ $color }) => BADGE_COLORS[$color].bg};
-  color: ${({ $color }) => BADGE_COLORS[$color].color};
 `;
 
 const StatLabel = styled.p`

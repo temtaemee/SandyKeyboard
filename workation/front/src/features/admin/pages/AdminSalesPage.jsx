@@ -51,10 +51,6 @@ export default function AdminSalesPage() {
             <StatIconWrap $bg="rgba(34,197,94,0.1)" $color="#16a34a">
               <WalletIcon />
             </StatIconWrap>
-            <StatTrendRow>
-              <TrendUp />
-              <TrendText>+8.4%</TrendText>
-            </StatTrendRow>
           </StatCardTop>
           <StatLabel>{SALES_STAT_CARDS[0].label}</StatLabel>
           <StatValue>{SALES_STAT_CARDS[0].value}</StatValue>
@@ -69,9 +65,6 @@ export default function AdminSalesPage() {
           </StatCardTop>
           <StatLabel>{SALES_STAT_CARDS[1].label}</StatLabel>
           <StatValue>{SALES_STAT_CARDS[1].value}</StatValue>
-          <ProgressWrap>
-            <ProgressBar $width={68} />
-          </ProgressWrap>
         </StatCard>
 
         {/* 카드 3: 수수료 총액 */}
@@ -242,9 +235,6 @@ function ReceiptIcon() {
 function PercentIcon() {
   return <Percent size={20} />;
 }
-function TrendUp() {
-  return <TrendingUp size={14} color="#16a34a" />;
-}
 function TrendInline() {
   return (
     <TrendingUp
@@ -354,38 +344,10 @@ const StatValue = styled.p`
   line-height: 1.2;
 `;
 
-const StatTrendRow = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-top: 4px;
-`;
-
-const TrendText = styled.span`
-  font-size: 12px;
-  font-weight: 600;
-  color: #16a34a;
-`;
-
 const StatSubText = styled.p`
   font-size: 11px;
   color: ${({ theme }) => theme.colors.textLight};
   margin-top: 4px;
-`;
-
-const ProgressWrap = styled.div`
-  margin-top: 8px;
-  height: 6px;
-  background: ${({ theme }) => theme.colors.borderLight};
-  border-radius: 999px;
-  overflow: hidden;
-`;
-
-const ProgressBar = styled.div`
-  height: 100%;
-  width: ${({ $width }) => $width}%;
-  background: ${({ theme }) => theme.colors.adminPrimary};
-  border-radius: 999px;
 `;
 
 /* 중단 3열 */

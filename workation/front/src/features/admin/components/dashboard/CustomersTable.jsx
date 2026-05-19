@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 import { AVATAR_COLORS, isNewMember } from '../../data/adminSellersConstants';
 
-export default function CustomersTable({ customers, isSuspended, onToggleClick }) {
+export default function CustomersTable({ customers, isSuspended, onToggleClick, onRowClick }) {
   return (
     <Table>
       <THead>
@@ -20,7 +20,7 @@ export default function CustomersTable({ customers, isSuspended, onToggleClick }
         {customers.map((customer, i) => {
           const sus = isSuspended(customer);
           return (
-            <TR key={customer.id} $hoverable>
+            <TR key={customer.id} $hoverable $clickable onClick={() => onRowClick?.(customer)}>
               <TD><AccountId>{customer.id}</AccountId></TD>
               <TD>
                 <NameCell>
@@ -34,7 +34,7 @@ export default function CustomersTable({ customers, isSuspended, onToggleClick }
               <TD><TransactionText>{customer.resvCount}건</TransactionText></TD>
               <TD>{isNewMember(customer.joinDate) && <NewBadge>NEW</NewBadge>}</TD>
               <TD>
-                <ToggleRow onClick={() => onToggleClick(customer, sus)}>
+                <ToggleRow onClick={(e) => { e.stopPropagation(); onToggleClick(customer, sus); }}>
                   <ToggleTrack $on={sus}><ToggleThumb $on={sus} /></ToggleTrack>
                   <ToggleLabel $on={sus}>{sus ? '정지' : '활성'}</ToggleLabel>
                 </ToggleRow>
@@ -54,6 +54,7 @@ const TBody = styled.tbody``;
 const TR = styled.tr`
   border-top: ${({ $hoverable }) => ($hoverable ? '1px solid #f1f5f9' : 'none')};
   transition: background 0.1s;
+  cursor: ${({ $clickable }) => ($clickable ? 'pointer' : 'default')};
   &:hover { background: ${({ $hoverable }) => ($hoverable ? '#fafbfc' : 'transparent')}; }
 `;
 const TH = styled.th`

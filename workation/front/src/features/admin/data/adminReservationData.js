@@ -14,7 +14,7 @@ export const RESERVATION_STAT_CARDS = [
   {
     id: 2,
     label: '결제 취소',
-    value: '₩42.5M',
+    value: '₩42,500,000',
     badge: { text: '-2%', color: 'red' },
   },
 ];

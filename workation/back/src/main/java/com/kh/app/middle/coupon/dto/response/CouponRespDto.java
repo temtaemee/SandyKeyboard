@@ -27,7 +27,7 @@ public class CouponRespDto {
                 .discountRate(entity.getDiscountRate())
                 .remainQty(entity.getRemainQty())
                 .couponStatus(entity.getCouponStatus().getCode())
-                .expriedDate(entity.getExpriedDate())
+                .expriedDate(entity.getExpiredDate())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();

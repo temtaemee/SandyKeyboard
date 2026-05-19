@@ -8,8 +8,8 @@ export const ADMIN_STAT_CARDS = [
   {
     id: 1,
     label: '총 매출액',
-    value: '₩142.5M',
-    sub: '전월 대비',
+    value: '₩142,500,000',
+    sub: '',
     badge: { text: '+12.5%', color: 'green' },
     icon: 'revenue',
   },
@@ -17,7 +17,7 @@ export const ADMIN_STAT_CARDS = [
     id: 2,
     label: '활성 숙소 수',
     value: '1,248',
-    sub: '전체 등록된 숙소',
+    sub: '',
     badge: { text: '856 개', color: 'blue' },
     icon: 'space',
   },
@@ -25,7 +25,7 @@ export const ADMIN_STAT_CARDS = [
     id: 3,
     label: '신규 고객 수',
     value: '342',
-    sub: '최근 24시간 기준',
+    sub: '최근 3개월 기준',
     badge: { text: '급증', color: 'orange' },
     icon: 'reservation',
   },
@@ -33,7 +33,7 @@ export const ADMIN_STAT_CARDS = [
     id: 4,
     label: '전체 판매자',
     value: '2,891',
-    sub: '인증된 파트너',
+    sub: '',
     badge: { text: '+3.2%', color: 'purple' },
     icon: 'seller',
   },
@@ -64,10 +64,10 @@ export const ADMIN_CHART_DATA_12M = [
 ];
 
 export const REGIONAL_SALES_DATA = [
-  { rank: 1, region: '서울', amount: '₩64.4M' },
-  { rank: 2, region: '제주', amount: '₩42.8M' },
-  { rank: 3, region: '부산', amount: '₩31.2M' },
-  { rank: 4, region: '경기', amount: '₩28.5M' },
+  { rank: 1, region: '서울', amount: '₩64,400,000' },
+  { rank: 2, region: '제주', amount: '₩42,800,000' },
+  { rank: 3, region: '부산', amount: '₩31,200,000' },
+  { rank: 4, region: '경기', amount: '₩28,500,000' },
 ];
 
 export const RECENT_PAYMENTS = [

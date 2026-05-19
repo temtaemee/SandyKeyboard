@@ -13,7 +13,7 @@ public class CouponCreateDto {
     private String couponName;
     private Integer discountRate;
     private Integer remainQty;
-    private String expriedDate;
+    private String expiredDate;
 
     public CouponEntity toEntity(String couponCode, LocalDateTime couponExiredDate) {
      return CouponEntity.builder()
@@ -21,7 +21,7 @@ public class CouponCreateDto {
              .couponName(couponName)
              .discountRate(discountRate)
              .remainQty(remainQty)
-             .expriedDate(couponExiredDate)
+             .expiredDate(couponExiredDate)
              .build();
     }
 

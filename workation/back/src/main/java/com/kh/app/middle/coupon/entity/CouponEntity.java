@@ -31,7 +31,7 @@ public class CouponEntity extends BaseEntity {
     @Builder.Default
     private CouponStatus couponStatus = CouponStatus.A;
 
-    private LocalDateTime expriedDate;
+    private LocalDateTime expiredDate;
 
 
 
@@ -46,7 +46,7 @@ public class CouponEntity extends BaseEntity {
             remainQty = dto.getRemainQty();
         }
         if(couponExiredDate != null){
-            expriedDate = couponExiredDate;
+            expiredDate = couponExiredDate;
         }
     }
 

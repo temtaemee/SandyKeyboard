@@ -1,9 +1,14 @@
 package com.kh.app.middle.coupon.service;
 
+import com.kh.app.member.entity.MemberEntity;
+import com.kh.app.member.repository.MemberRepository;
 import com.kh.app.middle.coupon.dto.request.CouponCreateDto;
+import com.kh.app.middle.coupon.dto.request.MemberCouponReqDto;
 import com.kh.app.middle.coupon.dto.response.CouponRespDto;
 import com.kh.app.middle.coupon.entity.CouponEntity;
+import com.kh.app.middle.coupon.entity.MemberCouponEntity;
 import com.kh.app.middle.coupon.repository.CouponRepository;
+import com.kh.app.middle.coupon.repository.MemberCouponRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -22,12 +27,14 @@ import java.util.UUID;
 public class CouponService {
 
     private final CouponRepository couponRepository;
+    private final MemberCouponRepository memberCouponRepository;
+    private final MemberRepository memberRepository;
 
     //쿠폰등록
     @Transactional
     public void create(CouponCreateDto couponCreateDto) {
         //쿠폰 만료일자 계산
-        LocalDateTime couponExiredDate = updateExpriedDate(couponCreateDto.getExpriedDate());
+        LocalDateTime couponExiredDate = updateExpriedDate(couponCreateDto.getExpiredDate());
         //쿠폰코드 생성
         String couponCode = generateCouponCode(couponCreateDto.getDiscountRate(), couponExiredDate);
 
@@ -57,13 +64,46 @@ public class CouponService {
     //쿠폰 수정
     @Transactional
     public void update(Long couponId, CouponCreateDto couponCreateDto) {
-        LocalDateTime couponExiredDate = updateExpriedDate(couponCreateDto.getExpriedDate());
-        CouponEntity entity = couponRepository.findById(couponId).orElseThrow(EntityNotFoundException::new);
+        LocalDateTime couponExiredDate = updateExpriedDate(couponCreateDto.getExpiredDate());
+        CouponEntity entity = couponRepository.findByIdAndDelYn(couponId, "N").orElseThrow(EntityNotFoundException::new);
         entity.update(couponCreateDto, couponExiredDate);
     }
 
+    // 쿠폰 리스트 조회
     public Page<CouponRespDto> getList(int pno) {
         Pageable pageable = PageRequest.of(pno, 10);
         return couponRepository.getList(pageable).map(CouponRespDto::from);
+    }
+
+/// ////////////////////// 멤버쿠폰
+    // 멤버가 쿠폰 발급
+    @Transactional
+    public void register(Long couponId, String username) {
+        MemberEntity member = memberRepository.findByUsernameAndDeletedAtIsNull(username)
+                .orElseThrow(EntityNotFoundException::new);
+        CouponEntity coupon = couponRepository.findByIdAndDelYn(couponId, "N").orElseThrow(EntityNotFoundException::new);
+
+
+        MemberCouponEntity memberCouponEntity = MemberCouponEntity.builder()
+                .memberId(member)
+                .couponId(coupon)
+                .build();
+
+        memberCouponRepository.save(memberCouponEntity);
+    }
+
+    // 멤버에게 쿠폰발급
+    @Transactional
+    public void adminRegister(MemberCouponReqDto reqDto) {
+
+        MemberEntity member = memberRepository.findByUsernameAndDeletedAtIsNull(reqDto.getUsername()).orElseThrow(EntityNotFoundException::new);
+        CouponEntity coupon = couponRepository.findByIdAndDelYn(reqDto.getCouponId(), "N").orElseThrow(EntityNotFoundException::new);
+
+        MemberCouponEntity memberCouponEntity = MemberCouponEntity.builder()
+                .memberId(member)
+                .couponId(coupon)
+                .build();
+
+        memberCouponRepository.save(memberCouponEntity);
     }
 }

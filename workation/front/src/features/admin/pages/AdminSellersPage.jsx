@@ -15,6 +15,8 @@ import {
   User,
   ChevronLeft as LucideChevronLeft,
   ChevronRight as LucideChevronRight,
+  X,
+  Tag,
 } from 'lucide-react';
 import { SELLERS_LIST, CUSTOMER_LIST } from '../data/adminSellersData';
 import {
@@ -61,6 +63,9 @@ export default function AdminSellersPage() {
   });
   /* 확인 모달 */
   const [confirmTarget, setConfirmTarget] = useState(null);
+
+  /* 고객 상세 모달 */
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
 
   const isSellerSuspended = (s) =>
     sellerSuspended[s.id] ?? s.status === 'stopped';
@@ -183,6 +188,7 @@ export default function AdminSellersPage() {
             customers={filteredCustomers}
             isSuspended={isCustomerSuspended}
             onToggleClick={handleToggleClick}
+            onRowClick={setSelectedCustomer}
           />
         )}
 
@@ -212,6 +218,61 @@ export default function AdminSellersPage() {
           System version: v2.4.0 &nbsp;•&nbsp; Last Activity: 2024.05.31 15:45
         </FooterRight>
       </PageFooter>
+
+      {/* ── 고객 상세 모달 ── */}
+      {selectedCustomer && (
+        <ModalOverlay onClick={() => setSelectedCustomer(null)}>
+          <ModalContent onClick={(e) => e.stopPropagation()}>
+            <ModalHeader>
+              <ModalTitleGroup>
+                <ModalIdBadge>{selectedCustomer.id}</ModalIdBadge>
+                <ModalTitle>{selectedCustomer.name}</ModalTitle>
+              </ModalTitleGroup>
+              <ModalCloseBtn onClick={() => setSelectedCustomer(null)}>
+                <X size={18} />
+              </ModalCloseBtn>
+            </ModalHeader>
+
+            <ModalBody>
+              <InfoGrid>
+                <InfoItem>
+                  <InfoLabel>이메일</InfoLabel>
+                  <InfoValue>{selectedCustomer.email}</InfoValue>
+                </InfoItem>
+                <InfoItem>
+                  <InfoLabel>전화번호</InfoLabel>
+                  <InfoValue>{selectedCustomer.phone}</InfoValue>
+                </InfoItem>
+                <InfoItem>
+                  <InfoLabel>가입일</InfoLabel>
+                  <InfoValue>{selectedCustomer.joinDate}</InfoValue>
+                </InfoItem>
+                <InfoItem>
+                  <InfoLabel>총 예약</InfoLabel>
+                  <InfoValue>{selectedCustomer.resvCount}건</InfoValue>
+                </InfoItem>
+                <InfoItem>
+                  <InfoLabel>계정 상태</InfoLabel>
+                  <StatusChip $active={selectedCustomer.status === 'active'}>
+                    {selectedCustomer.status === 'active' ? '활성' : '정지'}
+                  </StatusChip>
+                </InfoItem>
+              </InfoGrid>
+            </ModalBody>
+
+            <ModalFooter>
+              <div />
+              <ModalActions>
+                <ModalCancelBtn onClick={() => setSelectedCustomer(null)}>닫기</ModalCancelBtn>
+                <CouponBtn>
+                  <Tag size={13} />
+                  쿠폰 추가
+                </CouponBtn>
+              </ModalActions>
+            </ModalFooter>
+          </ModalContent>
+        </ModalOverlay>
+      )}
 
       {/* ── 활동정지 확인 모달 ── */}
       <ConfirmModal
@@ -376,5 +437,152 @@ const TableTitle = styled.h2`
   font-size: 16px;
   font-weight: 600;
   color: #0d1c2e;
+`;
+
+/* ── 고객 상세 모달 ── */
+const ModalOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const ModalContent = styled.div`
+  background: white;
+  width: 480px;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  gap: 12px;
+`;
+
+const ModalTitleGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+`;
+
+const ModalIdBadge = styled.span`
+  font-size: 11px;
+  font-weight: 600;
+  color: #244c54;
+  background: rgba(36,76,84,0.08);
+  padding: 2px 8px;
+  border-radius: 4px;
+  width: fit-content;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+`;
+
+const ModalTitle = styled.h2`
+  font-size: 18px;
+  font-weight: 700;
+  color: #0d1c2e;
+`;
+
+const ModalCloseBtn = styled.button`
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: color 0.15s;
+  &:hover { color: #475569; }
+`;
+
+const ModalBody = styled.div`
+  padding: 24px;
+`;
+
+const InfoGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+`;
+
+const InfoItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+`;
+
+const InfoLabel = styled.span`
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+`;
+
+const InfoValue = styled.span`
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+`;
+
+const StatusChip = styled.span`
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  width: fit-content;
+  background: ${({ $active }) => ($active ? '#dcfce7' : '#fee2e2')};
+  color: ${({ $active }) => ($active ? '#16a34a' : '#dc2626')};
+`;
+
+const ModalFooter = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+`;
+
+const ModalActions = styled.div`
+  display: flex;
+  gap: 8px;
+`;
+
+const ModalCancelBtn = styled.button`
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #475569;
+  transition: background 0.15s;
+  &:hover { background: #f1f5f9; }
+`;
+
+const CouponBtn = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  background: #244c54;
+  color: white;
+  border: 1px solid #244c54;
+  transition: background 0.15s;
+  &:hover { background: #1d3d44; }
 `;
 

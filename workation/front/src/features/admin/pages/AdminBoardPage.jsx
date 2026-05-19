@@ -29,11 +29,29 @@ import ConfirmModal from '../components/common/ConfirmModal';
 const TOTAL = 124;
 const TOTAL_PAGES = 3;
 
-const STATUS_LABEL = { published: '게시 중', ended: '종료' };
+const STATUS_LABEL = { published: '게시 중', ended: '종료', active: '활성', expired: '만료', exhausted: '소진' };
 const STATUS_COLORS = {
   published: { bg: '#dcfce7', color: '#16a34a' },
-  ended: { bg: '#f1f5f9', color: '#64748b' },
+  ended:     { bg: '#f1f5f9', color: '#64748b' },
+  active:    { bg: '#dcfce7', color: '#16a34a' },
+  expired:   { bg: '#f1f5f9', color: '#64748b' },
+  exhausted: { bg: '#fff7ed', color: '#ea580c' },
 };
+
+const COUPON_FILTERS = ['전체', '활성', '만료', '소진'];
+const COUPON_STATUS_MAP = { 활성: 'active', 만료: 'expired', 소진: 'exhausted' };
+
+function getDday(expiryDate) {
+  if (!expiryDate) return '-';
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const expiry = new Date(expiryDate);
+  expiry.setHours(0, 0, 0, 0);
+  const diff = Math.round((expiry - today) / (1000 * 60 * 60 * 24));
+  if (diff < 0) return '만료됨';
+  if (diff === 0) return 'D - Day';
+  return `D - ${diff}`;
+}
 
 export default function AdminBoardPage() {
   const [activeTab, setActiveTab] = useState('공지사항');
@@ -55,10 +73,15 @@ export default function AdminBoardPage() {
   // 검색
   const [searchQuery, setSearchQuery] = useState('');
 
+  // 쿠폰 필터
+  const [couponFilter, setCouponFilter] = useState('전체');
+
   const rawPosts = boardPosts[activeTab] || [];
-  const posts = rawPosts.filter((p) =>
-    p.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const posts = rawPosts.filter((p) => {
+    const matchSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase());
+    if (activeTab !== '쿠폰' || couponFilter === '전체') return matchSearch;
+    return matchSearch && p.status === COUPON_STATUS_MAP[couponFilter];
+  });
 
   // 신규 등록 / 수정 모달
   const [registerModal, setRegisterModal] = useState(null); // null | type string
@@ -128,6 +151,7 @@ export default function AdminBoardPage() {
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setSearchQuery('');
+    setCouponFilter('전체');
     resetPage();
   };
 
@@ -150,10 +174,6 @@ export default function AdminBoardPage() {
           </StatIconWrap>
           <StatLabel>전체 리뷰 수</StatLabel>
           <StatValue>1,284</StatValue>
-          <ProgressWrap>
-            <ProgressBar $width={72} />
-            <ProgressLabel>누적 데이터</ProgressLabel>
-          </ProgressWrap>
         </StatCard>
 
         {/* 카드 2: 이번 달 리뷰 수 */}
@@ -162,13 +182,9 @@ export default function AdminBoardPage() {
             <StatIconWrap $color="#f97316" $bg="rgba(249,115,22,0.1)">
               <CalendarIcon />
             </StatIconWrap>
-            <MonthBadge>이번 달</MonthBadge>
           </StatCardTopRow>
           <StatLabel>이번 달 리뷰 수</StatLabel>
           <StatValue>342</StatValue>
-          <StatSubText>
-            전월 동기 대비 <Strong>+12%</Strong> 상승
-          </StatSubText>
         </StatCard>
 
         {/* 카드 3: 콘텐츠 신규 등록 */}
@@ -226,13 +242,41 @@ export default function AdminBoardPage() {
           />
         </TabRow>
 
+        {activeTab === '쿠폰' && (
+          <CouponFilterRow>
+            {COUPON_FILTERS.map((f) => (
+              <CouponFilterBtn
+                key={f}
+                $active={couponFilter === f}
+                onClick={() => setCouponFilter(f)}
+              >
+                {f}
+              </CouponFilterBtn>
+            ))}
+          </CouponFilterRow>
+        )}
+
         <Table>
           <THead>
             <TR>
               <TH $width="280px">제목</TH>
-              <TH $width="160px">작성자</TH>
-              <TH $width="150px">등록일</TH>
-              <TH $width="80px">상단 고정</TH>
+              {activeTab === '쿠폰' ? (
+                <>
+                  <TH $width="120px">남은 수량</TH>
+                  <TH $width="120px">만료일</TH>
+                </>
+              ) : activeTab === '리뷰' ? (
+                <>
+                  <TH $width="160px">작성자</TH>
+                  <TH $width="150px">등록일</TH>
+                  <TH $width="80px">상단 고정</TH>
+                </>
+              ) : (
+                <>
+                  <TH $width="150px">등록일</TH>
+                  <TH $width="80px">상단 고정</TH>
+                </>
+              )}
             </TR>
           </THead>
           <TBody>
@@ -245,6 +289,7 @@ export default function AdminBoardPage() {
             ) : (
               posts.map((post) => {
                 const pinned = pinnedIds.includes(post.id);
+                const dday = getDday(post.expiryDate);
 
                 return (
                   <TR
@@ -260,23 +305,41 @@ export default function AdminBoardPage() {
                         {post.hasAttachment && <AttachIcon />}
                       </TitleCell>
                     </TD>
-                    <TD>
-                      <AuthorText>{post.author}</AuthorText>
-                    </TD>
-                    <TD>
-                      <DateText>{post.date}</DateText>
-                    </TD>
-                    <TD>
-                      <RowActions onClick={(e) => e.stopPropagation()}>
-                        <PinBtn
-                          $pinned={pinned}
-                          onClick={() => handlePin(post.id)}
-                          title={pinned ? '고정 해제' : '고정'}
-                        >
-                          <PinSvg $pinned={pinned} />
-                        </PinBtn>
-                      </RowActions>
-                    </TD>
+                    {activeTab === '쿠폰' ? (
+                      <>
+                        <TD>
+                          <QtyText>{post.remainingQty ?? '-'} 매</QtyText>
+                        </TD>
+                        <TD>
+                          <DdayText $expired={dday === '만료됨'} $urgent={dday !== '만료됨' && dday !== '-' && parseInt(dday.split('- ')[1]) <= 7}>
+                            {dday}
+                          </DdayText>
+                        </TD>
+                      </>
+                    ) : activeTab === '리뷰' ? (
+                      <>
+                        <TD><AuthorText>{post.author}</AuthorText></TD>
+                        <TD><DateText>{post.date}</DateText></TD>
+                        <TD>
+                          <RowActions onClick={(e) => e.stopPropagation()}>
+                            <PinBtn $pinned={pinned} onClick={() => handlePin(post.id)} title={pinned ? '고정 해제' : '고정'}>
+                              <PinSvg $pinned={pinned} />
+                            </PinBtn>
+                          </RowActions>
+                        </TD>
+                      </>
+                    ) : (
+                      <>
+                        <TD><DateText>{post.date}</DateText></TD>
+                        <TD>
+                          <RowActions onClick={(e) => e.stopPropagation()}>
+                            <PinBtn $pinned={pinned} onClick={() => handlePin(post.id)} title={pinned ? '고정 해제' : '고정'}>
+                              <PinSvg $pinned={pinned} />
+                            </PinBtn>
+                          </RowActions>
+                        </TD>
+                      </>
+                    )}
                   </TR>
                 );
               })
@@ -601,16 +664,6 @@ const StatValue = styled.p`
   letter-spacing: -0.5px;
   line-height: 1.2;
 `;
-const StatSubText = styled.p`
-  font-size: 12px;
-  color: ${({ theme }) => theme.colors.textMuted};
-  margin-top: 4px;
-`;
-const Strong = styled.span`
-  color: #16a34a;
-  font-weight: 600;
-`;
-
 const MonthBadge = styled.span`
   font-size: 10px;
   font-weight: 600;
@@ -618,37 +671,6 @@ const MonthBadge = styled.span`
   background: #fff7ed;
   padding: 3px 8px;
   border-radius: 999px;
-`;
-
-const ProgressWrap = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 8px;
-`;
-const ProgressBar = styled.div`
-  flex: 1;
-  height: 6px;
-  border-radius: 999px;
-  background: ${({ theme }) => theme.colors.border};
-  position: relative;
-  overflow: hidden;
-
-  &::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    height: 100%;
-    width: ${({ $width }) => $width}%;
-    background: ${({ theme }) => theme.colors.adminPrimary};
-    border-radius: 999px;
-  }
-`;
-const ProgressLabel = styled.span`
-  font-size: 11px;
-  color: ${({ theme }) => theme.colors.textLight};
-  white-space: nowrap;
 `;
 
 /* 콘텐츠 신규 등록 카드 */
@@ -695,6 +717,30 @@ const QuickBtnInner = styled.div`
     background: ${({ theme }) => theme.colors.adminPrimary};
     color: ${({ theme }) => theme.colors.white};
     border-color: ${({ theme }) => theme.colors.adminPrimary};
+  }
+`;
+
+/* 쿠폰 필터 */
+const CouponFilterRow = styled.div`
+  display: flex;
+  gap: 8px;
+  padding: 12px 24px;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
+`;
+
+const CouponFilterBtn = styled.button`
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: ${({ $active, theme }) => $active ? theme.colors.adminPrimary : theme.colors.white};
+  color: ${({ $active, theme }) => $active ? theme.colors.white : theme.colors.textMuted};
+  border: 1px solid ${({ $active, theme }) => $active ? theme.colors.adminPrimary : theme.colors.border};
+  &:hover {
+    background: ${({ $active, theme }) => $active ? theme.colors.adminPrimary : theme.colors.bgSection};
   }
 `;
 
@@ -802,6 +848,19 @@ const DateText = styled.span`
   font-size: 12px;
   color: ${({ theme }) => theme.colors.textLight};
   font-family: ${({ theme }) => theme.fonts.number};
+`;
+const QtyText = styled.span`
+  font-size: 13px;
+  font-weight: 500;
+  color: ${({ theme }) => theme.colors.adminTextDark};
+  font-family: ${({ theme }) => theme.fonts.number};
+`;
+const DdayText = styled.span`
+  font-size: 12px;
+  font-weight: 600;
+  font-family: ${({ theme }) => theme.fonts.number};
+  color: ${({ $expired, $urgent }) =>
+    $expired ? '#94a3b8' : $urgent ? '#dc2626' : '#16a34a'};
 `;
 
 /* 핀 버튼 */

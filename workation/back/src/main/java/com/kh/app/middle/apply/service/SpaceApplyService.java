@@ -5,6 +5,7 @@ import com.kh.app.member.repository.MemberRepository;
 import com.kh.app.middle.apply.dto.req.SpaceApplyPermitReqDto;
 import com.kh.app.middle.apply.dto.req.SpaceApplyReqDto;
 import com.kh.app.middle.apply.dto.resp.SpaceApplyRespDto;
+import com.kh.app.middle.apply.entity.ApplyStatus;
 import com.kh.app.middle.apply.entity.SpaceApplyEntity;
 import com.kh.app.middle.apply.repository.SpaceApplyRepository;
 import com.kh.app.notification.dto.request.NotificationCreateReqDto;
@@ -12,6 +13,8 @@ import com.kh.app.notification.entity.NotificationType;
 import com.kh.app.notification.service.NotificationService;
 import com.kh.app.product.space.entity.SpaceEntity;
 import com.kh.app.product.space.repository.SpaceRepository;
+import com.kh.app.product.stay.entity.StayEntity;
+import com.kh.app.product.stay.repository.StayRepository;
 import com.kh.app.security.user.CustomUserDetails;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +37,7 @@ public class SpaceApplyService {
     private final MemberRepository memberRepository;
     private final SpaceRepository spaceRepository;
     private final NotificationService notificationService;
+    private final StayRepository stayRepository;
 
     //등록 심사 신청
     @Transactional
@@ -75,17 +79,23 @@ public class SpaceApplyService {
     }
 
     // 심사
+    @Transactional
     public void update(Long applyId, SpaceApplyPermitReqDto dto) {
         SpaceApplyEntity apply = spaceApplyRepository.findByIdAndDelYn(applyId, "N")
                 .orElseThrow(() -> {
                     throw new EntityNotFoundException("[SPACE-4012] 존재하지 않는 신청 건입니다.");
                 });
 
+        //space 엔티티 찾기
+        Long spaceId = apply.getSpace().getId();
 
-        if(dto.getApplyStatus().equals("A")){
+
+        if(dto.getApplyStatus().equals(ApplyStatus.A)){
             //승인
             apply.update(dto);
             // 노출여부 변경필요
+            StayEntity stayEntity = stayRepository.findByIdAndDelYn(spaceId, "N").orElseThrow();
+            stayEntity.changeVisibleYn("Y");
 
             //알림
             notificationService.createNotification(
@@ -97,7 +107,7 @@ public class SpaceApplyService {
                             .referenceId(apply.getId())
                             .build()
             );
-        }else if(dto.getApplyStatus().equals("R")){
+        }else if(dto.getApplyStatus().equals(ApplyStatus.R)){
             //거절
             apply.update(dto);
 

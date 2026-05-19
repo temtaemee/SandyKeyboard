@@ -73,7 +73,6 @@ export default function AdminReservationPage() {
               >
                 {idx === 0 ? <CalendarIcon /> : <BuildingStatIcon />}
               </StatIconWrap>
-              <StatBadge $color={card.badge.color}>{card.badge.text}</StatBadge>
             </StatCardTop>
             <StatLabel>{card.label}</StatLabel>
             <StatValueRow>
@@ -359,13 +358,6 @@ const StatValue = styled.p`
   font-family: ${({ theme }) => theme.fonts.number};
   letter-spacing: -0.5px;
 `;
-
-const StatBadge = styled.span`
-  font-size: 13px;
-  font-weight: 600;
-  color: ${({ $color }) => $color === 'green' ? '#16a34a' : '#dc2626'};
-`;
-
 
 /* 예약 테이블 */
 const TableSection = styled.div`
