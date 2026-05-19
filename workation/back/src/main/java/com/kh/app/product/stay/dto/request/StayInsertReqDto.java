@@ -6,10 +6,11 @@ import com.kh.app.product.stay.entity.StayOption;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -37,10 +38,10 @@ public class StayInsertReqDto {
     private Integer maxCapa;
 
     @NotNull
-    private LocalTime checkInTime;
+    private LocalDateTime checkInTime;
 
     @NotNull
-    private LocalTime checkOutTime;
+    private LocalDateTime checkOutTime;
 
     @NotNull @Min(0) private Integer monPrice;
     @NotNull @Min(0) private Integer tuePrice;
@@ -50,6 +51,10 @@ public class StayInsertReqDto {
     @NotNull @Min(0) private Integer satPrice;
     @NotNull @Min(0) private Integer sunPrice;
     @NotNull @Min(0) private Integer holidayPrice;
+
+    @NotBlank
+    @Pattern(regexp = "^[YN]$")
+    private String workationYn;
 
     private List<StayOption> optionList;
 
@@ -73,6 +78,7 @@ public class StayInsertReqDto {
                 .satPrice(satPrice)
                 .sunPrice(sunPrice)
                 .holidayPrice(holidayPrice)
+                .workationYn(workationYn)
                 .visibleYn("Y")
                 .build();
     }

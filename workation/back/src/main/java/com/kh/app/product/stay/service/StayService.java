@@ -3,10 +3,10 @@ package com.kh.app.product.stay.service;
 import com.kh.app.aws.service.S3Service;
 import com.kh.app.product.exception.ErrorCode;
 import com.kh.app.product.exception.ProductException;
-import com.kh.app.product.space.entity.SpacePictureCategory;
 import com.kh.app.product.space.repository.SpaceRepository;
 import com.kh.app.product.stay.dto.request.StayExtraPriceReqDto;
 import com.kh.app.product.stay.dto.request.StayInsertReqDto;
+import com.kh.app.product.stay.dto.request.StaySearchReqDto;
 import com.kh.app.product.stay.dto.request.StayUpdateReqDto;
 import com.kh.app.product.stay.dto.response.StayResDto;
 import com.kh.app.product.stay.entity.*;
@@ -34,8 +34,8 @@ public class StayService {
     private final SpaceRepository spaceRepository;
     private final S3Service s3Service;
 
-    public List<StayResDto> selectAll() {
-        return stayRepository.findAllByDelYn("N").stream()
+    public List<StayResDto> searchList(StaySearchReqDto dto) {
+        return stayRepository.searchList(dto).stream()
                 .map(stay -> {
                     List<StayPictureEntity> pictures = stayPictureRepository.findByStayOrderBySortOrder(stay);
                     List<StayOption> options = stayOptionRepository.findByStay(stay).stream()
@@ -74,7 +74,8 @@ public class StayService {
                 dto.getCapacity(), dto.getMaxCapa(),
                 dto.getCheckInTime(), dto.getCheckOutTime(),
                 dto.getMonPrice(), dto.getTuePrice(), dto.getWedPrice(), dto.getThuPrice(),
-                dto.getFriPrice(), dto.getSatPrice(), dto.getSunPrice(), dto.getHolidayPrice()
+                dto.getFriPrice(), dto.getSatPrice(), dto.getSunPrice(), dto.getHolidayPrice(),
+                dto.getWorkationYn()
         );
         stayOptionRepository.deleteAllByStay(stay);
         insertOptions(stay, dto.getOptionList());
@@ -129,7 +130,6 @@ public class StayService {
                         .fileSize(file.getSize())
                         .mainYn(i == 0 ? "Y" : "N")
                         .sortOrder(i)
-                        .category(SpacePictureCategory.OTHERS)
                         .build());
             } catch (IOException e) {
                 log.error("S3 upload failed for file: {}", file.getOriginalFilename(), e);

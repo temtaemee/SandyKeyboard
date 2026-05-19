@@ -2,8 +2,10 @@ package com.kh.app.product.space.controller;
 
 import com.kh.app.product.exception.ErrorResponse;
 import com.kh.app.product.space.dto.request.SpaceInsertReqDto;
+import com.kh.app.product.space.dto.request.SpaceSearchReqDto;
 import com.kh.app.product.space.dto.request.SpaceUpdateReqDto;
 import com.kh.app.product.space.dto.response.SpaceResDto;
+import com.kh.app.product.space.entity.Area;
 import com.kh.app.product.space.service.SpaceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -30,15 +32,23 @@ public class SpaceApiController {
 
     private final SpaceService spaceService;
 
-    @Operation(summary = "공간 전체 조회", description = "삭제되지 않은 공간 목록을 조회합니다.")
+    @Operation(summary = "공간 전체 조회", description = "삭제되지 않은 공간 목록을 조회합니다. keyword/area/visibleYn 동적 필터 지원.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "조회 성공"),
             @ApiResponse(responseCode = "500", description = "서버 오류",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping
-    public ResponseEntity<List<SpaceResDto>> selectAll() {
-        return ResponseEntity.ok(spaceService.selectAll());
+    public ResponseEntity<List<SpaceResDto>> searchList(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Area area,
+            @RequestParam(required = false) String visibleYn
+    ) {
+        SpaceSearchReqDto dto = new SpaceSearchReqDto();
+        dto.setKeyword(keyword);
+        dto.setArea(area);
+        dto.setVisibleYn(visibleYn);
+        return ResponseEntity.ok(spaceService.searchList(dto));
     }
 
     @Operation(summary = "공간 상세 조회", description = "공간 ID로 단건 조회합니다.")

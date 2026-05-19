@@ -1,7 +1,11 @@
 package com.kh.app.product.space.repository;
 
+import com.kh.app.product.space.dto.request.SpaceSearchReqDto;
 import com.kh.app.product.space.entity.SpaceEntity;
-import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface SpaceRepositoryCustom{
+import java.util.List;
+
+public interface SpaceRepositoryCustom {
+
+    List<SpaceEntity> searchList(SpaceSearchReqDto dto);
 }

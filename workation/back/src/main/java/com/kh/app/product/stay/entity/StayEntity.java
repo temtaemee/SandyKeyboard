@@ -5,7 +5,7 @@ import com.kh.app.product.space.entity.SpaceEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "STAY")
@@ -15,9 +15,6 @@ import java.time.LocalTime;
 @Getter
 public class StayEntity extends BaseEntity {
 
-
-
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -26,7 +23,7 @@ public class StayEntity extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     private SpaceEntity space;
 
-    @Column(length = 100 , nullable = false , unique = true)
+    @Column(length = 100, nullable = false, unique = true)
     private String name;
 
     @Column(nullable = false)
@@ -45,27 +42,30 @@ public class StayEntity extends BaseEntity {
     @Builder.Default
     private String visibleYn = "Y";
 
-    @Column(nullable = false)
-    private LocalTime checkInTime;
+    @Column(name = "workation_yn", nullable = false, length = 1)
+    private String workationYn;
 
     @Column(nullable = false)
-    private LocalTime checkOutTime;
+    private LocalDateTime checkInTime;
 
-    @Column()
+    @Column(nullable = false)
+    private LocalDateTime checkOutTime;
+
+    @Column
     private int monPrice;
-    @Column()
+    @Column
     private int tuePrice;
-    @Column()
+    @Column
     private int wedPrice;
-    @Column()
+    @Column
     private int thuPrice;
-    @Column()
+    @Column
     private int friPrice;
-    @Column()
+    @Column
     private int satPrice;
-    @Column()
+    @Column
     private int sunPrice;
-    @Column()
+    @Column
     private int holidayPrice;
 
     public void changeVisibleYn(String visibleYn) {
@@ -74,9 +74,10 @@ public class StayEntity extends BaseEntity {
 
     public void update(String name, String summary, String description,
                        int capacity, int maxCapa,
-                       LocalTime checkInTime, LocalTime checkOutTime,
+                       LocalDateTime checkInTime, LocalDateTime checkOutTime,
                        int monPrice, int tuePrice, int wedPrice, int thuPrice,
-                       int friPrice, int satPrice, int sunPrice, int holidayPrice) {
+                       int friPrice, int satPrice, int sunPrice, int holidayPrice,
+                       String workationYn) {
         this.name = name;
         this.summary = summary;
         this.description = description;
@@ -92,5 +93,6 @@ public class StayEntity extends BaseEntity {
         this.satPrice = satPrice;
         this.sunPrice = sunPrice;
         this.holidayPrice = holidayPrice;
+        this.workationYn = workationYn;
     }
 }

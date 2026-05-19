@@ -1,7 +1,5 @@
 package com.kh.app.product.stay.entity;
 
-import com.kh.app.product.space.entity.Area;
-import com.kh.app.product.space.entity.SpacePictureCategory;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -32,24 +30,14 @@ public class StayPictureEntity {
     private String storedName;
 
     @Column(nullable = false, length = 1)
-    private String mainYn; // 'Y' 또는 'N'
+    private String mainYn;
 
     @Column(nullable = false)
     private Integer sortOrder;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "category", nullable = false)
-    private SpacePictureCategory category;
 
     @Column(nullable = false)
     private String contentType;
 
     @Column(nullable = false)
     private Long fileSize;
-
-
-
 }
-
-
-

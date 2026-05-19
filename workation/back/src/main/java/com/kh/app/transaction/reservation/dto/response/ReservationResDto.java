@@ -16,8 +16,6 @@ public class ReservationResDto {
 
     private Long stayId;
 
-    private Long officeId;
-
     private Integer guestCount;
 
     private String primaryGuestName;
