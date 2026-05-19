@@ -1,6 +1,7 @@
 package com.kh.app.member.entity;
 
 import com.kh.app.company.entity.CompanyEntity;
+import com.kh.app.product.space.entity.Area;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -26,6 +27,9 @@ public class MemberProfileEntity {
     @JoinColumn(name = "COMPANY_ID")
     private CompanyEntity company;
 
+    @Enumerated(EnumType.STRING)
+    private Area preferredArea;
+
     @Column(name = "NAME", length = 20)
     private String name;
 
@@ -34,4 +38,17 @@ public class MemberProfileEntity {
 
     @Column(name = "EMAIL", length = 50)
     private String email;
+
+    public void updateProfile(
+            String name,
+            String phone,
+            String email,
+            Area preferredArea
+    ) {
+        this.name = name;
+        this.phone = phone;
+        this.email = email;
+        this.preferredArea = preferredArea;
+    }
+
 }

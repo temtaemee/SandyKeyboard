@@ -65,7 +65,13 @@ function LoginForm() {
             <span>로그인 유지</span>
           </RememberMe>
 
-          <FindPassword>비밀번호 찾기</FindPassword>
+          <FindArea>
+            <FindLink>아이디 찾기</FindLink>
+
+            <DividerText>|</DividerText>
+
+            <FindLink>비밀번호 찾기</FindLink>
+          </FindArea>
         </OptionArea>
 
         <LoginButton type="submit">로그인 →</LoginButton>
@@ -224,6 +230,30 @@ const LoginButton = styled.button`
   &:hover {
     opacity: 0.9;
   }
+`;
+
+const FindArea = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+const FindLink = styled.div`
+  font-size: 13px;
+  color: #5f7d8b;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+
+  &:hover {
+    color: #3f6971;
+  }
+`;
+
+const DividerText = styled.span`
+  font-size: 12px;
+  color: #cbd5e1;
 `;
 
 const Divider = styled.div`

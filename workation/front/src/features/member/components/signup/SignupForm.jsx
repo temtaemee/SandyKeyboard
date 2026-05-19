@@ -11,6 +11,7 @@ function SignupForm() {
     password: '',
     phone: '',
     email: '',
+    preferredArea: '',
   });
 
   const [passwordCheck, setPasswordCheck] = useState('');
@@ -103,6 +104,27 @@ function SignupForm() {
             onChange={handleChange}
           />
         </InputWrapper>
+        <InputWrapper>
+          <Label>선호 지역</Label>
+
+          <Select
+            name="preferredArea"
+            value={vo.preferredArea}
+            onChange={handleChange}
+          >
+            <option value="">지역 선택</option>
+            <option value="SEOUL">서울</option>
+            <option value="GYEONGGI">경기</option>
+            <option value="GANGWON">강원</option>
+            <option value="CHUNGNAM">충남</option>
+            <option value="CHUNGBUK">충북</option>
+            <option value="GYEONGNAM">경남</option>
+            <option value="GYEONGBUK">경북</option>
+            <option value="JEONNAM">전남</option>
+            <option value="JEONBUK">전북</option>
+            <option value="JEJU">제주</option>
+          </Select>
+        </InputWrapper>
 
         <AgreeArea>
           <input type="checkbox" required />
@@ -144,6 +166,27 @@ const Card = styled.section`
   padding: 48px 42px;
 
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+`;
+const Select = styled.select`
+  width: 100%;
+  height: 54px;
+
+  border: 1px solid #d6dde2;
+  border-radius: 12px;
+
+  padding: 0 16px;
+
+  font-size: 14px;
+
+  outline: none;
+
+  background-color: white;
+
+  transition: 0.2s;
+
+  &:focus {
+    border-color: #4d6c75;
+  }
 `;
 
 const Title = styled.h2`

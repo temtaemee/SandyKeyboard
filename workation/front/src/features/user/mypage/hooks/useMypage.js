@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../../../../app/api/axios';
+import { deleteAccount } from '../api/mypageApi';
 
 function useMypage() {
     const [memberInfo, setMemberInfo] = useState(null);
@@ -20,6 +21,7 @@ function useMypage() {
 
         fetchMemberInfo();
     }, []);
+
 
     return {
         memberInfo,

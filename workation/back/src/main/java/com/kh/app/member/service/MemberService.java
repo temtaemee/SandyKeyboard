@@ -1,10 +1,7 @@
 package com.kh.app.member.service;
 
 import com.kh.app.common.dto.PageRespDto;
-import com.kh.app.member.dto.request.MemberJoinReqDto;
-import com.kh.app.member.dto.request.MemberSearchCondDto;
-import com.kh.app.member.dto.request.SellerApplyReqDto;
-import com.kh.app.member.dto.request.SellerSearchCondDto;
+import com.kh.app.member.dto.request.*;
 import com.kh.app.member.dto.response.MemberListRespDto;
 import com.kh.app.member.dto.response.MemberMeRespDto;
 import com.kh.app.member.dto.response.MemberRespDto;
@@ -154,5 +151,44 @@ public class MemberService {
         MemberEntity member = memberRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("회원 없음"));
         member.unban();
+    }
+
+    @Transactional
+    public void editMyInfo(Long memberId, MemberUpdateReqDto dto) {
+        MemberProfileEntity profile = profileRepository.findById(memberId).orElseThrow(() -> new RuntimeException("회원 없음"));
+        profile.updateProfile(
+                dto.getName(),
+                dto.getPhone(),
+                dto.getEmail(),
+                dto.getPreferredArea()
+        );
+    }
+
+    @Transactional
+    public void updatePassword(Long memberId, MemberPasswordUpdateReqDto dto) {
+        MemberEntity member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("회원 없음"));
+        // 현재 비밀번호 검증
+        if (!passwordEncoder.matches(
+                dto.getCurrentPassword(),
+                member.getPassword()
+        )) {
+            throw new RuntimeException("현재 비밀번호 불일치");
+        }
+        // 새 비밀번호 확인 검증
+        if (!dto.getNewPassword()
+                .equals(dto.getNewPasswordCheck())) {
+            throw new RuntimeException("새 비밀번호 확인 불일치");
+        }
+        // 암호화
+        String encodedPw =
+                passwordEncoder.encode(dto.getNewPassword());
+        // 엔티티 변경
+        member.changePassword(encodedPw);
+    }
+    @Transactional
+    public void deleteAccount(Long memberId) {
+        MemberEntity member = memberRepository.findById(memberId).orElseThrow(() -> new RuntimeException("회원 없음"));
+        member.delete();
     }
 }
