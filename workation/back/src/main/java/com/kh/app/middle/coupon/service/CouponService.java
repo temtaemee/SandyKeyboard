@@ -106,4 +106,32 @@ public class CouponService {
 
         memberCouponRepository.save(memberCouponEntity);
     }
+
+    // 멤버에게 쿠폰 삭제
+    @Transactional
+    public void deleteMemberCoupon(MemberCouponReqDto reqDto) {
+        MemberCouponEntity memberCouponEntity = memberCouponRepository.findByMemberUsernameAndCouponId(reqDto.getUsername(), reqDto.getCouponId()).orElseThrow(EntityNotFoundException::new);
+        memberCouponRepository.delete(memberCouponEntity);
+    }
+
+    // 멤버가 쿠폰 사용
+    @Transactional
+    public void useMemberCoupon(String username, Long memberCouponId) {
+        //쿠폰 정보 가져오기
+        MemberCouponEntity memberCouponEntity = memberCouponRepository.findById(memberCouponId).orElseThrow(EntityNotFoundException::new);
+
+        //쿠폰주인과 비교
+        if (!memberCouponEntity.getMemberId().getUsername().equals(username)) {
+            throw new IllegalStateException("[COUPON-7007] 본인의 쿠폰만 사용할 수 있습니다.");
+        }
+
+        //쿠폰 사용여부 확인
+        if(memberCouponEntity.isUsed()){
+            throw new IllegalStateException("[COUPON-7001] 이미 사용된 쿠폰입니다.");
+        }
+
+        //쿠폰 사용처리
+        memberCouponEntity.useCoupon();
+
+    }
 }
