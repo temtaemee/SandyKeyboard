@@ -1,8 +1,11 @@
 package com.kh.app.product.stay.controller;
 
+import com.kh.app.product.space.entity.Area;
 import com.kh.app.product.stay.dto.request.StayInsertReqDto;
+import com.kh.app.product.stay.dto.request.StaySearchReqDto;
 import com.kh.app.product.stay.dto.request.StayUpdateReqDto;
 import com.kh.app.product.stay.dto.response.StayResDto;
+import com.kh.app.product.stay.entity.StayOption;
 import com.kh.app.product.stay.service.StayService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,10 +27,28 @@ public class StayApiController {
 
     private final StayService stayService;
 
-    @Operation(summary = "숙소 전체 조회")
+    @Operation(summary = "숙소 전체 조회", description = "keyword/spaceId/workationYn/area/minPrice/maxPrice/capacity/options 동적 필터 지원")
     @GetMapping("/api/public/stay")
-    public ResponseEntity<List<StayResDto>> selectAll() {
-        return ResponseEntity.ok(stayService.selectAll());
+    public ResponseEntity<List<StayResDto>> searchList(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long spaceId,
+            @RequestParam(required = false) String workationYn,
+            @RequestParam(required = false) Area area,
+            @RequestParam(required = false) Integer minPrice,
+            @RequestParam(required = false) Integer maxPrice,
+            @RequestParam(required = false) Integer capacity,
+            @RequestParam(required = false) List<StayOption> options
+    ) {
+        StaySearchReqDto dto = new StaySearchReqDto();
+        dto.setKeyword(keyword);
+        dto.setSpaceId(spaceId);
+        dto.setWorkationYn(workationYn);
+        dto.setArea(area);
+        dto.setMinPrice(minPrice);
+        dto.setMaxPrice(maxPrice);
+        dto.setCapacity(capacity);
+        dto.setOptions(options);
+        return ResponseEntity.ok(stayService.searchList(dto));
     }
 
     @Operation(summary = "숙소 상세 조회")

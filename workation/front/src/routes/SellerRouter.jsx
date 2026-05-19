@@ -1,8 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
 import SellerHomePage from '../features/seller/pages/SellerHomePage';
-import SellerDefaultLayout from '../features/seller/layouts/SellerDefaultLayout';
-import SellerDashboardPage from '../features/seller/pages/SellerDashboardPage';
-import ProductCrudPage from '../features/seller/pages/ProductCrudPage';
 
 /**
  * Seller 도메인 라우터
@@ -15,9 +12,7 @@ export default function SellerRouter() {
   return (
     <Routes>
       {/* 예시: login */}
-      <Route index element={<SellerDashboardPage />} />
-      <Route path="spaces" element={<SellerHomePage />} /> {/* ← 추가 */}
-      <Route path="/product" element={<ProductCrudPage />} />
+      <Route index element={<SellerHomePage />} />
     </Routes>
   );
 }

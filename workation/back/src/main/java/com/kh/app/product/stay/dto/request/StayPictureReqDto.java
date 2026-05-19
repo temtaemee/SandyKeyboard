@@ -1,6 +1,5 @@
 package com.kh.app.product.stay.dto.request;
 
-import com.kh.app.product.space.entity.SpacePictureCategory;
 import com.kh.app.product.stay.entity.StayEntity;
 import com.kh.app.product.stay.entity.StayPictureEntity;
 import lombok.Getter;
@@ -24,10 +23,7 @@ public class StayPictureReqDto {
 
     private Integer sortOrder;
 
-    private SpacePictureCategory category;
-
     public StayPictureEntity toEntity(StayEntity stay) {
-
         return StayPictureEntity.builder()
                 .stay(stay)
                 .filePath(filePath)
@@ -37,7 +33,6 @@ public class StayPictureReqDto {
                 .fileSize(fileSize)
                 .mainYn(mainYn)
                 .sortOrder(sortOrder)
-                .category(category)
                 .build();
     }
 }

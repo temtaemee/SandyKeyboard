@@ -6,6 +6,13 @@ import com.kh.app.product.space.entity.SpacePictureCategory;
 import com.kh.app.product.space.entity.SpacePictureEntity;
 import com.kh.app.product.space.repository.SpacePictureRepository;
 import com.kh.app.product.space.repository.SpaceRepository;
+import com.kh.app.product.stay.entity.StayEntity;
+import com.kh.app.product.stay.entity.StayOption;
+import com.kh.app.product.stay.entity.StayOptionEntity;
+import com.kh.app.product.stay.entity.StayPictureEntity;
+import com.kh.app.product.stay.repository.StayOptionRepository;
+import com.kh.app.product.stay.repository.StayPictureRepository;
+import com.kh.app.product.stay.repository.StayRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -13,6 +20,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Component
@@ -22,6 +30,9 @@ public class DataInitializer implements CommandLineRunner {
 
     private final SpaceRepository spaceRepository;
     private final SpacePictureRepository spacePictureRepository;
+    private final StayRepository stayRepository;
+    private final StayPictureRepository stayPictureRepository;
+    private final StayOptionRepository stayOptionRepository;
 
     @Override
     @Transactional
@@ -152,6 +163,174 @@ public class DataInitializer implements CommandLineRunner {
                         .build()
         ));
 
-        log.info("[DataInitializer] 더미 데이터 삽입 완료 — Space {}건", spaceRepository.count());
+        // ===== STAY 더미 데이터 =====
+        LocalDateTime checkIn  = LocalDateTime.of(2000, 1, 1, 15, 0);
+        LocalDateTime checkOut = LocalDateTime.of(2000, 1, 1, 11, 0);
+
+        // 제주 — 워케이션 Stay
+        StayEntity jejuStay1 = stayRepository.save(StayEntity.builder()
+                .space(jeju)
+                .name("제주 오션뷰 워케이션 스위트")
+                .summary("바다가 보이는 업무 특화 워케이션 룸")
+                .description("넓은 책상과 고속 인터넷, 오션뷰 테라스를 갖춘 워케이션 전용 객실입니다.")
+                .capacity(2).maxCapa(3)
+                .checkInTime(checkIn).checkOutTime(checkOut)
+                .monPrice(180000).tuePrice(180000).wedPrice(180000).thuPrice(180000)
+                .friPrice(220000).satPrice(250000).sunPrice(220000).holidayPrice(250000)
+                .workationYn("Y")
+                .build());
+
+        // 제주 — 일반 Stay
+        StayEntity jejuStay2 = stayRepository.save(StayEntity.builder()
+                .space(jeju)
+                .name("제주 바다뷰 스탠다드 룸")
+                .summary("가성비 좋은 제주 바다 전망 객실")
+                .description("심플하고 깔끔한 인테리어, 오션뷰 창문이 있는 스탠다드 객실입니다.")
+                .capacity(2).maxCapa(2)
+                .checkInTime(checkIn).checkOutTime(checkOut)
+                .monPrice(120000).tuePrice(120000).wedPrice(120000).thuPrice(120000)
+                .friPrice(150000).satPrice(180000).sunPrice(150000).holidayPrice(180000)
+                .workationYn("N")
+                .build());
+
+        // 강원 — 워케이션 Stay
+        StayEntity gangwonStay1 = stayRepository.save(StayEntity.builder()
+                .space(gangwon)
+                .name("강원 포레스트 워케이션 캐빈")
+                .summary("숲속 고요함 속 집중 업무 환경")
+                .description("통나무 캐빈 스타일의 독립 공간으로, 모니터·프린터·화상회의 장비가 갖춰진 업무 전용 구역이 포함됩니다.")
+                .capacity(2).maxCapa(4)
+                .checkInTime(checkIn).checkOutTime(checkOut)
+                .monPrice(160000).tuePrice(160000).wedPrice(160000).thuPrice(160000)
+                .friPrice(200000).satPrice(230000).sunPrice(200000).holidayPrice(230000)
+                .workationYn("Y")
+                .build());
+
+        // 강원 — 일반 Stay
+        StayEntity gangwonStay2 = stayRepository.save(StayEntity.builder()
+                .space(gangwon)
+                .name("강원 힐링 더블 룸")
+                .summary("자연 속 편안한 휴식을 위한 더블 룸")
+                .description("숲 전망의 아늑한 더블 룸입니다. 업무 시설 없이 순수한 휴식에 집중할 수 있습니다.")
+                .capacity(2).maxCapa(2)
+                .checkInTime(checkIn).checkOutTime(checkOut)
+                .monPrice(100000).tuePrice(100000).wedPrice(100000).thuPrice(100000)
+                .friPrice(130000).satPrice(160000).sunPrice(130000).holidayPrice(160000)
+                .workationYn("N")
+                .build());
+
+        // 서울 — 워케이션 Stay
+        StayEntity seoulStay = stayRepository.save(StayEntity.builder()
+                .space(seoul)
+                .name("강남 비즈니스 워케이션 스위트")
+                .summary("강남 도심 접근성 + 프리미엄 업무 환경")
+                .description("미팅룸·복합기·4K 모니터가 포함된 비즈니스 특화 스위트. 강남역 도보 5분.")
+                .capacity(1).maxCapa(2)
+                .checkInTime(checkIn).checkOutTime(checkOut)
+                .monPrice(200000).tuePrice(200000).wedPrice(200000).thuPrice(200000)
+                .friPrice(230000).satPrice(260000).sunPrice(230000).holidayPrice(260000)
+                .workationYn("Y")
+                .build());
+
+        // 부산 — 워케이션 Stay
+        StayEntity busanStay1 = stayRepository.save(StayEntity.builder()
+                .space(busan)
+                .name("해운대 씨뷰 워케이션 룸")
+                .summary("해운대 바다 전망 + 업무 전용 데스크")
+                .description("해운대 해변이 보이는 고층 객실. 대형 책상·고속 WiFi·화이트보드가 구비된 워케이션 전용 룸.")
+                .capacity(2).maxCapa(3)
+                .checkInTime(checkIn).checkOutTime(checkOut)
+                .monPrice(170000).tuePrice(170000).wedPrice(170000).thuPrice(170000)
+                .friPrice(210000).satPrice(240000).sunPrice(210000).holidayPrice(240000)
+                .workationYn("Y")
+                .build());
+
+        // 부산 — 일반 Stay
+        StayEntity busanStay2 = stayRepository.save(StayEntity.builder()
+                .space(busan)
+                .name("해운대 오션 트윈 룸")
+                .summary("2인 여행객을 위한 오션뷰 트윈 룸")
+                .description("해운대 해수욕장 바로 앞. 트윈 베드와 발코니로 최적의 바다 여행을 즐기세요.")
+                .capacity(2).maxCapa(2)
+                .checkInTime(checkIn).checkOutTime(checkOut)
+                .monPrice(130000).tuePrice(130000).wedPrice(130000).thuPrice(130000)
+                .friPrice(160000).satPrice(190000).sunPrice(160000).holidayPrice(190000)
+                .workationYn("N")
+                .build());
+
+        // ===== STAY_OPTION 더미 =====
+        stayOptionRepository.saveAll(List.of(
+                StayOptionEntity.builder().stay(jejuStay1).stayOption(StayOption.DESK).build(),
+                StayOptionEntity.builder().stay(jejuStay1).stayOption(StayOption.OCEAN_VIEW).build(),
+                StayOptionEntity.builder().stay(jejuStay1).stayOption(StayOption.PRIVATE_BATHROOM).build(),
+                StayOptionEntity.builder().stay(jejuStay1).stayOption(StayOption.COFFEE_MACHINE).build(),
+
+                StayOptionEntity.builder().stay(jejuStay2).stayOption(StayOption.OCEAN_VIEW).build(),
+                StayOptionEntity.builder().stay(jejuStay2).stayOption(StayOption.PRIVATE_BATHROOM).build(),
+
+                StayOptionEntity.builder().stay(gangwonStay1).stayOption(StayOption.DESK).build(),
+                StayOptionEntity.builder().stay(gangwonStay1).stayOption(StayOption.MOUNTAIN_VIEW).build(),
+                StayOptionEntity.builder().stay(gangwonStay1).stayOption(StayOption.KITCHEN).build(),
+                StayOptionEntity.builder().stay(gangwonStay1).stayOption(StayOption.REFRIGERATOR).build(),
+
+                StayOptionEntity.builder().stay(gangwonStay2).stayOption(StayOption.MOUNTAIN_VIEW).build(),
+                StayOptionEntity.builder().stay(gangwonStay2).stayOption(StayOption.PRIVATE_BATHROOM).build(),
+
+                StayOptionEntity.builder().stay(seoulStay).stayOption(StayOption.DESK).build(),
+                StayOptionEntity.builder().stay(seoulStay).stayOption(StayOption.CITY_VIEW).build(),
+                StayOptionEntity.builder().stay(seoulStay).stayOption(StayOption.COFFEE_MACHINE).build(),
+
+                StayOptionEntity.builder().stay(busanStay1).stayOption(StayOption.DESK).build(),
+                StayOptionEntity.builder().stay(busanStay1).stayOption(StayOption.OCEAN_VIEW).build(),
+                StayOptionEntity.builder().stay(busanStay1).stayOption(StayOption.BATHTUB).build(),
+
+                StayOptionEntity.builder().stay(busanStay2).stayOption(StayOption.OCEAN_VIEW).build(),
+                StayOptionEntity.builder().stay(busanStay2).stayOption(StayOption.PRIVATE_BATHROOM).build()
+        ));
+
+        // ===== STAY_PICTURE 더미 (category 없음) =====
+        stayPictureRepository.saveAll(List.of(
+                StayPictureEntity.builder().stay(jejuStay1)
+                        .filePath("/uploads/stay/jeju_w_main.jpg").originName("jeju_w_main.jpg")
+                        .storedName("uuid-stay-jeju-w-001.jpg").mainYn("Y").sortOrder(1)
+                        .contentType("image/jpeg").fileSize(204800L).build(),
+                StayPictureEntity.builder().stay(jejuStay1)
+                        .filePath("/uploads/stay/jeju_w_desk.jpg").originName("jeju_w_desk.jpg")
+                        .storedName("uuid-stay-jeju-w-002.jpg").mainYn("N").sortOrder(2)
+                        .contentType("image/jpeg").fileSize(153600L).build(),
+
+                StayPictureEntity.builder().stay(jejuStay2)
+                        .filePath("/uploads/stay/jeju_s_main.jpg").originName("jeju_s_main.jpg")
+                        .storedName("uuid-stay-jeju-s-001.jpg").mainYn("Y").sortOrder(1)
+                        .contentType("image/jpeg").fileSize(184320L).build(),
+
+                StayPictureEntity.builder().stay(gangwonStay1)
+                        .filePath("/uploads/stay/gangwon_w_main.jpg").originName("gangwon_w_main.jpg")
+                        .storedName("uuid-stay-gangwon-w-001.jpg").mainYn("Y").sortOrder(1)
+                        .contentType("image/jpeg").fileSize(256000L).build(),
+
+                StayPictureEntity.builder().stay(gangwonStay2)
+                        .filePath("/uploads/stay/gangwon_s_main.jpg").originName("gangwon_s_main.jpg")
+                        .storedName("uuid-stay-gangwon-s-001.jpg").mainYn("Y").sortOrder(1)
+                        .contentType("image/jpeg").fileSize(204800L).build(),
+
+                StayPictureEntity.builder().stay(seoulStay)
+                        .filePath("/uploads/stay/seoul_w_main.jpg").originName("seoul_w_main.jpg")
+                        .storedName("uuid-stay-seoul-w-001.jpg").mainYn("Y").sortOrder(1)
+                        .contentType("image/jpeg").fileSize(307200L).build(),
+
+                StayPictureEntity.builder().stay(busanStay1)
+                        .filePath("/uploads/stay/busan_w_main.jpg").originName("busan_w_main.jpg")
+                        .storedName("uuid-stay-busan-w-001.jpg").mainYn("Y").sortOrder(1)
+                        .contentType("image/jpeg").fileSize(230400L).build(),
+
+                StayPictureEntity.builder().stay(busanStay2)
+                        .filePath("/uploads/stay/busan_s_main.jpg").originName("busan_s_main.jpg")
+                        .storedName("uuid-stay-busan-s-001.jpg").mainYn("Y").sortOrder(1)
+                        .contentType("image/jpeg").fileSize(204800L).build()
+        ));
+
+        log.info("[DataInitializer] 더미 데이터 삽입 완료 — Space {}건 / Stay {}건",
+                spaceRepository.count(), stayRepository.count());
     }
 }

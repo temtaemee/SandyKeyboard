@@ -7,7 +7,6 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 
 @Getter
@@ -22,8 +21,9 @@ public class StayResDto {
     private int capacity;
     private int maxCapa;
     private String visibleYn;
-    private LocalTime checkInTime;
-    private LocalTime checkOutTime;
+    private String workationYn;
+    private LocalDateTime checkInTime;
+    private LocalDateTime checkOutTime;
     private int monPrice;
     private int tuePrice;
     private int wedPrice;
@@ -45,7 +45,6 @@ public class StayResDto {
         private String originName;
         private String mainYn;
         private Integer sortOrder;
-        private String category;
         private String contentType;
         private Long fileSize;
     }
@@ -60,6 +59,7 @@ public class StayResDto {
                 .capacity(entity.getCapacity())
                 .maxCapa(entity.getMaxCapa())
                 .visibleYn(entity.getVisibleYn())
+                .workationYn(entity.getWorkationYn())
                 .checkInTime(entity.getCheckInTime())
                 .checkOutTime(entity.getCheckOutTime())
                 .monPrice(entity.getMonPrice())
@@ -78,7 +78,6 @@ public class StayResDto {
                                 .originName(p.getOriginName())
                                 .mainYn(p.getMainYn())
                                 .sortOrder(p.getSortOrder())
-                                .category(p.getCategory() != null ? p.getCategory().name() : null)
                                 .contentType(p.getContentType())
                                 .fileSize(p.getFileSize())
                                 .build())

@@ -4,6 +4,7 @@ import com.kh.app.aws.service.S3Service;
 import com.kh.app.product.exception.ErrorCode;
 import com.kh.app.product.exception.ProductException;
 import com.kh.app.product.space.dto.request.SpaceInsertReqDto;
+import com.kh.app.product.space.dto.request.SpaceSearchReqDto;
 import com.kh.app.product.space.dto.request.SpaceUpdateReqDto;
 import com.kh.app.product.space.dto.response.SpaceResDto;
 import com.kh.app.product.space.entity.*;
@@ -31,8 +32,8 @@ public class SpaceService {
     private final SpacePictureRepository spacePictureRepository;
     private final S3Service s3Service;
 
-    public List<SpaceResDto> selectAll() {
-        return spaceRepository.findAllByDelYn("N")
+    public List<SpaceResDto> searchList(SpaceSearchReqDto dto) {
+        return spaceRepository.searchList(dto)
                 .stream()
                 .map(SpaceResDto::from)
                 .toList();
