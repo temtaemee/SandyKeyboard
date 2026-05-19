@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import SocialLoginButtons from './SocialLoginButtons';
 import useLogin from '../../hooks/useLogin';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 function LoginForm() {
   const { fetchLogin, navi } = useLogin();
@@ -66,11 +67,23 @@ function LoginForm() {
           </RememberMe>
 
           <FindArea>
-            <FindLink>아이디 찾기</FindLink>
+            <FindLink
+              onClick={() => {
+                navi(`/find-id`);
+              }}
+            >
+              아이디 찾기
+            </FindLink>
 
             <DividerText>|</DividerText>
 
-            <FindLink>비밀번호 찾기</FindLink>
+            <FindLink
+              onClick={() => {
+                navi(`/find-password`);
+              }}
+            >
+              비밀번호 찾기
+            </FindLink>
           </FindArea>
         </OptionArea>
 
