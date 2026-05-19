@@ -7,16 +7,16 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum Area {
 
-    soeul("서울"),
-    gyeonggi("경기"),
-    gangwon("강원"),
-    chungnam("충남"),
-    chungbuk("충북"),
-    gyeongnam("경남"),
-    gyeongbuk("경북"),
-    jeonnam("전남"),
-    jeonbuk("전북"),
-    jeju("제주");
+    SEOUL("서울"),
+    GYEONGGI("경기"),
+    GANGWON("강원"),
+    CHUNGNAM("충남"),
+    CHUNGBUK("충북"),
+    GYEONGNAM("경남"),
+    GYEONGBUK("경북"),
+    JEONNAM("전남"),
+    JEONBUK("전북"),
+    JEJU("제주");
 
 
     private final String description;
