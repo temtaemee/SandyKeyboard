@@ -3,6 +3,7 @@ package com.kh.app.middle.coupon.controller;
 import com.kh.app.middle.coupon.dto.request.CouponCreateDto;
 import com.kh.app.middle.coupon.dto.request.MemberCouponReqDto;
 import com.kh.app.middle.coupon.dto.response.CouponRespDto;
+import com.kh.app.middle.coupon.dto.response.MemberCouponRespDto;
 import com.kh.app.middle.coupon.service.CouponService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -72,11 +73,15 @@ public class CouponApiController {
     }
 
 
-    //멤버쿠폰 조회
+    //멤버가 본인 보유 쿠폰 조회
     @GetMapping("/user/memberCoupon")
-    public void getMemberCoupon(){
-
+    public ResponseEntity<Page<MemberCouponRespDto>> getMemberCoupon(@RequestParam(defaultValue = "0") int pno){
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Page<MemberCouponRespDto> couponList = couponService.getCouponList(username, pno);
+        return ResponseEntity.ok(couponList);
     }
+
+    // admin 이 멤버 보유 쿠폰 조회
 
     //유저가 멤버쿠폰 사용
     @PutMapping("/user/memberCoupon")

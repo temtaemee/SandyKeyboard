@@ -16,10 +16,24 @@ import {
 import usePagination from '../hooks/usePagination';
 import AdminPagination from '../components/common/AdminPagination';
 import StatusBadge from '../components/common/StatusBadge';
+import {
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseBtn,
+} from '../components/common/AdminModal.styles'; // 모달 공통 스타일
 
+
+const STATUS_FILTER_TABS = [
+  { key: 'all', label: '전체' },
+  { key: 'confirmed', label: '예약확정' },
+  { key: 'waiting', label: '대기' },
+  { key: 'cancelled', label: '취소' },
+];
 
 export default function AdminReservationPage() {
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [partnerSearch, setPartnerSearch] = useState('');
   const [companyName, setCompanyName] = useState('');
   const { currentPage, goToPage, goToPrev, goToNext } = usePagination();
@@ -85,7 +99,20 @@ export default function AdminReservationPage() {
       {/* ── 중단: 예약 테이블 ── */}
       <TableSection>
         <TableTitleRow>
-          <TableTitle>예약</TableTitle>
+          <TableTitleGroup>
+            <TableTitle>예약</TableTitle>
+            <FilterTabList>
+              {STATUS_FILTER_TABS.map(tab => (
+                <FilterTab
+                  key={tab.key}
+                  $active={statusFilter === tab.key}
+                  onClick={() => setStatusFilter(tab.key)}
+                >
+                  {tab.label}
+                </FilterTab>
+              ))}
+            </FilterTabList>
+          </TableTitleGroup>
           <AdminSearchInput
             value={search}
             onChange={setSearch}
@@ -106,12 +133,14 @@ export default function AdminReservationPage() {
             </TR>
           </THead>
           <TBody>
-            {RESERVATION_LIST.filter((row) =>
-              !search ||
-              row.customerName.toLowerCase().includes(search.toLowerCase()) ||
-              row.spaceName.toLowerCase().includes(search.toLowerCase()) ||
-              row.id.toLowerCase().includes(search.toLowerCase())
-            ).map((row) => (
+            {RESERVATION_LIST.filter((row) => {
+              const matchSearch = !search ||
+                row.customerName.toLowerCase().includes(search.toLowerCase()) ||
+                row.spaceName.toLowerCase().includes(search.toLowerCase()) ||
+                row.id.toLowerCase().includes(search.toLowerCase());
+              const matchStatus = statusFilter === 'all' || row.status === statusFilter;
+              return matchSearch && matchStatus;
+            }).map((row) => (
               <TR key={row.id} $hoverable>
                 <TD>
                   <ResvId>{row.id}</ResvId>
@@ -221,7 +250,7 @@ export default function AdminReservationPage() {
       {/* ── 파트너사 관리 모달 ── */}
       {partnerModalOpen && (
         <ModalOverlay onClick={() => setPartnerModalOpen(false)}>
-          <ModalContent onClick={e => e.stopPropagation()}>
+          <ModalContent $width="480px" onClick={e => e.stopPropagation()}>
             <ModalHeader>
               <ModalTitle>파트너사 전체 목록</ModalTitle>
               <ModalCloseBtn onClick={() => setPartnerModalOpen(false)}>
@@ -376,10 +405,42 @@ const TableTitleRow = styled.div`
   border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
 `;
 
+const TableTitleGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 16px;
+`;
+
 const TableTitle = styled.h2`
   font-size: 16px;
   font-weight: 600;
   color: ${({ theme }) => theme.colors.adminTextDark};
+`;
+
+const FilterTabList = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: ${({ theme }) => theme.colors.bgSection};
+  border: 1px solid ${({ theme }) => theme.colors.borderLight};
+  border-radius: 8px;
+  padding: 3px;
+`;
+
+const FilterTab = styled.button`
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: ${({ $active }) => ($active ? '600' : '400')};
+  color: ${({ $active, theme }) => ($active ? theme.colors.adminPrimary : theme.colors.textMuted)};
+  background: ${({ $active }) => ($active ? '#fff' : 'transparent')};
+  box-shadow: ${({ $active }) => ($active ? '0 1px 3px rgba(0,0,0,0.08)' : 'none')};
+  transition: all 0.15s;
+  white-space: nowrap;
+  font-family: inherit;
+  &:hover {
+    color: ${({ $active, theme }) => ($active ? theme.colors.adminPrimary : theme.colors.adminTextDark)};
+  }
 `;
 
 const Table = styled.table`
@@ -697,54 +758,18 @@ const RegisterBtn = styled.button`
   &:hover { background: ${({ theme }) => theme.colors.adminPrimaryLight}; }
 `;
 
-/* ── Modal Styled Components ── */
-
-const ModalOverlay = styled.div`
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const ModalContent = styled.div`
-  background: white;
-  width: 480px;
-  border-radius: 12px;
-  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-`;
-
-const ModalHeader = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e2e8f0;
-`;
+/* ── Modal: ModalOverlay / ModalContent / ModalHeader / ModalCloseBtn 은
+   components/common/AdminModal.styles.js 에서 공통 import ── */
 
 const ModalSearchRow = styled.div`
   margin-bottom: 16px;
 `;
 
-
+// 이 모달에서만 쓰는 타이틀 스타일
 const ModalTitle = styled.h2`
   font-size: 18px;
   font-weight: 600;
   color: #0d1c2e;
-`;
-
-const ModalCloseBtn = styled.button`
-  color: #94a3b8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.2s;
-  &:hover { color: #475569; }
 `;
 
 const ModalBody = styled.div`

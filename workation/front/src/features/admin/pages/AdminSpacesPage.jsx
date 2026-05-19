@@ -12,6 +12,13 @@ import {
 import usePagination from '../hooks/usePagination';
 import AdminPagination from '../components/common/AdminPagination';
 import ConfirmModal from '../components/common/ConfirmModal';
+import Toggle from '../components/common/Toggle'; // 활성/정지 토글 공통 컴포넌트
+import {
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseBtn,
+} from '../components/common/AdminModal.styles'; // 모달 공통 스타일
 
 
 export default function AdminSpacesPage() {
@@ -181,12 +188,14 @@ export default function AdminSpacesPage() {
                   <TD><PriceText>{space.price}</PriceText></TD>
                   <TD><DateText>{space.registeredAt}</DateText></TD>
                   <TD>
-                    <ToggleRow onClick={() => handleBlindClick(space)}>
-                      <ToggleTrack $on={blinded}>
-                        <ToggleThumb $on={blinded} />
-                      </ToggleTrack>
-                      <ToggleLabel $on={blinded}>{blinded ? '중지' : '공개'}</ToggleLabel>
-                    </ToggleRow>
+                    {/* labelWidth: '공개'(2자) 보다 여유있게 40px */}
+                    <Toggle
+                      on={blinded}
+                      onClick={() => handleBlindClick(space)}
+                      onLabel="중지"
+                      offLabel="공개"
+                      labelWidth="40px"
+                    />
                   </TD>
                 </TR>
               );
@@ -224,7 +233,7 @@ export default function AdminSpacesPage() {
       {/* ── 승인/거절 모달 ── */}
       {isModalOpen && (
         <ModalOverlay onClick={() => setIsModalOpen(false)}>
-          <ModalContent onClick={e => e.stopPropagation()}>
+          <ModalContent $width="500px" onClick={e => e.stopPropagation()}>
             <ModalHeader>
               <ModalTitle>숙소 승인 관리</ModalTitle>
               <ModalCloseBtn onClick={() => setIsModalOpen(false)}>
@@ -526,42 +535,7 @@ const DateText = styled.span`
   font-family: 'Plus Jakarta Sans', sans-serif;
 `;
 
-const ToggleRow = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  user-select: none;
-`;
-
-const ToggleTrack = styled.div`
-  width: 40px;
-  height: 22px;
-  border-radius: 999px;
-  background: ${({ $on }) => ($on ? '#ef4444' : '#22c55e')};
-  position: relative;
-  transition: background 0.2s;
-  flex-shrink: 0;
-`;
-
-const ToggleThumb = styled.div`
-  position: absolute;
-  top: 3px;
-  left: ${({ $on }) => ($on ? '21px' : '3px')};
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: white;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-  transition: left 0.2s;
-`;
-
-const ToggleLabel = styled.span`
-  font-size: 12px;
-  font-weight: 500;
-  color: ${({ $on }) => ($on ? '#dc2626' : '#16a34a')};
-  min-width: 40px;
-`;
+// Toggle 스타일은 components/common/Toggle.jsx 에서 관리
 
 const EmptyTableState = styled.div`
   padding: 48px 0;
@@ -576,49 +550,14 @@ const TableFooter = styled.div`
   background: #f8fafc;
 `;
 
-/* ── Modal Styled Components ── */
+/* ── Modal: ModalOverlay / ModalContent / ModalHeader / ModalCloseBtn 은
+   components/common/AdminModal.styles.js 에서 공통 import ── */
 
-const ModalOverlay = styled.div`
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const ModalContent = styled.div`
-  background: white;
-  width: 500px;
-  border-radius: 12px;
-  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-`;
-
-const ModalHeader = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e2e8f0;
-`;
-
+// 이 모달에서만 쓰는 타이틀 스타일
 const ModalTitle = styled.h2`
   font-size: 18px;
   font-weight: 600;
   color: #0d1c2e;
-`;
-
-const ModalCloseBtn = styled.button`
-  color: #94a3b8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.2s;
-  &:hover { color: #475569; }
 `;
 
 const ModalTabs = styled.div`
