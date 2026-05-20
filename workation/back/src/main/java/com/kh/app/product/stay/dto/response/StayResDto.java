@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Getter
@@ -22,8 +23,8 @@ public class StayResDto {
     private int maxCapa;
     private String visibleYn;
     private String workationYn;
-    private LocalDateTime checkInTime;
-    private LocalDateTime checkOutTime;
+    private LocalTime checkInTime;
+    private LocalTime checkOutTime;
     private int monPrice;
     private int tuePrice;
     private int wedPrice;
