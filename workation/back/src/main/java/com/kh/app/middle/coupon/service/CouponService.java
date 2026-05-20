@@ -11,7 +11,8 @@ import com.kh.app.middle.coupon.entity.CouponEntity;
 import com.kh.app.middle.coupon.entity.MemberCouponEntity;
 import com.kh.app.middle.coupon.repository.CouponRepository;
 import com.kh.app.middle.coupon.repository.MemberCouponRepository;
-import jakarta.persistence.EntityNotFoundException;
+import com.kh.app.middle.exception.ErrorCode;
+import com.kh.app.middle.exception.MiddleException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -47,14 +48,16 @@ public class CouponService {
     // 쿠폰 삭제
     @Transactional
     public void delete(Long couponId) {
-        CouponEntity entity = couponRepository.findById(couponId).orElseThrow(EntityNotFoundException::new);
+        CouponEntity entity = couponRepository.findById(couponId)
+                .orElseThrow(() -> new MiddleException(ErrorCode.NOT_EXIST_COUPON));
         entity.delete();
     }
 
     // 쿠폰 수정
     @Transactional
     public void update(Long couponId, CouponCreateDto couponCreateDto) {
-        CouponEntity entity = couponRepository.findByIdAndDelYn(couponId, "N").orElseThrow(EntityNotFoundException::new);
+        CouponEntity entity = couponRepository.findByIdAndDelYn(couponId, "N")
+                .orElseThrow(() -> new MiddleException(ErrorCode.NOT_EXIST_COUPON));
         entity.update(couponCreateDto);
     }
 
@@ -70,11 +73,12 @@ public class CouponService {
     @Transactional
     public void register(Long couponId, String username) {
         MemberEntity member = memberRepository.findByUsernameAndDeletedAtIsNull(username)
-                .orElseThrow(EntityNotFoundException::new);
-        CouponEntity coupon = couponRepository.findByIdAndDelYn(couponId, "N").orElseThrow(EntityNotFoundException::new);
+                .orElseThrow(() -> new MiddleException(ErrorCode.MEMBER_NOT_FOUND));
+        CouponEntity coupon = couponRepository.findByIdAndDelYn(couponId, "N")
+                .orElseThrow(() -> new MiddleException(ErrorCode.NOT_EXIST_COUPON));
 
         if (memberCouponRepository.existsByMemberIdAndCouponIdId(member.getId(), couponId)) {
-            throw new IllegalStateException("[COUPON-7006] 이미 발급받은 쿠폰입니다.");
+            throw new MiddleException(ErrorCode.DUPLICATE_COUPON_ISSUE);
         }
 
         memberCouponRepository.save(MemberCouponEntity.builder()
@@ -88,11 +92,13 @@ public class CouponService {
     // 멤버에게 쿠폰 발급 (어드민)
     @Transactional
     public void adminRegister(MemberCouponReqDto reqDto) {
-        MemberEntity member = memberRepository.findByUsernameAndDeletedAtIsNull(reqDto.getUsername()).orElseThrow(EntityNotFoundException::new);
-        CouponEntity coupon = couponRepository.findByIdAndDelYn(reqDto.getCouponId(), "N").orElseThrow(EntityNotFoundException::new);
+        MemberEntity member = memberRepository.findByUsernameAndDeletedAtIsNull(reqDto.getUsername())
+                .orElseThrow(() -> new MiddleException(ErrorCode.MEMBER_NOT_FOUND));
+        CouponEntity coupon = couponRepository.findByIdAndDelYn(reqDto.getCouponId(), "N")
+                .orElseThrow(() -> new MiddleException(ErrorCode.NOT_EXIST_COUPON));
 
         if (memberCouponRepository.existsByMemberIdAndCouponIdId(member.getId(), reqDto.getCouponId())) {
-            throw new IllegalStateException("[COUPON-7006] 이미 발급받은 쿠폰입니다.");
+            throw new MiddleException(ErrorCode.DUPLICATE_COUPON_ISSUE);
         }
 
         memberCouponRepository.save(MemberCouponEntity.builder()
@@ -113,25 +119,27 @@ public class CouponService {
     // 멤버 쿠폰 삭제 (어드민)
     @Transactional
     public void deleteMemberCoupon(MemberCouponReqDto reqDto) {
-        MemberCouponEntity memberCouponEntity = memberCouponRepository.findByMemberUsernameAndCouponId(reqDto.getUsername(), reqDto.getCouponId()).orElseThrow(EntityNotFoundException::new);
+        MemberCouponEntity memberCouponEntity = memberCouponRepository.findByMemberUsernameAndCouponId(reqDto.getUsername(), reqDto.getCouponId())
+                .orElseThrow(() -> new MiddleException(ErrorCode.NOT_EXIST_COUPON));
         memberCouponRepository.delete(memberCouponEntity);
     }
 
     // 멤버가 쿠폰 사용
     @Transactional
     public void useMemberCoupon(String username, UserMemberCouponReqDto reqDto) {
-        MemberCouponEntity memberCouponEntity = memberCouponRepository.findById(reqDto.getMemberCouponId()).orElseThrow(EntityNotFoundException::new);
+        MemberCouponEntity memberCouponEntity = memberCouponRepository.findById(reqDto.getMemberCouponId())
+                .orElseThrow(() -> new MiddleException(ErrorCode.NOT_EXIST_COUPON));
 
         if (!memberCouponEntity.getMember().getUsername().equals(username)) {
-            throw new IllegalStateException("[COUPON-7007] 본인의 쿠폰만 사용할 수 있습니다.");
+            throw new MiddleException(ErrorCode.COUPON_OWNER_RESTRICTION);
         }
 
         if (memberCouponEntity.isUsed()) {
-            throw new IllegalStateException("[COUPON-7001] 이미 사용된 쿠폰입니다.");
+            throw new MiddleException(ErrorCode.USED_COUPON);
         }
 
         if (memberCouponEntity.isExpired()) {
-            throw new IllegalStateException("[COUPON-7003] 만료된 쿠폰입니다.");
+            throw new MiddleException(ErrorCode.EXPIRED_COUPON);
         }
 
         memberCouponEntity.useCoupon();
@@ -139,7 +147,8 @@ public class CouponService {
 
     // 멤버가 본인 보유 쿠폰 조회
     public Page<MemberCouponRespDto> getCouponList(String username, int pno) {
-        MemberEntity memberEntity = memberRepository.findByUsernameAndDeletedAtIsNull(username).orElseThrow(EntityNotFoundException::new);
+        MemberEntity memberEntity = memberRepository.findByUsernameAndDeletedAtIsNull(username)
+                .orElseThrow(() -> new MiddleException(ErrorCode.MEMBER_NOT_FOUND));
         Pageable pageable = PageRequest.of(pno, 10);
         return memberCouponRepository.getCouponList(memberEntity.getId(), pageable).map(MemberCouponRespDto::from);
     }

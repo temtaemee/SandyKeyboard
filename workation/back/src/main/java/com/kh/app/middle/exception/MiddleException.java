@@ -5,8 +5,9 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public class ErrorRespDto {
+public class MiddleException extends RuntimeException {
 
-    private final String message;
+    private final ErrorCode errorCode;
+
 
 }

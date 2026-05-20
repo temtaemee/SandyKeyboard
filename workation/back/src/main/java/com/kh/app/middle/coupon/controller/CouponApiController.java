@@ -65,6 +65,9 @@ public class CouponApiController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
+    //쿠폰 단건조회 (이벤트페이지에서)
+
+
     // 쿠폰을 어드민이 사용자에게 지급
     @PostMapping("/admin/memberCoupon")
     public ResponseEntity<Void> adminRegister(@RequestBody MemberCouponReqDto reqDto){
