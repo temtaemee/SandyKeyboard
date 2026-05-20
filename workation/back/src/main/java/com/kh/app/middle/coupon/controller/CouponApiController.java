@@ -56,6 +56,14 @@ public class CouponApiController {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
+    //쿠폰 단건조회 (이벤트페이지에서)
+    @GetMapping("/public/coupon/{couponId}")
+    public ResponseEntity<CouponRespDto> listOne(@PathVariable Long couponId){
+
+        CouponRespDto coupon = couponService.getOne(couponId);
+        return ResponseEntity.ok(coupon);
+    }
+
     ////////////// member coupon
     //쿠폰을 사용자가 발급 (이벤트페이지에서)
     @PostMapping("/user/coupon/{couponId}")
@@ -65,7 +73,7 @@ public class CouponApiController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    //쿠폰 단건조회 (이벤트페이지에서)
+
 
 
     // 쿠폰을 어드민이 사용자에게 지급

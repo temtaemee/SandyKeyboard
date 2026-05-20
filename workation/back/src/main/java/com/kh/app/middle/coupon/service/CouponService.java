@@ -152,4 +152,9 @@ public class CouponService {
         Pageable pageable = PageRequest.of(pno, 10);
         return memberCouponRepository.getCouponList(memberEntity.getId(), pageable).map(MemberCouponRespDto::from);
     }
+
+    public CouponRespDto getOne(Long couponId) {
+        CouponEntity entity = couponRepository.findByIdAndDelYn(couponId, "N").orElseThrow(() -> new MiddleException(ErrorCode.NOT_EXIST_COUPON));
+        return CouponRespDto.from(entity);
+    }
 }
