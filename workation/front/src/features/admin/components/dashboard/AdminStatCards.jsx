@@ -1,6 +1,7 @@
 // src/features/admin/components/dashboard/AdminStatCards.jsx
 import styled from 'styled-components';
 import { ADMIN_STAT_CARDS } from '../../data/adminDashboardData';
+import { STAT_ICON_BG } from '../../data/adminDashboardConstants';
 import { DollarSign, Home, Calendar, Users } from 'lucide-react';
 
 const ICONS = {
@@ -10,19 +11,6 @@ const ICONS = {
   seller:      <Users size={28} color="#9333ea" strokeWidth={1.8} />,
 };
 
-const ICON_BG = {
-  revenue: 'rgba(204,251,241,0.5)',
-  space:   'rgba(219,234,254,0.5)',
-  reservation: 'rgba(255,237,213,0.5)',
-  seller:  'rgba(243,232,255,0.5)',
-};
-
-const BADGE_STYLE = {
-  green:  { bg: '#f0fdfa', color: '#0d9488' },
-  blue:   { bg: '#eff6ff', color: '#2563eb' },
-  orange: { bg: '#fff7ed', color: '#ea580c' },
-  purple: { bg: '#faf5ff', color: '#9333ea' },
-};
 
 export default function AdminStatCards() {
   return (
@@ -30,10 +18,7 @@ export default function AdminStatCards() {
       {ADMIN_STAT_CARDS.map((card) => (
         <Card key={card.id}>
           <CardTop>
-            <IconBg $bg={ICON_BG[card.icon]}>{ICONS[card.icon]}</IconBg>
-            <Badge $bg={BADGE_STYLE[card.badge.color].bg} $color={BADGE_STYLE[card.badge.color].color}>
-              {card.badge.text}
-            </Badge>
+            <IconBg $bg={STAT_ICON_BG[card.icon]}>{ICONS[card.icon]}</IconBg>
           </CardTop>
           <CardLabel>{card.label}</CardLabel>
           <CardValue>{card.value}</CardValue>
@@ -85,14 +70,6 @@ const IconBg = styled.div`
   justify-content: center;
 `;
 
-const Badge = styled.span`
-  padding: 4px 8px;
-  border-radius: 2px;
-  font-size: 11px;
-  font-weight: 700;
-  background: ${({ $bg }) => $bg};
-  color: ${({ $color }) => $color};
-`;
 
 const CardLabel = styled.p`
   font-size: 12px;

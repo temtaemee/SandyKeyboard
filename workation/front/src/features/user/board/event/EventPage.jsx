@@ -1,283 +1,181 @@
-import { useState } from 'react';
-import styled from 'styled-components';
+import React, { useState } from 'react';
+import eventBanner from '../assets/신규회원.png';
+import returnBanner from '../assets/복귀자.png';
+import reviewBanner from '../assets/베스트리뷰자.png';
+import './EventPage.css';
 
-const MOCK_IS_LOGGED_IN = false;
-// 📌 실제 연동 시: import { useAuth } from '../../../../context/AuthContext';
+const EventPage = () => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [showCouponModal, setShowCouponModal] = useState(false);
 
-const coupons = [
-  {
-    id: 1,
-    label: '신규 가입 축하 쿠폰',
-    discount: 10,
-    description: '첫 예약 시 10% 할인',
-    expiry: '2026.06.30',
-    bg: '#c3edf6',
-    color: '#2c6480',
-  },
-  {
-    id: 2,
-    label: '봄 시즌 특별 쿠폰',
-    discount: 20,
-    description: '5월 한 달 예약 시 20% 할인',
-    expiry: '2026.05.31',
-    bg: '#f6e5ba',
-    color: '#92640a',
-  },
-  {
-    id: 3,
-    label: '주말 특가 쿠폰',
-    discount: 15,
-    description: '주말 예약 한정 15% 할인',
-    expiry: '2026.06.15',
-    bg: '#e0f2e9',
-    color: '#276749',
-  },
-  {
-    id: 4,
-    label: '장기 이용 감사 쿠폰',
-    discount: 25,
-    description: '3박 이상 예약 시 25% 할인',
-    expiry: '2026.07.31',
-    bg: '#ede9fe',
-    color: '#5b21b6',
-  },
-];
+  const events = [
+    {
+      id: 0,
+      type: 'image', // 이미지 슬라이드
+    },
+    {
+      id: 1,
+      type: 'image2', // 복귀자 이미지 슬라이드
+    },
+    {
+      id: 2,
+      type: 'image3', // 베스트리뷰자 이미지 슬라이드
+    },
+    {
+      id: 3,
+      title: '지인 초대 이벤트',
+      subTitle: '친구도 나도 함께 받는 혜택',
+      discount: '둘 다 5,000원 적립',
+      desc: '초대 링크를 통해 친구가 가입하면 두 분 모두에게 즉시 적립금을 드립니다.',
+      bgClass: 'bg-orange',
+      tag: 'INVITE',
+    },
+  ];
 
-const btnColors = {
-  idle: { bg: '#2c6480', hover: '#3d8aaa' },
-  issued: { bg: '#22c55e', hover: '#16a34a' },
-  notLoggedIn: { bg: '#ef4444', hover: '#dc2626' },
-  duplicate: { bg: '#f97316', hover: '#ea580c' },
-};
+  const nextSlide = () => {
+    if (currentIndex < events.length - 1) setCurrentIndex(currentIndex + 1);
+  };
 
-export default function EventPage() {
-  const [issuedIds, setIssuedIds] = useState([]);
-  const [btnState, setBtnState] = useState({});
-
-  function handleIssue(id) {
-    if (!MOCK_IS_LOGGED_IN) {
-      setBtnState((p) => ({ ...p, [id]: 'notLoggedIn' }));
-      setTimeout(() => setBtnState((p) => ({ ...p, [id]: 'idle' })), 2500);
-      return;
-    }
-    if (issuedIds.includes(id)) {
-      setBtnState((p) => ({ ...p, [id]: 'duplicate' }));
-      setTimeout(() => setBtnState((p) => ({ ...p, [id]: 'idle' })), 2500);
-      return;
-    }
-    setIssuedIds((p) => [...p, id]);
-    setBtnState((p) => ({ ...p, [id]: 'issued' }));
-  }
-
-  function getLabel(id) {
-    const s = btnState[id] || 'idle';
-    if (s === 'notLoggedIn') return '🔒 로그인이 필요합니다';
-    if (s === 'duplicate') return '이미 발급된 쿠폰입니다';
-    if (issuedIds.includes(id)) return '✓ 발급완료';
-    return '쿠폰 받기';
-  }
-
-  function getStyle(id) {
-    const s = btnState[id] || 'idle';
-    if (s === 'notLoggedIn') return 'notLoggedIn';
-    if (s === 'duplicate') return 'duplicate';
-    if (issuedIds.includes(id)) return 'issued';
-    return 'idle';
-  }
+  const prevSlide = () => {
+    if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
+  };
 
   return (
-    <Wrapper>
-      <PageTitle>이벤트 &amp; 쿠폰</PageTitle>
-      <PageSubTitle>쿠폰을 발급받아 예약 시 할인 혜택을 누리세요</PageSubTitle>
+    <div className="slider-wrapper">
+      {/* 상단 타이틀 및 페이지 표시 */}
+      <div className="slider-header">
+        <h2 className="slider-title">진행 중인 이벤트</h2>
+        <span className="slider-page-indicator">
+          {currentIndex + 1} / {events.length}
+        </span>
+      </div>
 
-      <Grid>
-        {coupons.map((coupon) => (
-          <CouponCard key={coupon.id} $bg={coupon.bg}>
-            <CardTop $color={coupon.color}>
-              <Badge $color={coupon.color}>{coupon.discount}% OFF</Badge>
-              <CouponName>{coupon.label}</CouponName>
-              <CouponDesc>{coupon.description}</CouponDesc>
-            </CardTop>
+      {/* 슬라이더 본체 */}
+      <div className="slider-container">
+        <div
+          className="slider-track"
+          style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+        >
+          {events.map((event) =>
+            event.type === 'image' ? (
+              /* ── 1페이지 이미지 슬라이드 ── */
+              <div key={event.id} className="slide-card slide-image-card">
+                <img
+                  src={eventBanner}
+                  alt="회원가입 이벤트"
+                  className="event-banner-img"
+                />
+                <button
+                  className="coupon-receive-btn"
+                  onClick={() => setShowCouponModal(true)}
+                >
+                  🎁 쿠폰 받기
+                </button>
+              </div>
+            ) : event.type === 'image2' ? (
+              /* ── 2페이지 복귀자 이미지 슬라이드 ── */
+              <div key={event.id} className="slide-card slide-image-card">
+                <img
+                  src={returnBanner}
+                  alt="복귀자 이벤트"
+                  className="event-banner-img"
+                />
+              </div>
+            ) : event.type === 'image3' ? (
+              /* ── 3페이지 베스트리뷰자 이미지 슬라이드 ── */
+              <div key={event.id} className="slide-card slide-image-card">
+                <img
+                  src={reviewBanner}
+                  alt="베스트리뷰자 이벤트"
+                  className="event-banner-img"
+                />
+              </div>
+            ) : (
+              /* ── 일반 카드 슬라이드 ── */
+              <div key={event.id} className={`slide-card ${event.bgClass}`}>
+                <div className="card-top">
+                  <span className="card-tag">{event.tag}</span>
+                  <p className="card-subtitle">{event.subTitle}</p>
+                  <h3 className="card-main-title">{event.title}</h3>
+                </div>
+                <div className="card-coupon">
+                  <span className="coupon-discount">{event.discount}</span>
+                  <span className="coupon-sub">COUPON BENEFIT</span>
+                </div>
+                <div className="card-bottom">
+                  <p className="card-desc">{event.desc}</p>
+                  <button className="card-btn">혜택 받으러 가기</button>
+                </div>
+              </div>
+            )
+          )}
+        </div>
+      </div>
 
-            <Perforation>
-              <Notch className="left" />
-              <DashLine />
-              <Notch className="right" />
-            </Perforation>
+      {/* 좌우 화살표 버튼 */}
+      {currentIndex > 0 && (
+        <button onClick={prevSlide} className="nav-btn prev-btn">
+          &lt;
+        </button>
+      )}
+      {currentIndex < events.length - 1 && (
+        <button onClick={nextSlide} className="nav-btn next-btn">
+          &gt;
+        </button>
+      )}
 
-            <CardBottom>
-              <Expiry>유효기간 · {coupon.expiry}까지</Expiry>
-              <IssueBtn
-                $s={getStyle(coupon.id)}
-                onClick={() => handleIssue(coupon.id)}
-                disabled={issuedIds.includes(coupon.id)}
-              >
-                {getLabel(coupon.id)}
-              </IssueBtn>
-            </CardBottom>
-          </CouponCard>
+      {/* 하단 점 인디케이터 */}
+      <div className="dot-container">
+        {events.map((_, idx) => (
+          <button
+            key={idx}
+            onClick={() => setCurrentIndex(idx)}
+            className={`dot ${currentIndex === idx ? 'active' : ''}`}
+          />
         ))}
-      </Grid>
+      </div>
 
-      <CautionBox>
-        <CautionTitle>쿠폰 유의사항</CautionTitle>
-        <CautionList>
-          <li>
-            쿠폰은 예약 결제 시 보유 쿠폰 목록에서 선택해 적용할 수 있습니다.
-          </li>
-          <li>쿠폰은 1회 예약에 1장만 사용 가능합니다.</li>
-          <li>동일한 쿠폰은 중복 발급되지 않습니다.</li>
-          <li>유효기간이 지난 쿠폰은 사용이 불가합니다.</li>
-        </CautionList>
-      </CautionBox>
-    </Wrapper>
+      {/* 쿠폰 받기 모달 */}
+      {showCouponModal && (
+        <div
+          className="coupon-modal-overlay"
+          onClick={() => setShowCouponModal(false)}
+        >
+          <div className="coupon-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="coupon-modal-header">
+              <span className="coupon-modal-emoji">🎉</span>
+              <h3 className="coupon-modal-title">신규회원 쿠폰</h3>
+              <p className="coupon-modal-desc">
+                회원가입을 축하드립니다!
+                <br />
+                아래 쿠폰을 발급받으세요.
+              </p>
+            </div>
+            <div className="coupon-modal-card">
+              <div className="coupon-modal-discount">20%</div>
+              <div className="coupon-modal-label">신규회원 할인쿠폰</div>
+              <div className="coupon-modal-code">WELCOME2024</div>
+            </div>
+            <button
+              className="coupon-modal-btn"
+              onClick={() => {
+                alert('쿠폰이 발급되었습니다! 마이페이지에서 확인하세요.');
+                setShowCouponModal(false);
+              }}
+            >
+              쿠폰 발급받기
+            </button>
+            <button
+              className="coupon-modal-close"
+              onClick={() => setShowCouponModal(false)}
+            >
+              닫기
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
-}
+};
 
-const Wrapper = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 80px 20px;
-  font-family: ${({ theme }) => theme.fonts.base};
-`;
-
-const PageTitle = styled.h1`
-  font-size: 40px;
-  font-weight: 700;
-  margin-bottom: 12px;
-  color: ${({ theme }) => theme.colors.textDark};
-`;
-
-const PageSubTitle = styled.p`
-  font-size: 16px;
-  color: ${({ theme }) => theme.colors.textMid};
-  margin-bottom: 48px;
-`;
-
-const Grid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
-  margin-bottom: 64px;
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const CouponCard = styled.div`
-  background: ${({ $bg }) => $bg};
-  border-radius: ${({ theme }) => theme.radius.lg};
-  overflow: hidden;
-  box-shadow: ${({ theme }) => theme.shadows.card};
-  transition: box-shadow 0.2s;
-  &:hover {
-    box-shadow: ${({ theme }) => theme.shadows.cardHover};
-  }
-`;
-
-const CardTop = styled.div`
-  padding: 32px 28px 24px;
-  color: ${({ $color }) => $color};
-`;
-
-const Badge = styled.div`
-  display: inline-block;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  background: ${({ $color }) => $color};
-  color: white;
-  padding: 4px 12px;
-  border-radius: ${({ theme }) => theme.radius.full};
-  margin-bottom: 16px;
-`;
-
-const CouponName = styled.div`
-  font-size: 20px;
-  font-weight: 700;
-  margin-bottom: 8px;
-`;
-const CouponDesc = styled.div`
-  font-size: 14px;
-  opacity: 0.8;
-`;
-
-const Perforation = styled.div`
-  position: relative;
-  display: flex;
-  align-items: center;
-  margin: 0 -1px;
-  .left {
-    left: -12px;
-  }
-  .right {
-    right: -12px;
-  }
-`;
-
-const Notch = styled.div`
-  position: absolute;
-  width: 24px;
-  height: 24px;
-  background: ${({ theme }) => theme.colors.bg};
-  border-radius: 50%;
-`;
-
-const DashLine = styled.div`
-  width: 100%;
-  border-top: 2px dashed rgba(0, 0, 0, 0.1);
-`;
-
-const CardBottom = styled.div`
-  padding: 20px 28px 28px;
-  background: rgba(255, 255, 255, 0.5);
-`;
-
-const Expiry = styled.div`
-  font-size: 12px;
-  color: ${({ theme }) => theme.colors.textMuted};
-  margin-bottom: 12px;
-`;
-
-const IssueBtn = styled.button`
-  width: 100%;
-  padding: 12px 0;
-  border-radius: ${({ theme }) => theme.radius.sm};
-  border: none;
-  background: ${({ $s }) => btnColors[$s]?.bg || '#2c6480'};
-  color: white;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: ${({ disabled }) => (disabled ? 'default' : 'pointer')};
-  transition: background 0.2s;
-  font-family: ${({ theme }) => theme.fonts.base};
-  &:hover {
-    background: ${({ $s, disabled }) =>
-      disabled ? btnColors['issued'].bg : btnColors[$s]?.hover};
-  }
-`;
-
-const CautionBox = styled.div`
-  border-top: 2px solid ${({ theme }) => theme.colors.textDark};
-  padding-top: 32px;
-`;
-
-const CautionTitle = styled.h3`
-  font-size: 16px;
-  font-weight: 700;
-  margin-bottom: 16px;
-  color: ${({ theme }) => theme.colors.textDark};
-`;
-
-const CautionList = styled.ul`
-  list-style: disc;
-  padding-left: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  li {
-    font-size: 14px;
-    color: ${({ theme }) => theme.colors.textMid};
-    line-height: 1.6;
-  }
-`;
+export default EventPage;

@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import SocialLoginButtons from './SocialLoginButtons';
 import useLogin from '../../hooks/useLogin';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 function LoginForm() {
   const { fetchLogin, navi } = useLogin();
@@ -65,7 +66,25 @@ function LoginForm() {
             <span>로그인 유지</span>
           </RememberMe>
 
-          <FindPassword>비밀번호 찾기</FindPassword>
+          <FindArea>
+            <FindLink
+              onClick={() => {
+                navi(`/find-id`);
+              }}
+            >
+              아이디 찾기
+            </FindLink>
+
+            <DividerText>|</DividerText>
+
+            <FindLink
+              onClick={() => {
+                navi(`/find-password`);
+              }}
+            >
+              비밀번호 찾기
+            </FindLink>
+          </FindArea>
         </OptionArea>
 
         <LoginButton type="submit">로그인 →</LoginButton>
@@ -224,6 +243,30 @@ const LoginButton = styled.button`
   &:hover {
     opacity: 0.9;
   }
+`;
+
+const FindArea = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+const FindLink = styled.div`
+  font-size: 13px;
+  color: #5f7d8b;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+
+  &:hover {
+    color: #3f6971;
+  }
+`;
+
+const DividerText = styled.span`
+  font-size: 12px;
+  color: #cbd5e1;
 `;
 
 const Divider = styled.div`

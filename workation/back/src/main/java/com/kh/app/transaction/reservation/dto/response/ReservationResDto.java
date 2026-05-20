@@ -4,6 +4,7 @@ import com.kh.app.transaction.reservation.entity.ReservationEntity;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Getter
@@ -11,40 +12,87 @@ import java.time.LocalDateTime;
 public class ReservationResDto {
 
     private Long id;
+
     private Long memberId;
+
     private Long stayId;
-    private Long officeId;
 
     private Integer guestCount;
-    private String reserverName;
 
-    private LocalDateTime checkinDate;
-    private LocalDateTime checkoutDate;
+    private String primaryGuestName;
 
-    private String reserverPhone;
-    private String reserverEmail;
+    private LocalDate checkinDate;
+
+    private LocalDate checkoutDate;
+
+    private String primaryGuestPhone;
+
+    private String primaryGuestEmail;
 
     private Long totalPrice;
 
+    // enum name
     private String status;
+
+    // 한글 라벨
+    private String statusLabel;
 
     public static ReservationResDto from(
             ReservationEntity entity
     ) {
 
         return ReservationResDto.builder()
+
                 .id(entity.getId())
-                .memberId(entity.getMember().getId())
+
+                .memberId(
+                        entity.getMember().getId()
+                )
+/// ////////////////////////////////////////////////////////////
+                //스테이 완료후 수정
+//                .stayId(
+//                        entity.getStay() != null
+//                                ? entity.getStay().getId()
+//                                : null
+//                )
                 .stayId(entity.getStayId())
-                .officeId(entity.getOfficeId())
-                .guestCount(entity.getGuestCount())
-                .reserverName(entity.getReserverName())
-                .checkinDate(entity.getCheckinDate())
-                .checkoutDate(entity.getCheckoutDate())
-                .reserverPhone(entity.getReserverPhone())
-                .reserverEmail(entity.getReserverEmail())
-                .totalPrice(entity.getTotalPrice())
-                .status(entity.getStatus().name())
+/// ////////////////////////////////////////////////////////////
+                .guestCount(
+                        entity.getGuestCount()
+                )
+
+                .primaryGuestName(
+                        entity.getPrimaryGuestName()
+                )
+
+                .checkinDate(
+                        entity.getCheckinDate()
+                )
+
+                .checkoutDate(
+                        entity.getCheckoutDate()
+                )
+
+                .primaryGuestPhone(
+                        entity.getPrimaryGuestPhone()
+                )
+
+                .primaryGuestEmail(
+                        entity.getPrimaryGuestEmail()
+                )
+
+                .totalPrice(
+                        entity.getTotalPrice()
+                )
+
+                .status(
+                        entity.getStatus().name()
+                )
+
+                .statusLabel(
+                        entity.getStatus().getLabel()
+                )
+
                 .build();
     }
 }

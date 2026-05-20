@@ -1,4 +1,12 @@
 package com.kh.app.transaction.payment.repository;
 
-public interface PaymentRepository {
+import com.kh.app.transaction.payment.entity.PaymentEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+
+public interface PaymentRepository
+        extends JpaRepository<PaymentEntity, Long> {
+
+    Optional<PaymentEntity> findByReservationId(Long reservationId);
 }

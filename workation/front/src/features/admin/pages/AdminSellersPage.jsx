@@ -2,80 +2,159 @@
 import { useState } from 'react';
 import styled from 'styled-components';
 import {
-  Home, Building2, Coffee, Tent, Store, Users, CheckCircle, XCircle,
-  UserPlus, Briefcase, User,
-  ChevronLeft as LucideChevronLeft, ChevronRight as LucideChevronRight,
+  Home,
+  Building2,
+  Coffee,
+  Tent,
+  Store,
+  Users,
+  CheckCircle,
+  XCircle,
+  UserPlus,
+  Briefcase,
+  User,
+  ChevronLeft as LucideChevronLeft,
+  ChevronRight as LucideChevronRight,
+  X,
+  Tag,
+  Trash2,
+  Plus,
+  TicketPercent,
 } from 'lucide-react';
+import { SELLERS_LIST, CUSTOMER_LIST, CUSTOMER_COUPONS, COUPON_TEMPLATES } from '../data/adminSellersData';
 import {
   SELLER_STATUS_MAP,
-  SELLERS_LIST,
-} from '../data/adminSellersData';
-
-const TOTAL_PAGES = 3;
-const FILTER_TABS = ['전체', '활동 중', '정지됨', '신규'];
-
-/* ── 고객 계정 목데이터 ── */
-const CUSTOMER_LIST = [
-  { id: 'USR-001', name: '강다은', email: 'daeun.kang@example.com', phone: '010-1111-2222', joinDate: '2023-02-10', resvCount: 14, status: 'active' },
-  { id: 'USR-002', name: '윤지오', email: 'jio.yoon@example.com', phone: '010-2222-3333', joinDate: '2023-04-25', resvCount: 6, status: 'active' },
-  { id: 'USR-003', name: '서하준', email: 'hajun.seo@example.com', phone: '010-3333-4444', joinDate: '2023-06-14', resvCount: 2, status: 'stopped' },
-  { id: 'USR-004', name: '김도연', email: 'doyeon.kim@example.com', phone: '010-4444-5555', joinDate: '2023-08-30', resvCount: 9, status: 'active' },
-  { id: 'USR-005', name: '이나영', email: 'nayoung.lee@example.com', phone: '010-5555-6666', joinDate: '2023-11-05', resvCount: 3, status: 'active' },
-  { id: 'USR-006', name: '박성민', email: 'sungmin.park@example.com', phone: '010-6666-7777', joinDate: '2026-03-10', resvCount: 1, status: 'active' },
-  { id: 'USR-007', name: '조현우', email: 'hyunwoo.jo@example.com', phone: '010-7777-8888', joinDate: '2026-04-07', resvCount: 0, status: 'stopped' },
-  { id: 'USR-008', name: '신예진', email: 'yejin.shin@example.com', phone: '010-8888-9999', joinDate: '2026-05-01', resvCount: 5, status: 'active' },
-];
-const AVATAR_COLORS = ['#dbeafe','#dcfce7','#fef9c3','#fce7f3','#ede9fe','#ffedd5','#cffafe','#f1f5f9'];
-
-/* 가입일(createdAt)이 현재 기준 3개월 이내면 신규 */
-const isNewMember = (dateStr) => {
-  const joined = new Date(dateStr.replace(/\./g, '-'));
-  const cutoff = new Date();
-  cutoff.setMonth(cutoff.getMonth() - 3);
-  return joined >= cutoff;
-};
+  TOTAL_PAGES,
+  AVATAR_COLORS,
+  isNewMember,
+} from '../data/adminSellersConstants';
+import usePagination from '../hooks/usePagination';
+import AdminPagination from '../components/common/AdminPagination';
+import ConfirmModal from '../components/common/ConfirmModal';
+import AdminSearchInput from '../components/common/AdminSearchInput';
+import SellersStatCards from '../components/dashboard/SellersStatCards';
+import SellersTable from '../components/dashboard/SellersTable';
+import CustomersTable from '../components/dashboard/CustomersTable';
+import {
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseBtn,
+} from '../components/common/AdminModal.styles'; // 모달 공통 스타일
 
 export default function AdminSellersPage() {
   const [view, setView] = useState('customer'); // 'customer' | 'seller'
   const [filter, setFilter] = useState('전체');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const {
+    currentPage,
+    goToPage,
+    goToPrev,
+    goToNext,
+    reset: resetPage,
+  } = usePagination();
 
   /* 판매자 토글 */
   const [sellerSuspended, setSellerSuspended] = useState(() => {
     const init = {};
-    SELLERS_LIST.forEach((s) => { if (s.status === 'stopped') init[s.id] = true; });
+    SELLERS_LIST.forEach((s) => {
+      if (s.status === 'stopped') init[s.id] = true;
+    });
     return init;
   });
   /* 고객 토글 */
   const [customerSuspended, setCustomerSuspended] = useState(() => {
     const init = {};
-    CUSTOMER_LIST.forEach((c) => { if (c.status === 'stopped') init[c.id] = true; });
+    CUSTOMER_LIST.forEach((c) => {
+      if (c.status === 'stopped') init[c.id] = true;
+    });
     return init;
   });
   /* 확인 모달 */
   const [confirmTarget, setConfirmTarget] = useState(null);
 
-  const isSellerSuspended = (s) => sellerSuspended[s.id] ?? s.status === 'stopped';
-  const isCustomerSuspended = (c) => customerSuspended[c.id] ?? c.status === 'stopped';
+  /* 고객 상세 모달 */
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [customerCoupons, setCustomerCoupons] = useState(() => {
+    const copy = {};
+    Object.entries(CUSTOMER_COUPONS).forEach(([k, v]) => { copy[k] = [...v]; });
+    return copy;
+  });
+  const [showIssuePanel, setShowIssuePanel] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState(COUPON_TEMPLATES[0].id);
+
+  const isSellerSuspended = (s) =>
+    sellerSuspended[s.id] ?? s.status === 'stopped';
+  const isCustomerSuspended = (c) =>
+    customerSuspended[c.id] ?? c.status === 'stopped';
 
   const handleToggleClick = (item, isCurrent) => {
-    setConfirmTarget({ id: item.id, name: item.name, willSuspend: !isCurrent, view });
+    setConfirmTarget({
+      id: item.id,
+      name: item.name,
+      willSuspend: !isCurrent,
+      view,
+    });
   };
 
   const handleConfirm = () => {
     if (!confirmTarget) return;
     if (confirmTarget.view === 'seller') {
-      setSellerSuspended((prev) => ({ ...prev, [confirmTarget.id]: confirmTarget.willSuspend }));
+      setSellerSuspended((prev) => ({
+        ...prev,
+        [confirmTarget.id]: confirmTarget.willSuspend,
+      }));
     } else {
-      setCustomerSuspended((prev) => ({ ...prev, [confirmTarget.id]: confirmTarget.willSuspend }));
+      setCustomerSuspended((prev) => ({
+        ...prev,
+        [confirmTarget.id]: confirmTarget.willSuspend,
+      }));
     }
     setConfirmTarget(null);
+  };
+
+  const handleCloseCustomerModal = () => {
+    setSelectedCustomer(null);
+    setShowIssuePanel(false);
+    setSelectedTemplate(COUPON_TEMPLATES[0].id);
+  };
+
+  const handleDeleteCoupon = (customerId, couponId) => {
+    setCustomerCoupons((prev) => ({
+      ...prev,
+      [customerId]: prev[customerId].filter((c) => c.id !== couponId),
+    }));
+  };
+
+  const handleIssueCoupon = () => {
+    if (!selectedCustomer) return;
+    const tpl = COUPON_TEMPLATES.find((t) => t.id === selectedTemplate);
+    if (!tpl) return;
+    const today = new Date();
+    const expire = new Date(today);
+    expire.setDate(expire.getDate() + tpl.validDays);
+    const fmt = (d) =>
+      `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+    const newCoupon = {
+      id: `CPN-${Date.now()}`,
+      title: tpl.title,
+      discount: tpl.discount,
+      issuedAt: fmt(today),
+      expireAt: fmt(expire),
+    };
+    setCustomerCoupons((prev) => ({
+      ...prev,
+      [selectedCustomer.id]: [newCoupon, ...(prev[selectedCustomer.id] ?? [])],
+    }));
+    setShowIssuePanel(false);
+    setSelectedTemplate(COUPON_TEMPLATES[0].id);
   };
 
   const handleViewChange = (v) => {
     setView(v);
     setFilter('전체');
-    setCurrentPage(1);
+    setSearchQuery('');
+    resetPage();
   };
 
   /* 필터링 */
@@ -84,13 +163,17 @@ export default function AdminSellersPage() {
     if (filter === '정지됨') return isSellerSuspended(s);
     if (filter === '신규') return isNewMember(s.joinedAt);
     return true;
-  });
+  }).filter((s) =>
+    !searchQuery || s.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
   const filteredCustomers = CUSTOMER_LIST.filter((c) => {
     if (filter === '활동 중') return !isCustomerSuspended(c);
     if (filter === '정지됨') return isCustomerSuspended(c);
     if (filter === '신규') return isNewMember(c.joinDate);
     return true;
-  });
+  }).filter((c) =>
+    !searchQuery || c.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const TOTAL = view === 'seller' ? 1284 : 8420;
 
@@ -99,7 +182,9 @@ export default function AdminSellersPage() {
       {/* ── 페이지 헤더 ── */}
       <PageHeader>
         <PageTitleGroup>
-          <PageTitle>{view === 'seller' ? '판매자 관리' : '계정 관리'}</PageTitle>
+          <PageTitle>
+            {view === 'seller' ? '판매자 관리' : '계정 관리'}
+          </PageTitle>
           <PageSub>
             {view === 'seller'
               ? '서비스 내 모든 판매 채널의 활동 현황 및 가입 정보를 관리합니다.'
@@ -107,11 +192,17 @@ export default function AdminSellersPage() {
           </PageSub>
         </PageTitleGroup>
         <ViewSwitch>
-          <SwitchBtn $active={view === 'customer'} onClick={() => handleViewChange('customer')}>
+          <SwitchBtn
+            $active={view === 'customer'}
+            onClick={() => handleViewChange('customer')}
+          >
             <CustomerSvg active={view === 'customer'} />
             계정 관리
           </SwitchBtn>
-          <SwitchBtn $active={view === 'seller'} onClick={() => handleViewChange('seller')}>
+          <SwitchBtn
+            $active={view === 'seller'}
+            onClick={() => handleViewChange('seller')}
+          >
             <SellerSvg active={view === 'seller'} />
             판매자 관리
           </SwitchBtn>
@@ -119,274 +210,200 @@ export default function AdminSellersPage() {
       </PageHeader>
 
       {/* ── 통계 카드 ── */}
-      {view === 'seller' ? (
-        <StatsSection>
-          <StatCard $active={filter === '전체'} onClick={() => setFilter('전체')}>
-            <StatCardTop>
-              <StatIconWrap $bg="rgba(30,41,59,0.08)"><SellersIcon /></StatIconWrap>
-              <StatBadge $green>+2.4%</StatBadge>
-            </StatCardTop>
-            <StatLabel>전체 판매자</StatLabel>
-            <StatValue>1,284</StatValue>
-            <StatProgress $color="#1e293b" $width={100} />
-          </StatCard>
-          <StatCard $active={filter === '활동 중'} onClick={() => setFilter('활동 중')}>
-            <StatCardTop>
-              <StatIconWrap $bg="rgba(16,185,129,0.1)"><ActiveIcon /></StatIconWrap>
-              <StatBadge $green>+4.2%</StatBadge>
-            </StatCardTop>
-            <StatLabel>활동 중</StatLabel>
-            <StatValue>1,270</StatValue>
-            <StatProgress $color="#10b981" $width={99} />
-          </StatCard>
-          <StatCard $active={filter === '정지됨'} onClick={() => setFilter('정지됨')}>
-            <StatCardTop>
-              <StatIconWrap $bg="rgba(239,68,68,0.08)"><StoppedIcon /></StatIconWrap>
-              <StatBadge $red>-2.1%</StatBadge>
-            </StatCardTop>
-            <StatLabel>정지됨</StatLabel>
-            <StatValue>14</StatValue>
-            <StatProgress $color="#ef4444" $width={8} />
-          </StatCard>
-          <StatCard $active={filter === '신규'} onClick={() => setFilter('신규')}>
-            <StatCardTop>
-              <StatIconWrap $bg="rgba(245,158,11,0.1)"><NewSellerIcon /></StatIconWrap>
-            </StatCardTop>
-            <StatLabel>이달 신규</StatLabel>
-            <StatValue>156</StatValue>
-            <StatProgress $color="#f59e0b" $width={30} />
-          </StatCard>
-        </StatsSection>
-      ) : (
-        <StatsSection>
-          <StatCard $active={filter === '전체'} onClick={() => setFilter('전체')}>
-            <StatCardTop>
-              <StatIconWrap $bg="rgba(59,130,246,0.1)"><SellersIcon /></StatIconWrap>
-            </StatCardTop>
-            <StatLabel>전체 고객</StatLabel>
-            <StatValue>8,420</StatValue>
-            <StatProgress $color="#3b82f6" $width={100} />
-          </StatCard>
-          <StatCard $active={filter === '활동 중'} onClick={() => setFilter('활동 중')}>
-            <StatCardTop>
-              <StatIconWrap $bg="rgba(16,185,129,0.1)"><ActiveIcon /></StatIconWrap>
-              <StatBadge $green>+3.1%</StatBadge>
-            </StatCardTop>
-            <StatLabel>활성 고객</StatLabel>
-            <StatValue>8,180</StatValue>
-            <StatProgress $color="#10b981" $width={97} />
-          </StatCard>
-          <StatCard $active={filter === '정지됨'} onClick={() => setFilter('정지됨')}>
-            <StatCardTop>
-              <StatIconWrap $bg="rgba(239,68,68,0.08)"><StoppedIcon /></StatIconWrap>
-              <StatBadge $red>-0.8%</StatBadge>
-            </StatCardTop>
-            <StatLabel>활동정지</StatLabel>
-            <StatValue>240</StatValue>
-            <StatProgress $color="#ef4444" $width={3} />
-          </StatCard>
-          <StatCard $active={filter === '신규'} onClick={() => setFilter('신규')}>
-            <StatCardTop>
-              <StatIconWrap $bg="rgba(245,158,11,0.1)"><NewSellerIcon /></StatIconWrap>
-            </StatCardTop>
-            <StatLabel>이달 신규</StatLabel>
-            <StatValue>342</StatValue>
-            <StatProgress $color="#f59e0b" $width={25} />
-          </StatCard>
-        </StatsSection>
-      )}
+      <SellersStatCards
+        view={view}
+        filter={filter}
+        onFilterChange={setFilter}
+      />
 
       {/* ── 목록 테이블 ── */}
       <TableSection>
         <TableHeader>
-          <TableTitle>{view === 'seller' ? '전체 판매자 목록' : '전체 고객 목록'}</TableTitle>
-          <FilterTabs>
-            {FILTER_TABS.map((tab) => (
-              <FilterTab key={tab} $active={filter === tab} onClick={() => setFilter(tab)}>
-                {tab}
-              </FilterTab>
-            ))}
-          </FilterTabs>
+          <TableTitle>
+            {view === 'seller' ? '전체 판매자 목록' : '전체 고객 목록'}
+          </TableTitle>
+          <AdminSearchInput
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder={view === 'seller' ? '판매자 이름 검색...' : '고객 이름 검색...'}
+            width="220px"
+          />
         </TableHeader>
 
         {view === 'seller' ? (
-          <Table>
-            <THead>
-              <TR>
-                <TH>상호명</TH>
-                <TH $width="80px">판매자명</TH>
-                <TH $width="140px">사업자번호</TH>
-                <TH $width="150px">연락처</TH>
-                <TH $width="110px">가입일</TH>
-                <TH $width="90px">거래 건수</TH>
-                <TH $width="60px">신규</TH>
-                <TH $width="80px">상태</TH>
-                <TH $width="90px">활동정지</TH>
-              </TR>
-            </THead>
-            <TBody>
-              {filteredSellers.map((seller) => {
-                const sus = isSellerSuspended(seller);
-                return (
-                  <TR key={seller.id} $hoverable>
-                    <TD>
-                      <SellerCell>
-                        <SellerIconWrap><StoreIcon /></SellerIconWrap>
-                        <SellerInfo>
-                          <SellerName>{seller.name}</SellerName>
-                          <SellerId><IdDots />{seller.id}</SellerId>
-                        </SellerInfo>
-                      </SellerCell>
-                    </TD>
-                    <TD><SellerPersonName>{seller.sellerName}</SellerPersonName></TD>
-                    <TD><BusinessNoText>{seller.businessNo}</BusinessNoText></TD>
-                    <TD><PhoneText>{seller.phone}</PhoneText></TD>
-                    <TD><DateText>{seller.joinedAt}</DateText></TD>
-                    <TD><TransactionText>{seller.transactions.toLocaleString()}</TransactionText></TD>
-                    <TD>{isNewMember(seller.joinedAt) && <NewBadge>NEW</NewBadge>}</TD>
-                    <TD>
-                      <StatusBadge $bg={sus ? '#fee2e2' : '#dcfce7'} $color={sus ? '#b91c1c' : '#15803d'}>
-                        {sus ? '정지됨' : '활동 중'}
-                      </StatusBadge>
-                    </TD>
-                    <TD>
-                      <ToggleRow onClick={() => handleToggleClick(seller, sus)}>
-                        <ToggleTrack $on={sus}><ToggleThumb $on={sus} /></ToggleTrack>
-                        <ToggleLabel $on={sus}>{sus ? '정지' : '활성'}</ToggleLabel>
-                      </ToggleRow>
-                    </TD>
-                  </TR>
-                );
-              })}
-            </TBody>
-          </Table>
+          <SellersTable
+            sellers={filteredSellers}
+            isSuspended={isSellerSuspended}
+            onToggleClick={handleToggleClick}
+          />
         ) : (
-          <Table>
-            <THead>
-              <TR>
-                <TH>고객 ID</TH>
-                <TH>이름</TH>
-                <TH>이메일</TH>
-                <TH $width="140px">전화번호</TH>
-                <TH $width="120px">가입일</TH>
-                <TH $width="90px">총 예약</TH>
-                <TH $width="60px">신규</TH>
-                <TH $width="80px">상태</TH>
-                <TH $width="90px">활동정지</TH>
-              </TR>
-            </THead>
-            <TBody>
-              {filteredCustomers.map((customer, i) => {
-                const sus = isCustomerSuspended(customer);
-                return (
-                  <TR key={customer.id} $hoverable>
-                    <TD><AccountId>{customer.id}</AccountId></TD>
-                    <TD>
-                      <NameCell>
-                        <Avatar $bg={AVATAR_COLORS[i % AVATAR_COLORS.length]}>{customer.name[0]}</Avatar>
-                        {customer.name}
-                      </NameCell>
-                    </TD>
-                    <TD><EmailText>{customer.email}</EmailText></TD>
-                    <TD><PhoneText>{customer.phone}</PhoneText></TD>
-                    <TD><DateText>{customer.joinDate}</DateText></TD>
-                    <TD><TransactionText>{customer.resvCount}건</TransactionText></TD>
-                    <TD>{isNewMember(customer.joinDate) && <NewBadge>NEW</NewBadge>}</TD>
-                    <TD>
-                      <StatusBadge $bg={sus ? '#fee2e2' : '#dcfce7'} $color={sus ? '#b91c1c' : '#15803d'}>
-                        {sus ? '정지됨' : '활성'}
-                      </StatusBadge>
-                    </TD>
-                    <TD>
-                      <ToggleRow onClick={() => handleToggleClick(customer, sus)}>
-                        <ToggleTrack $on={sus}><ToggleThumb $on={sus} /></ToggleTrack>
-                        <ToggleLabel $on={sus}>{sus ? '정지' : '활성'}</ToggleLabel>
-                      </ToggleRow>
-                    </TD>
-                  </TR>
-                );
-              })}
-            </TBody>
-          </Table>
+          <CustomersTable
+            customers={filteredCustomers}
+            isSuspended={isCustomerSuspended}
+            onToggleClick={handleToggleClick}
+            onRowClick={setSelectedCustomer}
+          />
         )}
 
         <TableFooter>
           <FooterInfo>
-            SHOWING 1-{view === 'seller' ? filteredSellers.length : filteredCustomers.length} OF {TOTAL.toLocaleString()} ENTRIES
+            SHOWING 1-
+            {view === 'seller'
+              ? filteredSellers.length
+              : filteredCustomers.length}{' '}
+            OF {TOTAL.toLocaleString()} ENTRIES
           </FooterInfo>
-          <Pagination>
-            <PageBtn onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1}>
-              <ChevronLeft />
-            </PageBtn>
-            {[1, 2, 3].map((p) => (
-              <PageBtn key={p} $active={currentPage === p} onClick={() => setCurrentPage(p)}>{p}</PageBtn>
-            ))}
-            <PageBtn onClick={() => setCurrentPage((p) => Math.min(TOTAL_PAGES, p + 1))} disabled={currentPage === TOTAL_PAGES}>
-              <ChevronRight />
-            </PageBtn>
-          </Pagination>
+          <AdminPagination
+            currentPage={currentPage}
+            totalPages={TOTAL_PAGES}
+            onPageChange={goToPage}
+          />
+          <div style={{ width: '200px' }} />{' '}
+          {/* 우측 밸런스를 위한 더미 공간 */}
         </TableFooter>
       </TableSection>
 
       <PageFooter>
-        <FooterLeft>© 2024 ADMIN PORTAL — PROFESSIONAL MANAGEMENT SYSTEM</FooterLeft>
-        <FooterRight>System version: v2.4.0 &nbsp;•&nbsp; Last Activity: 2024.05.31 15:45</FooterRight>
+        <FooterLeft>
+          © 2024 ADMIN PORTAL — PROFESSIONAL MANAGEMENT SYSTEM
+        </FooterLeft>
+        <FooterRight>
+          System version: v2.4.0 &nbsp;•&nbsp; Last Activity: 2024.05.31 15:45
+        </FooterRight>
       </PageFooter>
 
-      {/* ── 활동정지 확인 모달 ── */}
-      {confirmTarget && (
-        <ModalOverlay onClick={() => setConfirmTarget(null)}>
-          <Modal onClick={(e) => e.stopPropagation()}>
-            <ModalIcon $suspend={confirmTarget.willSuspend}>
-              {confirmTarget.willSuspend ? <SuspendModalIcon /> : <ResumeModalIcon />}
-            </ModalIcon>
-            <ModalTitle>
-              {confirmTarget.willSuspend ? '활동정지 처리' : '활동 재개'}
-            </ModalTitle>
-            <ModalDesc>
-              <strong>{confirmTarget.name}</strong> 계정을{' '}
-              {confirmTarget.willSuspend
-                ? '활동정지 처리하시겠습니까? 해당 계정은 서비스 이용이 제한됩니다.'
-                : '활동 재개하시겠습니까? 해당 계정의 서비스 이용이 복구됩니다.'}
-            </ModalDesc>
-            <ModalActions>
-              <ModalCancelBtn onClick={() => setConfirmTarget(null)}>취소</ModalCancelBtn>
-              <ModalConfirmBtn $danger={confirmTarget.willSuspend} onClick={handleConfirm}>
-                {confirmTarget.willSuspend ? '정지하기' : '재개하기'}
-              </ModalConfirmBtn>
-            </ModalActions>
-          </Modal>
+      {/* ── 고객 상세 모달 ── */}
+      {selectedCustomer && (
+        <ModalOverlay onClick={handleCloseCustomerModal}>
+          {/* max-height: 90vh — 쿠폰 목록이 길어질 수 있어서 스크롤 허용 */}
+          <ModalContent $width="520px" $maxHeight="90vh" onClick={(e) => e.stopPropagation()}>
+            {/* $align="flex-start": 제목이 ID 배지 + 이름 두 줄 구조라 상단 정렬 */}
+            <ModalHeader $align="flex-start" $gap="12px">
+              <ModalTitleGroup>
+                <ModalIdBadge>{selectedCustomer.id}</ModalIdBadge>
+                <ModalTitle>{selectedCustomer.name}</ModalTitle>
+              </ModalTitleGroup>
+              <ModalCloseBtn onClick={handleCloseCustomerModal}>
+                <X size={18} />
+              </ModalCloseBtn>
+            </ModalHeader>
+
+            <ModalBody>
+              <CouponSectionHeader>
+                <CouponSectionTitle>
+                  <TicketPercent size={15} />
+                  보유 쿠폰
+                </CouponSectionTitle>
+                <CouponCount>
+                  {(customerCoupons[selectedCustomer.id] ?? []).length}장
+                </CouponCount>
+              </CouponSectionHeader>
+
+              {(customerCoupons[selectedCustomer.id] ?? []).length === 0 ? (
+                <CouponEmpty>보유 중인 쿠폰이 없습니다.</CouponEmpty>
+              ) : (
+                <CouponList>
+                  {(customerCoupons[selectedCustomer.id] ?? []).map((coupon) => (
+                    <CouponRow key={coupon.id}>
+                      <CouponDiscountBadge>{coupon.discount}</CouponDiscountBadge>
+                      <CouponInfo>
+                        <CouponTitle>{coupon.title}</CouponTitle>
+                        <CouponMeta>
+                          발급일 {coupon.issuedAt} &nbsp;·&nbsp; 만료일 {coupon.expireAt}
+                        </CouponMeta>
+                      </CouponInfo>
+                      <CouponDeleteBtn
+                        title="쿠폰 삭제"
+                        onClick={() => handleDeleteCoupon(selectedCustomer.id, coupon.id)}
+                      >
+                        <Trash2 size={14} />
+                      </CouponDeleteBtn>
+                    </CouponRow>
+                  ))}
+                </CouponList>
+              )}
+
+              {showIssuePanel && (
+                <IssuePanel>
+                  <IssuePanelTitle>쿠폰 발급</IssuePanelTitle>
+                  <IssueRow>
+                    <CouponSelect
+                      value={selectedTemplate}
+                      onChange={(e) => setSelectedTemplate(e.target.value)}
+                    >
+                      {COUPON_TEMPLATES.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.title} ({t.discount}, {t.validDays}일)
+                        </option>
+                      ))}
+                    </CouponSelect>
+                    <IssueConfirmBtn onClick={handleIssueCoupon}>발급</IssueConfirmBtn>
+                    <IssueCancelBtn onClick={() => setShowIssuePanel(false)}>취소</IssueCancelBtn>
+                  </IssueRow>
+                </IssuePanel>
+              )}
+            </ModalBody>
+
+            <ModalFooter>
+              <div />
+              <ModalActions>
+                <ModalCancelBtn onClick={handleCloseCustomerModal}>닫기</ModalCancelBtn>
+                {!showIssuePanel && (
+                  <CouponBtn onClick={() => setShowIssuePanel(true)}>
+                    <Plus size={13} />
+                    쿠폰 발급
+                  </CouponBtn>
+                )}
+              </ModalActions>
+            </ModalFooter>
+          </ModalContent>
         </ModalOverlay>
       )}
+
+      {/* ── 활동정지 확인 모달 ── */}
+      <ConfirmModal
+        isOpen={confirmTarget !== null}
+        onClose={() => setConfirmTarget(null)}
+        onConfirm={handleConfirm}
+        title={confirmTarget?.willSuspend ? '활동정지 처리' : '활동 재개'}
+        description={
+          confirmTarget
+            ? `${confirmTarget.name} 계정을 ${confirmTarget.willSuspend ? '활동정지 처리하시겠습니까? 해당 계정은 서비스 이용이 제한됩니다.' : '활동 재개하시겠습니까? 해당 계정의 서비스 이용이 복구됩니다.'}`
+            : ''
+        }
+        isDanger={confirmTarget?.willSuspend}
+        confirmText={confirmTarget?.willSuspend ? '정지하기' : '재개하기'}
+        icon={
+          confirmTarget?.willSuspend ? (
+            <SuspendModalIcon />
+          ) : (
+            <ResumeModalIcon />
+          )
+        }
+      />
     </PageWrapper>
   );
 }
 
 /* ── Icons ── */
-function CategoryIcon({ category }) {
-  const props = { size: 16, color: '#475569', strokeWidth: 1.8 };
-  if (category === '숙박/호텔') return <Home {...props} />;
-  if (category === '공유오피스') return <Building2 {...props} />;
-  if (category === '카페/식음료') return <Coffee {...props} />;
-  return <Tent {...props} />;
+function ResumeModalIcon() {
+  return <CheckCircle size={28} color="#16a34a" />;
 }
-function StoreIcon() { return <Store size={16} color="#475569" strokeWidth={1.8} />; }
-function SellersIcon() { return <Users size={18} color="#1e293b" />; }
-function ActiveIcon() { return <CheckCircle size={18} color="#10b981" />; }
-function StoppedIcon() { return <XCircle size={18} color="#ef4444" />; }
-function NewSellerIcon() { return <UserPlus size={18} color="#f59e0b" />; }
-function SuspendModalIcon() { return <XCircle size={28} color="#ef4444" />; }
-function ResumeModalIcon() { return <CheckCircle size={28} color="#16a34a" />; }
-function SellerSvg({ active }) { return <Briefcase size={14} color={active ? '#244c54' : '#94a3b8'} />; }
-function CustomerSvg({ active }) { return <User size={14} color={active ? '#244c54' : '#94a3b8'} />; }
-function ChevronLeft() { return <LucideChevronLeft size={14} color="#475569" strokeWidth={1.5} />; }
-function ChevronRight() { return <LucideChevronRight size={14} color="#475569" strokeWidth={1.5} />; }
-function IdDots() {
-  return (
-    <span style={{ display: 'inline-flex', gap: 1.5, marginRight: 5, verticalAlign: 'middle' }}>
-      {[0,1,2,3].map((i) => <span key={i} style={{ width: 3, height: 9, borderRadius: 1, background: i < 3 ? '#94a3b8' : '#e2e8f0', display: 'inline-block' }} />)}
-    </span>
-  );
+function SuspendModalIcon() {
+  return <XCircle size={28} color="#ef4444" />;
+}
+function SellerSvg({ active }) {
+  return <Briefcase size={14} color={active ? '#244c54' : '#94a3b8'} />;
+}
+function CustomerSvg({ active }) {
+  return <User size={14} color={active ? '#244c54' : '#94a3b8'} />;
+}
+
+function ChevronLeft() {
+  return <LucideChevronLeft size={14} color="#475569" strokeWidth={1.5} />;
+}
+function ChevronRight() {
+  return <LucideChevronRight size={14} color="#475569" strokeWidth={1.5} />;
 }
 
 /* ── Styled Components ── */
@@ -404,9 +421,21 @@ const PageHeader = styled.div`
   justify-content: space-between;
 `;
 
-const PageTitleGroup = styled.div`display: flex; flex-direction: column; gap: 4px;`;
-const PageTitle = styled.h1`font-size: 24px; font-weight: 500; color: #0d1c2e; letter-spacing: -0.24px;`;
-const PageSub = styled.p`font-size: 14px; color: #64748b;`;
+const PageTitleGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
+const PageTitle = styled.h1`
+  font-size: 24px;
+  font-weight: 500;
+  color: #0d1c2e;
+  letter-spacing: -0.24px;
+`;
+const PageSub = styled.p`
+  font-size: 14px;
+  color: #64748b;
+`;
 
 const ViewSwitch = styled.div`
   display: flex;
@@ -428,84 +457,58 @@ const SwitchBtn = styled.button`
   transition: all 0.18s;
   background: ${({ $active }) => ($active ? 'white' : 'transparent')};
   color: ${({ $active }) => ($active ? '#244c54' : '#94a3b8')};
-  box-shadow: ${({ $active }) => ($active ? '0 1px 3px rgba(0,0,0,0.1)' : 'none')};
+  box-shadow: ${({ $active }) =>
+    $active ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'};
   white-space: nowrap;
 `;
 
-/* 통계 카드 */
-const StatsSection = styled.div`
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-`;
-
-const StatCard = styled.div`
-  background: white;
-  border: 1px solid ${({ $active }) => ($active ? '#244c54' : '#e2e8f0')};
-  border-radius: 10px;
-  padding: 20px 22px 18px;
-  box-shadow: ${({ $active }) => ($active ? '0 0 0 3px rgba(36,76,84,0.1)' : '0 1px 2px rgba(0,0,0,0.05)')};
+/* 페이지네이션 푸터 */
+const TableFooter = styled.div`
   display: flex;
-  flex-direction: column;
-  gap: 5px;
-  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
-  cursor: pointer;
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  }
-`;
-
-const StatCardTop = styled.div`
-  display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  margin-bottom: 4px;
+  padding: 14px 24px;
+  background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
 `;
 
-const StatIconWrap = styled.div`
-  width: 40px; height: 40px;
-  border-radius: 10px;
-  background: ${({ $bg }) => $bg};
-  display: flex; align-items: center; justify-content: center;
-`;
-
-const StatBadge = styled.span`
-  font-size: 11px; font-weight: 700;
-  padding: 3px 8px; border-radius: 999px;
-  background: ${({ $green, $red }) => $green ? '#f0fdf4' : $red ? '#fff1f1' : '#f8fafc'};
-  color: ${({ $green, $red }) => $green ? '#16a34a' : $red ? '#dc2626' : '#64748b'};
-`;
-
-const StatLabel = styled.p`font-size: 12px; color: #64748b;`;
-const StatValue = styled.p`
-  font-size: 30px; font-weight: 700; color: #0d1c2e;
+const FooterInfo = styled.p`
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
   font-family: 'Plus Jakarta Sans', sans-serif;
-  letter-spacing: -0.5px; line-height: 1.2;
 `;
 
-const StatProgress = styled.div`
-  margin-top: 8px;
-  height: 4px; border-radius: 999px;
-  background: #f1f5f9;
-  position: relative; overflow: hidden;
-  &::after {
-    content: '';
-    position: absolute; left: 0; top: 0;
-    height: 100%;
-    width: ${({ $width }) => $width}%;
-    background: ${({ $color }) => $color};
-    border-radius: 999px;
-  }
+/* 하단 Footer */
+const PageFooter = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+`;
+const FooterLeft = styled.p`
+  font-size: 10px;
+  letter-spacing: 0.8px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+`;
+const FooterRight = styled.p`
+  font-size: 10px;
+  color: #94a3b8;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 `;
 
-/* 테이블 */
+/* ── Styled Components ── */
+
+/* 테이블 전체를 감싸는 섹션 */
 const TableSection = styled.div`
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 `;
 
 const TableHeader = styled.div`
@@ -516,185 +519,251 @@ const TableHeader = styled.div`
   border-bottom: 1px solid #f1f5f9;
 `;
 
-const TableTitle = styled.h2`font-size: 16px; font-weight: 600; color: #0d1c2e;`;
+const TableTitle = styled.h2`
+  font-size: 16px;
+  font-weight: 600;
+  color: #0d1c2e;
+`;
 
-const FilterTabs = styled.div`display: flex; gap: 6px;`;
+/* ── 고객 상세 모달: ModalOverlay / ModalContent / ModalHeader / ModalCloseBtn 은
+   components/common/AdminModal.styles.js 에서 공통 import ── */
 
-const FilterTab = styled.button`
-  padding: 6px 14px;
+const ModalTitleGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+`;
+
+const ModalIdBadge = styled.span`
+  font-size: 11px;
+  font-weight: 600;
+  color: #244c54;
+  background: rgba(36,76,84,0.08);
+  padding: 2px 8px;
+  border-radius: 4px;
+  width: fit-content;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+`;
+
+const ModalTitle = styled.h2`
+  font-size: 18px;
+  font-weight: 700;
+  color: #0d1c2e;
+`;
+
+
+const ModalBody = styled.div`
+  padding: 20px 24px;
+  overflow-y: auto;
+  flex: 1;
+`;
+
+
+const ModalFooter = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+`;
+
+const ModalActions = styled.div`
+  display: flex;
+  gap: 8px;
+`;
+
+const ModalCancelBtn = styled.button`
+  padding: 8px 18px;
   border-radius: 6px;
-  font-size: 12px; font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
   font-family: inherit;
-  border: 1px solid ${({ $active }) => ($active ? '#244c54' : '#e2e8f0')};
-  background: ${({ $active }) => ($active ? '#244c54' : 'white')};
-  color: ${({ $active }) => ($active ? 'white' : '#64748b')};
-  transition: all 0.15s;
-  &:hover { background: ${({ $active }) => ($active ? '#3d646c' : '#f8fafc')}; }
-`;
-
-const Table = styled.table`width: 100%; border-collapse: collapse;`;
-const THead = styled.thead`background: #f8fafc; border-bottom: 1px solid #f1f5f9;`;
-const TBody = styled.tbody``;
-const TR = styled.tr`
-  border-top: ${({ $hoverable }) => ($hoverable ? '1px solid #f1f5f9' : 'none')};
-  transition: background 0.1s;
-  &:hover { background: ${({ $hoverable }) => ($hoverable ? '#fafbfc' : 'transparent')}; }
-`;
-const TH = styled.th`
-  padding: 11px 24px; text-align: left;
-  font-size: 11px; font-weight: 600; color: #64748b;
-  letter-spacing: 0.4px; white-space: nowrap;
-  width: ${({ $width }) => $width || 'auto'};
-`;
-const TD = styled.td`padding: 14px 24px; vertical-align: middle;`;
-
-const SellerCell = styled.div`display: flex; align-items: center; gap: 12px;`;
-const SellerIconWrap = styled.div`
-  width: 38px; height: 38px;
-  border-radius: 8px; background: #f1f5f9;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-`;
-const SellerInfo = styled.div`display: flex; flex-direction: column; gap: 3px;`;
-const SellerName = styled.span`font-size: 13px; font-weight: 600; color: #0d1c2e;`;
-const SellerId = styled.span`
-  font-size: 11px; color: #94a3b8;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  display: flex; align-items: center;
-`;
-
-const SellerPersonName = styled.span`font-size: 13px; font-weight: 500; color: #334155; white-space: nowrap;`;
-const BusinessNoText = styled.span`font-size: 12px; color: #475569; font-family: 'Plus Jakarta Sans', sans-serif; white-space: nowrap; letter-spacing: 0.3px;`;
-const PhoneText = styled.span`
-  font-size: 13px; color: #475569;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  white-space: nowrap;
-`;
-const DateText = styled.span`font-size: 12px; color: #94a3b8; font-family: 'Plus Jakarta Sans', sans-serif; white-space: nowrap;`;
-const TransactionText = styled.span`font-size: 14px; font-weight: 700; color: #0d1c2e; font-family: 'Plus Jakarta Sans', sans-serif;`;
-
-const AccountId = styled.span`font-size: 12px; font-weight: 600; color: #334155; font-family: 'Plus Jakarta Sans', sans-serif;`;
-const NameCell = styled.div`display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 500; color: #0d1c2e;`;
-const Avatar = styled.div`
-  width: 30px; height: 30px; border-radius: 50%;
-  background: ${({ $bg }) => $bg};
-  display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 700; color: #244c54; flex-shrink: 0;
-`;
-const EmailText = styled.span`font-size: 12px; color: #64748b;`;
-
-const StatusBadge = styled.span`
-  display: inline-block;
-  padding: 4px 10px; border-radius: 999px;
-  font-size: 11px; font-weight: 500;
-  background: ${({ $bg }) => $bg};
-  color: ${({ $color }) => $color};
-  white-space: nowrap;
-`;
-
-const NewBadge = styled.span`
-  display: inline-block;
-  padding: 2px 7px; border-radius: 999px;
-  font-size: 10px; font-weight: 700;
-  background: #fef3c7;
-  color: #b45309;
-  letter-spacing: 0.4px;
-  white-space: nowrap;
-`;
-
-/* 활동정지 토글 */
-const ToggleRow = styled.div`
-  display: flex; align-items: center; gap: 8px;
-  cursor: pointer; user-select: none;
-`;
-const ToggleTrack = styled.div`
-  width: 40px; height: 22px; border-radius: 999px;
-  background: ${({ $on }) => ($on ? '#ef4444' : '#22c55e')};
-  position: relative; transition: background 0.2s; flex-shrink: 0;
-`;
-const ToggleThumb = styled.div`
-  position: absolute; top: 3px;
-  left: ${({ $on }) => ($on ? '21px' : '3px')};
-  width: 16px; height: 16px; border-radius: 50%;
+  border: 1px solid #e2e8f0;
   background: white;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-  transition: left 0.2s;
-`;
-const ToggleLabel = styled.span`
-  font-size: 12px; font-weight: 500;
-  color: ${({ $on }) => ($on ? '#dc2626' : '#16a34a')};
-  min-width: 24px;
+  color: #475569;
+  transition: background 0.15s;
+  &:hover { background: #f1f5f9; }
 `;
 
-/* 페이지네이션 */
-const TableFooter = styled.div`
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 24px;
-  background: #f8fafc; border-top: 1px solid #f1f5f9;
-`;
-const FooterInfo = styled.p`
-  font-size: 11px; font-weight: 600;
-  color: #94a3b8; letter-spacing: 0.5px;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-`;
-const Pagination = styled.div`display: flex; gap: 4px;`;
-const PageBtn = styled.button`
-  min-width: 30px; height: 30px; padding: 0 8px;
+const CouponBtn = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
   border-radius: 6px;
-  border: ${({ $active }) => ($active ? 'none' : '1px solid #e2e8f0')};
-  background: ${({ $active }) => ($active ? '#244c54' : 'white')};
-  color: ${({ $active }) => ($active ? 'white' : '#475569')};
-  font-size: 12px; font-weight: 600;
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.15s;
-  opacity: ${({ disabled }) => (disabled ? 0.35 : 1)};
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  &:hover:not(:disabled) { background: ${({ $active }) => ($active ? '#244c54' : '#f8fafc')}; }
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  background: #244c54;
+  color: white;
+  border: 1px solid #244c54;
+  transition: background 0.15s;
+  &:hover { background: #1d3d44; }
 `;
 
-/* 하단 Footer */
-const PageFooter = styled.div`display: flex; align-items: center; justify-content: space-between; padding-top: 8px;`;
-const FooterLeft = styled.p`font-size: 10px; letter-spacing: 0.8px; color: #94a3b8; text-transform: uppercase; font-family: 'Plus Jakarta Sans', sans-serif;`;
-const FooterRight = styled.p`font-size: 10px; color: #94a3b8; font-family: 'Plus Jakarta Sans', sans-serif;`;
-
-/* 확인 모달 */
-const ModalOverlay = styled.div`
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.4);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 100;
+/* ── 쿠폰 섹션 ── */
+const CouponSectionHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
 `;
-const Modal = styled.div`
-  background: white;
-  border-radius: 16px;
-  padding: 32px 28px 24px;
-  width: 360px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-  display: flex; flex-direction: column; align-items: center;
+
+const CouponSectionTitle = styled.h3`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+`;
+
+const CouponCount = styled.span`
+  font-size: 12px;
+  font-weight: 600;
+  color: #244c54;
+  background: rgba(36,76,84,0.08);
+  padding: 2px 8px;
+  border-radius: 999px;
+`;
+
+const CouponEmpty = styled.p`
+  font-size: 13px;
+  color: #94a3b8;
+  text-align: center;
+  padding: 28px 0;
+  border: 1.5px dashed #e2e8f0;
+  border-radius: 8px;
+`;
+
+const CouponList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const CouponRow = styled.div`
+  display: flex;
+  align-items: center;
   gap: 12px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+`;
+
+const CouponDiscountBadge = styled.span`
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #244c54;
+  background: rgba(36,76,84,0.1);
+  padding: 4px 10px;
+  border-radius: 6px;
+  min-width: 56px;
   text-align: center;
 `;
-const ModalIcon = styled.div`
-  width: 56px; height: 56px; border-radius: 50%;
-  background: ${({ $suspend }) => ($suspend ? '#fff1f1' : '#f0fdf4')};
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 4px;
+
+const CouponInfo = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
 `;
-const ModalTitle = styled.h3`font-size: 18px; font-weight: 700; color: #0d1c2e;`;
-const ModalDesc = styled.p`font-size: 14px; color: #64748b; line-height: 1.6;`;
-const ModalActions = styled.div`display: flex; gap: 10px; margin-top: 8px; width: 100%;`;
-const ModalCancelBtn = styled.button`
-  flex: 1; padding: 12px;
-  border: 1px solid #e2e8f0; border-radius: 8px;
-  font-size: 14px; font-weight: 600; color: #475569;
-  font-family: inherit; transition: background 0.15s;
-  &:hover { background: #f8fafc; }
+
+const CouponTitle = styled.span`
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
-const ModalConfirmBtn = styled.button`
-  flex: 1; padding: 12px;
+
+const CouponMeta = styled.span`
+  font-size: 11px;
+  color: #94a3b8;
+`;
+
+const CouponDeleteBtn = styled.button`
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 6px;
+  color: #94a3b8;
+  transition: all 0.15s;
+  &:hover {
+    background: #fee2e2;
+    color: #dc2626;
+  }
+`;
+
+/* ── 쿠폰 발급 패널 ── */
+const IssuePanel = styled.div`
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
   border-radius: 8px;
-  font-size: 14px; font-weight: 600; color: white;
-  font-family: inherit; transition: opacity 0.15s;
-  background: ${({ $danger }) => ($danger ? '#ef4444' : '#16a34a')};
-  &:hover { opacity: 0.85; }
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 `;
+
+const IssuePanelTitle = styled.p`
+  font-size: 12px;
+  font-weight: 700;
+  color: #16a34a;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+`;
+
+const IssueRow = styled.div`
+  display: flex;
+  gap: 8px;
+  align-items: center;
+`;
+
+const CouponSelect = styled.select`
+  flex: 1;
+  padding: 7px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #1e293b;
+  background: white;
+  outline: none;
+  &:focus { border-color: #244c54; }
+`;
+
+const IssueConfirmBtn = styled.button`
+  padding: 7px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  background: #16a34a;
+  color: white;
+  transition: background 0.15s;
+  &:hover { background: #15803d; }
+`;
+
+const IssueCancelBtn = styled.button`
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #64748b;
+  transition: background 0.15s;
+  &:hover { background: #f1f5f9; }
+`;
+

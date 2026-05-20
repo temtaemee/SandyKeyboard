@@ -3,6 +3,7 @@
 /* ==========================================
    [MOCK DATA] 서버 연결 시 삭제/대체 필요
    ========================================== */
+
 export const BOARD_STAT_CARDS = [
   {
     id: 1,
@@ -22,14 +23,6 @@ export const BOARD_STAT_CARDS = [
   },
 ];
 
-/* ==========================================
-   [CONSTANTS] 서버 연결 후에도 유지 (UI 설정값)
-   ========================================== */
-export const BOARD_TABS = ['공지사항', 'FAQ', '리뷰', '이벤트', '쿠폰'];
-
-/* ==========================================
-   [MOCK DATA] 서버 연결 시 삭제/대체 필요
-   ========================================== */
 export const BOARD_POSTS = {
   공지사항: [
     {
@@ -71,16 +64,6 @@ export const BOARD_POSTS = {
       date: '2024.05.12',
       views: 542,
       status: 'published',
-    },
-    {
-      id: 5,
-      isFixed: false,
-      title: '[임시저장] 멤버십 혜택 업그레이드 예정 공지',
-      hasAttachment: false,
-      author: '관리자',
-      date: '2024.05.10',
-      views: 0,
-      status: 'draft',
     },
   ],
   FAQ: [
@@ -148,16 +131,6 @@ export const BOARD_POSTS = {
       views: 4320,
       status: 'published',
     },
-    {
-      id: 12,
-      isFixed: false,
-      title: '6월 제주 신규 오픈 기념 이벤트',
-      hasAttachment: true,
-      author: '마케팅팀',
-      date: '2024.04.28',
-      views: 1230,
-      status: 'draft',
-    },
   ],
   쿠폰: [
     {
@@ -168,7 +141,9 @@ export const BOARD_POSTS = {
       author: '관리자',
       date: '2024.05.01',
       views: 0,
-      status: 'published',
+      status: 'active',
+      remainingQty: 84,
+      expiryDate: '2026-05-26',
     },
     {
       id: 14,
@@ -178,16 +153,21 @@ export const BOARD_POSTS = {
       author: '관리자',
       date: '2024.04.15',
       views: 0,
-      status: 'ended',
+      status: 'expired',
+      remainingQty: 12,
+      expiryDate: '2026-04-30',
+    },
+    {
+      id: 15,
+      isFixed: false,
+      title: '봄맞이 특별 쿠폰 15% 할인',
+      hasAttachment: false,
+      author: '마케팅팀',
+      date: '2024.03.20',
+      views: 0,
+      status: 'exhausted',
+      remainingQty: 0,
+      expiryDate: '2026-06-10',
     },
   ],
-};
-
-/* ==========================================
-   [CONSTANTS] 서버 연결 후에도 유지 (UI 설정값)
-   ========================================== */
-export const POST_STATUS_MAP = {
-  published: { label: '게시중',   bg: '#dcfce7', color: '#15803d' },
-  ended:     { label: '게시종료', bg: '#f1f5f9', color: '#475569' },
-  draft:     { label: '임시저장', bg: '#fef9c3', color: '#a16207' },
 };

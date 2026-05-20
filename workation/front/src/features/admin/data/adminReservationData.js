@@ -3,6 +3,7 @@
 /* ==========================================
    [MOCK DATA] 서버 연결 시 삭제/대체 필요
    ========================================== */
+
 export const RESERVATION_STAT_CARDS = [
   {
     id: 1,
@@ -13,7 +14,7 @@ export const RESERVATION_STAT_CARDS = [
   {
     id: 2,
     label: '결제 취소',
-    value: '₩42.5M',
+    value: '₩42,500,000',
     badge: { text: '-2%', color: 'red' },
   },
 ];
@@ -54,18 +55,6 @@ export const RESERVATION_LIST = [
   },
 ];
 
-/* ==========================================
-   [CONSTANTS] 서버 연결 후에도 유지 (UI 설정값)
-   ========================================== */
-export const RESERVATION_STATUS_MAP = {
-  confirmed: { label: '예약확정', bg: '#dcfce7', color: '#15803d' },
-  waiting:   { label: '대기',     bg: '#fef9c3', color: '#a16207' },
-  cancelled: { label: '취소',     bg: '#fee2e2', color: '#b91c1c' },
-};
-
-/* ==========================================
-   [MOCK DATA] 서버 연결 시 삭제/대체 필요
-   ========================================== */
 export const PARTNER_COMPANIES = [
   {
     id: 1,
@@ -74,13 +63,33 @@ export const PARTNER_COMPANIES = [
     status: 'active',
     iconBg: '#e0f2fe',
     iconColor: '#0369a1',
+    created_at: '2023-01-15T00:00:00Z',
   },
   {
     id: 2,
     name: 'Creative Studio Lab',
     reservationCount: 3,
-    status: 'active',
+    status: 'inactive',
     iconBg: '#f0fdf4',
     iconColor: '#15803d',
+    created_at: '2023-05-20T00:00:00Z',
+  },
+  {
+    id: 3,
+    name: 'Global Ventures',
+    reservationCount: 12,
+    status: 'active',
+    iconBg: '#fef3c7',
+    iconColor: '#b45309',
+    created_at: '2023-11-01T00:00:00Z',
+  },
+  {
+    id: 4,
+    name: 'Alpha Systems',
+    reservationCount: 0,
+    status: 'active',
+    iconBg: '#fce7f3',
+    iconColor: '#be185d',
+    created_at: '2023-10-10T00:00:00Z',
   },
 ];

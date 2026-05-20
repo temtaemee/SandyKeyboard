@@ -3,12 +3,13 @@
 /* ==========================================
    [MOCK DATA] 서버 연결 시 삭제/대체 필요
    ========================================== */
+
 export const ADMIN_STAT_CARDS = [
   {
     id: 1,
     label: '총 매출액',
-    value: '₩142.5M',
-    sub: '전월 대비',
+    value: '₩142,500,000',
+    sub: '',
     badge: { text: '+12.5%', color: 'green' },
     icon: 'revenue',
   },
@@ -16,7 +17,7 @@ export const ADMIN_STAT_CARDS = [
     id: 2,
     label: '활성 숙소 수',
     value: '1,248',
-    sub: '전체 등록된 숙소',
+    sub: '',
     badge: { text: '856 개', color: 'blue' },
     icon: 'space',
   },
@@ -24,7 +25,7 @@ export const ADMIN_STAT_CARDS = [
     id: 3,
     label: '신규 고객 수',
     value: '342',
-    sub: '최근 24시간 기준',
+    sub: '최근 3개월 기준',
     badge: { text: '급증', color: 'orange' },
     icon: 'reservation',
   },
@@ -32,7 +33,7 @@ export const ADMIN_STAT_CARDS = [
     id: 4,
     label: '전체 판매자',
     value: '2,891',
-    sub: '인증된 파트너',
+    sub: '',
     badge: { text: '+3.2%', color: 'purple' },
     icon: 'seller',
   },
@@ -63,10 +64,10 @@ export const ADMIN_CHART_DATA_12M = [
 ];
 
 export const REGIONAL_SALES_DATA = [
-  { rank: 1, region: '서울', amount: '₩64.4M' },
-  { rank: 2, region: '제주', amount: '₩42.8M' },
-  { rank: 3, region: '부산', amount: '₩31.2M' },
-  { rank: 4, region: '경기', amount: '₩28.5M' },
+  { rank: 1, region: '서울', amount: '₩64,400,000' },
+  { rank: 2, region: '제주', amount: '₩42,800,000' },
+  { rank: 3, region: '부산', amount: '₩31,200,000' },
+  { rank: 4, region: '경기', amount: '₩28,500,000' },
 ];
 
 export const RECENT_PAYMENTS = [
@@ -116,41 +117,15 @@ export const RECENT_PAYMENTS = [
     product: '마운틴 뷰 빌라',
     amount: '₩312,000',
     datetime: '2023.05.20 09:40',
-    status: 'shipping',
+    status: 'paid',
   },
 ];
 
-/* ==========================================
-   [CONSTANTS] 서버 연결 후에도 유지 (UI 설정값)
-   ========================================== */
-export const PAYMENT_STATUS_MAP = {
-  paid: { label: '결제완료', bg: '#dcfce7', color: '#15803d' },
-  pending: { label: '결제대기', bg: '#ffedd5', color: '#c2410c' },
-  refunded: { label: '환불완료', bg: '#fee2e2', color: '#b91c1c' },
-  shipping: { label: '배송중', bg: '#dbeafe', color: '#1d4ed8' },
-};
-
-export const ADMIN_NAV_ITEMS = [
-  { id: 'dashboard', label: '매출', path: '/admin/dashboard', icon: 'chart' },
-  {
-    id: 'reservations',
-    label: '예약/기업 관리',
-    path: '/admin/reservations',
-    icon: 'bookmark',
-  },
-  {
-    id: 'accounts',
-    label: '계정/판매자 관리',
-    path: '/admin/accounts',
-    icon: 'users',
-  },
-  { id: 'spaces', label: '숙소 관리', path: '/admin/spaces', icon: 'home' },
-  { id: 'board', label: '게시판 관리', path: '/admin/board', icon: 'file' },
-  { id: 'sales', label: '정산', path: '/admin/sales', icon: 'coin' },
+/* ── 알림 목데이터 ── */
+export const NOTIFICATIONS = [
+  { id: 1, type: 'warning', title: '긴급 정산 지연 건 발생', desc: 'ST-20231115 해변의 정원 — 3일 이상 지연 중', time: '방금 전', unread: true },
+  { id: 2, type: 'info', title: '신규 판매자 가입 승인 요청', desc: '포레스트 캠핑 외 2건 승인 대기 중입니다.', time: '12분 전', unread: true },
+  { id: 3, type: 'info', title: '이달 신규 고객 급증 알림', desc: '이번 달 신규 가입자가 342명으로 전달 대비 12% 증가했습니다.', time: '1시간 전', unread: true },
+  { id: 4, type: 'success', title: '숙소 승인 처리 완료', desc: '오션 브리즈 리조트 신규 등록이 승인되었습니다.', time: '3시간 전', unread: false },
+  { id: 5, type: 'info', title: '시스템 점검 예정 안내', desc: '2024.06.01 02:00 ~ 04:00 정기 점검이 예정되어 있습니다.', time: '어제', unread: false },
 ];
-
-export const STATUS_MAP = {
-  success: { label: '성공', bg: '#dcfce7', color: '#15803d' },
-  pending: { label: '대기', bg: '#ffedd5', color: '#c2410c' },
-  failed: { label: '실패', bg: '#fee2e2', color: '#b91c1c' },
-};

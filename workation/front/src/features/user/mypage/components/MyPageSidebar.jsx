@@ -9,64 +9,87 @@ import {
   Megaphone,
   LogOut,
   Store,
+  Heart,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import api from '../../../../app/api/axios';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
-function MyPageSidebar() {
+function MyPageSidebar({ memberInfo }) {
   const navi = useNavigate();
-  const [memberInfo, setMemberInfo] = useState(null);
-  useEffect(() => {
-    api.get('/user/me').then((res) => {
-      console.log(res.data);
-      setMemberInfo(res.data);
-    });
-  }, []);
+  const location = useLocation();
+
   const isSeller = memberInfo?.roleSet?.includes('SELLER');
+
   return (
     <Sidebar>
       <MenuSection>
         <MenuTitle>마이페이지</MenuTitle>
 
-        <MenuItem active>
+        <MenuItem
+          active={location.pathname === '/mypage'}
+          onClick={() => navi('/mypage')}
+        >
           <User size={18} />
           <span>내 프로필</span>
         </MenuItem>
 
-        <MenuItem>
+        <MenuItem
+          active={location.pathname === '/mypage/reservation'}
+          onClick={() => navi('/mypage/reservation')}
+        >
           <ClipboardList size={18} />
           <span>예약 현황</span>
         </MenuItem>
 
-        <MenuItem>
-          <CreditCard size={18} />
-          <span>포인트/쿠폰</span>
+        <MenuItem
+          active={location.pathname.startsWith('/mypage/wishlist')}
+          onClick={() => navi('/mypage/wishlist')}
+        >
+          <Heart size={18} />
+          <span>찜 목록</span>
         </MenuItem>
 
-        <MenuItem>
+        <MenuItem
+          active={location.pathname.startsWith('/mypage/coupon')}
+          onClick={() => navi('/mypage/coupon')}
+        >
+          <CreditCard size={18} />
+          <span>쿠폰</span>
+        </MenuItem>
+
+        <MenuItem
+          active={location.pathname.startsWith('/mypage/review')}
+          onClick={() => navi('/mypage/review')}
+        >
           <History size={18} />
           <span>나의 활동</span>
         </MenuItem>
 
-        <MenuItem>
+        <MenuItem
+          active={location.pathname.startsWith('/mypage/setting')}
+          onClick={() => navi('/mypage/setting')}
+        >
           <Settings size={18} />
           <span>환경 설정</span>
         </MenuItem>
+
         {isSeller ? (
           <MenuItem
+            active={location.pathname.startsWith('/seller')}
             onClick={() => {
               navi(`/seller`);
             }}
           >
+            <Store size={18} />
             <span>판매자 센터</span>
           </MenuItem>
         ) : (
           <MenuItem
+            active={location.pathname.startsWith('/mypage/seller-apply')}
             onClick={() => {
               navi(`/mypage/seller-apply`);
             }}
           >
+            <Store size={18} />
             <span>판매자 신청</span>
           </MenuItem>
         )}
@@ -78,12 +101,21 @@ function MyPageSidebar() {
           <span>고객센터</span>
         </BottomItem>
 
-        <BottomItem>
+        <BottomItem
+          onClick={() => {
+            navi(`/board/support/notice`);
+          }}
+        >
           <Megaphone size={16} />
           <span>공지사항</span>
         </BottomItem>
 
-        <BottomItem>
+        <BottomItem
+          onClick={() => {
+            localStorage.removeItem('accessToken');
+            window.location.replace('/');
+          }}
+        >
           <LogOut size={16} />
           <span>로그아웃</span>
         </BottomItem>
@@ -96,12 +128,20 @@ export default MyPageSidebar;
 
 const Sidebar = styled.aside`
   width: 240px;
+  min-width: 240px;
+  flex-shrink: 0;
+
   background-color: white;
   border-right: 1px solid #edf1f4;
   padding: 40px 24px;
+
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+
+  @media (max-width: 1024px) {
+    display: none;
+  }
 `;
 
 const MenuSection = styled.div``;
@@ -112,20 +152,24 @@ const MenuTitle = styled.h2`
   margin-bottom: 26px;
 `;
 
-const MenuItem = styled.div`
+const MenuItem = styled.button`
+  width: 100%;
+  border: none;
+  background: ${({ active }) => (active ? '#eef5f6' : 'transparent')};
+
   display: flex;
   align-items: center;
   gap: 12px;
+
   height: 48px;
   padding: 0 14px;
   border-radius: 12px;
   margin-bottom: 8px;
+
   cursor: pointer;
   font-size: 14px;
 
   color: ${({ active }) => (active ? '#3f6971' : '#6b7280')};
-
-  background-color: ${({ active }) => (active ? '#eef5f6' : 'transparent')};
 
   font-weight: ${({ active }) => (active ? '600' : '400')};
 

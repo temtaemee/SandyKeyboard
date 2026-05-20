@@ -1,6 +1,10 @@
 **/node_modules/
 CLAUDE.md
-WORKLOG.md
-space_product_domain_structure_analysis (1).md
-space_product_entity_structure.md
+.claude/
 **/application-private.properties
+
+qa.md
+workation/front/dist/
+
+.codex/
+AGENTS.md

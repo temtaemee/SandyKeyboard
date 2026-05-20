@@ -1,9 +1,9 @@
 import { configureStore } from '@reduxjs/toolkit';
+import reservationCReducer from '../../features/user/reservation/store/reservationSlice';
 
 const store = configureStore({
   reducer: {
-    user: userReducer, // 사용자 관련 리듀서 // 경로 추가 필요
-    // 다른 리듀서 추가 가능
+    reservation: reservationCReducer,
   },
 });
 export default store;

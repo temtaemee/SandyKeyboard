@@ -1,29 +1,18 @@
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-
-const dummyList = [
-  {
-    reviewId: 1,
-    title: '제주 워케이션 후기',
-    writer: 'user01',
-    date: '2개월 전',
-    rating: 5,
-  },
-  {
-    reviewId: 2,
-    title: '부산 여행 후기',
-    writer: 'user02',
-    date: '1개월 전',
-    rating: 4,
-  },
-  {
-    reviewId: 3,
-    title: '서울 스튜디오 이용 후기',
-    writer: 'user03',
-    date: '3주 전',
-    rating: 5,
-  },
-];
+import {
+  getReviewList,
+  deleteReview,
+  getComments,
+  createComment,
+  deleteComment,
+  getImageUrl,
+  getReviewLike,
+  toggleReviewLike,
+  getCommentLike,
+  toggleCommentLike,
+} from '../api/Reviewapi';
 
 function StarDisplay({ rating }) {
   return (
@@ -37,107 +26,943 @@ function StarDisplay({ rating }) {
   );
 }
 
-export default function ReviewListPage() {
-  const navigate = useNavigate();
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  if (days === 0) return '오늘';
+  if (days < 7) return `${days}일 전`;
+  if (days < 30) return `${Math.floor(days / 7)}주 전`;
+  if (days < 365) return `${Math.floor(days / 30)}개월 전`;
+  return `${Math.floor(days / 365)}년 전`;
+}
+
+/* ── 댓글 좋아요 버튼 ── */
+function CommentLikeBtn({ reviewId, commentId }) {
+  const [liked, setLiked] = useState(false);
+  const [count, setCount] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    getCommentLike(reviewId, commentId)
+      .then((data) => {
+        setLiked(data.liked);
+        setCount(data.count);
+      })
+      .catch(() => {});
+  }, [commentId]);
+
+  async function handleToggle() {
+    if (loading) return;
+    try {
+      setLoading(true);
+      const data = await toggleCommentLike(reviewId, commentId);
+      setLiked(data.liked);
+      setCount(data.count);
+    } catch {
+      alert('로그인이 필요합니다.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
-    <Board>
-      <HeaderRow>
-        <ColNum>번호</ColNum>
-        <ColTitle>제목</ColTitle>
-        <ColRating>별점</ColRating>
-        <ColWriter>작성자</ColWriter>
-        <ColDate>날짜</ColDate>
-      </HeaderRow>
-
-      {dummyList.map((review) => (
-        <Row
-          key={review.reviewId}
-          onClick={() => navigate(`/board/review/detail/${review.reviewId}`)}
-        >
-          <ColNum>{review.reviewId}</ColNum>
-          <ColTitle>{review.title}</ColTitle>
-          <ColRating>
-            <StarDisplay rating={review.rating} />
-          </ColRating>
-          <ColWriter>{review.writer}</ColWriter>
-          <ColDate>{review.date}</ColDate>
-        </Row>
-      ))}
-    </Board>
+    <LikeBtn $liked={liked} onClick={handleToggle} disabled={loading}>
+      👍 {count > 0 && <LikeCount>{count}</LikeCount>}
+    </LikeBtn>
   );
 }
 
-const Board = styled.div`
-  border-top: 2px solid ${({ theme }) => theme.colors.textDark};
-`;
+/* ── 댓글 섹션 ── */
+function CommentSection({ reviewId }) {
+  const [comments, setComments] = useState([]);
+  const [loadingComments, setLoadingComments] = useState(true);
+  const [commentInput, setCommentInput] = useState('');
+  const [deleteCommentId, setDeleteCommentId] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
-const HeaderRow = styled.div`
+  useEffect(() => {
+    setLoadingComments(true);
+    getComments(reviewId)
+      .then((data) =>
+        setComments(Array.isArray(data) ? data : (data.content ?? []))
+      )
+      .catch((err) => console.error(err))
+      .finally(() => setLoadingComments(false));
+  }, [reviewId]);
+
+  async function handleCommentSubmit() {
+    if (!commentInput.trim()) return;
+    try {
+      setSubmitting(true);
+      await createComment(reviewId, { content: commentInput, ownerYn: 'N' });
+      const updated = await getComments(reviewId);
+      setComments(Array.isArray(updated) ? updated : (updated.content ?? []));
+      setCommentInput('');
+    } catch (err) {
+      console.error(err);
+      alert('댓글 등록에 실패했습니다.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleCommentDelete(commentId) {
+    try {
+      await deleteComment(reviewId, commentId);
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+      setDeleteCommentId(null);
+    } catch (err) {
+      console.error(err);
+      alert('댓글 삭제에 실패했습니다.');
+    }
+  }
+
+  if (loadingComments)
+    return <CommentLoading>댓글 불러오는 중...</CommentLoading>;
+
+  return (
+    <CommentArea>
+      <CommentList>
+        {comments.length === 0 && (
+          <EmptyComment>첫 번째 댓글을 남겨보세요</EmptyComment>
+        )}
+        {comments.map((c) => (
+          <CommentCard key={c.id} $isOwner={c.ownerYn === 'Y'}>
+            <CommentTop>
+              <CommentAvatar $isOwner={c.ownerYn === 'Y'}>
+                {c.writer?.charAt(0) ?? '?'}
+              </CommentAvatar>
+              <CommentWriter $isOwner={c.ownerYn === 'Y'}>
+                {c.writer}
+              </CommentWriter>
+              {c.ownerYn === 'Y' && <OwnerBadge>운영자</OwnerBadge>}
+              <CommentMeta>
+                <CommentDate>{formatDate(c.createdAt)}</CommentDate>
+                <CommentLikeBtn reviewId={reviewId} commentId={c.id} />
+                <CommentDelBtn onClick={() => setDeleteCommentId(c.id)}>
+                  삭제
+                </CommentDelBtn>
+              </CommentMeta>
+            </CommentTop>
+            <CommentBody>{c.content}</CommentBody>
+          </CommentCard>
+        ))}
+      </CommentList>
+
+      <CommentInputBox>
+        <CommentInputRow>
+          <CommentTextArea
+            placeholder="댓글을 입력하세요"
+            value={commentInput}
+            onChange={(e) => setCommentInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleCommentSubmit();
+              }
+            }}
+          />
+          <CommentSubmitBtn onClick={handleCommentSubmit} disabled={submitting}>
+            {submitting ? '...' : '등록'}
+          </CommentSubmitBtn>
+        </CommentInputRow>
+      </CommentInputBox>
+
+      {deleteCommentId && (
+        <ModalOverlay>
+          <Modal>
+            <ModalText>댓글을 삭제하시겠습니까?</ModalText>
+            <ModalButtons>
+              <ModalCancel onClick={() => setDeleteCommentId(null)}>
+                취소
+              </ModalCancel>
+              <ModalDelete onClick={() => handleCommentDelete(deleteCommentId)}>
+                삭제
+              </ModalDelete>
+            </ModalButtons>
+          </Modal>
+        </ModalOverlay>
+      )}
+    </CommentArea>
+  );
+}
+
+/* ── 게시글 좋아요 버튼 ── */
+function ReviewLikeBtn({ reviewId }) {
+  const [liked, setLiked] = useState(false);
+  const [count, setCount] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    getReviewLike(reviewId)
+      .then((data) => {
+        setLiked(data.liked);
+        setCount(data.count);
+      })
+      .catch(() => {});
+  }, [reviewId]);
+
+  async function handleToggle() {
+    if (loading) return;
+    try {
+      setLoading(true);
+      const data = await toggleReviewLike(reviewId);
+      setLiked(data.liked);
+      setCount(data.count);
+    } catch {
+      alert('로그인이 필요합니다.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <ReviewLikeBtnWrapper
+      $liked={liked}
+      onClick={handleToggle}
+      disabled={loading}
+    >
+      👍 좋아요 {count > 0 && <span>{count}</span>}
+    </ReviewLikeBtnWrapper>
+  );
+}
+
+/* ── 카드 ── */
+function ReviewCard({ review, onDelete, onEdit }) {
+  const [expanded, setExpanded] = useState(false);
+  const [lightboxIdx, setLightboxIdx] = useState(null);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [needsMore, setNeedsMore] = useState(false);
+  const contentRef = useRef(null);
+  const imageUrls = review.images?.map((img) => getImageUrl(img.s3Key)) ?? [];
+
+  useEffect(() => {
+    if (!contentRef.current) return;
+    const lineHeight = parseFloat(
+      getComputedStyle(contentRef.current).lineHeight
+    );
+    setNeedsMore(contentRef.current.scrollHeight > lineHeight * 3 + 4);
+  }, [review.content]);
+
+  return (
+    <Card>
+      <CardHeader>
+        <Avatar>{review.writer?.[0] ?? 'U'}</Avatar>
+        <HeaderRight>
+          <TitleRow>
+            <CardTitle>{review.title}</CardTitle>
+            <CardActions>
+              <ActionBtn onClick={() => onEdit(review.id)}>수정</ActionBtn>
+              <ActionBtn $danger onClick={() => setShowConfirm(true)}>
+                삭제
+              </ActionBtn>
+            </CardActions>
+          </TitleRow>
+          <WriterMeta>
+            <WriterName>{review.writer}</WriterName>
+            <StarDisplay rating={review.rating} />
+            <ReviewLikeBtn reviewId={review.id} />
+            <DateText>{formatDate(review.createdAt)}</DateText>
+          </WriterMeta>
+        </HeaderRight>
+      </CardHeader>
+
+      {imageUrls.length > 0 && (
+        <ImageGrid>
+          {imageUrls.slice(0, 4).map((src, i) => (
+            <ImageItem key={i} onClick={() => setLightboxIdx(i)}>
+              <img src={src} alt={`리뷰 이미지 ${i + 1}`} />
+              {i === 3 && imageUrls.length > 4 && (
+                <MoreImageOverlay>+{imageUrls.length - 4}</MoreImageOverlay>
+              )}
+            </ImageItem>
+          ))}
+        </ImageGrid>
+      )}
+
+      <ContentArea>
+        <CardContent ref={contentRef} $expanded={expanded}>
+          {review.content}
+        </CardContent>
+        {needsMore && (
+          <MoreBtn onClick={() => setExpanded((v) => !v)}>
+            {expanded ? '접기 ▲' : '더보기 ▼'}
+          </MoreBtn>
+        )}
+      </ContentArea>
+
+      <CommentToggleBtn onClick={() => setShowComments((v) => !v)}>
+        💬 댓글 {showComments ? '닫기 ▲' : '보기 ▼'}
+      </CommentToggleBtn>
+
+      {showComments && <CommentSection reviewId={review.id} />}
+
+      {lightboxIdx !== null && (
+        <Overlay onClick={() => setLightboxIdx(null)}>
+          <LightboxImg
+            src={imageUrls[lightboxIdx]}
+            alt="확대"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <LightboxClose onClick={() => setLightboxIdx(null)}>✕</LightboxClose>
+          {lightboxIdx > 0 && (
+            <LightboxPrev
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightboxIdx(lightboxIdx - 1);
+              }}
+            >
+              ‹
+            </LightboxPrev>
+          )}
+          {lightboxIdx < imageUrls.length - 1 && (
+            <LightboxNext
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightboxIdx(lightboxIdx + 1);
+              }}
+            >
+              ›
+            </LightboxNext>
+          )}
+        </Overlay>
+      )}
+
+      {showConfirm && (
+        <Overlay onClick={() => setShowConfirm(false)}>
+          <Modal onClick={(e) => e.stopPropagation()}>
+            <ModalText>정말 삭제하시겠습니까?</ModalText>
+            <ModalButtons>
+              <ModalCancel onClick={() => setShowConfirm(false)}>
+                취소
+              </ModalCancel>
+              <ModalDelete
+                onClick={() => {
+                  setShowConfirm(false);
+                  onDelete(review.id);
+                }}
+              >
+                삭제
+              </ModalDelete>
+            </ModalButtons>
+          </Modal>
+        </Overlay>
+      )}
+    </Card>
+  );
+}
+
+/* ── 메인 ── */
+export default function ReviewListPage() {
+  const navigate = useNavigate();
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const topRef = useRef(null);
+
+  useEffect(() => {
+    setLoading(true);
+    getReviewList(currentPage)
+      .then((data) => {
+        setList(data.content ?? []);
+        setTotalPages(data.totalPages ?? 1);
+      })
+      .catch((err) => console.error(err))
+      .finally(() => setLoading(false));
+  }, [currentPage]);
+
+  function handlePageChange(page) {
+    setCurrentPage(page);
+    topRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  async function handleDelete(id) {
+    try {
+      await deleteReview(id);
+      const data = await getReviewList(currentPage);
+      setList(data.content ?? []);
+      setTotalPages(data.totalPages ?? 1);
+      if ((data.content ?? []).length === 0 && currentPage > 0)
+        setCurrentPage((p) => p - 1);
+    } catch (err) {
+      console.error(err);
+      alert('삭제에 실패했습니다.');
+    }
+  }
+
+  if (loading) return <Empty>불러오는 중...</Empty>;
+
+  return (
+    <Wrapper>
+      <div ref={topRef} />
+      <ListHeader>
+        <ReviewCount>
+          ⭐ 전체 후기 <Strong>{totalPages * 10}개+</Strong>
+        </ReviewCount>
+      </ListHeader>
+      <FeedList>
+        {list.length === 0 && <Empty>등록된 후기가 없습니다.</Empty>}
+        {list.map((review) => (
+          <ReviewCard
+            key={review.id}
+            review={review}
+            onDelete={handleDelete}
+            onEdit={(id) => navigate(`/board/review/write?id=${id}`)}
+          />
+        ))}
+      </FeedList>
+      {totalPages > 1 && (
+        <Pagination>
+          <PageBtn
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 0}
+          >
+            ‹
+          </PageBtn>
+          {Array.from({ length: totalPages }, (_, i) => (
+            <PageBtn
+              key={i}
+              $active={i === currentPage}
+              onClick={() => handlePageChange(i)}
+            >
+              {i + 1}
+            </PageBtn>
+          ))}
+          <PageBtn
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages - 1}
+          >
+            ›
+          </PageBtn>
+        </Pagination>
+      )}
+    </Wrapper>
+  );
+}
+
+/* ── Styled Components ── */
+const Wrapper = styled.div``;
+const ListHeader = styled.div`
   display: flex;
   align-items: center;
-  padding: 14px 10px;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid ${({ theme }) => theme.colors.textDark};
+`;
+const ReviewCount = styled.div`
+  font-size: 16px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.textDark};
+`;
+const Strong = styled.span`
+  color: ${({ theme }) => theme.colors.primary};
+`;
+const FeedList = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+const Card = styled.div`
+  padding: 28px 0;
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+`;
+const CardHeader = styled.div`
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 16px;
+`;
+const Avatar = styled.div`
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: ${({ theme }) => theme.colors.primary};
+  color: white;
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+`;
+const HeaderRight = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: center;
+  min-height: 44px;
+`;
+const TitleRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+`;
+const CardTitle = styled.div`
+  font-size: 16px;
+  font-weight: 800;
+  color: ${({ theme }) => theme.colors.textDark};
+  line-height: 1.4;
+  flex: 1;
+`;
+const CardActions = styled.div`
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+`;
+const ActionBtn = styled.button`
+  padding: 5px 12px;
+  border-radius: ${({ theme }) => theme.radius.full};
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1px solid ${({ $danger }) => ($danger ? '#ef4444' : 'currentColor')};
+  background: transparent;
+  color: ${({ $danger, theme }) =>
+    $danger ? '#ef4444' : theme.colors.textMid};
+  &:hover {
+    background: ${({ $danger, theme }) =>
+      $danger ? '#ef4444' : theme.colors.primary};
+    color: white;
+    border-color: ${({ $danger, theme }) =>
+      $danger ? '#ef4444' : theme.colors.primary};
+  }
+`;
+const WriterMeta = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+`;
+const WriterName = styled.span`
+  font-size: 13px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.textMid};
+`;
+const DateText = styled.span`
+  font-size: 13px;
   color: ${({ theme }) => theme.colors.textLight};
+`;
+
+const ReviewLikeBtnWrapper = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: ${({ theme }) => theme.radius.full};
+  border: 1px solid
+    ${({ $liked, theme }) =>
+      $liked ? theme.colors.primary : theme.colors.border};
+  background: ${({ $liked, theme }) =>
+    $liked ? theme.colors.primary + '15' : 'transparent'};
+  color: ${({ $liked, theme }) =>
+    $liked ? theme.colors.primary : theme.colors.textMid};
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  &:hover:not(:disabled) {
+    border-color: ${({ theme }) => theme.colors.primary};
+    background: ${({ theme }) => theme.colors.primary + '15'};
+    color: ${({ theme }) => theme.colors.primary};
+  }
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+`;
+
+const ImageGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3px;
+  margin-bottom: 14px;
+  border-radius: ${({ theme }) => theme.radius.md};
+  overflow: hidden;
+`;
+const ImageItem = styled.div`
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 1/1;
+  cursor: pointer;
+  background: ${({ theme }) => theme.colors.bgSection};
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.2s;
+    display: block;
+  }
+  &:hover img {
+    transform: scale(1.03);
+  }
+`;
+const MoreImageOverlay = styled.div`
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+  color: white;
+`;
+const ContentArea = styled.div``;
+const CardContent = styled.p`
+  font-size: 14px;
+  line-height: 1.8;
+  color: ${({ theme }) => theme.colors.textMid};
+  white-space: pre-line;
+  margin: 0;
+  ${({ $expanded }) =>
+    !$expanded &&
+    `display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;`}
+`;
+const MoreBtn = styled.button`
+  margin-top: 6px;
+  background: none;
+  border: none;
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.primary};
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  &:hover {
+    opacity: 0.75;
+  }
+`;
+const CommentToggleBtn = styled.button`
+  margin-top: 16px;
+  padding: 8px 16px;
+  border-radius: ${({ theme }) => theme.radius.full};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  background: ${({ theme }) => theme.colors.bgSection};
+  color: ${({ theme }) => theme.colors.textMid};
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  &:hover {
+    border-color: ${({ theme }) => theme.colors.primary};
+    color: ${({ theme }) => theme.colors.primary};
+  }
+`;
+const CommentArea = styled.div`
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
+`;
+const CommentLoading = styled.div`
+  padding: 16px 0;
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.textLight};
+`;
+const CommentList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+`;
+const CommentCard = styled.div`
+  padding: 14px 16px;
+  border-radius: ${({ theme }) => theme.radius.md};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  background: ${({ $isOwner, theme }) =>
+    $isOwner ? theme.colors.bgSection : 'white'};
+`;
+const CommentTop = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+`;
+const CommentAvatar = styled.div`
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: ${({ $isOwner, theme }) =>
+    $isOwner ? theme.colors.primary + '20' : theme.colors.bgSection};
+  color: ${({ $isOwner, theme }) =>
+    $isOwner ? theme.colors.primary : theme.colors.textMid};
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+`;
+const CommentWriter = styled.span`
+  font-size: 13px;
+  font-weight: 700;
+  color: ${({ $isOwner, theme }) =>
+    $isOwner ? theme.colors.primary : theme.colors.textDark};
+`;
+const OwnerBadge = styled.span`
+  font-size: 11px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.primary};
+  background: ${({ theme }) => theme.colors.primary}18;
+  border-radius: ${({ theme }) => theme.radius.full};
+  padding: 2px 8px;
+`;
+const CommentMeta = styled.div`
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+const CommentDate = styled.span`
+  font-size: 12px;
+  color: ${({ theme }) => theme.colors.textLight};
+`;
+const CommentDelBtn = styled.button`
+  font-size: 12px;
+  color: ${({ theme }) => theme.colors.textLight};
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s;
+  &:hover {
+    color: #ef4444;
+  }
+`;
+const LikeBtn = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: ${({ theme }) => theme.radius.full};
+  border: 1px solid
+    ${({ $liked, theme }) =>
+      $liked ? theme.colors.primary : theme.colors.border};
+  background: ${({ $liked, theme }) =>
+    $liked ? theme.colors.primary + '15' : 'transparent'};
+  color: ${({ $liked, theme }) =>
+    $liked ? theme.colors.primary : theme.colors.textLight};
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  &:hover:not(:disabled) {
+    border-color: ${({ theme }) => theme.colors.primary};
+    color: ${({ theme }) => theme.colors.primary};
+    background: ${({ theme }) => theme.colors.primary + '15'};
+  }
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+`;
+const LikeCount = styled.span`
+  font-size: 12px;
+`;
+const CommentBody = styled.p`
+  font-size: 14px;
+  color: ${({ theme }) => theme.colors.textMid};
+  line-height: 1.7;
+  margin: 0;
+`;
+const EmptyComment = styled.div`
+  padding: 20px 0;
+  text-align: center;
+  color: ${({ theme }) => theme.colors.textLight};
+  font-size: 13px;
+`;
+const CommentInputBox = styled.div`
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.radius.md};
+  padding: 14px;
+  background: ${({ theme }) => theme.colors.bgSection};
+`;
+const CommentInputRow = styled.div`
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+`;
+const CommentTextArea = styled.textarea`
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.radius.sm};
+  font-size: 14px;
+  color: ${({ theme }) => theme.colors.textDark};
+  resize: none;
+  height: 60px;
+  outline: none;
+  font-family: ${({ theme }) => theme.fonts.base};
+  background: white;
+  transition: border-color 0.15s;
+  &::placeholder {
+    color: ${({ theme }) => theme.colors.textLight};
+  }
+  &:focus {
+    border-color: ${({ theme }) => theme.colors.primary};
+  }
+`;
+const CommentSubmitBtn = styled.button`
+  padding: 0 18px;
+  height: 60px;
+  border-radius: ${({ theme }) => theme.radius.sm};
+  border: none;
+  background: ${({ theme }) => theme.colors.primary};
+  color: white;
   font-size: 14px;
   font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  opacity: ${({ disabled }) => (disabled ? 0.6 : 1)};
+  transition: background 0.15s;
+  &:hover:not(:disabled) {
+    background: ${({ theme }) => theme.colors.primaryLight};
+  }
 `;
-
-const Row = styled.div`
+const Overlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
   display: flex;
   align-items: center;
-  padding: 20px 10px;
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  justify-content: center;
+  z-index: 300;
+`;
+const LightboxImg = styled.img`
+  max-width: 80vw;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: ${({ theme }) => theme.radius.md};
+`;
+const LightboxClose = styled.button`
+  position: fixed;
+  top: 24px;
+  right: 32px;
+  font-size: 28px;
+  color: white;
+  background: none;
+  border: none;
   cursor: pointer;
-  transition: background 0.12s;
+`;
+const LightboxPrev = styled.button`
+  position: fixed;
+  left: 24px;
+  font-size: 52px;
+  color: white;
+  background: none;
+  border: none;
+  cursor: pointer;
+`;
+const LightboxNext = styled.button`
+  position: fixed;
+  right: 24px;
+  font-size: 52px;
+  color: white;
+  background: none;
+  border: none;
+  cursor: pointer;
+`;
+const Modal = styled.div`
+  background: ${({ theme }) => theme.colors.white};
+  border-radius: ${({ theme }) => theme.radius.md};
+  padding: 40px 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  box-shadow: ${({ theme }) => theme.shadows.cardHover};
+`;
+const ModalText = styled.p`
+  font-size: 18px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.textDark};
+`;
+const ModalButtons = styled.div`
+  display: flex;
+  gap: 12px;
+`;
+const ModalCancel = styled.button`
+  padding: 12px 28px;
+  border-radius: ${({ theme }) => theme.radius.full};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  background: white;
+  color: ${({ theme }) => theme.colors.textMid};
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
   &:hover {
     background: ${({ theme }) => theme.colors.bgSection};
   }
 `;
-
-const ColNum = styled.div`
-  width: 60px;
-  flex-shrink: 0;
-  color: ${({ theme }) => theme.colors.textLight};
+const ModalDelete = styled.button`
+  padding: 12px 28px;
+  border-radius: ${({ theme }) => theme.radius.full};
+  border: none;
+  background: #ef4444;
+  color: white;
+  font-weight: 600;
   font-size: 14px;
+  cursor: pointer;
+  &:hover {
+    background: #dc2626;
+  }
 `;
-
-const ColTitle = styled.div`
-  flex: 1;
+const ModalOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+`;
+const Empty = styled.div`
+  padding: 48px 0;
+  text-align: center;
+  color: ${({ theme }) => theme.colors.textLight};
   font-size: 15px;
-  color: ${({ theme }) => theme.colors.textDark};
-  font-weight: 500;
 `;
-
-const ColRating = styled.div`
-  width: 120px;
-  flex-shrink: 0;
+const Pagination = styled.div`
   display: flex;
   justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin-top: 40px;
 `;
-
-const ColWriter = styled.div`
-  width: 80px;
-  flex-shrink: 0;
-  color: ${({ theme }) => theme.colors.textMuted};
+const PageBtn = styled.button`
+  width: 36px;
+  height: 36px;
+  border-radius: ${({ theme }) => theme.radius.sm};
+  border: 1px solid
+    ${({ $active, theme }) =>
+      $active ? theme.colors.primary : theme.colors.border};
+  background: ${({ $active, theme }) =>
+    $active ? theme.colors.primary : theme.colors.white};
+  color: ${({ $active, theme }) => ($active ? 'white' : theme.colors.textMid)};
   font-size: 14px;
-  text-align: center;
+  font-weight: ${({ $active }) => ($active ? '700' : '400')};
+  cursor: pointer;
+  transition: all 0.15s;
+  &:hover:not(:disabled) {
+    background: ${({ $active, theme }) =>
+      $active ? theme.colors.primary : theme.colors.bgSection};
+    border-color: ${({ theme }) => theme.colors.primary};
+  }
+  &:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
 `;
-
-const ColDate = styled.div`
-  width: 90px;
-  flex-shrink: 0;
-  color: ${({ theme }) => theme.colors.textLight};
-  font-size: 14px;
-  text-align: right;
-`;
-
 const Stars = styled.div`
   display: flex;
   gap: 1px;
 `;
-
 const Star = styled.span`
-  font-size: 15px;
+  font-size: 14px;
   color: ${({ $filled }) => ($filled ? '#f59e0b' : '#e2e8f0')};
-  line-height: 1;
 `;

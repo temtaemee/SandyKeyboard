@@ -12,6 +12,7 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.util.List;
 
+
 @Getter
 @Setter
 @Schema(description = "공간 등록 요청 DTO")
@@ -61,9 +62,6 @@ public class SpaceInsertReqDto {
 
     @Schema(description = "편의시설 ID 목록 (arcade 테이블에 존재하는 ID만 허용)", example = "[]")
     private List<Long> arcadeIdList;
-
-    @Schema(description = "공간 사진 목록")
-    private List<SpacePictureReqDto> pictureList;
 
     public SpaceEntity toEntity() {
 

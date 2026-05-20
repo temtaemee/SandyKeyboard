@@ -3,6 +3,7 @@ package com.kh.app.transaction.reservation.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @Entity
 @Table(name = "RESERVE_FILE")
@@ -27,6 +28,14 @@ public class ReserveFileEntity   {
     private String s3Key;
 
     //bucket name(파일경로)
+
+    public static ReserveFileEntity from(ReservationEntity reservation, MultipartFile file, String s3Key) {
+        return ReserveFileEntity.builder()
+                .reservationEntity(reservation)
+                .originalFileName(file.getOriginalFilename())
+                .s3Key(s3Key)
+                .build();
+    }
 
 
 }

@@ -1,13 +1,20 @@
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-
-const notices = [
-  { id: 1, title: '5월 워케이션 이벤트 안내', date: '2026.05.08' },
-  { id: 2, title: '서비스 점검 안내', date: '2026.05.01' },
-];
+import { useNoticeList } from '../hooks/useNoticeList';
 
 export default function NoticePage() {
   const navigate = useNavigate();
+
+  const { notices, loading, currentPage, setCurrentPage, totalPages } =
+    useNoticeList();
+
+  // 상단 고정 공지 3개
+  const fixedNotices = notices.slice(0, 3);
+
+  // 일반 게시글
+  const normalNotices = notices.slice(3);
+
+  if (loading) return <Empty>불러오는 중...</Empty>;
 
   return (
     <Wrapper>
@@ -24,17 +31,77 @@ export default function NoticePage() {
           <ColDate>날짜</ColDate>
         </HeaderRow>
 
-        {notices.map((item) => (
+        {/* 상단 고정 공지 */}
+        {fixedNotices.map((item, idx) => (
+          <PinnedRow
+            key={item.id}
+            onClick={() => navigate(`/board/support/notice/${item.id}`)}
+          >
+            <ColNum>{currentPage * 10 + idx + 1}</ColNum>
+
+            <ColTitle>
+              <TitleWrap>
+                <NoticeBadge>공지</NoticeBadge>
+                <PinnedTitle>{item.title}</PinnedTitle>
+              </TitleWrap>
+            </ColTitle>
+
+            <ColDate>
+              {item.createdAt
+                ? new Date(item.createdAt).toLocaleDateString('ko-KR')
+                : ''}
+            </ColDate>
+          </PinnedRow>
+        ))}
+
+        {/* 일반 게시글 */}
+        {normalNotices.map((item, idx) => (
           <Row
             key={item.id}
             onClick={() => navigate(`/board/support/notice/${item.id}`)}
           >
-            <ColNum>{item.id}</ColNum>
+            <ColNum>{currentPage * 10 + fixedNotices.length + idx + 1}</ColNum>
+
             <ColTitle>{item.title}</ColTitle>
-            <ColDate>{item.date}</ColDate>
+
+            <ColDate>
+              {item.createdAt
+                ? new Date(item.createdAt).toLocaleDateString('ko-KR')
+                : ''}
+            </ColDate>
           </Row>
         ))}
+
+        {notices.length === 0 && <Empty>등록된 공지사항이 없습니다.</Empty>}
       </Board>
+
+      {totalPages > 1 && (
+        <Pagination>
+          <PageBtn
+            onClick={() => setCurrentPage((p) => p - 1)}
+            disabled={currentPage === 0}
+          >
+            ‹
+          </PageBtn>
+
+          {Array.from({ length: totalPages }, (_, i) => (
+            <PageBtn
+              key={i}
+              $active={i === currentPage}
+              onClick={() => setCurrentPage(i)}
+            >
+              {i + 1}
+            </PageBtn>
+          ))}
+
+          <PageBtn
+            onClick={() => setCurrentPage((p) => p + 1)}
+            disabled={currentPage === totalPages - 1}
+          >
+            ›
+          </PageBtn>
+        </Pagination>
+      )}
     </Wrapper>
   );
 }
@@ -57,6 +124,7 @@ const WriteButton = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s;
+
   &:hover {
     background: ${({ theme }) => theme.colors.primaryLight};
   }
@@ -82,9 +150,32 @@ const Row = styled.div`
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
   cursor: pointer;
   transition: background 0.12s;
+
   &:hover {
     background: ${({ theme }) => theme.colors.bgSection};
   }
+`;
+
+const PinnedRow = styled(Row)`
+  background: ${({ theme }) => theme.colors.bgSection};
+`;
+
+const TitleWrap = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const PinnedTitle = styled.span`
+  font-weight: 600;
+`;
+
+const NoticeBadge = styled.span`
+  padding: 3px 8px;
+  border-radius: 10px;
+  background: ${({ theme }) => theme.colors.primary};
+  color: white;
+  font-size: 12px;
 `;
 
 const ColNum = styled.div`
@@ -98,7 +189,6 @@ const ColTitle = styled.div`
   flex: 1;
   font-size: 15px;
   color: ${({ theme }) => theme.colors.textDark};
-  font-weight: 500;
 `;
 
 const ColDate = styled.div`
@@ -107,4 +197,42 @@ const ColDate = styled.div`
   color: ${({ theme }) => theme.colors.textLight};
   font-size: 14px;
   text-align: right;
+`;
+
+const Empty = styled.div`
+  padding: 48px 0;
+  text-align: center;
+  color: ${({ theme }) => theme.colors.textLight};
+  font-size: 15px;
+`;
+
+const Pagination = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin-top: 32px;
+`;
+
+const PageBtn = styled.button`
+  width: 36px;
+  height: 36px;
+  border-radius: ${({ theme }) => theme.radius.sm};
+  border: 1px solid
+    ${({ $active, theme }) =>
+      $active ? theme.colors.primary : theme.colors.border};
+
+  background: ${({ $active, theme }) =>
+    $active ? theme.colors.primary : theme.colors.white};
+
+  color: ${({ $active, theme }) => ($active ? 'white' : theme.colors.textMid)};
+
+  font-size: 14px;
+  font-weight: ${({ $active }) => ($active ? '700' : '400')};
+
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.3;
+  }
 `;

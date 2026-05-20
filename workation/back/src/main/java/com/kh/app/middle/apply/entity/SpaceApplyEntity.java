@@ -2,6 +2,7 @@ package com.kh.app.middle.apply.entity;
 
 import com.kh.app.common.entity.BaseEntity;
 import com.kh.app.member.entity.MemberEntity;
+import com.kh.app.middle.apply.dto.req.SpaceApplyPermitReqDto;
 import com.kh.app.product.space.entity.SpaceEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -21,12 +22,13 @@ public class SpaceApplyEntity extends BaseEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "MEMBER_ID")
-    private MemberEntity seller;
-
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "SPACE_ID")
     private SpaceEntity space;
+
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "MEMBER_ID")
+    private MemberEntity seller;
 
     @Column(length = 20, nullable = false)
     @Builder.Default
@@ -34,15 +36,9 @@ public class SpaceApplyEntity extends BaseEntity {
 
     private LocalDateTime reviewedAt;
 
-    //거절
-    public void reject() {
-        this.applyStatus = ApplyStatus.R;
-        this.reviewedAt = LocalDateTime.now();
-    }
-
-    //승인
-    public void approve() {
-        this.applyStatus = ApplyStatus.A;
+    //거절 & 거절
+    public void update(SpaceApplyPermitReqDto dto) {
+        this.applyStatus = dto.getApplyStatus();
         this.reviewedAt = LocalDateTime.now();
     }
 

@@ -2,6 +2,7 @@ package com.kh.app.member.dto.request;
 
 import com.kh.app.member.entity.MemberEntity;
 import com.kh.app.member.entity.MemberProfileEntity;
+import com.kh.app.product.space.entity.Area;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,6 +18,7 @@ public class MemberJoinReqDto {
     private String name;
     private String phone;
     private String email;
+    private Area preferredArea;
 
     // 선택값
     private Long companyId;
@@ -42,6 +44,7 @@ public class MemberJoinReqDto {
                 .name(name)
                 .phone(phone)
                 .email(email)
+                .preferredArea(preferredArea)
                 .build();
     }
 

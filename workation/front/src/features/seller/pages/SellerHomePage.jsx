@@ -1,11 +1,7 @@
-import React from "react";
+import styled from 'styled-components';
 
-function SellerHomePage() {
-  return (
-    <>
-      <h1>SellerHomePage</h1>
-    </>
-  );
+export default function SellerHomePage() {
+  return <Wrapper>SellerHomePage</Wrapper>;
 }
 
-export default SellerHomePage;
+const Wrapper = styled.div``;

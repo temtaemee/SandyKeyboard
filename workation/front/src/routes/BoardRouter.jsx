@@ -10,11 +10,11 @@ import FaqPage from '../features/user/board/support/FaqPage';
 // 참여후기
 import ReviewHomePage from '../features/user/board/reviewboard/ReviewHomePage';
 import ReviewListPage from '../features/user/board/reviewboard/ReviewListPage';
-import ReviewDetailPage from '../features/user/board/reviewboard/ReviewDetailPage';
 import ReviewWritePage from '../features/user/board/reviewboard/ReviewWritePage';
 
 // 이벤트
 import EventPage from '../features/user/board/event/EventPage';
+import ReviewDetailPage from '../features/user/board/reviewboard/ReviewDetailPage';
 
 function BoardRouter() {
   return (
@@ -32,8 +32,9 @@ function BoardRouter() {
       <Route path="review" element={<ReviewHomePage />}>
         <Route index element={<Navigate to="list" replace />} />
         <Route path="list" element={<ReviewListPage />} />
-        <Route path="detail/:reviewId" element={<ReviewDetailPage />} />
         <Route path="write" element={<ReviewWritePage />} />
+        <Route path="detail/:reviewId" element={<ReviewDetailPage />} />{' '}
+        {/* 이거 추가! */}
       </Route>
 
       {/* 이벤트 */}

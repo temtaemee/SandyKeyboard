@@ -1,60 +1,9 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import { useReviewDetail } from '../hooks/useReviewDetail';
 
-// 예시 이미지 (Unsplash 무료 이미지)
-const SAMPLE_IMAGES = [
-  'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=600&h=450&fit=crop',
-  'https://images.unsplash.com/photo-1586105251261-72a756497a11?w=600&h=450&fit=crop',
-  'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=600&h=450&fit=crop',
-  'https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=600&h=450&fit=crop',
-];
-
-const dummyData = {
-  1: {
-    title: '제주 워케이션 후기',
-    writer: 'user01',
-    date: '2개월 전',
-    rating: 5,
-    tag: '제주 바다뷰 스튜디오 — 인터넷 빵빵하고 뷰 최고!',
-    content: `길동역 주변에 위치한 마리호텔은 접근성이 뛰어나고 주차장이 넓어서 참 좋습니다. 지하주차장에 주차하고 엘리베이터 타고 프론트에서 체크인 하고 로비에 커피머신이 있어 아메리노 내려서 객실로 입실하니 객실은 조금 작지만 아담하고 인테리어는 심플하고 깔끔합니다.
-
-침구류도 깨끗하게 세팅되어 있어 기분 좋습니다. 냉장고 안에 생수도 훌륭해요. 일회용품은 프론트에서 2000원에 구입해야 하고 충전기도 대여해 줍니다. 화장실도 무선 비데 설치로 편리하고 뷰도 아주 좋았습니다.`,
-    images: SAMPLE_IMAGES,
-  },
-  2: {
-    title: '부산 여행 후기',
-    writer: 'user02',
-    date: '1개월 전',
-    rating: 4,
-    tag: '부산 해운대 숙소 — 바다뷰 너무 좋아요',
-    content: `바다 뷰가 너무 아름다웠습니다. 창문을 열면 파도 소리가 들려서 힐링이 되었어요. 조식도 맛있고 직원분들도 친절하셨습니다. 다음에 또 오고 싶어요.`,
-    images: SAMPLE_IMAGES,
-  },
-  3: {
-    title: '서울 스튜디오 이용 후기',
-    writer: 'user03',
-    date: '3주 전',
-    rating: 5,
-    tag: '서울 강남 스튜디오 — 접근성 최고!',
-    content: `접근성이 뛰어나고 시설이 깔끔했습니다. 지하철역 바로 앞이라 이동이 너무 편했어요. 넓은 책상과 빠른 와이파이 덕분에 업무도 잘 됐습니다. 강력 추천합니다!`,
-    images: SAMPLE_IMAGES,
-  },
-};
-
-const initialComments = [
-  {
-    id: 1,
-    writer: '제휴점 답변',
-    date: '2개월 전',
-    content:
-      '저희 숙소를 이용해주셔서 진심으로 감사드립니다. 자주 오셔서 편히 쉬시다 가실 수 있도록 항상 꼼꼼하게 객실 관리를 해놓겠습니다. 앞으로도 많은 이용 부탁드리겠습니다',
-    isOwner: true,
-  },
-];
-
-/* ── 별점 컴포넌트 ── */
-function StarRating({ rating, onChange }) {
+function StarRating({ rating, onChange, size = 20 }) {
   const [hovered, setHovered] = useState(0);
   return (
     <Stars>
@@ -63,6 +12,7 @@ function StarRating({ rating, onChange }) {
           key={n}
           $filled={n <= (hovered || rating)}
           $interactive={!!onChange}
+          $size={size}
           onClick={() => onChange?.(n)}
           onMouseEnter={() => onChange && setHovered(n)}
           onMouseLeave={() => onChange && setHovered(0)}
@@ -74,81 +24,73 @@ function StarRating({ rating, onChange }) {
   );
 }
 
+function Avatar({ name, isOwner }) {
+  const initial = name?.charAt(0) ?? '?';
+  return <AvatarCircle $isOwner={isOwner}>{initial}</AvatarCircle>;
+}
+
 export default function ReviewDetailPage() {
   const { reviewId } = useParams();
   const navigate = useNavigate();
-  const review = dummyData[reviewId];
 
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [comments, setComments] = useState(initialComments);
-  const [commentInput, setCommentInput] = useState('');
-  const [commentRating, setCommentRating] = useState(5);
-  const [deleteCommentId, setDeleteCommentId] = useState(null);
-  const [lightboxIdx, setLightboxIdx] = useState(null);
+  const {
+    review,
+    comments,
+    loading,
+    commentInput,
+    setCommentInput,
+    commentRating,
+    setCommentRating,
+    showConfirm,
+    setShowConfirm,
+    deleteCommentId,
+    setDeleteCommentId,
+    lightboxIdx,
+    setLightboxIdx,
+    handleDelete,
+    handleCommentSubmit,
+    handleCommentDelete,
+  } = useReviewDetail(reviewId);
 
+  if (loading) return <LoadingWrapper>불러오는 중...</LoadingWrapper>;
   if (!review)
-    return (
-      <Wrapper>
-        <p>존재하지 않는 후기입니다.</p>
-      </Wrapper>
-    );
+    return <LoadingWrapper>존재하지 않는 후기입니다.</LoadingWrapper>;
 
-  function handleDelete() {
-    setShowConfirm(false);
-    navigate('/board/review/list');
-  }
-
-  function handleCommentSubmit() {
-    if (!commentInput.trim()) return;
-    setComments((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        writer: 'user01',
-        date: '방금 전',
-        rating: commentRating,
-        content: commentInput.trim(),
-        isOwner: false,
-      },
-    ]);
-    setCommentInput('');
-    setCommentRating(5);
-  }
-
-  function handleCommentDelete(id) {
-    setComments((prev) => prev.filter((c) => c.id !== id));
-    setDeleteCommentId(null);
-  }
+  const images = review.images ?? [];
 
   return (
     <Wrapper>
-      {/* ── 헤더: 별점 + 작성자 + 수정/삭제 ── */}
+      {/* ── 헤더 ── */}
       <Header>
         <HeaderLeft>
-          <StarRating rating={review.rating} />
+          <StarRating rating={review.rating} size={20} />
           <MetaRow>
+            <Avatar name={review.writer} />
             <Writer>{review.writer}</Writer>
             <Dot>·</Dot>
-            <DateText>{review.date}</DateText>
+            <DateText>
+              {new Date(review.createdAt).toLocaleDateString('ko-KR')}
+            </DateText>
           </MetaRow>
         </HeaderLeft>
         <ActionButtons>
-          <EditButton onClick={() => navigate('/board/review/write')}>
+          <EditBtn
+            onClick={() => navigate(`/board/review/write?id=${reviewId}`)}
+          >
             수정
-          </EditButton>
-          <DeleteButton onClick={() => setShowConfirm(true)}>삭제</DeleteButton>
+          </EditBtn>
+          <DeleteBtn onClick={() => setShowConfirm(true)}>삭제</DeleteBtn>
         </ActionButtons>
       </Header>
 
-      {/* ── 사진 4장 그리드 ── */}
-      {review.images?.length > 0 && (
-        <ImageGrid>
-          {review.images.slice(0, 4).map((src, i) => (
-            <ImageItem key={i} onClick={() => setLightboxIdx(i)}>
-              <img src={src} alt={`후기 이미지 ${i + 1}`} />
-              {/* 4번째 사진이 더 있을 때 +N 표시 */}
-              {i === 3 && review.images.length > 4 && (
-                <MoreOverlay>+{review.images.length - 4}</MoreOverlay>
+      {/* ── 이미지 그리드 ── */}
+      {images.length > 0 && (
+        <ImageGrid $count={Math.min(images.length, 4)}>
+          {images.slice(0, 4).map((img, i) => (
+            <ImageItem key={img.id} onClick={() => setLightboxIdx(i)}>
+              <img src={img.s3Key} alt={img.originalFileName} />
+              {i === 3 && images.length > 4 && (
+                <MoreOverlay>+{images.length - 4}</MoreOverlay>
               )}
             </ImageItem>
           ))}
@@ -156,46 +98,68 @@ export default function ReviewDetailPage() {
       )}
 
       {/* ── 태그 ── */}
-      {review.tag && <TagLine>{review.tag}</TagLine>}
+      {review.tag && (
+        <TagPill>
+          <TagDot />
+          {review.tag}
+        </TagPill>
+      )}
 
       {/* ── 본문 ── */}
       <Body>{review.content}</Body>
 
       {/* ── 목록으로 ── */}
-      <BackButton onClick={() => navigate('/board/review/list')}>
-        ← 목록으로
-      </BackButton>
+      <BackRow>
+        <BackBtn onClick={() => navigate('/board/review/list')}>
+          ← 목록으로
+        </BackBtn>
+      </BackRow>
 
       {/* ── 댓글 섹션 ── */}
       <CommentSection>
-        <CommentTitle>
-          댓글 <CommentCount>{comments.length}</CommentCount>
-        </CommentTitle>
+        <CommentHeader>
+          <CommentTitle>댓글</CommentTitle>
+          <CommentBadge>{comments.length}</CommentBadge>
+        </CommentHeader>
 
         <CommentList>
-          {comments.map((c) => (
-            <CommentItem key={c.id} $isOwner={c.isOwner}>
-              <CommentTop>
-                <CommentWriter $isOwner={c.isOwner}>{c.writer}</CommentWriter>
-                {!c.isOwner && c.rating && <StarRating rating={c.rating} />}
-                <CommentDate>{c.date}</CommentDate>
-              </CommentTop>
-              <CommentBody>{c.content}</CommentBody>
-              <CommentDeleteBtn onClick={() => setDeleteCommentId(c.id)}>
-                삭제
-              </CommentDeleteBtn>
-            </CommentItem>
-          ))}
           {comments.length === 0 && (
-            <EmptyComment>첫 번째 댓글을 남겨보세요 💬</EmptyComment>
+            <EmptyComment>첫 번째 댓글을 남겨보세요</EmptyComment>
           )}
+          {comments.map((c) => (
+            <CommentCard key={c.id} $isOwner={c.ownerYn === 'Y'}>
+              <CommentCardTop>
+                <Avatar name={c.writer} isOwner={c.ownerYn === 'Y'} />
+                <CommentWriter $isOwner={c.ownerYn === 'Y'}>
+                  {c.writer}
+                </CommentWriter>
+                {c.ownerYn === 'Y' && <OwnerBadge>운영자</OwnerBadge>}
+                {c.ownerYn !== 'Y' && c.rating && (
+                  <StarRating rating={c.rating} size={13} />
+                )}
+                <CommentMeta>
+                  <CommentDate>
+                    {new Date(c.createdAt).toLocaleDateString('ko-KR')}
+                  </CommentDate>
+                  <CommentDelBtn onClick={() => setDeleteCommentId(c.id)}>
+                    삭제
+                  </CommentDelBtn>
+                </CommentMeta>
+              </CommentCardTop>
+              <CommentBody>{c.content}</CommentBody>
+            </CommentCard>
+          ))}
         </CommentList>
 
-        {/* 댓글 입력 */}
+        {/* ── 댓글 입력 ── */}
         <CommentInputBox>
           <CommentInputTop>
             <CommentInputLabel>별점</CommentInputLabel>
-            <StarRating rating={commentRating} onChange={setCommentRating} />
+            <StarRating
+              rating={commentRating}
+              onChange={setCommentRating}
+              size={18}
+            />
           </CommentInputTop>
           <CommentInputRow>
             <CommentTextArea
@@ -218,10 +182,10 @@ export default function ReviewDetailPage() {
 
       {/* ── 라이트박스 ── */}
       {lightboxIdx !== null && (
-        <Overlay onClick={() => setLightboxIdx(null)}>
+        <LightboxOverlay onClick={() => setLightboxIdx(null)}>
           <LightboxImg
-            src={review.images[lightboxIdx]}
-            alt="확대 이미지"
+            src={images[lightboxIdx]?.s3Key}
+            alt="확대"
             onClick={(e) => e.stopPropagation()}
           />
           <LightboxClose onClick={() => setLightboxIdx(null)}>✕</LightboxClose>
@@ -235,7 +199,7 @@ export default function ReviewDetailPage() {
               ‹
             </LightboxPrev>
           )}
-          {lightboxIdx < review.images.length - 1 && (
+          {lightboxIdx < images.length - 1 && (
             <LightboxNext
               onClick={(e) => {
                 e.stopPropagation();
@@ -245,10 +209,10 @@ export default function ReviewDetailPage() {
               ›
             </LightboxNext>
           )}
-        </Overlay>
+        </LightboxOverlay>
       )}
 
-      {/* ── 게시글 삭제 모달 ── */}
+      {/* ── 후기 삭제 모달 ── */}
       {showConfirm && (
         <ModalOverlay>
           <Modal>
@@ -283,37 +247,67 @@ export default function ReviewDetailPage() {
   );
 }
 
-/* ── Styled Components ── */
+/* ────────────────────────────────────────
+   Styled Components
+──────────────────────────────────────── */
 
-const Wrapper = styled.div``;
+const Wrapper = styled.div`
+  max-width: 780px;
+`;
 
+const LoadingWrapper = styled.div`
+  padding: 80px 0;
+  text-align: center;
+  color: ${({ theme }) => theme.colors.textLight};
+  font-size: 15px;
+`;
+
+/* ── 헤더 ── */
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 20px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  margin-bottom: 28px;
 `;
 
 const HeaderLeft = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 `;
 
 const MetaRow = styled.div`
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+`;
+
+const AvatarCircle = styled.div`
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: ${({ $isOwner, theme }) =>
+    $isOwner ? theme.colors.primary + '20' : theme.colors.bgSection};
+  color: ${({ $isOwner, theme }) =>
+    $isOwner ? theme.colors.primary : theme.colors.textMid};
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 `;
 
 const Writer = styled.span`
   font-size: 14px;
   font-weight: 600;
-  color: ${({ theme }) => theme.colors.textMid};
+  color: ${({ theme }) => theme.colors.textDark};
 `;
 
 const Dot = styled.span`
-  color: ${({ theme }) => theme.colors.textLight};
+  color: ${({ theme }) => theme.colors.border};
   font-size: 13px;
 `;
 
@@ -324,208 +318,256 @@ const DateText = styled.span`
 
 const ActionButtons = styled.div`
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
 `;
 
-const EditButton = styled.button`
-  padding: 8px 20px;
+const EditBtn = styled.button`
+  padding: 7px 18px;
   border-radius: ${({ theme }) => theme.radius.full};
-  border: 1px solid ${({ theme }) => theme.colors.primary};
-  background: ${({ theme }) => theme.colors.white};
-  color: ${({ theme }) => theme.colors.primary};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  background: white;
+  color: ${({ theme }) => theme.colors.textMid};
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
   &:hover {
-    background: ${({ theme }) => theme.colors.primary};
+    border-color: ${({ theme }) => theme.colors.primary};
+    color: ${({ theme }) => theme.colors.primary};
+  }
+`;
+
+const DeleteBtn = styled.button`
+  padding: 7px 18px;
+  border-radius: ${({ theme }) => theme.radius.full};
+  border: 1px solid transparent;
+  background: #fef2f2;
+  color: #ef4444;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  &:hover {
+    background: #ef4444;
     color: white;
   }
 `;
 
-const DeleteButton = styled.button`
-  padding: 8px 20px;
-  border-radius: ${({ theme }) => theme.radius.full};
-  border: none;
-  background: #ef4444;
-  color: white;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s;
-  &:hover {
-    background: #dc2626;
-  }
-`;
-
-/* 별점 */
 const Stars = styled.div`
   display: flex;
-  gap: 2px;
+  gap: 1px;
 `;
 
 const Star = styled.span`
-  font-size: 22px;
+  font-size: ${({ $size }) => $size ?? 20}px;
   color: ${({ $filled }) => ($filled ? '#f59e0b' : '#e2e8f0')};
   cursor: ${({ $interactive }) => ($interactive ? 'pointer' : 'default')};
   transition: color 0.1s;
   line-height: 1;
 `;
 
-/* 사진 4장 그리드 */
+/* ── 이미지 ── */
 const ImageGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-bottom: 16px;
-
+  grid-template-columns: repeat(${({ $count }) => Math.min($count, 4)}, 1fr);
+  gap: 6px;
+  margin-bottom: 24px;
+  border-radius: ${({ theme }) => theme.radius.md};
+  overflow: hidden;
   @media (max-width: 768px) {
     grid-template-columns: repeat(2, 1fr);
   }
 `;
 
 const ImageItem = styled.div`
-  aspect-ratio: 4/3;
-  border-radius: ${({ theme }) => theme.radius.sm};
+  aspect-ratio: 1 / 1;
   overflow: hidden;
   cursor: pointer;
   position: relative;
-
+  background: ${({ theme }) => theme.colors.bgSection};
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.2s;
+    transition: transform 0.25s ease;
   }
-
   &:hover img {
-    transform: scale(1.04);
+    transform: scale(1.05);
   }
 `;
 
 const MoreOverlay = styled.div`
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.48);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
   color: white;
 `;
 
-const TagLine = styled.div`
+/* ── 태그 ── */
+const TagPill = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: ${({ theme }) => theme.colors.bgSection};
+  border-radius: ${({ theme }) => theme.radius.full};
+  padding: 5px 14px;
   font-size: 13px;
-  color: ${({ theme }) => theme.colors.primary};
-  margin-bottom: 16px;
-  font-weight: 500;
+  color: ${({ theme }) => theme.colors.textMid};
+  margin-bottom: 20px;
 `;
 
+const TagDot = styled.span`
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: ${({ theme }) => theme.colors.primary};
+  flex-shrink: 0;
+`;
+
+/* ── 본문 ── */
 const Body = styled.p`
   font-size: 15px;
   line-height: 1.9;
   color: ${({ theme }) => theme.colors.textMid};
-  margin-bottom: 16px;
+  margin-bottom: 32px;
   white-space: pre-line;
 `;
 
-const BackButton = styled.button`
-  padding: 10px 22px;
-  border-radius: ${({ theme }) => theme.radius.full};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  background: ${({ theme }) => theme.colors.white};
-  color: ${({ theme }) => theme.colors.textMid};
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
+/* ── 목록으로 ── */
+const BackRow = styled.div`
   margin-bottom: 48px;
-  transition: all 0.15s;
+`;
+
+const BackBtn = styled.button`
+  padding: 0;
+  background: none;
+  border: none;
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.textLight};
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.15s;
   &:hover {
-    background: ${({ theme }) => theme.colors.bgSection};
+    color: ${({ theme }) => theme.colors.textDark};
   }
 `;
 
-/* 댓글 */
+/* ── 댓글 섹션 ── */
 const CommentSection = styled.div`
-  border-top: 2px solid ${({ theme }) => theme.colors.textDark};
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
   padding-top: 32px;
 `;
 
-const CommentTitle = styled.h3`
-  font-size: 17px;
-  font-weight: 700;
-  margin-bottom: 24px;
-  color: ${({ theme }) => theme.colors.textDark};
+const CommentHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
 `;
 
-const CommentCount = styled.span`
+const CommentTitle = styled.h3`
+  font-size: 16px;
+  font-weight: 700;
+  color: ${({ theme }) => theme.colors.textDark};
+  margin: 0;
+`;
+
+const CommentBadge = styled.span`
+  font-size: 12px;
+  font-weight: 700;
   color: ${({ theme }) => theme.colors.primary};
+  background: ${({ theme }) => theme.colors.primary}18;
+  border-radius: ${({ theme }) => theme.radius.full};
+  padding: 2px 8px;
 `;
 
 const CommentList = styled.div`
-  margin-bottom: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
 `;
 
-const CommentItem = styled.div`
-  padding: 20px ${({ $isOwner }) => ($isOwner ? '16px' : '0')};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-  position: relative;
+const CommentCard = styled.div`
+  padding: 16px;
+  border-radius: ${({ theme }) => theme.radius.md};
+  border: 1px solid ${({ theme }) => theme.colors.border};
   background: ${({ $isOwner, theme }) =>
-    $isOwner ? theme.colors.bgSection : 'transparent'};
-  border-radius: ${({ $isOwner, theme }) => ($isOwner ? theme.radius.sm : '0')};
-  margin-bottom: ${({ $isOwner }) => ($isOwner ? '8px' : '0')};
+    $isOwner ? theme.colors.bgSection : 'white'};
 `;
 
-const CommentTop = styled.div`
+const CommentCardTop = styled.div`
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
+  gap: 8px;
+  margin-bottom: 10px;
   flex-wrap: wrap;
 `;
 
 const CommentWriter = styled.span`
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   color: ${({ $isOwner, theme }) =>
     $isOwner ? theme.colors.primary : theme.colors.textDark};
 `;
 
-const CommentDate = styled.span`
-  font-size: 13px;
-  color: ${({ theme }) => theme.colors.textLight};
+const OwnerBadge = styled.span`
+  font-size: 11px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.primary};
+  background: ${({ theme }) => theme.colors.primary}18;
+  border-radius: ${({ theme }) => theme.radius.full};
+  padding: 2px 8px;
+`;
+
+const CommentMeta = styled.div`
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+const CommentDate = styled.span`
+  font-size: 12px;
+  color: ${({ theme }) => theme.colors.textLight};
+`;
+
+const CommentDelBtn = styled.button`
+  font-size: 12px;
+  color: ${({ theme }) => theme.colors.textLight};
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s;
+  &:hover {
+    color: #ef4444;
+  }
 `;
 
 const CommentBody = styled.p`
   font-size: 14px;
   color: ${({ theme }) => theme.colors.textMid};
   line-height: 1.7;
-`;
-
-const CommentDeleteBtn = styled.button`
-  position: absolute;
-  top: 20px;
-  right: 0;
-  font-size: 13px;
-  color: ${({ theme }) => theme.colors.textLight};
-  background: none;
-  border: none;
-  cursor: pointer;
-  &:hover {
-    color: #ef4444;
-  }
+  margin: 0;
 `;
 
 const EmptyComment = styled.div`
   padding: 32px 0;
   text-align: center;
   color: ${({ theme }) => theme.colors.textLight};
-  font-size: 15px;
+  font-size: 14px;
 `;
 
+/* ── 댓글 입력 ── */
 const CommentInputBox = styled.div`
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: ${({ theme }) => theme.radius.md};
@@ -536,7 +578,7 @@ const CommentInputBox = styled.div`
 const CommentInputTop = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   margin-bottom: 12px;
 `;
 
@@ -548,23 +590,22 @@ const CommentInputLabel = styled.span`
 
 const CommentInputRow = styled.div`
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: flex-end;
 `;
 
 const CommentTextArea = styled.textarea`
   flex: 1;
-  padding: 12px 14px;
+  padding: 11px 14px;
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: ${({ theme }) => theme.radius.sm};
   font-size: 14px;
   color: ${({ theme }) => theme.colors.textDark};
   resize: none;
-  height: 68px;
-  line-height: 1.6;
+  height: 64px;
   outline: none;
   font-family: ${({ theme }) => theme.fonts.base};
-  background: ${({ theme }) => theme.colors.white};
+  background: white;
   transition: border-color 0.15s;
   &::placeholder {
     color: ${({ theme }) => theme.colors.textLight};
@@ -575,8 +616,8 @@ const CommentTextArea = styled.textarea`
 `;
 
 const CommentSubmitBtn = styled.button`
-  padding: 0 22px;
-  height: 68px;
+  padding: 0 20px;
+  height: 64px;
   border-radius: ${({ theme }) => theme.radius.sm};
   border: none;
   background: ${({ theme }) => theme.colors.primary};
@@ -591,11 +632,11 @@ const CommentSubmitBtn = styled.button`
   }
 `;
 
-/* 라이트박스 */
-const Overlay = styled.div`
+/* ── 라이트박스 ── */
+const LightboxOverlay = styled.div`
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.88);
+  background: rgba(0, 0, 0, 0.9);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -613,38 +654,50 @@ const LightboxClose = styled.button`
   position: fixed;
   top: 24px;
   right: 32px;
-  font-size: 28px;
-  color: white;
+  font-size: 24px;
+  color: rgba(255, 255, 255, 0.7);
   background: none;
   border: none;
   cursor: pointer;
+  transition: color 0.15s;
+  &:hover {
+    color: white;
+  }
 `;
 
 const LightboxPrev = styled.button`
   position: fixed;
   left: 24px;
-  font-size: 52px;
-  color: white;
+  font-size: 48px;
+  color: rgba(255, 255, 255, 0.7);
   background: none;
   border: none;
   cursor: pointer;
+  transition: color 0.15s;
+  &:hover {
+    color: white;
+  }
 `;
 
 const LightboxNext = styled.button`
   position: fixed;
   right: 24px;
-  font-size: 52px;
-  color: white;
+  font-size: 48px;
+  color: rgba(255, 255, 255, 0.7);
   background: none;
   border: none;
   cursor: pointer;
+  transition: color 0.15s;
+  &:hover {
+    color: white;
+  }
 `;
 
-/* 모달 */
+/* ── 모달 ── */
 const ModalOverlay = styled.div`
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -652,32 +705,33 @@ const ModalOverlay = styled.div`
 `;
 
 const Modal = styled.div`
-  background: ${({ theme }) => theme.colors.white};
-  border-radius: ${({ theme }) => theme.radius.md};
+  background: white;
+  border-radius: ${({ theme }) => theme.radius.lg};
   padding: 40px 48px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 28px;
-  box-shadow: ${({ theme }) => theme.shadows.cardHover};
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
 `;
 
 const ModalText = styled.p`
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 600;
   color: ${({ theme }) => theme.colors.textDark};
+  margin: 0;
 `;
 
 const ModalButtons = styled.div`
   display: flex;
-  gap: 12px;
+  gap: 10px;
 `;
 
 const ModalCancel = styled.button`
-  padding: 12px 28px;
+  padding: 11px 28px;
   border-radius: ${({ theme }) => theme.radius.full};
   border: 1px solid ${({ theme }) => theme.colors.border};
-  background: ${({ theme }) => theme.colors.white};
+  background: white;
   color: ${({ theme }) => theme.colors.textMid};
   font-weight: 600;
   font-size: 14px;
@@ -688,7 +742,7 @@ const ModalCancel = styled.button`
 `;
 
 const ModalDelete = styled.button`
-  padding: 12px 28px;
+  padding: 11px 28px;
   border-radius: ${({ theme }) => theme.radius.full};
   border: none;
   background: #ef4444;
