@@ -7,6 +7,7 @@ import MyCouponPage from '../features/user/mypage/pages/MyCouponPage';
 import MyReservationPage from '../features/user/mypage/pages/MyReservationPage';
 import MyReviewPage from '../features/user/mypage/pages/MyReviewPage';
 import MySettingPage from '../features/user/mypage/pages/MySettingPage';
+import MyWishlistPage from '../features/user/mypage/pages/MyWishlistPage';
 
 /**
  * User 도메인 라우터
@@ -27,6 +28,7 @@ export default function MypageRouter() {
       <Route path="coupon" element={<MyCouponPage />} />
       <Route path="review" element={<MyReviewPage />} />
       <Route path="setting" element={<MySettingPage />} />
+      <Route path="wishlist" element={<MyWishlistPage />} />
     </Routes>
   );
 }
