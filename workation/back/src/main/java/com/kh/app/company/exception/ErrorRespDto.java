@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ErrorRespDto {
 
+    private final String code;    // 에러코드 (ex. COMPANY-10001)
     private final String message;
 
 }
