@@ -93,6 +93,9 @@ public class MemberService {
                 .name(memberProfile.getName())
                 .phone(memberProfile.getPhone())
                 .email(memberProfile.getEmail())
+                .zonecode(memberProfile.getZonecode())
+                .address(memberProfile.getAddress())
+                .addressDetail(memberProfile.getAddressDetail())
                 .companyName(companyName)
                 .build();
     }
@@ -169,7 +172,10 @@ public class MemberService {
                 dto.getName(),
                 dto.getPhone(),
                 dto.getEmail(),
-                dto.getPreferredArea()
+                dto.getPreferredArea(),
+                dto.getZonecode(),
+                dto.getAddress(),
+                dto.getAddressDetail()
         );
     }
 

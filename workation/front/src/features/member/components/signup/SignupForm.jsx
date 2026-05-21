@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import styled from 'styled-components';
 import useJoin from '../../hooks/useJoin';
+import AddressSearchModal from '../../../../home/components/AddressSearchModal';
 
 function SignupForm() {
   const { fetchJoin, navi } = useJoin();
@@ -12,14 +13,26 @@ function SignupForm() {
     phone: '',
     email: '',
     preferredArea: '',
+    zonecode: '',
+    address: '',
+    addressDetail: '',
   });
 
   const [passwordCheck, setPasswordCheck] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   function handleChange(e) {
     const { name, value } = e.target;
     setVo((prev) => ({ ...prev, [name]: value }));
   }
+
+  const handleAddressSelect = (selectedAddress) => {
+    setVo((prev) => ({
+      ...prev,
+      zonecode: selectedAddress.zonecode,
+      address: selectedAddress.address,
+    }));
+  };
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -104,6 +117,47 @@ function SignupForm() {
             onChange={handleChange}
           />
         </InputWrapper>
+        {/* 주소 입력 컴포넌트 부분 */}
+        <InputWrapper>
+          <Label>주소</Label>
+          <AddressRow>
+            <Input
+              type="text"
+              name="zonecode"
+              value={vo.zonecode}
+              placeholder="우편번호"
+              readOnly
+            />
+            <AddressButton type="button" onClick={() => setIsModalOpen(true)}>
+              주소 검색
+            </AddressButton>
+          </AddressRow>
+
+          <Input
+            type="text"
+            name="address"
+            value={vo.address}
+            placeholder="기본 주소"
+            readOnly
+            style={{ marginTop: '10px' }}
+          />
+          <Input
+            type="text"
+            name="addressDetail"
+            value={vo.addressDetail}
+            placeholder="상세 주소를 입력하세요"
+            onChange={handleChange}
+            style={{ marginTop: '10px' }}
+          />
+        </InputWrapper>
+
+        {/* 💡 깔끔하게 컴포넌트 한 줄로 호출 */}
+        {isModalOpen && (
+          <AddressSearchModal
+            onClose={() => setIsModalOpen(false)}
+            onSelect={handleAddressSelect}
+          />
+        )}
         <InputWrapper>
           <Label>선호 지역</Label>
 
@@ -334,6 +388,28 @@ const SocialArea = styled.div`
   display: flex;
   justify-content: center;
   gap: 18px;
+`;
+const AddressRow = styled.div`
+  display: flex;
+  gap: 10px;
+`;
+
+const AddressButton = styled.button`
+  width: 120px;
+  height: 54px;
+  border: 1px solid #4d6c75;
+  border-radius: 12px;
+  background-color: transparent;
+  color: #4d6c75;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: 0.2s;
+
+  &:hover {
+    background-color: #f4f7f8;
+  }
 `;
 
 const SocialButton = styled.button`

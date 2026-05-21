@@ -20,6 +20,10 @@ public class MemberJoinReqDto {
     private String email;
     private Area preferredArea;
 
+    private String zonecode;
+    private String address;
+    private String addressDetail;
+
     // 선택값
     private Long companyId;
 
@@ -44,6 +48,9 @@ public class MemberJoinReqDto {
                 .name(name)
                 .phone(phone)
                 .email(email)
+                .zonecode(zonecode)
+                .address(address)
+                .addressDetail(addressDetail)
                 .preferredArea(preferredArea)
                 .build();
     }
