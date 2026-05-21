@@ -31,5 +31,9 @@ public class CompanyEntity extends BaseEntity {
         this.businessNo = dto.getBusinessNo();
     }
 
+    public void toggleStatus() {
+        this.delYn = "Y".equals(this.delYn) ? "N" : "Y";
+    }
+
 
 }
