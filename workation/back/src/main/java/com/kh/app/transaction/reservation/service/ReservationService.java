@@ -110,6 +110,9 @@ public class ReservationService {
         Long totalPrice =
                 originalPrice - discountAmount;
 
+
+        // 예약 생성 전에 orderId 생성
+        String orderId = "ORDER_" + java.util.UUID.randomUUID();
         // 예약 생성
         ReservationEntity reservation =
                 dto.toEntity(

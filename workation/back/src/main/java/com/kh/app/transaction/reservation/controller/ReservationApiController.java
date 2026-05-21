@@ -48,6 +48,8 @@ public class ReservationApiController {
                 .body(reservationId);
     }
 
+
+    //결제 완료후 보기
     @GetMapping("/user/reservation")
     public ResponseEntity<List<ReservationResDto>> getMyReservations(
             @AuthenticationPrincipal(expression = "username") String username
@@ -58,6 +60,7 @@ public class ReservationApiController {
         );
     }
 
+    //결제 완료후 보기
     @GetMapping("/user/reservation/{id}")
     public ResponseEntity<ReservationResDto> getOne(@PathVariable Long id) {
 
@@ -69,6 +72,7 @@ public class ReservationApiController {
 
 
 
+    //결제 완료후 보기
     @PutMapping("/user/reservation/{id}")
     public ResponseEntity<Void> update(
             @PathVariable Long id,
