@@ -5,14 +5,13 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class PaymentCreateReqDto {
+public class PaymentConfirmReqDto {
 
-    // 예약 번호
-    private Long reservationNo;
+    private String paymentKey;
 
-    // 주문 번호
     private String orderId;
 
-    // 결제 금액
     private Long amount;
+
+    private Long reservationId;
 }

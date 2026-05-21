@@ -3,10 +3,12 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import styled from 'styled-components';
+import { loadTossPayments } from '@tosspayments/payment-sdk';
 
 import useReservationInsert from '../hooks/useReservationInsert';
 
 function ReservationInsertPage() {
+  const clientKey = 'test_ck_5OWRapdA8djRAOLzPxRYVo1zEqZK';
   const { stayId } = useParams();
 
   const { insertReservation } = useReservationInsert();
@@ -40,7 +42,34 @@ function ReservationInsertPage() {
   async function handleSubmit(e) {
     e.preventDefault();
 
-    await insertReservation(stayId, vo, fileList);
+    try {
+      // 1. 예약 생성
+      const reservationId = await insertReservation(stayId, vo, fileList);
+
+      // 2. 결제창 호출
+      await requestPayment(reservationId);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+  async function requestPayment(reservationId) {
+    const tossPayments = await loadTossPayments(clientKey);
+
+    await tossPayments.requestPayment('CARD', {
+      amount: 100,
+
+      orderId: `ORDER_${reservationId}_${Date.now()}`,
+
+      orderName: '숙소 예약 결제',
+
+      customerName: vo.primaryGuestName,
+
+      customerEmail: vo.primaryGuestEmail,
+
+      successUrl: `http://localhost:5173/resv/payment/success?reservationId=${reservationId}`,
+
+      failUrl: 'http://localhost:5173/payment/fail',
+    });
   }
 
   return (

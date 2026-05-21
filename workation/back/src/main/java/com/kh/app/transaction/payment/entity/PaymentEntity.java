@@ -4,63 +4,78 @@ import com.kh.app.transaction.payment.enums.PaymentMethod;
 import com.kh.app.transaction.payment.enums.PaymentStatus;
 import com.kh.app.transaction.reservation.entity.ReservationEntity;
 import jakarta.persistence.*;
-import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "PAYMENT")
 @Getter
-@Builder
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Setter
 public class PaymentEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "PAYMENT_ID")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "RESERVATION_ID", nullable = false)
+    @JoinColumn(name = "reservation_id")
     private ReservationEntity reservation;
 
+    @Column(nullable = false, unique = true)
+    private String orderId;
+
+    @Column(unique = true)
+    private String paymentKey;
+
+    @Column(nullable = false)
+    private Long amount; // 최초 결제 금액
+
+    // 💡 [추가] 누적 취소(환불) 금액 (부분 취소 대응용, 기본값 0)
+    @Column(nullable = false)
+    private Long cancelAmount = 0L;
+
     @Enumerated(EnumType.STRING)
-    @Column(name = "PAYMENT_METHOD")
+    @Column(nullable = false)
     private PaymentMethod paymentMethod;
 
-    @Column(name = "PAYMENT_AMOUNT")
-    private Long paymentAmount;
-
     @Enumerated(EnumType.STRING)
-    @Column(name = "PAYMENT_STATUS")
-    private PaymentStatus paymentStatus;
+    @Column(nullable = false)
+    private PaymentStatus status; // SUCCESS, FAILED, CANCELED 등
 
-    @Column(name = "PG_PROVIDER")
-    private String pgProvider;
+    private String cardCompany;
+    private String cardNumber;
 
-    @Column(name = "PG_TID")
-    private String pgTid;
+    private String failReason; // 결제 승인 실패 사유
 
-    @Column(name = "PAID_AT")
-    private LocalDateTime paidAt;
+    // 💡 [추가] 결제 취소(환불) 사유
+    private String cancelReason;
 
-    @CreationTimestamp
-    @Column(name = "CREATED_AT")
+    private LocalDateTime approvedAt; // 결제 승인 시간
+
+    // 💡 [추가] 결제 취소 시간
+    private LocalDateTime canceledAt;
+
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
-    public void success(String pgTid) {
-        this.paymentStatus = PaymentStatus.PAID;
-        this.pgTid = pgTid;
-        this.paidAt = LocalDateTime.now();
+    // 💡 [추가] 편의 메소드: 비즈니스 로직에서 환불 처리 시 사용
+    public void cancel(Long cancelAmount, String cancelReason) {
+        this.status = PaymentStatus.CANCELED;
+        this.cancelAmount = cancelAmount;
+        this.cancelReason = cancelReason;
+        this.canceledAt = LocalDateTime.now();
     }
 
-    public void fail() {
-        this.paymentStatus = PaymentStatus.FAILED;
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
-    public void cancel() {
-        this.paymentStatus = PaymentStatus.CANCELLED;
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 }

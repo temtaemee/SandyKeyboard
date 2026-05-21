@@ -23,4 +23,6 @@ public interface ReservationRepository extends JpaRepository<ReservationEntity, 
 
     List<ReservationEntity> findByMember_UsernameOrderByIdDesc(String username);
 
+    Optional<ReservationEntity> findByOrderId(String orderId);
+
 }

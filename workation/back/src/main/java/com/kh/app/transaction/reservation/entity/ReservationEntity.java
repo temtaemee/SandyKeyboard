@@ -103,6 +103,9 @@ public class ReservationEntity {
     @Column(length = 100)
     private String refundAccountHolder;
 
+    @Column(unique = true)
+    private String orderId;
+
     // =========================
     // 상태 변경
     // =========================
@@ -182,6 +185,7 @@ public class ReservationEntity {
 
     @PrePersist
     private void prePersist() {
+
 
         if (this.status == null) {
             this.status = ReservationStatus.PENDING;
