@@ -36,6 +36,7 @@ export default function AdminReservationPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [partnerSearch, setPartnerSearch] = useState('');
   const [companyName, setCompanyName] = useState('');
+  const [companyBizNum, setCompanyBizNum] = useState('');
   const { currentPage, goToPage, goToPrev, goToNext } = usePagination();
 
   const [partners, setPartners] = useState(PARTNER_COMPANIES);
@@ -53,7 +54,7 @@ export default function AdminReservationPage() {
       const newCompany = {
         id: Date.now(),
         name: companyName,
-        businessNumber: '',
+        businessNumber: companyBizNum.trim(),
         reservationCount: 0,
         status: 'active',
         iconBg: '#e2e8f0',
@@ -64,6 +65,7 @@ export default function AdminReservationPage() {
       };
       setPartners(prev => [newCompany, ...prev]);
       setCompanyName('');
+      setCompanyBizNum('');
     }
   };
 
@@ -132,11 +134,15 @@ export default function AdminReservationPage() {
         {/* 신규 기업 빠른 등록 폼 */}
         <QuickRegisterCard>
           <QuickRegisterTitle>신규 기업 빠른 등록</QuickRegisterTitle>
-          <FormLabel>기업명</FormLabel>
           <FormInput
-            placeholder="기업명 입력"
+            placeholder="기업명"
             value={companyName}
             onChange={(e) => setCompanyName(e.target.value)}
+          />
+          <FormInput
+            placeholder="사업자번호 (0000-00-0000)"
+            value={companyBizNum}
+            onChange={(e) => setCompanyBizNum(e.target.value)}
           />
           <RegisterBtn onClick={handleRegisterCompany}>
             등록하기
