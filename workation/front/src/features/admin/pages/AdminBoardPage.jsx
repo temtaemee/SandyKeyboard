@@ -47,17 +47,6 @@ const STATUS_COLORS = {
 const COUPON_FILTERS = ['전체', '활성', '만료', '소진'];
 const COUPON_STATUS_MAP = { 활성: 'active', 만료: 'expired', 소진: 'exhausted' };
 
-function getDday(expiryDate) {
-  if (!expiryDate) return '-';
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const expiry = new Date(expiryDate);
-  expiry.setHours(0, 0, 0, 0);
-  const diff = Math.round((expiry - today) / (1000 * 60 * 60 * 24));
-  if (diff < 0) return '만료됨';
-  if (diff === 0) return 'D - Day';
-  return `D - ${diff}`;
-}
 
 export default function AdminBoardPage() {
   const [activeTab, setActiveTab] = useState('공지사항');
@@ -269,7 +258,7 @@ export default function AdminBoardPage() {
               {activeTab === '쿠폰' ? (
                 <>
                   <TH $width="120px">남은 수량</TH>
-                  <TH $width="120px">만료일</TH>
+                  <TH $width="120px">유효기간</TH>
                 </>
               ) : activeTab === '리뷰' ? (
                 <>
@@ -295,7 +284,6 @@ export default function AdminBoardPage() {
             ) : (
               posts.map((post) => {
                 const pinned = pinnedIds.includes(post.id);
-                const dday = getDday(post.expiryDate);
 
                 return (
                   <TR
@@ -317,9 +305,9 @@ export default function AdminBoardPage() {
                           <QtyText>{post.remainingQty ?? '-'} 매</QtyText>
                         </TD>
                         <TD>
-                          <DdayText $expired={dday === '만료됨'} $urgent={dday !== '만료됨' && dday !== '-' && parseInt(dday.split('- ')[1]) <= 7}>
-                            {dday}
-                          </DdayText>
+                          <ValidDaysText>
+                            {post.validDays != null ? `${post.validDays}일` : '-'}
+                          </ValidDaysText>
                         </TD>
                       </>
                     ) : activeTab === '리뷰' ? (
@@ -862,12 +850,11 @@ const QtyText = styled.span`
   color: ${({ theme }) => theme.colors.adminTextDark};
   font-family: ${({ theme }) => theme.fonts.number};
 `;
-const DdayText = styled.span`
-  font-size: 12px;
-  font-weight: 600;
+const ValidDaysText = styled.span`
+  font-size: 13px;
+  font-weight: 500;
   font-family: ${({ theme }) => theme.fonts.number};
-  color: ${({ $expired, $urgent }) =>
-    $expired ? '#94a3b8' : $urgent ? '#dc2626' : '#16a34a'};
+  color: ${({ theme }) => theme.colors.adminTextDark};
 `;
 
 /* 핀 버튼 */

@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Getter
@@ -33,10 +33,10 @@ public class StayUpdateReqDto {
     private Integer maxCapa;
 
     @NotNull
-    private LocalDateTime checkInTime;
+    private LocalTime checkInTime;
 
     @NotNull
-    private LocalDateTime checkOutTime;
+    private LocalTime checkOutTime;
 
     @NotNull @Min(0) private Integer monPrice;
     @NotNull @Min(0) private Integer tuePrice;

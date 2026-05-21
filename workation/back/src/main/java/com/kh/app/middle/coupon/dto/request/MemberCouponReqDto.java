@@ -9,7 +9,7 @@ import lombok.Getter;
 public class MemberCouponReqDto {
 
     private String username;
-    private Long couponId;
+    private Long couponId; // 쿠폰의 아이디
 
 
 }

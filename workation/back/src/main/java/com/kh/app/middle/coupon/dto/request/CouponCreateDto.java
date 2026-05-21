@@ -4,8 +4,6 @@ import com.kh.app.middle.coupon.entity.CouponEntity;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-
 @Getter
 @Setter
 public class CouponCreateDto {
@@ -13,16 +11,15 @@ public class CouponCreateDto {
     private String couponName;
     private Integer discountRate;
     private Integer remainQty;
-    private String expiredDate;
+    private Integer validDays;
 
-    public CouponEntity toEntity(String couponCode, LocalDateTime couponExiredDate) {
-     return CouponEntity.builder()
-             .couponCode(couponCode)
-             .couponName(couponName)
-             .discountRate(discountRate)
-             .remainQty(remainQty)
-             .expiredDate(couponExiredDate)
-             .build();
+    public CouponEntity toEntity(String couponCode) {
+        return CouponEntity.builder()
+                .couponCode(couponCode)
+                .couponName(couponName)
+                .discountRate(discountRate)
+                .remainQty(remainQty)
+                .validDays(validDays)
+                .build();
     }
-
 }

@@ -143,7 +143,7 @@ export const BOARD_POSTS = {
       views: 0,
       status: 'active',
       remainingQty: 84,
-      expiryDate: '2026-05-26',
+      validDays: 7,
     },
     {
       id: 14,
@@ -155,7 +155,7 @@ export const BOARD_POSTS = {
       views: 0,
       status: 'expired',
       remainingQty: 12,
-      expiryDate: '2026-04-30',
+      validDays: 14,
     },
     {
       id: 15,
@@ -167,7 +167,7 @@ export const BOARD_POSTS = {
       views: 0,
       status: 'exhausted',
       remainingQty: 0,
-      expiryDate: '2026-06-10',
+      validDays: 30,
     },
   ],
 };

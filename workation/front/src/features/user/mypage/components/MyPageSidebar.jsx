@@ -9,6 +9,7 @@ import {
   Megaphone,
   LogOut,
   Store,
+  Heart,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -17,6 +18,7 @@ function MyPageSidebar({ memberInfo }) {
   const location = useLocation();
 
   const isSeller = memberInfo?.roleSet?.includes('SELLER');
+
   return (
     <Sidebar>
       <MenuSection>
@@ -36,6 +38,14 @@ function MyPageSidebar({ memberInfo }) {
         >
           <ClipboardList size={18} />
           <span>예약 현황</span>
+        </MenuItem>
+
+        <MenuItem
+          active={location.pathname.startsWith('/mypage/wishlist')}
+          onClick={() => navi('/mypage/wishlist')}
+        >
+          <Heart size={18} />
+          <span>찜 목록</span>
         </MenuItem>
 
         <MenuItem
@@ -61,20 +71,25 @@ function MyPageSidebar({ memberInfo }) {
           <Settings size={18} />
           <span>환경 설정</span>
         </MenuItem>
+
         {isSeller ? (
           <MenuItem
+            active={location.pathname.startsWith('/seller')}
             onClick={() => {
               navi(`/seller`);
             }}
           >
+            <Store size={18} />
             <span>판매자 센터</span>
           </MenuItem>
         ) : (
           <MenuItem
+            active={location.pathname.startsWith('/mypage/seller-apply')}
             onClick={() => {
               navi(`/mypage/seller-apply`);
             }}
           >
+            <Store size={18} />
             <span>판매자 신청</span>
           </MenuItem>
         )}

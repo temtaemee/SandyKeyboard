@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Component
@@ -164,8 +164,8 @@ public class DataInitializer implements CommandLineRunner {
         ));
 
         // ===== STAY 더미 데이터 =====
-        LocalDateTime checkIn  = LocalDateTime.of(2000, 1, 1, 15, 0);
-        LocalDateTime checkOut = LocalDateTime.of(2000, 1, 1, 11, 0);
+        LocalTime checkIn  = LocalTime.of(15, 0);
+        LocalTime checkOut = LocalTime.of(11, 0);
 
         // 제주 — 워케이션 Stay
         StayEntity jejuStay1 = stayRepository.save(StayEntity.builder()

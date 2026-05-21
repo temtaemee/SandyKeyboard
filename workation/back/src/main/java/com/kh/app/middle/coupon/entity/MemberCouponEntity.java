@@ -37,6 +37,12 @@ public class MemberCouponEntity extends BaseEntity {
     @Builder.Default
     private String usedYn = "N";
 
+    @Column(length = 1, nullable = false)
+    @Builder.Default
+    private String expiredYn = "N";
+
+    private LocalDateTime expiredAt;
+
     private LocalDateTime usedAt;
 
     // 쿠폰 사용
@@ -45,24 +51,19 @@ public class MemberCouponEntity extends BaseEntity {
         usedAt = LocalDateTime.now();
     }
 
+    // 쿠폰 만료
+    public void expire() {
+        expiredYn = "Y";
+    }
+
     // 쿠폰 사용 여부 확인
     public boolean isUsed() {
         return "Y".equals(usedYn);
     }
 
-    // 중복여부
-    public boolean isDuplicate(String code) {
-        if( couponId.getCouponCode() != null && couponId.getCouponCode().equals(code) ) {
-            return true;
-        }
-        return false;
+    // 쿠폰 만료 여부 확인
+    public boolean isExpired() {
+        return "Y".equals(expiredYn);
     }
-
-
-
-
-
-
-
 
 }

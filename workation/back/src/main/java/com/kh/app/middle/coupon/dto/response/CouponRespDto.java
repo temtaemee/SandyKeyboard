@@ -15,7 +15,7 @@ public class CouponRespDto {
     private Integer discountRate;
     private Integer remainQty;
     private String couponStatus;
-    private LocalDateTime expriedDate;
+    private Integer validDays;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -27,7 +27,7 @@ public class CouponRespDto {
                 .discountRate(entity.getDiscountRate())
                 .remainQty(entity.getRemainQty())
                 .couponStatus(entity.getCouponStatus().getCode())
-                .expriedDate(entity.getExpiredDate())
+                .validDays(entity.getValidDays())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();

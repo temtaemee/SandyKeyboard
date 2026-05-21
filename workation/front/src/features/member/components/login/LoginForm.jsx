@@ -2,7 +2,7 @@
 import styled from 'styled-components';
 import SocialLoginButtons from './SocialLoginButtons';
 import useLogin from '../../hooks/useLogin';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 function LoginForm() {
@@ -12,12 +12,31 @@ function LoginForm() {
     password: '',
   });
 
+  const [rememberMe, setRememberMe] = useState(false);
+
+  useEffect(() => {
+    const savedUsername = localStorage.getItem('savedUsername');
+    if (savedUsername) {
+      setVo((prev) => ({ ...prev, username: savedUsername }));
+      setRememberMe(true);
+    }
+  }, []);
+
+  function handleCheckboxChange(e) {
+    setRememberMe(e.target.checked);
+  }
+
   function handleChange(e) {
     const { name, value } = e.target;
     setVo((prev) => ({ ...prev, [name]: value }));
   }
   function handleSubmit(e) {
     e.preventDefault();
+    if (rememberMe) {
+      localStorage.setItem('savedUsername', vo.username);
+    } else {
+      localStorage.removeItem('savedUsername');
+    }
     fetchLogin(vo);
   }
 
@@ -40,6 +59,7 @@ function LoginForm() {
               type="text"
               name="username"
               placeholder="ID입력"
+              value={vo.username}
               onChange={handleChange}
             />
           </InputBox>
@@ -62,8 +82,12 @@ function LoginForm() {
 
         <OptionArea>
           <RememberMe>
-            <input type="checkbox" />
-            <span>로그인 유지</span>
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={handleCheckboxChange}
+            />
+            <span>아이디 저장</span>
           </RememberMe>
 
           <FindArea>

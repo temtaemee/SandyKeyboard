@@ -35,7 +35,7 @@ public class MemberCouponRespDto {
                 .couponId(entity.getCouponId().getId())
                 .couponName(entity.getCouponId().getCouponName())
                 .discountRate(entity.getCouponId().getDiscountRate())
-                .expiredDate(entity.getCouponId().getExpiredDate())
+                .expiredDate(entity.getExpiredAt())
                 .usedYn(entity.getUsedYn())
                 .usedAt(entity.getUsedAt())
                 .createdAt(entity.getCreatedAt())
