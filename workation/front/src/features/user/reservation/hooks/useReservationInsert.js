@@ -27,16 +27,10 @@ export default function useReservationInsert() {
         formData.append('fileList', file);
       });
 
-      // ❌ const stayId = 1; 제거
-
       // ✅ API 호출 + await + 결과 저장
       const resp = await createReservation(stayId, formData);
 
       console.log(resp.data);
-
-      alert('예약 성공');
-
-      navigate('/');
 
       return resp.data;
     } catch (error) {
