@@ -12,14 +12,21 @@ function MemberEditForm({ setEditMode }) {
     email: '',
     phone: '',
     preferredArea: '',
+    zonecode: '',
+    address: '',
+    addressDetail: '',
   });
+  const [isModalOpen, setIsModalOpen] = useState(false);
   useEffect(() => {
     if (memberInfo) {
       setVo({
-        name: memberInfo.name,
-        email: memberInfo.email,
-        phone: memberInfo.phone,
-        preferredArea: memberInfo.preferredArea,
+        name: memberInfo.name || '',
+        email: memberInfo.email || '',
+        phone: memberInfo.phone || '',
+        preferredArea: memberInfo.preferredArea || '',
+        zonecode: memberInfo.zonecode || '',
+        address: memberInfo.address || '',
+        addressDetail: memberInfo.addressDetail || '',
       });
     }
   }, [memberInfo]);
@@ -32,6 +39,13 @@ function MemberEditForm({ setEditMode }) {
       [name]: value,
     }));
   }
+  const handleAddressSelect = (selectedAddress) => {
+    setVo((prev) => ({
+      ...prev,
+      zonecode: selectedAddress.zonecode,
+      address: selectedAddress.address,
+    }));
+  };
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -81,6 +95,48 @@ function MemberEditForm({ setEditMode }) {
           onChange={handleChange}
         />
       </InputGroup>
+
+      <InputGroup>
+        <Label>주소</Label>
+        <AddressRow>
+          <Input
+            type="text"
+            name="zonecode"
+            value={vo.zonecode}
+            placeholder="우편번호"
+            readOnly
+          />
+          <AddressButton type="button" onClick={() => setIsModalOpen(true)}>
+            주소 검색
+          </AddressButton>
+        </AddressRow>
+
+        <Input
+          type="text"
+          name="address"
+          value={vo.address}
+          placeholder="기본 주소"
+          readOnly
+          style={{ marginTop: '10px' }}
+        />
+
+        <Input
+          type="text"
+          name="addressDetail"
+          value={vo.addressDetail}
+          placeholder="상세 주소를 입력하세요"
+          onChange={handleChange}
+          style={{ marginTop: '10px' }}
+        />
+      </InputGroup>
+
+      {/* 💡 공용 우편번호 모달 부착 */}
+      {isModalOpen && (
+        <AddressSearchModal
+          onClose={() => setIsModalOpen(false)}
+          onSelect={handleAddressSelect}
+        />
+      )}
 
       <InputGroup>
         <Label>선호 지역</Label>
@@ -153,6 +209,30 @@ const Input = styled.input`
 
   &:focus {
     border-color: #3f6971;
+  }
+`;
+// 💡 주소 정렬용 행 레이아웃
+const AddressRow = styled.div`
+  display: flex;
+  gap: 12px;
+`;
+
+// 💡 마이페이지 시그니처 컬러(#3f6971)를 매칭한 검색 버튼 디자인
+const AddressButton = styled.button`
+  width: 130px;
+  height: 52px;
+  border: 1px solid #3f6971;
+  border-radius: 14px;
+  background-color: transparent;
+  color: #3f6971;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: 0.2s;
+
+  &:hover {
+    background-color: #f3f6f8;
   }
 `;
 
