@@ -6,8 +6,8 @@ import AdminSearchInput from '../components/common/AdminSearchInput';
 import {
   RESERVATION_STAT_CARDS,
   RESERVATION_LIST,
-  PARTNER_COMPANIES,
 } from '../data/adminReservationData';
+import useAdminReservation from '../hooks/useAdminReservation';
 import {
   RESERVATION_STATUS_MAP,
   TOTAL_RESERVATIONS,
@@ -32,14 +32,20 @@ const STATUS_FILTER_TABS = [
 ];
 
 export default function AdminReservationPage() {
+  const {
+    partners,
+    addPartner,
+    updatePartner,
+    togglePartnerStatus,
+  } = useAdminReservation();
+
+  // UI 전용 상태
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [partnerSearch, setPartnerSearch] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [companyBizNum, setCompanyBizNum] = useState('');
   const { currentPage, goToPage, goToPrev, goToNext } = usePagination();
-
-  const [partners, setPartners] = useState(PARTNER_COMPANIES);
   const [partnerModalOpen, setPartnerModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
@@ -63,7 +69,7 @@ export default function AdminReservationPage() {
         updatedAt: today,
         created_at: new Date().toISOString(),
       };
-      setPartners(prev => [newCompany, ...prev]);
+      addPartner(newCompany);
       setCompanyName('');
       setCompanyBizNum('');
     }
@@ -79,9 +85,7 @@ export default function AdminReservationPage() {
 
   const saveEdit = (id) => {
     const today = new Date().toISOString().slice(0, 10);
-    setPartners(prev =>
-      prev.map(p => p.id === id ? { ...p, ...editForm, updatedAt: today } : p)
-    );
+    updatePartner(id, { ...editForm, updatedAt: today });
     setEditingId(null);
   };
 
@@ -301,7 +305,7 @@ export default function AdminReservationPage() {
                           )}
                           <StatusToggleBtn
                             $active={company.status === 'active'}
-                            onClick={() => setPartners(prev => prev.map(p => p.id === company.id ? { ...p, status: p.status === 'active' ? 'inactive' : 'active' } : p))}
+                            onClick={() => togglePartnerStatus(company.id)}
                           >
                             {company.status === 'active' ? '활성' : '비활성'}
                           </StatusToggleBtn>

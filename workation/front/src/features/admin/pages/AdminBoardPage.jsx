@@ -19,8 +19,8 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from 'lucide-react';
-import { BOARD_STAT_CARDS, BOARD_POSTS } from '../data/adminBoardData';
 import { BOARD_TABS } from '../data/adminBoardConstants';
+import useAdminBoard from '../hooks/useAdminBoard';
 import usePagination from '../hooks/usePagination';
 import AdminPagination from '../components/common/AdminPagination';
 import AdminSearchInput from '../components/common/AdminSearchInput';
@@ -50,18 +50,13 @@ const COUPON_STATUS_MAP = { 활성: 'active', 만료: 'expired', 소진: 'exhaus
 
 export default function AdminBoardPage() {
   const [activeTab, setActiveTab] = useState('공지사항');
-  const [pinnedIds, setPinnedIds] = useState(() => {
-    const ids = [];
-    Object.values(BOARD_POSTS).forEach((posts) =>
-      posts.forEach((p) => {
-        if (p.isFixed) ids.push(p.id);
-      })
-    );
-    return ids;
-  });
-
-  // 게시글 목록 (삭제 지원을 위해 state로 관리)
-  const [boardPosts, setBoardPosts] = useState(BOARD_POSTS);
+  const {
+    posts: tabPosts,
+    pinnedIds,
+    updatePost,
+    deletePost: dispatchDeletePost,
+    togglePin,
+  } = useAdminBoard(activeTab);
 
   const { currentPage, goToPage, reset: resetPage } = usePagination();
 
@@ -71,7 +66,7 @@ export default function AdminBoardPage() {
   // 쿠폰 필터
   const [couponFilter, setCouponFilter] = useState('전체');
 
-  const rawPosts = boardPosts[activeTab] || [];
+  const rawPosts = tabPosts;
   const posts = rawPosts.filter((p) => {
     const matchSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase());
     if (activeTab !== '쿠폰' || couponFilter === '전체') return matchSearch;
@@ -108,14 +103,7 @@ export default function AdminBoardPage() {
 
   const handleRegisterSubmit = () => {
     if (editingPost) {
-      setBoardPosts((prev) => ({
-        ...prev,
-        [activeTab]: prev[activeTab].map((p) =>
-          p.id === editingPost.id
-            ? { ...p, title: formData.title || p.title }
-            : p
-        ),
-      }));
+      updatePost(editingPost.id, { title: formData.title || editingPost.title });
     }
     closeRegisterModal();
   };
@@ -128,19 +116,13 @@ export default function AdminBoardPage() {
 
   const handleDeleteConfirm = () => {
     if (!deleteTarget) return;
-    setBoardPosts((prev) => ({
-      ...prev,
-      [activeTab]: prev[activeTab].filter((p) => p.id !== deleteTarget.id),
-    }));
-    setPinnedIds((prev) => prev.filter((id) => id !== deleteTarget.id));
+    dispatchDeletePost(deleteTarget.id);
     setDeleteTarget(null);
     setDetailPost(null);
   };
 
   const handlePin = (id) => {
-    setPinnedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    );
+    togglePin(id);
   };
 
   const handleTabChange = (tab) => {

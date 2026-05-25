@@ -1,36 +1,45 @@
-import { useEffect, useState } from 'react';
-import { getAdminSpaces, deleteAdminSpace } from '../api/adminSpacesApi';
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { getAdminSpaces } from '../api/adminSpacesApi';
 import { SPACES_LIST } from '../data/adminSpacesData';
+import {
+  setSpaces,
+  setLoading,
+  setBlinded,
+  approveSpaces,
+  rejectSpaces,
+} from '../store/adminSpacesSlice';
 
 export default function useAdminSpaces() {
-  const [spaces, setSpaces] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const dispatch = useDispatch();
+  const { spaces, pendingSpaces, rejectedSpaces, blindedIds, loading, error } =
+    useSelector((state) => state.admin.spaces);
 
   useEffect(() => {
     const fetchSpaces = async () => {
+      dispatch(setLoading(true));
       try {
-        const res = await getAdminSpaces();
-        setSpaces(res.data);
+        const resp = await getAdminSpaces();
+        dispatch(setSpaces(resp.data));
       } catch (err) {
         console.error(err);
-        setSpaces(SPACES_LIST);
+        dispatch(setSpaces(SPACES_LIST));
       } finally {
-        setLoading(false);
+        dispatch(setLoading(false));
       }
     };
-
     fetchSpaces();
-  }, []);
+  }, [dispatch]);
 
-  const deleteSpace = async (spaceId) => {
-    try {
-      await deleteAdminSpace(spaceId);
-      setSpaces((prev) => prev.filter((s) => s.id !== spaceId));
-    } catch (err) {
-      console.error(err);
-    }
+  return {
+    spaces,
+    pendingSpaces,
+    rejectedSpaces,
+    blindedIds,
+    loading,
+    error,
+    setBlinded: (id, blinded) => dispatch(setBlinded({ id, blinded })),
+    approveSpaces: (ids, fromTab) => dispatch(approveSpaces({ ids, fromTab })),
+    rejectSpaces: (ids) => dispatch(rejectSpaces(ids)),
   };
-
-  return { spaces, loading, error, deleteSpace };
 }
