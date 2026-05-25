@@ -3,37 +3,37 @@ import { useState } from 'react';
 import styled from 'styled-components';
 import { Home, CheckCircle, AlertTriangle, EyeOff, X } from 'lucide-react';
 import AdminSearchInput from '../components/common/AdminSearchInput';
-import {
-  SPACES_TOTAL,
-  SPACES_TOTAL_PAGES,
-  SPACES_LIST,
-  PENDING_SPACES,
-} from '../data/adminSpacesData';
+import { SPACES_TOTAL_PAGES } from '../data/adminSpacesData';
 import usePagination from '../hooks/usePagination';
 import AdminPagination from '../components/common/AdminPagination';
 import ConfirmModal from '../components/common/ConfirmModal';
-import Toggle from '../components/common/Toggle'; // 활성/정지 토글 공통 컴포넌트
+import Toggle from '../components/common/Toggle';
 import {
   ModalOverlay,
   ModalContent,
   ModalHeader,
   ModalCloseBtn,
-} from '../components/common/AdminModal.styles'; // 모달 공통 스타일
+} from '../components/common/AdminModal.styles';
+import useAdminSpaces from '../hooks/useAdminSpaces';
 
 
 export default function AdminSpacesPage() {
   const { currentPage, goToPage } = usePagination();
-  const [spaces, setSpaces] = useState(SPACES_LIST);
-  const [blindedIds, setBlindedIds] = useState({});
-  const [blindConfirmTarget, setBlindConfirmTarget] = useState(null);
+  const {
+    spaces,
+    pendingSpaces,
+    rejectedSpaces,
+    blindedIds,
+    setBlinded,
+    approveSpaces,
+    rejectSpaces,
+  } = useAdminSpaces();
 
-  // 승인 대기 / 거절 관련 상태
-  const [pendingSpaces, setPendingSpaces] = useState(PENDING_SPACES);
-  const [rejectedSpaces, setRejectedSpaces] = useState([]);
+  // UI 전용 상태
+  const [blindConfirmTarget, setBlindConfirmTarget] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalTab, setModalTab] = useState('pending'); // 'pending' | 'rejected'
   const [selectedIds, setSelectedIds] = useState([]);
-
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('전체');
 
@@ -55,7 +55,7 @@ export default function AdminSpacesPage() {
 
   const handleBlindConfirm = () => {
     if (!blindConfirmTarget) return;
-    setBlindedIds((prev) => ({ ...prev, [blindConfirmTarget.id]: blindConfirmTarget.willBlind }));
+    setBlinded(blindConfirmTarget.id, blindConfirmTarget.willBlind);
     setBlindConfirmTarget(null);
   };
 
@@ -64,31 +64,13 @@ export default function AdminSpacesPage() {
   };
 
   const handleApproveSelected = () => {
-    const listToProcess = modalTab === 'pending' ? pendingSpaces : rejectedSpaces;
-    const toApprove = listToProcess.filter(s => selectedIds.includes(s.id));
-    
-    // 승인된 항목들을 메인 리스트로 이동
-    setSpaces(prev => [...toApprove.map(s => ({ ...s, status: 'active' })), ...prev]);
-    
-    // 기존 리스트에서 제거
-    if (modalTab === 'pending') {
-      setPendingSpaces(prev => prev.filter(s => !selectedIds.includes(s.id)));
-    } else {
-      setRejectedSpaces(prev => prev.filter(s => !selectedIds.includes(s.id)));
-    }
-    
+    approveSpaces(selectedIds, modalTab);
     setSelectedIds([]);
   };
 
   const handleRejectSelected = () => {
     if (modalTab !== 'pending') return;
-    
-    const toReject = pendingSpaces.filter(s => selectedIds.includes(s.id));
-    
-    // 거절 리스트로 이동
-    setRejectedSpaces(prev => [...toReject, ...prev]);
-    setPendingSpaces(prev => prev.filter(s => !selectedIds.includes(s.id)));
-    
+    rejectSpaces(selectedIds);
     setSelectedIds([]);
   };
 

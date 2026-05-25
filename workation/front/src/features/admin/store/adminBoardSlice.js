@@ -1,0 +1,63 @@
+import { createSlice } from '@reduxjs/toolkit';
+import { BOARD_POSTS } from '../data/adminBoardData';
+
+const initPinnedIds = () => {
+  const ids = [];
+  Object.values(BOARD_POSTS).forEach((posts) =>
+    posts.forEach((p) => { if (p.isFixed) ids.push(p.id); })
+  );
+  return ids;
+};
+
+const adminBoardSlice = createSlice({
+  name: 'adminBoard',
+  initialState: {
+    posts: BOARD_POSTS,
+    pinnedIds: initPinnedIds(),
+    loading: false,
+    error: null,
+  },
+  reducers: {
+    updatePostsForTab(state, action) {
+      const { tab, posts } = action.payload;
+      state.posts[tab] = posts;
+    },
+    updatePostInTab(state, action) {
+      const { tab, postId, changes } = action.payload;
+      state.posts[tab] = state.posts[tab].map((p) =>
+        p.id === postId ? { ...p, ...changes } : p
+      );
+    },
+    deletePostFromTab(state, action) {
+      const { tab, postId } = action.payload;
+      state.posts[tab] = state.posts[tab].filter((p) => p.id !== postId);
+      state.pinnedIds = state.pinnedIds.filter((id) => id !== postId);
+    },
+    togglePin(state, action) {
+      const id = action.payload;
+      const idx = state.pinnedIds.indexOf(id);
+      if (idx === -1) {
+        state.pinnedIds.push(id);
+      } else {
+        state.pinnedIds.splice(idx, 1);
+      }
+    },
+    setLoading(state, action) {
+      state.loading = action.payload;
+    },
+    setError(state, action) {
+      state.error = action.payload;
+    },
+  },
+});
+
+export const {
+  updatePostsForTab,
+  updatePostInTab,
+  deletePostFromTab,
+  togglePin,
+  setLoading,
+  setError,
+} = adminBoardSlice.actions;
+
+export default adminBoardSlice.reducer;

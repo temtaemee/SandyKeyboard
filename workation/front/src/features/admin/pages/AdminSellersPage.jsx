@@ -21,7 +21,8 @@ import {
   Plus,
   TicketPercent,
 } from 'lucide-react';
-import { SELLERS_LIST, CUSTOMER_LIST, CUSTOMER_COUPONS, COUPON_TEMPLATES } from '../data/adminSellersData';
+import { COUPON_TEMPLATES } from '../data/adminSellersData';
+import useAdminSellers from '../hooks/useAdminSellers';
 import {
   SELLER_STATUS_MAP,
   TOTAL_PAGES,
@@ -43,6 +44,18 @@ import {
 } from '../components/common/AdminModal.styles'; // 모달 공통 스타일
 
 export default function AdminSellersPage() {
+  const {
+    sellers,
+    customers,
+    customerCoupons,
+    sellerSuspended,
+    customerSuspended,
+    suspendSeller,
+    suspendCustomer,
+    addCoupon,
+    deleteCoupon,
+  } = useAdminSellers();
+
   const [view, setView] = useState('customer'); // 'customer' | 'seller'
   const [filter, setFilter] = useState('전체');
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,32 +67,9 @@ export default function AdminSellersPage() {
     reset: resetPage,
   } = usePagination();
 
-  /* 판매자 토글 */
-  const [sellerSuspended, setSellerSuspended] = useState(() => {
-    const init = {};
-    SELLERS_LIST.forEach((s) => {
-      if (s.status === 'stopped') init[s.id] = true;
-    });
-    return init;
-  });
-  /* 고객 토글 */
-  const [customerSuspended, setCustomerSuspended] = useState(() => {
-    const init = {};
-    CUSTOMER_LIST.forEach((c) => {
-      if (c.status === 'stopped') init[c.id] = true;
-    });
-    return init;
-  });
-  /* 확인 모달 */
+  // UI 전용 상태
   const [confirmTarget, setConfirmTarget] = useState(null);
-
-  /* 고객 상세 모달 */
   const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [customerCoupons, setCustomerCoupons] = useState(() => {
-    const copy = {};
-    Object.entries(CUSTOMER_COUPONS).forEach(([k, v]) => { copy[k] = [...v]; });
-    return copy;
-  });
   const [showIssuePanel, setShowIssuePanel] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(COUPON_TEMPLATES[0].id);
 
@@ -100,15 +90,9 @@ export default function AdminSellersPage() {
   const handleConfirm = () => {
     if (!confirmTarget) return;
     if (confirmTarget.view === 'seller') {
-      setSellerSuspended((prev) => ({
-        ...prev,
-        [confirmTarget.id]: confirmTarget.willSuspend,
-      }));
+      suspendSeller(confirmTarget.id, confirmTarget.willSuspend);
     } else {
-      setCustomerSuspended((prev) => ({
-        ...prev,
-        [confirmTarget.id]: confirmTarget.willSuspend,
-      }));
+      suspendCustomer(confirmTarget.id, confirmTarget.willSuspend);
     }
     setConfirmTarget(null);
   };
@@ -120,10 +104,7 @@ export default function AdminSellersPage() {
   };
 
   const handleDeleteCoupon = (customerId, couponId) => {
-    setCustomerCoupons((prev) => ({
-      ...prev,
-      [customerId]: prev[customerId].filter((c) => c.id !== couponId),
-    }));
+    deleteCoupon(customerId, couponId);
   };
 
   const handleIssueCoupon = () => {
@@ -142,10 +123,7 @@ export default function AdminSellersPage() {
       issuedAt: fmt(today),
       expireAt: fmt(expire),
     };
-    setCustomerCoupons((prev) => ({
-      ...prev,
-      [selectedCustomer.id]: [newCoupon, ...(prev[selectedCustomer.id] ?? [])],
-    }));
+    addCoupon(selectedCustomer.id, newCoupon);
     setShowIssuePanel(false);
     setSelectedTemplate(COUPON_TEMPLATES[0].id);
   };
@@ -158,7 +136,7 @@ export default function AdminSellersPage() {
   };
 
   /* 필터링 */
-  const filteredSellers = SELLERS_LIST.filter((s) => {
+  const filteredSellers = sellers.filter((s) => {
     if (filter === '활동 중') return !isSellerSuspended(s);
     if (filter === '정지됨') return isSellerSuspended(s);
     if (filter === '신규') return isNewMember(s.joinedAt);
@@ -166,7 +144,7 @@ export default function AdminSellersPage() {
   }).filter((s) =>
     !searchQuery || s.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
-  const filteredCustomers = CUSTOMER_LIST.filter((c) => {
+  const filteredCustomers = customers.filter((c) => {
     if (filter === '활동 중') return !isCustomerSuspended(c);
     if (filter === '정지됨') return isCustomerSuspended(c);
     if (filter === '신규') return isNewMember(c.joinDate);

@@ -1,60 +1,51 @@
-import { useEffect, useState } from 'react';
-import { getAdminSellers, updateSellerStatus, getAdminUsers, updateUserStatus } from '../api/adminSellersApi';
-import { SELLERS_LIST, CUSTOMER_LIST } from '../data/adminSellersData';
-import { SELLER_STATUS_MAP } from '../data/adminSellersConstants';
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { getAdminSellers, getAdminUsers } from '../api/adminSellersApi';
+import {
+  setSellers,
+  setCustomers,
+  setSellerSuspended,
+  setCustomerSuspended,
+  addCoupon,
+  deleteCoupon,
+  setLoading,
+} from '../store/adminSellersSlice';
 
 export default function useAdminSellers() {
-  const [sellers, setSellers] = useState([]);
-  const [customers, setCustomers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const dispatch = useDispatch();
+  const { sellers, customers, customerCoupons, sellerSuspended, customerSuspended, loading, error } =
+    useSelector((state) => state.admin.sellers);
 
   useEffect(() => {
     const fetchData = async () => {
+      dispatch(setLoading(true));
       try {
-        const [sellerRes, userRes] = await Promise.all([
+        const [sellerResp, userResp] = await Promise.all([
           getAdminSellers(),
           getAdminUsers(),
         ]);
-        setSellers(sellerRes.data);
-        setCustomers(userRes.data);
+        dispatch(setSellers(sellerResp.data));
+        dispatch(setCustomers(userResp.data));
       } catch (err) {
         console.error(err);
-        setSellers(SELLERS_LIST);
-        setCustomers(CUSTOMER_LIST);
       } finally {
-        setLoading(false);
+        dispatch(setLoading(false));
       }
     };
-
     fetchData();
-  }, []);
+  }, [dispatch]);
 
-  const toggleSellerStatus = async (sellerId, suspended) => {
-    try {
-      await updateSellerStatus(sellerId, suspended);
-      setSellers((prev) =>
-        prev.map((s) =>
-          s.id === sellerId ? { ...s, status: suspended ? 'stopped' : 'active' } : s
-        )
-      );
-    } catch (err) {
-      console.error(err);
-    }
+  return {
+    sellers,
+    customers,
+    customerCoupons,
+    sellerSuspended,
+    customerSuspended,
+    loading,
+    error,
+    suspendSeller: (id, suspended) => dispatch(setSellerSuspended({ id, suspended })),
+    suspendCustomer: (id, suspended) => dispatch(setCustomerSuspended({ id, suspended })),
+    addCoupon: (customerId, coupon) => dispatch(addCoupon({ customerId, coupon })),
+    deleteCoupon: (customerId, couponId) => dispatch(deleteCoupon({ customerId, couponId })),
   };
-
-  const toggleUserStatus = async (userId, suspended) => {
-    try {
-      await updateUserStatus(userId, suspended);
-      setCustomers((prev) =>
-        prev.map((c) =>
-          c.id === userId ? { ...c, status: suspended ? 'stopped' : 'active' } : c
-        )
-      );
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  return { sellers, customers, loading, error, toggleSellerStatus, toggleUserStatus };
 }

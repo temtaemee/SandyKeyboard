@@ -1,63 +1,48 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { getAdminBoardPosts } from '../api/adminBoardApi';
 import {
-  getAdminBoardPosts,
-  updatePostPinStatus,
-  deleteAdminBoardPost,
-} from '../api/adminBoardApi';
-import { BOARD_POSTS } from '../data/adminBoardData';
+  updatePostsForTab,
+  updatePostInTab,
+  deletePostFromTab,
+  togglePin,
+  setLoading,
+} from '../store/adminBoardSlice';
 
 export default function useAdminBoard(activeTab) {
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const dispatch = useDispatch();
+  const {
+    posts: allPosts,
+    pinnedIds,
+    loading,
+    error,
+  } = useSelector((state) => state.admin.board);
 
   useEffect(() => {
     if (!activeTab) return;
-    setLoading(true);
-
+    dispatch(setLoading(true));
     const fetchPosts = async () => {
       try {
-        const res = await getAdminBoardPosts(activeTab);
-        setPosts(res.data);
+        const resp = await getAdminBoardPosts(activeTab);
+        dispatch(updatePostsForTab({ tab: activeTab, posts: resp.data }));
       } catch (err) {
         console.error(err);
-        setPosts(BOARD_POSTS[activeTab] || []);
       } finally {
-        setLoading(false);
+        dispatch(setLoading(false));
       }
     };
-
     fetchPosts();
-  }, [activeTab]);
+  }, [dispatch, activeTab]);
 
-  const togglePin = async (postId, currentlyPinned) => {
-    // API 성공 전에 먼저 UI 반영 (빠른 응답감)
-    setPosts((prev) =>
-      prev.map((p) =>
-        p.id === postId ? { ...p, isFixed: !currentlyPinned } : p
-      )
-    );
-    try {
-      await updatePostPinStatus(postId, !currentlyPinned);
-    } catch (err) {
-      console.error(err);
-      // 실패 시 롤백
-      setPosts((prev) =>
-        prev.map((p) =>
-          p.id === postId ? { ...p, isFixed: currentlyPinned } : p
-        )
-      );
-    }
+  return {
+    posts: allPosts[activeTab] || [],
+    pinnedIds,
+    loading,
+    error,
+    updatePost: (postId, changes) =>
+      dispatch(updatePostInTab({ tab: activeTab, postId, changes })),
+    deletePost: (postId) =>
+      dispatch(deletePostFromTab({ tab: activeTab, postId })),
+    togglePin: (postId) => dispatch(togglePin(postId)),
   };
-
-  const deletePost = async (postId) => {
-    try {
-      await deleteAdminBoardPost(postId);
-      setPosts((prev) => prev.filter((p) => p.id !== postId));
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  return { posts, loading, error, togglePin, deletePost };
 }

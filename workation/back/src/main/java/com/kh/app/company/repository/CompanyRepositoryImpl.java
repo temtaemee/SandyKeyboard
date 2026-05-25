@@ -28,8 +28,9 @@ public class CompanyRepositoryImpl implements CompanyRepositoryCustom{
 
         // 전체 건수 조회 (페이지 계산용)
         Long total = queryFactory
-                .selectFrom(c)
-                .fetchCount();
+                .select(c.count())
+                .from(c)
+                .fetchOne();
 
         return new PageImpl<>(content, pageable, total);
     }
