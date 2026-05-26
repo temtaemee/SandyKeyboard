@@ -6,6 +6,7 @@ import com.kh.app.product.stay.entity.QStayEntity;   // 💡 추가
 import com.kh.app.transaction.reservation.dto.response.ReservationAdminListResDto;
 import com.kh.app.transaction.reservation.entity.QReservationEntity;
 import com.kh.app.transaction.reservation.entity.ReservationEntity;
+import com.kh.app.transaction.reservation.entity.ReservationStatus;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -132,4 +133,77 @@ public class ReservationRepositoryImpl implements ReservationRepositoryCustom {
         return Optional.ofNullable(result);
     }
 
+    @Override
+    public Page<ReservationAdminListResDto> findSellerReservationList(
+            org.springframework.data.domain.Pageable pageable,
+            String sellerUsername,
+            Long reservationId,
+            String guestName,
+            java.time.LocalDate checkinDate
+    ) {
+
+        // 1. 동적 필터가 적용된 컨텐츠 조회
+        List<ReservationEntity> targetList = qf
+                .selectFrom(qReservation)
+                .join(qReservation.member, qMember).fetchJoin()
+                .join(qReservation.stay, qStay).fetchJoin()
+                .join(qStay.space, qSpace)
+                .join(qSpace.seller, qSeller)
+                .where(
+                        qSeller.username.eq(sellerUsername), // 💡 본인 매장 예약 고정 필수
+                        qReservation.status.ne(ReservationStatus.PENDING), // 결제 완료된 건 위주
+                        reservationIdEq(reservationId),       // 💡 동적 조건: 예약 번호
+                        guestNameContains(guestName),         // 💡 동적 조건: 대표 예약자명 (Like)
+                        checkinDateEq(checkinDate)            // 💡 동적 조건: 체크인 날짜 일치
+                )
+                .orderBy(qReservation.id.desc())
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        // 2. 동적 필터가 적용된 전체 카운트 조회
+        Long total = qf
+                .select(qReservation.count())
+                .from(qReservation)
+                .join(qReservation.stay, qStay)
+                .join(qStay.space, qSpace)
+                .join(qSpace.seller, qSeller)
+                .where(
+                        qSeller.username.eq(sellerUsername),
+                        qReservation.status.ne(ReservationStatus.PENDING),
+                        reservationIdEq(reservationId),
+                        guestNameContains(guestName),
+                        checkinDateEq(checkinDate)
+                )
+                .fetchOne();
+
+        long totalCount = (total != null) ? total : 0L;
+
+        List<ReservationAdminListResDto> dtoList = targetList.stream()
+                .map(ReservationAdminListResDto::from)
+                .toList();
+
+        return new PageImpl<>(dtoList, pageable, totalCount);
+    }
+
+    // =========================================================================
+// 💡 [추가] 체크인 날짜 매칭 Expression 메서드
+// =========================================================================
+    private BooleanExpression checkinDateEq(java.time.LocalDate checkinDate) {
+        return checkinDate != null ? qReservation.checkinDate.eq(checkinDate) : null;
+    }
+
+    @Override
+    public Optional<ReservationEntity> findSellerOneById(Long id) {
+        ReservationEntity result = qf
+                .selectFrom(qReservation)
+                .join(qReservation.member, qMember).fetchJoin() // 예약한 유저 정보
+                .join(qReservation.stay, qStay).fetchJoin()     // 숙소 정보
+                .join(qStay.space, qSpace).fetchJoin()          // 공간 정보
+                .join(qSpace.seller, qSeller).fetchJoin()       // 판매자 정보까지 한방에 긁어오기
+                .where(qReservation.id.eq(id))
+                .fetchOne();
+
+        return Optional.ofNullable(result);
+    }
 }
