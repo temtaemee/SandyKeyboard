@@ -11,9 +11,10 @@ import java.util.Set;
 @Entity
 @Table(name = "MEMBER")
 @Builder
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
+@Setter
 public class MemberEntity{
 
     @Id

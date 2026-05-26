@@ -80,22 +80,48 @@ public class MemberService {
 
         MemberEntity member = memberRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("회원 없음"));
+
         MemberProfileEntity memberProfile = member.getProfile();
+
+        // 1. 프로필이나 회사 정보가 없을 때를 대비해 초기값을 null(또는 빈 문자열 "")로 세팅합니다.
         String companyName = null;
-        if (memberProfile.getCompany() != null){
-            companyName = memberProfile.getCompany().getCompanyName();
+        String name = null;
+        String phone = null;
+        String email = null;
+        String zonecode = null;
+        String address = null;
+        String addressDetail = null;
+
+        // 2. 핵심 널 방어: memberProfile이 진짜로 존재할 때만 데이터를 쏙쏙 꺼내옵니다! ✨
+        if (memberProfile != null) {
+            name = memberProfile.getName();
+            phone = memberProfile.getPhone();
+            email = memberProfile.getEmail();
+            zonecode = memberProfile.getZonecode();
+            address = memberProfile.getAddress();
+            addressDetail = memberProfile.getAddressDetail();
+
+            if (memberProfile.getCompany() != null) {
+                companyName = memberProfile.getCompany().getCompanyName();
+            }
+        } else {
+            // 💡 필요하다면 소셜 신규 가입자를 위해 기본 가이드 텍스트를 채워줄 수 있습니다. (선택 사항)
+            name = "소셜 가입 회원";
+            email = member.getUsername(); // 네이버 로그인 시 저장한 이메일 매핑
         }
+
+        // 3. 기존 빌더 패턴 그대로 변수만 매핑해주면 끝! 코드 구조가 하나도 깨지지 않습니다. 💯
         return MemberMeRespDto.builder()
                 .memberId(member.getId())
                 .joinDate(member.getCreatedAt())
                 .username(member.getUsername())
                 .roleSet(member.getRoleSet())
-                .name(memberProfile.getName())
-                .phone(memberProfile.getPhone())
-                .email(memberProfile.getEmail())
-                .zonecode(memberProfile.getZonecode())
-                .address(memberProfile.getAddress())
-                .addressDetail(memberProfile.getAddressDetail())
+                .name(name)
+                .phone(phone)
+                .email(email)
+                .zonecode(zonecode)
+                .address(address)
+                .addressDetail(addressDetail)
                 .companyName(companyName)
                 .build();
     }
@@ -306,5 +332,25 @@ public class MemberService {
         verifiedEmailSet.remove(dto.getEmail());
     }
 
+    @Transactional
+    public void createSocialProfile(SocialJoinReqDto dto) {
+        // 1. 소셜 로그인 시 이미 생성해둔 Member를 username(이메일)으로 찾습니다.
+        MemberEntity member = memberRepository.findByUsername(dto.getUsername())
+                .orElseThrow(() -> new RuntimeException("해당 소셜 계정이 존재하지 않습니다."));
 
+        // 2. 이 유저를 위한 프로필 엔티티를 빌더로 생성합니다.
+        MemberProfileEntity profile = MemberProfileEntity.builder()
+                .member(member) // 1:1 관계 매핑
+                .name(dto.getName())
+                .phone(dto.getPhone())
+                .email(dto.getEmail())
+                .preferredArea(dto.getPreferredArea())
+                .zonecode(dto.getZonecode())
+                .address(dto.getAddress())
+                .addressDetail(dto.getAddressDetail())
+                .build();
+
+        // 3. 프로필 저장 완료!
+        profileRepository.save(profile);
+    }
 }

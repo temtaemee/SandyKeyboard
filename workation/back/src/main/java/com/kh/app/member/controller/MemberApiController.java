@@ -4,7 +4,9 @@ import com.kh.app.common.dto.PageRespDto;
 import com.kh.app.member.dto.request.*;
 import com.kh.app.member.dto.response.*;
 import com.kh.app.member.repository.BankRepository;
+import com.kh.app.member.service.KakaoAuthService;
 import com.kh.app.member.service.MemberService;
+import com.kh.app.member.service.NaverAuthService;
 import com.kh.app.security.user.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +16,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -24,6 +28,9 @@ import java.util.stream.Collectors;
 public class MemberApiController {
     private final MemberService memberService;
     private final BankRepository bankRepository;
+    private final KakaoAuthService kakaoAuthService;
+    private final NaverAuthService naverAuthService;
+
     @PostMapping("/guest/join")
     public ResponseEntity<Object> join(@RequestBody MemberJoinReqDto dto){
         memberService.join(dto);
@@ -129,6 +136,38 @@ public class MemberApiController {
         memberService.resetPassword(dto);
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/guest/kakao")
+    public ResponseEntity<Map<String, String>> kakaoLogin(@RequestBody KakaoLoginReqDto dto) {
+        // 카카오 인증 및 서비스 JWT 발급 프로세스 진행
+        String appAccessToken = kakaoAuthService.kakaoLogin(dto.getCode());
+
+        // 리액트 규격({ token: '...' })에 맞게 반환 데이터 패키징
+        Map<String, String> result = new HashMap<>();
+        result.getOrDefault("token", appAccessToken); // 혹은 리액트 콜백의 response.data.token 구조에 맞춤
+
+        return ResponseEntity.ok(result);
+    }
+
+
+    @PostMapping("/guest/naver")
+    public ResponseEntity<SocialLoginRespDto> naverLogin(@RequestBody NaverLoginReqDto dto) {
+        // 공용 소셜 응답 DTO 규격으로 리턴받음 ✨
+        SocialLoginRespDto responseDto = naverAuthService.naverLogin(dto);
+        System.out.println("responseDto = " + responseDto);
+        return ResponseEntity.ok(responseDto);
+    }
+    // MemberApiController.java 에 추가
+
+    @PostMapping("/guest/social-join")
+    public ResponseEntity<String> socialJoin(@RequestBody SocialJoinReqDto dto) {
+        // 💡 소셜 회원가입 마무리(프로필 생성) 로직 호출
+        memberService.createSocialProfile(dto);
+        return ResponseEntity.ok("소셜 연동 및 가입 완료!");
+    }
+
+
+
 
 
 

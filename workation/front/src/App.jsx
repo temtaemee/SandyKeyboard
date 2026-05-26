@@ -19,6 +19,7 @@ import LoginPage from './features/member/pages/login/LoginPage';
 import MypageRouter from './routes/MypageRouter';
 import SellerSelectionView from './features/member/pages/login/SellerSelectionView';
 import useAuth from './features/member/hooks/useAuth';
+import NaverCallback from './features/member/components/login/NaverCallback';
 
 export default function App() {
   const { loading, isSeller } = useAuth();
@@ -53,6 +54,7 @@ export default function App() {
           <Route path="login" element={<LoginPage />} />
           <Route path="find-id" element={<FindIdPage />} />
           <Route path="find-password" element={<FindPassWordPage />} />
+          <Route path="oauth/callback/naver" element={<NaverCallback />} />
 
           {/* 예약(reservation) 관련 라우트 - 팀원 김민성 */}
           <Route path="resv/*" element={<ResvRouter />} />
