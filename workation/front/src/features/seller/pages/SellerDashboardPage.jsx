@@ -1,47 +1,26 @@
 // src/features/seller/pages/SellerDashboardPage.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import {
-  DollarSign,
-  CalendarDays,
-  Star,
-  Building2,
-  ChevronRight,
-} from 'lucide-react';
+import { DollarSign, CalendarDays, Star, Building2, ChevronRight } from 'lucide-react';
+import api from '../../../app/api/axios';
+import { getSpaces, updateSpaceVisible } from '../api/spaceApi';
 
-/* ── Mock Data (서버 연결 시 삭제/대체 필요) ── */
+/* ── 지역 라벨 맵 ── */
+const AREA_LABEL = {
+  SEOUL: '서울', GYEONGGI: '경기', GANGWON: '강원',
+  CHUNGNAM: '충남', CHUNGBUK: '충북', GYEONGNAM: '경남',
+  GYEONGBOOK: '경북', JEONNAM: '전남', JEONBUK: '전북', JEJU: '제주',
+};
 
-const STAT_CARDS = [
-  {
-    id: 1,
-    label: '이번달 매출',
-    value: '₩4,820,000',
-    badge: { text: '+12% 전월 대비', color: 'green' },
-    icon: 'revenue',
-  },
-  {
-    id: 2,
-    label: '이번달 예약',
-    value: '38건',
-    badge: { text: '취소 2건 포함', color: 'orange' },
-    icon: 'calendar',
-  },
-  {
-    id: 3,
-    label: '최근 리뷰',
-    value: '12건',
-    badge: { text: '미답변 3건', color: 'yellow' },
-    icon: 'star',
-  },
-  {
-    id: 4,
-    label: '등록 공간',
-    value: '3개',
-    badge: { text: '스테이 9개', color: 'teal' },
-    icon: 'building',
-  },
-];
+const formatLocation = (area, address1) => {
+  const label = AREA_LABEL[area] ?? area;
+  if (!address1) return label;
+  const district = address1.trim().split(/\s+/)[1] ?? '';
+  return district ? `${label} · ${district}` : label;
+};
+
+/* ── 임시 더미 데이터 (매출/예약/리뷰 API 연동 전까지 사용) ── */
 
 const CHART_DATA = [
   { month: '12월', height: 96 },
@@ -50,22 +29,6 @@ const CHART_DATA = [
   { month: '3월', height: 160 },
   { month: '4월', height: 208, highlight: true },
   { month: '5월', height: 180 },
-];
-
-const INITIAL_SPACES = [
-  { id: 1, name: '모래 덮인 키보드', location: '서울 · 강남구', visible: true },
-  {
-    id: 2,
-    name: '제주 오션뷰 워크',
-    location: '제주 · 서귀포시',
-    visible: true,
-  },
-  {
-    id: 3,
-    name: '숲속 힐링 스테이',
-    location: '강원 · 평창군',
-    visible: false,
-  },
 ];
 
 const RECENT_RESERVATIONS = [
@@ -121,7 +84,7 @@ const RECENT_RESERVATIONS = [
   },
 ];
 
-/* ── Style Constants ── */
+/* ── 스타일 상수 ── */
 
 const ACCENT = '#3ec9a7';
 
@@ -145,28 +108,96 @@ const STAT_ICON = {
 };
 
 const BADGE_STYLE = {
-  green: { bg: '#f0fdfa', color: '#0d9488' },
+  green:  { bg: '#f0fdfa', color: '#0d9488' },
   orange: { bg: '#fff7ed', color: '#ea580c' },
   yellow: { bg: '#fefce8', color: '#ca8a04' },
-  teal: { bg: '#ecfeff', color: '#0891b2' },
+  teal:   { bg: '#ecfeff', color: '#0891b2' },
 };
 
 const STATUS_MAP = {
   confirmed: { label: '예약확정', bg: '#dcfce7', color: '#15803d' },
-  pending: { label: '대기중', bg: '#ffedd5', color: '#c2410c' },
-  cancelled: { label: '취소됨', bg: '#fee2e2', color: '#b91c1c' },
+  pending:   { label: '대기중',   bg: '#ffedd5', color: '#c2410c' },
+  cancelled: { label: '취소됨',   bg: '#fee2e2', color: '#b91c1c' },
 };
 
-/* ── Component ── */
+/* ── 컴포넌트 ── */
 
 export default function SellerDashboardPage() {
   const navigate = useNavigate();
-  const [spaces, setSpaces] = useState(INITIAL_SPACES);
+  const [spaces, setSpaces] = useState([]);
+  const [spacesLoading, setSpacesLoading] = useState(true);
 
-  const toggleVisible = (id) =>
-    setSpaces((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, visible: !s.visible } : s))
-    );
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [meRes, spacesRes] = await Promise.all([
+          api.get('/auth/me'),
+          getSpaces(),
+        ]);
+        const me = meRes.data;
+        const mySpaces = spacesRes.data
+          .filter((s) => s.sellerUsername === me.username)
+          .map((s) => ({
+            id: s.id,
+            name: s.name,
+            location: formatLocation(s.area, s.address1),
+            visible: s.visibleYn === 'Y',
+          }));
+        setSpaces(mySpaces);
+      } catch (e) {
+        console.error('공간 목록 로딩 실패', e);
+      } finally {
+        setSpacesLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const toggleVisible = async (id) => {
+    const target = spaces.find((s) => s.id === id);
+    if (!target) return;
+    const nextYn = target.visible ? 'N' : 'Y';
+    // 낙관적 업데이트
+    setSpaces((prev) => prev.map((s) => (s.id === id ? { ...s, visible: !s.visible } : s)));
+    try {
+      await updateSpaceVisible(id, nextYn);
+    } catch (e) {
+      // 실패 시 롤백
+      setSpaces((prev) => prev.map((s) => (s.id === id ? { ...s, visible: target.visible } : s)));
+      console.error('노출 상태 변경 실패', e);
+    }
+  };
+
+  const statCards = [
+    {
+      id: 1,
+      label: '이번달 매출',
+      value: '₩4,820,000',
+      badge: { text: '+12% 전월 대비', color: 'green' },
+      icon: 'revenue',
+    },
+    {
+      id: 2,
+      label: '이번달 예약',
+      value: '38건',
+      badge: { text: '취소 2건 포함', color: 'orange' },
+      icon: 'calendar',
+    },
+    {
+      id: 3,
+      label: '최근 리뷰',
+      value: '12건',
+      badge: { text: '미답변 3건', color: 'yellow' },
+      icon: 'star',
+    },
+    {
+      id: 4,
+      label: '등록 공간',
+      value: spacesLoading ? '-' : `${spaces.length}개`,
+      badge: { text: '스테이 준비중', color: 'teal' },
+      icon: 'building',
+    },
+  ];
 
   return (
     <>
@@ -178,7 +209,7 @@ export default function SellerDashboardPage() {
 
       {/* 통계 카드 */}
       <StatGrid>
-        {STAT_CARDS.map((card) => {
+        {statCards.map((card) => {
           const { el, bg } = STAT_ICON[card.icon];
           const badge = BADGE_STYLE[card.badge.color];
           return (
@@ -234,23 +265,24 @@ export default function SellerDashboardPage() {
           </SpaceCardHeader>
 
           <SpaceList>
-            {spaces.map((space) => (
-              <SpaceItem key={space.id}>
-                <SpaceIcon>{space.name[0]}</SpaceIcon>
-                <SpaceInfo
-                  onClick={() => navigate(`/seller/spaces/${space.id}`)}
-                >
-                  <SpaceName>{space.name}</SpaceName>
-                  <SpaceLoc>{space.location}</SpaceLoc>
-                </SpaceInfo>
-                <Toggle
-                  $on={space.visible}
-                  onClick={() => toggleVisible(space.id)}
-                >
-                  <ToggleThumb $on={space.visible} />
-                </Toggle>
-              </SpaceItem>
-            ))}
+            {spacesLoading ? (
+              <SpaceLoadingMsg>불러오는 중...</SpaceLoadingMsg>
+            ) : spaces.length === 0 ? (
+              <SpaceEmptyMsg>등록된 공간이 없습니다</SpaceEmptyMsg>
+            ) : (
+              spaces.map((space) => (
+                <SpaceItem key={space.id}>
+                  <SpaceIcon>{space.name[0]}</SpaceIcon>
+                  <SpaceInfo onClick={() => navigate(`/seller/spaces/${space.id}`)}>
+                    <SpaceName>{space.name}</SpaceName>
+                    <SpaceLoc>{space.location}</SpaceLoc>
+                  </SpaceInfo>
+                  <Toggle $on={space.visible} onClick={() => toggleVisible(space.id)}>
+                    <ToggleThumb $on={space.visible} />
+                  </Toggle>
+                </SpaceItem>
+              ))
+            )}
           </SpaceList>
 
           <SpaceCardFooter>
@@ -354,9 +386,7 @@ const StatCard = styled.div`
   flex-direction: column;
   gap: 4px;
   box-shadow: ${({ theme }) => theme.shadows.card};
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s;
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
@@ -531,6 +561,20 @@ const SpaceList = styled.div`
   flex-direction: column;
 `;
 
+const SpaceLoadingMsg = styled.p`
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.textLight};
+  padding: 24px;
+  text-align: center;
+`;
+
+const SpaceEmptyMsg = styled.p`
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.textLight};
+  padding: 32px 24px;
+  text-align: center;
+`;
+
 const SpaceItem = styled.div`
   display: flex;
   align-items: center;
@@ -646,9 +690,7 @@ const ViewAllBtn = styled.button`
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 6px;
   font-family: inherit;
-  transition:
-    color 0.15s,
-    border-color 0.15s;
+  transition: color 0.15s, border-color 0.15s;
   &:hover {
     color: ${ACCENT};
     border-color: ${ACCENT};
