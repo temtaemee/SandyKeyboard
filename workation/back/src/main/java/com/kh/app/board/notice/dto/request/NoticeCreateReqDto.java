@@ -3,10 +3,12 @@ package com.kh.app.board.notice.dto.request;
 import com.kh.app.board.notice.entity.NoticeEntity;
 import com.kh.app.member.entity.MemberEntity;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
+@NoArgsConstructor
 public class NoticeCreateReqDto {
 
     private Long memberId;
@@ -21,3 +23,4 @@ public class NoticeCreateReqDto {
                 .build();
     }
 }
+

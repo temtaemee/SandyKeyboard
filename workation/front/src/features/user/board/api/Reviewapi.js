@@ -11,7 +11,7 @@ const getAuthConfig = () => {
 export const getImageUrl = (s3Key) => {
   if (!s3Key) return '';
   if (s3Key.startsWith('http')) return s3Key;
-  return `https://finalproject-s3-bucket-243050855199-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/${s3Key}`;
+  return `https://temp0514-651592874046-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/${s3Key}`;
 };
 
 export const getReviewList = (page = 0) =>
