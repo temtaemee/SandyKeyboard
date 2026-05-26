@@ -1,129 +1,21 @@
-import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { useNoticeWrite } from '../hooks/useNoticeWrite';
 
-export default function NoticeWritePage() {
-  const navigate = useNavigate();
-  const {
-    isEdit,
-    title,
-    setTitle,
-    content,
-    setContent,
-    pinYn,
-    setPinYn,
-    files,
-    submitting,
-    loadingEdit,
-    handleFileChange,
-    handleRemoveFile,
-    handleSubmit,
-  } = useNoticeWrite();
+export const Wrapper = styled.div``;
 
-  if (loadingEdit)
-    return (
-      <Wrapper>
-        <p>불러오는 중...</p>
-      </Wrapper>
-    );
-
-  return (
-    <Wrapper>
-      <Board>
-        <Row>
-          <Label>제목</Label>
-          <Input
-            placeholder="제목을 입력하세요"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-        </Row>
-        <Row $alignTop>
-          <Label>내용</Label>
-          <TextArea
-            placeholder="내용을 입력하세요"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-          />
-        </Row>
-
-        {/* 공지 고정 여부 */}
-        <Row>
-          <Label>공지 설정</Label>
-          <PinToggle>
-            <PinCheckbox
-              type="checkbox"
-              id="pinYn"
-              checked={pinYn === 'Y'}
-              onChange={(e) => setPinYn(e.target.checked ? 'Y' : 'N')}
-            />
-            <PinLabel htmlFor="pinYn">상단 공지로 고정</PinLabel>
-            {pinYn === 'Y' && <PinBadge>📌 공지</PinBadge>}
-          </PinToggle>
-        </Row>
-
-        {!isEdit && (
-          <Row $alignTop>
-            <Label>파일 첨부</Label>
-            <FileArea>
-              <FileLabel htmlFor="notice-file-upload">
-                📎 파일 선택
-                <FileInput
-                  id="notice-file-upload"
-                  type="file"
-                  multiple
-                  onChange={handleFileChange}
-                />
-              </FileLabel>
-              <FileHint>모든 파일 형식 첨부 가능합니다</FileHint>
-              {files.length > 0 && (
-                <FileList>
-                  {files.map((file, i) => (
-                    <FileItem key={i}>
-                      <FileName>📎 {file.name}</FileName>
-                      <RemoveBtn onClick={() => handleRemoveFile(i)}>
-                        ✕
-                      </RemoveBtn>
-                    </FileItem>
-                  ))}
-                </FileList>
-              )}
-            </FileArea>
-          </Row>
-        )}
-      </Board>
-
-      <ButtonGroup>
-        <CancelButton onClick={() => navigate('/board/support/notice')}>
-          취소
-        </CancelButton>
-        <SubmitButton onClick={handleSubmit} disabled={submitting}>
-          {submitting
-            ? isEdit
-              ? '수정 중...'
-              : '등록 중...'
-            : isEdit
-              ? '수정 완료'
-              : '등록'}
-        </SubmitButton>
-      </ButtonGroup>
-    </Wrapper>
-  );
-}
-
-const Wrapper = styled.div``;
-const Board = styled.div`
+export const Board = styled.div`
   border-top: 2px solid ${({ theme }) => theme.colors.textDark};
   margin-bottom: 32px;
 `;
-const Row = styled.div`
+
+export const Row = styled.div`
   display: flex;
   align-items: ${({ $alignTop }) => ($alignTop ? 'flex-start' : 'center')};
   padding: 20px 10px;
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
   gap: 24px;
 `;
-const Label = styled.div`
+
+export const Label = styled.div`
   width: 80px;
   flex-shrink: 0;
   font-weight: 600;
@@ -131,7 +23,8 @@ const Label = styled.div`
   color: ${({ theme }) => theme.colors.textMid};
   padding-top: 2px;
 `;
-const Input = styled.input`
+
+export const Input = styled.input`
   flex: 1;
   border: none;
   outline: none;
@@ -143,7 +36,8 @@ const Input = styled.input`
     color: ${({ theme }) => theme.colors.textLight};
   }
 `;
-const TextArea = styled.textarea`
+
+export const TextArea = styled.textarea`
   flex: 1;
   border: none;
   outline: none;
@@ -160,24 +54,27 @@ const TextArea = styled.textarea`
 `;
 
 /* ── 공지 고정 ── */
-const PinToggle = styled.div`
+export const PinToggle = styled.div`
   display: flex;
   align-items: center;
   gap: 10px;
 `;
-const PinCheckbox = styled.input`
+
+export const PinCheckbox = styled.input`
   width: 18px;
   height: 18px;
   cursor: pointer;
   accent-color: ${({ theme }) => theme.colors.primary};
 `;
-const PinLabel = styled.label`
+
+export const PinLabel = styled.label`
   font-size: 14px;
   color: ${({ theme }) => theme.colors.textMid};
   cursor: pointer;
   font-weight: 500;
 `;
-const PinBadge = styled.span`
+
+export const PinBadge = styled.span`
   padding: 3px 10px;
   border-radius: 9999px;
   background: ${({ theme }) => theme.colors.primary};
@@ -186,13 +83,14 @@ const PinBadge = styled.span`
   font-weight: 600;
 `;
 
-const FileArea = styled.div`
+export const FileArea = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 8px;
 `;
-const FileLabel = styled.label`
+
+export const FileLabel = styled.label`
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -212,20 +110,24 @@ const FileLabel = styled.label`
     color: ${({ theme }) => theme.colors.primary};
   }
 `;
-const FileInput = styled.input`
+
+export const FileInput = styled.input`
   display: none;
 `;
-const FileHint = styled.div`
+
+export const FileHint = styled.div`
   font-size: 12px;
   color: ${({ theme }) => theme.colors.textLight};
 `;
-const FileList = styled.div`
+
+export const FileList = styled.div`
   display: flex;
   flex-direction: column;
   gap: 6px;
   margin-top: 4px;
 `;
-const FileItem = styled.div`
+
+export const FileItem = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -234,11 +136,13 @@ const FileItem = styled.div`
   border-radius: ${({ theme }) => theme.radius.sm};
   border: 1px solid ${({ theme }) => theme.colors.borderLight};
 `;
-const FileName = styled.span`
+
+export const FileName = styled.span`
   font-size: 13px;
   color: ${({ theme }) => theme.colors.textMid};
 `;
-const RemoveBtn = styled.button`
+
+export const RemoveBtn = styled.button`
   font-size: 12px;
   color: ${({ theme }) => theme.colors.textLight};
   background: none;
@@ -249,12 +153,14 @@ const RemoveBtn = styled.button`
     color: #ef4444;
   }
 `;
-const ButtonGroup = styled.div`
+
+export const ButtonGroup = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 12px;
 `;
-const CancelButton = styled.button`
+
+export const CancelButton = styled.button`
   padding: 11px 28px;
   border-radius: ${({ theme }) => theme.radius.full};
   border: 1px solid ${({ theme }) => theme.colors.border};
@@ -268,7 +174,8 @@ const CancelButton = styled.button`
     background: ${({ theme }) => theme.colors.bgSection};
   }
 `;
-const SubmitButton = styled.button`
+
+export const SubmitButton = styled.button`
   padding: 11px 28px;
   border-radius: ${({ theme }) => theme.radius.full};
   border: none;

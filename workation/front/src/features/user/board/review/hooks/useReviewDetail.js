@@ -6,7 +6,7 @@ import {
   deleteReview,
   getComments,
   getReviewDetail,
-} from '../api/Reviewapi';
+} from '../api/reviewApi';
 
 export function useReviewDetail(reviewId) {
   const navigate = useNavigate();

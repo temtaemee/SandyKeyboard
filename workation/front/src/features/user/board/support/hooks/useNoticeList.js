@@ -1,25 +1,22 @@
 import { useEffect, useState } from 'react';
-import { getReviewList } from '../api/Reviewapi';
+import { getNoticeList } from '../api/supportApi';
 
-export function useReviewList() {
-  const [list, setList] = useState([]);
+export function useNoticeList() {
+  const [notices, setNotices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     setLoading(true);
-    getReviewList(currentPage)
+    getNoticeList(currentPage)
       .then((data) => {
-        setList(data.content ?? []);
+        setNotices(data.content ?? []);
         setTotalPages(data.totalPages ?? 1);
       })
-      .catch((err) => {
-        console.error(err);
-        setList([]);
-      })
+      .catch((err) => console.error('공지 목록 조회 실패', err))
       .finally(() => setLoading(false));
   }, [currentPage]);
 
-  return { list, loading, currentPage, setCurrentPage, totalPages };
+  return { notices, loading, currentPage, setCurrentPage, totalPages };
 }
