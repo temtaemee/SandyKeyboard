@@ -10,6 +10,8 @@ export default function NoticeWritePage() {
     setTitle,
     content,
     setContent,
+    pinYn,
+    setPinYn,
     files,
     submitting,
     loadingEdit,
@@ -43,6 +45,21 @@ export default function NoticeWritePage() {
             value={content}
             onChange={(e) => setContent(e.target.value)}
           />
+        </Row>
+
+        {/* 공지 고정 여부 */}
+        <Row>
+          <Label>공지 설정</Label>
+          <PinToggle>
+            <PinCheckbox
+              type="checkbox"
+              id="pinYn"
+              checked={pinYn === 'Y'}
+              onChange={(e) => setPinYn(e.target.checked ? 'Y' : 'N')}
+            />
+            <PinLabel htmlFor="pinYn">상단 공지로 고정</PinLabel>
+            {pinYn === 'Y' && <PinBadge>📌 공지</PinBadge>}
+          </PinToggle>
         </Row>
 
         {!isEdit && (
@@ -141,6 +158,34 @@ const TextArea = styled.textarea`
     color: ${({ theme }) => theme.colors.textLight};
   }
 `;
+
+/* ── 공지 고정 ── */
+const PinToggle = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+const PinCheckbox = styled.input`
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: ${({ theme }) => theme.colors.primary};
+`;
+const PinLabel = styled.label`
+  font-size: 14px;
+  color: ${({ theme }) => theme.colors.textMid};
+  cursor: pointer;
+  font-weight: 500;
+`;
+const PinBadge = styled.span`
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background: ${({ theme }) => theme.colors.primary};
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+`;
+
 const FileArea = styled.div`
   flex: 1;
   display: flex;

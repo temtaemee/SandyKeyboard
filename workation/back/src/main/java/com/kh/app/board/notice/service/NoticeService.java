@@ -87,7 +87,7 @@ public class NoticeService {
         NoticeEntity notice = noticeRepository
                 .findByIdAndDelYn(id, "N")
                 .orElseThrow(() -> new IllegalArgumentException("공지사항을 찾을 수 없습니다."));
-        notice.update(dto.getTitle(), dto.getContent());
+        notice.update(dto.getTitle(), dto.getContent(), dto.getPinYn());
     }
 
     // 삭제 (소프트 삭제)

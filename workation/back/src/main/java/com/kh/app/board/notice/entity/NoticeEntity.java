@@ -27,8 +27,14 @@ public class NoticeEntity extends BaseEntity {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
-    public void update(String title, String content) {
+    // 공지 고정 여부 (Y: 고정, N: 일반)
+    @Column(length = 1, nullable = false)
+    @Builder.Default
+    private String pinYn = "N";
+
+    public void update(String title, String content, String pinYn) {
         this.title = title;
         this.content = content;
+        this.pinYn = pinYn;
     }
 }
