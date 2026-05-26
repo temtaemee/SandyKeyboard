@@ -1,50 +1,110 @@
 // src/features/seller/pages/SellerDashboardPage.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { DollarSign, CalendarDays, Star, Building2, ChevronRight } from 'lucide-react';
+import api from '../../../app/api/axios';
+import { getSpaces, updateSpaceVisible } from '../api/spaceApi';
 
-/* ── Mock Data (서버 연결 시 삭제/대체 필요) ── */
+/* ── 지역 라벨 맵 ── */
+const AREA_LABEL = {
+  SEOUL: '서울', GYEONGGI: '경기', GANGWON: '강원',
+  CHUNGNAM: '충남', CHUNGBUK: '충북', GYEONGNAM: '경남',
+  GYEONGBOOK: '경북', JEONNAM: '전남', JEONBUK: '전북', JEJU: '제주',
+};
 
-const STAT_CARDS = [
-  { id: 1, label: '이번달 매출',  value: '₩4,820,000', badge: { text: '+12% 전월 대비', color: 'green'  }, icon: 'revenue'  },
-  { id: 2, label: '이번달 예약',  value: '38건',        badge: { text: '취소 2건 포함',   color: 'orange' }, icon: 'calendar' },
-  { id: 3, label: '최근 리뷰',   value: '12건',        badge: { text: '미답변 3건',      color: 'yellow' }, icon: 'star'     },
-  { id: 4, label: '등록 공간',   value: '3개',         badge: { text: '스테이 9개',      color: 'teal'   }, icon: 'building' },
-];
+const formatLocation = (area, address1) => {
+  const label = AREA_LABEL[area] ?? area;
+  if (!address1) return label;
+  const district = address1.trim().split(/\s+/)[1] ?? '';
+  return district ? `${label} · ${district}` : label;
+};
+
+/* ── 임시 더미 데이터 (매출/예약/리뷰 API 연동 전까지 사용) ── */
 
 const CHART_DATA = [
-  { month: '12월', height: 96  },
-  { month: '1월',  height: 128 },
-  { month: '2월',  height: 112 },
-  { month: '3월',  height: 160 },
-  { month: '4월',  height: 208, highlight: true },
-  { month: '5월',  height: 180 },
-];
-
-const INITIAL_SPACES = [
-  { id: 1, name: '모래 덮인 키보드', location: '서울 · 강남구',  visible: true  },
-  { id: 2, name: '제주 오션뷰 워크', location: '제주 · 서귀포시', visible: true  },
-  { id: 3, name: '숲속 힐링 스테이', location: '강원 · 평창군',  visible: false },
+  { month: '12월', height: 96 },
+  { month: '1월', height: 128 },
+  { month: '2월', height: 112 },
+  { month: '3월', height: 160 },
+  { month: '4월', height: 208, highlight: true },
+  { month: '5월', height: 180 },
 ];
 
 const RECENT_RESERVATIONS = [
-  { id: '#RV-2405001', guest: '김지수', space: '모래 덮인 키보드', stay: '스탠다드룸', checkIn: '2025.05.10', checkOut: '2025.05.12', amount: '₩180,000', status: 'confirmed' },
-  { id: '#RV-2405002', guest: '이민준', space: '제주 오션뷰 워크', stay: '오션뷰룸',   checkIn: '2025.05.15', checkOut: '2025.05.17', amount: '₩320,000', status: 'confirmed' },
-  { id: '#RV-2405003', guest: '박소연', space: '숲속 힐링 스테이', stay: '패밀리룸',   checkIn: '2025.05.20', checkOut: '2025.05.22', amount: '₩420,000', status: 'pending'   },
-  { id: '#RV-2405004', guest: '최현우', space: '모래 덮인 키보드', stay: '디럭스룸',   checkIn: '2025.05.08', checkOut: '2025.05.09', amount: '₩95,000',  status: 'confirmed' },
-  { id: '#RV-2405005', guest: '정예린', space: '제주 오션뷰 워크', stay: '스탠다드룸', checkIn: '2025.05.25', checkOut: '2025.05.27', amount: '₩240,000', status: 'cancelled' },
+  {
+    id: '#RV-2405001',
+    guest: '김지수',
+    space: '모래 덮인 키보드',
+    stay: '스탠다드룸',
+    checkIn: '2025.05.10',
+    checkOut: '2025.05.12',
+    amount: '₩180,000',
+    status: 'confirmed',
+  },
+  {
+    id: '#RV-2405002',
+    guest: '이민준',
+    space: '제주 오션뷰 워크',
+    stay: '오션뷰룸',
+    checkIn: '2025.05.15',
+    checkOut: '2025.05.17',
+    amount: '₩320,000',
+    status: 'confirmed',
+  },
+  {
+    id: '#RV-2405003',
+    guest: '박소연',
+    space: '숲속 힐링 스테이',
+    stay: '패밀리룸',
+    checkIn: '2025.05.20',
+    checkOut: '2025.05.22',
+    amount: '₩420,000',
+    status: 'pending',
+  },
+  {
+    id: '#RV-2405004',
+    guest: '최현우',
+    space: '모래 덮인 키보드',
+    stay: '디럭스룸',
+    checkIn: '2025.05.08',
+    checkOut: '2025.05.09',
+    amount: '₩95,000',
+    status: 'confirmed',
+  },
+  {
+    id: '#RV-2405005',
+    guest: '정예린',
+    space: '제주 오션뷰 워크',
+    stay: '스탠다드룸',
+    checkIn: '2025.05.25',
+    checkOut: '2025.05.27',
+    amount: '₩240,000',
+    status: 'cancelled',
+  },
 ];
 
-/* ── Style Constants ── */
+/* ── 스타일 상수 ── */
 
 const ACCENT = '#3ec9a7';
 
 const STAT_ICON = {
-  revenue:  { el: <DollarSign  size={28} color="#0d9488" strokeWidth={1.8} />, bg: 'rgba(204,251,241,0.5)' },
-  calendar: { el: <CalendarDays size={28} color="#ea580c" strokeWidth={1.8} />, bg: 'rgba(255,237,213,0.5)' },
-  star:     { el: <Star        size={28} color="#ca8a04" strokeWidth={1.8} />, bg: 'rgba(254,252,232,0.5)' },
-  building: { el: <Building2   size={28} color="#0891b2" strokeWidth={1.8} />, bg: 'rgba(224,242,254,0.5)' },
+  revenue: {
+    el: <DollarSign size={28} color="#0d9488" strokeWidth={1.8} />,
+    bg: 'rgba(204,251,241,0.5)',
+  },
+  calendar: {
+    el: <CalendarDays size={28} color="#ea580c" strokeWidth={1.8} />,
+    bg: 'rgba(255,237,213,0.5)',
+  },
+  star: {
+    el: <Star size={28} color="#ca8a04" strokeWidth={1.8} />,
+    bg: 'rgba(254,252,232,0.5)',
+  },
+  building: {
+    el: <Building2 size={28} color="#0891b2" strokeWidth={1.8} />,
+    bg: 'rgba(224,242,254,0.5)',
+  },
 };
 
 const BADGE_STYLE = {
@@ -60,14 +120,84 @@ const STATUS_MAP = {
   cancelled: { label: '취소됨',   bg: '#fee2e2', color: '#b91c1c' },
 };
 
-/* ── Component ── */
+/* ── 컴포넌트 ── */
 
 export default function SellerDashboardPage() {
   const navigate = useNavigate();
-  const [spaces, setSpaces] = useState(INITIAL_SPACES);
+  const [spaces, setSpaces] = useState([]);
+  const [spacesLoading, setSpacesLoading] = useState(true);
 
-  const toggleVisible = (id) =>
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [meRes, spacesRes] = await Promise.all([
+          api.get('/auth/me'),
+          getSpaces(),
+        ]);
+        const me = meRes.data;
+        const mySpaces = spacesRes.data
+          .filter((s) => s.sellerUsername === me.username)
+          .map((s) => ({
+            id: s.id,
+            name: s.name,
+            location: formatLocation(s.area, s.address1),
+            visible: s.visibleYn === 'Y',
+          }));
+        setSpaces(mySpaces);
+      } catch (e) {
+        console.error('공간 목록 로딩 실패', e);
+      } finally {
+        setSpacesLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const toggleVisible = async (id) => {
+    const target = spaces.find((s) => s.id === id);
+    if (!target) return;
+    const nextYn = target.visible ? 'N' : 'Y';
+    // 낙관적 업데이트
     setSpaces((prev) => prev.map((s) => (s.id === id ? { ...s, visible: !s.visible } : s)));
+    try {
+      await updateSpaceVisible(id, nextYn);
+    } catch (e) {
+      // 실패 시 롤백
+      setSpaces((prev) => prev.map((s) => (s.id === id ? { ...s, visible: target.visible } : s)));
+      console.error('노출 상태 변경 실패', e);
+    }
+  };
+
+  const statCards = [
+    {
+      id: 1,
+      label: '이번달 매출',
+      value: '₩4,820,000',
+      badge: { text: '+12% 전월 대비', color: 'green' },
+      icon: 'revenue',
+    },
+    {
+      id: 2,
+      label: '이번달 예약',
+      value: '38건',
+      badge: { text: '취소 2건 포함', color: 'orange' },
+      icon: 'calendar',
+    },
+    {
+      id: 3,
+      label: '최근 리뷰',
+      value: '12건',
+      badge: { text: '미답변 3건', color: 'yellow' },
+      icon: 'star',
+    },
+    {
+      id: 4,
+      label: '등록 공간',
+      value: spacesLoading ? '-' : `${spaces.length}개`,
+      badge: { text: '스테이 준비중', color: 'teal' },
+      icon: 'building',
+    },
+  ];
 
   return (
     <>
@@ -79,14 +209,16 @@ export default function SellerDashboardPage() {
 
       {/* 통계 카드 */}
       <StatGrid>
-        {STAT_CARDS.map((card) => {
+        {statCards.map((card) => {
           const { el, bg } = STAT_ICON[card.icon];
           const badge = BADGE_STYLE[card.badge.color];
           return (
             <StatCard key={card.id}>
               <CardTop>
                 <IconBg $bg={bg}>{el}</IconBg>
-                <Badge $bg={badge.bg} $color={badge.color}>{card.badge.text}</Badge>
+                <Badge $bg={badge.bg} $color={badge.color}>
+                  {card.badge.text}
+                </Badge>
               </CardTop>
               <CardLabel>{card.label}</CardLabel>
               <CardValue>{card.value}</CardValue>
@@ -108,7 +240,9 @@ export default function SellerDashboardPage() {
 
           <BarChart>
             <GridLines>
-              {[0, 1, 2, 3].map((i) => <GridLine key={i} />)}
+              {[0, 1, 2, 3].map((i) => (
+                <GridLine key={i} />
+              ))}
             </GridLines>
             <Bars>
               {CHART_DATA.map((d, i) => (
@@ -131,22 +265,30 @@ export default function SellerDashboardPage() {
           </SpaceCardHeader>
 
           <SpaceList>
-            {spaces.map((space) => (
-              <SpaceItem key={space.id}>
-                <SpaceIcon>{space.name[0]}</SpaceIcon>
-                <SpaceInfo onClick={() => navigate(`/seller/spaces/${space.id}`)}>
-                  <SpaceName>{space.name}</SpaceName>
-                  <SpaceLoc>{space.location}</SpaceLoc>
-                </SpaceInfo>
-                <Toggle $on={space.visible} onClick={() => toggleVisible(space.id)}>
-                  <ToggleThumb $on={space.visible} />
-                </Toggle>
-              </SpaceItem>
-            ))}
+            {spacesLoading ? (
+              <SpaceLoadingMsg>불러오는 중...</SpaceLoadingMsg>
+            ) : spaces.length === 0 ? (
+              <SpaceEmptyMsg>등록된 공간이 없습니다</SpaceEmptyMsg>
+            ) : (
+              spaces.map((space) => (
+                <SpaceItem key={space.id}>
+                  <SpaceIcon>{space.name[0]}</SpaceIcon>
+                  <SpaceInfo onClick={() => navigate(`/seller/spaces/${space.id}`)}>
+                    <SpaceName>{space.name}</SpaceName>
+                    <SpaceLoc>{space.location}</SpaceLoc>
+                  </SpaceInfo>
+                  <Toggle $on={space.visible} onClick={() => toggleVisible(space.id)}>
+                    <ToggleThumb $on={space.visible} />
+                  </Toggle>
+                </SpaceItem>
+              ))
+            )}
           </SpaceList>
 
           <SpaceCardFooter>
-            <FooterBtn onClick={() => navigate('/seller/spaces')}>전체 공간 보기 &gt;</FooterBtn>
+            <FooterBtn onClick={() => navigate('/seller/spaces')}>
+              전체 공간 보기 &gt;
+            </FooterBtn>
           </SpaceCardFooter>
         </SpaceCard>
       </PanelGrid>
@@ -180,13 +322,23 @@ export default function SellerDashboardPage() {
               const s = STATUS_MAP[r.status];
               return (
                 <Tr key={r.id}>
-                  <Td><ResvId>{r.id}</ResvId></Td>
+                  <Td>
+                    <ResvId>{r.id}</ResvId>
+                  </Td>
                   <Td>{r.guest}</Td>
-                  <Td>{r.space} / {r.stay}</Td>
+                  <Td>
+                    {r.space} / {r.stay}
+                  </Td>
                   <Td>{r.checkIn}</Td>
                   <Td>{r.checkOut}</Td>
-                  <Td><Amount>{r.amount}</Amount></Td>
-                  <Td><StatusBadge $bg={s.bg} $color={s.color}>{s.label}</StatusBadge></Td>
+                  <Td>
+                    <Amount>{r.amount}</Amount>
+                  </Td>
+                  <Td>
+                    <StatusBadge $bg={s.bg} $color={s.color}>
+                      {s.label}
+                    </StatusBadge>
+                  </Td>
                 </Tr>
               );
             })}
@@ -409,13 +561,29 @@ const SpaceList = styled.div`
   flex-direction: column;
 `;
 
+const SpaceLoadingMsg = styled.p`
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.textLight};
+  padding: 24px;
+  text-align: center;
+`;
+
+const SpaceEmptyMsg = styled.p`
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.textLight};
+  padding: 32px 24px;
+  text-align: center;
+`;
+
 const SpaceItem = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 16px 24px;
   border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
-  &:last-child { border-bottom: none; }
+  &:last-child {
+    border-bottom: none;
+  }
 `;
 
 const SpaceIcon = styled.div`
@@ -435,7 +603,9 @@ const SpaceIcon = styled.div`
 const SpaceInfo = styled.div`
   flex: 1;
   cursor: pointer;
-  &:hover p:first-child { color: ${ACCENT}; }
+  &:hover p:first-child {
+    color: ${ACCENT};
+  }
 `;
 
 const SpaceName = styled.p`
@@ -486,7 +656,9 @@ const FooterBtn = styled.button`
   color: ${({ theme }) => theme.colors.textMuted};
   font-family: inherit;
   transition: color 0.15s;
-  &:hover { color: ${ACCENT}; }
+  &:hover {
+    color: ${ACCENT};
+  }
 `;
 
 /* ── Recent Reservations ── */
@@ -519,7 +691,10 @@ const ViewAllBtn = styled.button`
   border-radius: 6px;
   font-family: inherit;
   transition: color 0.15s, border-color 0.15s;
-  &:hover { color: ${ACCENT}; border-color: ${ACCENT}; }
+  &:hover {
+    color: ${ACCENT};
+    border-color: ${ACCENT};
+  }
 `;
 
 const Table = styled.table`
@@ -541,8 +716,12 @@ const Th = styled.th`
 
 const Tr = styled.tr`
   border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
-  &:last-child { border-bottom: none; }
-  &:hover { background: ${({ theme }) => theme.colors.bgSection}; }
+  &:last-child {
+    border-bottom: none;
+  }
+  &:hover {
+    background: ${({ theme }) => theme.colors.bgSection};
+  }
 `;
 
 const Td = styled.td`

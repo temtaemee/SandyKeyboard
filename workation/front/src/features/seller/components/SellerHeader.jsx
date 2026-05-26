@@ -1,7 +1,12 @@
 // src/features/seller/components/SellerHeader.jsx
 import styled from 'styled-components';
+import useAuth from '../../member/hooks/useAuth';
 
 export default function SellerHeader() {
+  const { memberInfo } = useAuth();
+  const displayName = memberInfo?.name ? `${memberInfo.name} 셀러` : '셀러';
+  const avatarChar = memberInfo?.name?.[0] ?? '셀';
+
   return (
     <Header>
       <div />
@@ -10,10 +15,10 @@ export default function SellerHeader() {
       <Right>
         <SellerInfo>
           <InfoText>
-            <SellerName>홍길동 셀러</SellerName>
+            <SellerName>{displayName}</SellerName>
             <SellerRole>워케이션 셀러</SellerRole>
           </InfoText>
-          <SellerAvatar>셀</SellerAvatar>
+          <SellerAvatar>{avatarChar}</SellerAvatar>
         </SellerInfo>
       </Right>
     </Header>
