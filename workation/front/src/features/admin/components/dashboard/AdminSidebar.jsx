@@ -2,21 +2,37 @@
 import { NavLink } from 'react-router-dom';
 import styled from 'styled-components';
 import { ADMIN_NAV_ITEMS } from '../../data/adminDashboardConstants';
-import { BarChart2, Home, Bookmark, Users, FileText, DollarSign, HelpCircle, LogOut, List } from 'lucide-react';
+import {
+  BarChart2,
+  Home,
+  Bookmark,
+  Users,
+  FileText,
+  DollarSign,
+  HelpCircle,
+  LogOut,
+  List,
+} from 'lucide-react';
 
 const ICONS = {
-  chart:    <BarChart2 size={18} />,
-  home:     <Home size={18} />,
+  chart: <BarChart2 size={18} />,
+  home: <Home size={18} />,
   bookmark: <Bookmark size={18} />,
-  users:    <Users size={18} />,
-  file:     <FileText size={18} />,
-  coin:     <DollarSign size={18} />,
-  support:  <HelpCircle size={18} />,
-  logout:   <LogOut size={18} />,
-  board:    <List size={18} />,
+  users: <Users size={18} />,
+  file: <FileText size={18} />,
+  coin: <DollarSign size={18} />,
+  support: <HelpCircle size={18} />,
+  logout: <LogOut size={18} />,
+  board: <List size={18} />,
 };
 
 export default function AdminSidebar() {
+  const handleLogout = () => {
+    localStorage.removeItem('accessToken');
+    // alert(`로그아웃 되었습니다.. !`);
+    window.location.href = '/home';
+  };
+
   return (
     <Aside>
       {/* 로고 */}
@@ -47,7 +63,7 @@ export default function AdminSidebar() {
       {/* 하단 메뉴 */}
       <BottomNav>
         <Divider />
-        <BottomItem to="/admin/logout">
+        <BottomItem onClick={handleLogout}>
           <IconWrap>{ICONS.logout}</IconWrap>
           <NavLabel>로그아웃</NavLabel>
         </BottomItem>
