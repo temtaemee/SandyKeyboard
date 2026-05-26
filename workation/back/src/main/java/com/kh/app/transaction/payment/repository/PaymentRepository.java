@@ -12,5 +12,7 @@ public interface PaymentRepository
 
     boolean existsByPaymentKey(String paymentKey);
 
+    // 예약 엔티티를 조건으로 결제 원장 한 건을 안전하게 찾아오는 쿼리 메서드
+    Optional<PaymentEntity> findByReservation(ReservationEntity reservation);
 
 }
