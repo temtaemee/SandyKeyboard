@@ -19,7 +19,7 @@ function KakaoCallback() {
       // 2. 커스텀 api 인스턴스를 사용하여 백엔드로 코드 토스
       // baseURL이 세팅되어 있으므로 '/auth/kakao'로만 요청을 보냅니다.
       api
-        .post('/guest/kakao', { code: code })
+        .post('/guest/kakao', { code: code, state: null })
         .then((response) => {
           // 3. 백엔드가 가입/로그인 처리 후 쥐어준 우리 서비스 전용 JWT 토큰
           // (백엔드 리턴 구조가 { token: '...' } 일 경우)
