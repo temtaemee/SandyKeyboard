@@ -7,7 +7,6 @@ const USER_FAQ = 'http://localhost/api/user/board/faq';
 
 const getAuthConfig = () => {
   const token = localStorage.getItem('accessToken');
-  console.log('토큰:', token); // ← 추가
   return { headers: { Authorization: `Bearer ${token}` } };
 };
 
@@ -26,18 +25,15 @@ export const getNoticeDetail = (id) =>
 
 // 등록  POST /api/user/board/notice  (multipart/form-data)
 export const createNotice = (dto, fileList = []) => {
-  console.log('createNotice 호출됨', dto, fileList); // ← 추가
   const formData = new FormData();
   formData.append(
     'dto',
     new Blob([JSON.stringify(dto)], { type: 'application/json' })
   );
   fileList.forEach((file) => formData.append('files', file));
-  console.log('formData 생성 완료, 요청 시작'); // ← 추가
   return axios
     .post(USER_NOTICE, formData, getAuthConfig())
     .then((res) => {
-      console.log('요청 성공:', res);
       return res.data;
     })
     .catch((err) => {

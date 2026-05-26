@@ -70,5 +70,5 @@ public class NoticeApiController {
         noticeService.delete(id);
         return ResponseEntity.ok().build();
     }
-    
+
 }
