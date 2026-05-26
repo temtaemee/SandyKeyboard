@@ -180,7 +180,6 @@ public class ReservationService {
         }
         com.kh.app.product.space.entity.SpaceEntity spaceEntity = stayEntity.getSpace();
 
-        // 3. 💡 [수정] 팀원 레포지토리 메커니즘으로 완벽 대체 (컴파일 에러 해결 완료!)
         List<com.kh.app.product.stay.entity.StayOptionEntity> optionEntities = stayOptionRepository.findByStay(stayEntity);
         List<com.kh.app.product.stay.entity.StayPictureEntity> pictures = stayPictureRepository.findByStayOrderBySortOrder(stayEntity);
 
