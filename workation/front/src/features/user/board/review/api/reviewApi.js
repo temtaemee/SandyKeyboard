@@ -1,12 +1,7 @@
-import axios from 'axios';
+import api from '../../../../../app/api/axios';
 
-const PUBLIC_BASE = 'http://localhost/api/public/board/review';
-const USER_BASE = 'http://localhost/api/user/board/review';
-
-const getAuthConfig = () => {
-  const token = localStorage.getItem('accessToken');
-  return { headers: { Authorization: `Bearer ${token}` } };
-};
+const PUBLIC_BASE = '/public/board/review';
+const USER_BASE = '/user/board/review';
 
 export const getImageUrl = (s3Key) => {
   if (!s3Key) return '';
@@ -15,10 +10,10 @@ export const getImageUrl = (s3Key) => {
 };
 
 export const getReviewList = (page = 0) =>
-  axios.get(PUBLIC_BASE, { params: { page } }).then((res) => res.data);
+  api.get(PUBLIC_BASE, { params: { page } }).then((res) => res.data);
 
 export const getReviewDetail = (id) =>
-  axios.get(`${PUBLIC_BASE}/${id}`).then((res) => res.data);
+  api.get(`${PUBLIC_BASE}/${id}`).then((res) => res.data);
 
 export const createReview = (dto, imageFiles) => {
   const formData = new FormData();
@@ -28,9 +23,7 @@ export const createReview = (dto, imageFiles) => {
   );
   if (imageFiles?.length)
     imageFiles.forEach((file) => formData.append('images', file));
-  return axios
-    .post(USER_BASE, formData, getAuthConfig())
-    .then((res) => res.data);
+  return api.post(USER_BASE, formData).then((res) => res.data);
 };
 
 export const updateReview = (id, dto, imageFiles, deletedImageIds = []) => {
@@ -45,49 +38,39 @@ export const updateReview = (id, dto, imageFiles, deletedImageIds = []) => {
     deletedImageIds.forEach((imgId) =>
       formData.append('deletedImageIds', imgId)
     );
-  return axios
-    .put(`${USER_BASE}/${id}`, formData, getAuthConfig())
-    .then((res) => res.data);
+  return api.put(`${USER_BASE}/${id}`, formData).then((res) => res.data);
 };
 
 export const deleteReview = (id) =>
-  axios.delete(`${USER_BASE}/${id}`, getAuthConfig()).then((res) => res.data);
+  api.delete(`${USER_BASE}/${id}`).then((res) => res.data);
 
 export const getComments = (reviewId) =>
-  axios.get(`${PUBLIC_BASE}/${reviewId}/comment`).then((res) => res.data);
+  api.get(`${PUBLIC_BASE}/${reviewId}/comment`).then((res) => res.data);
 
 export const createComment = (reviewId, dto) =>
-  axios
-    .post(`${USER_BASE}/${reviewId}/comment`, dto, getAuthConfig())
-    .then((res) => res.data);
+  api.post(`${USER_BASE}/${reviewId}/comment`, dto).then((res) => res.data);
 
 export const deleteComment = (reviewId, commentId) =>
-  axios
-    .delete(`${USER_BASE}/${reviewId}/comment/${commentId}`, getAuthConfig())
+  api
+    .delete(`${USER_BASE}/${reviewId}/comment/${commentId}`)
     .then((res) => res.data);
 
 // 게시글 좋아요 조회
 export const getReviewLike = (reviewId) =>
-  axios.get(`${PUBLIC_BASE}/${reviewId}/like`).then((res) => res.data);
+  api.get(`${PUBLIC_BASE}/${reviewId}/like`).then((res) => res.data);
 
 // 게시글 좋아요 토글
 export const toggleReviewLike = (reviewId) =>
-  axios
-    .post(`${USER_BASE}/${reviewId}/like`, {}, getAuthConfig())
-    .then((res) => res.data);
+  api.post(`${USER_BASE}/${reviewId}/like`, {}).then((res) => res.data);
 
 // 댓글 좋아요 조회
 export const getCommentLike = (reviewId, commentId) =>
-  axios
+  api
     .get(`${PUBLIC_BASE}/${reviewId}/comment/${commentId}/like`)
     .then((res) => res.data);
 
 // 댓글 좋아요 토글
 export const toggleCommentLike = (reviewId, commentId) =>
-  axios
-    .post(
-      `${USER_BASE}/${reviewId}/comment/${commentId}/like`,
-      {},
-      getAuthConfig()
-    )
+  api
+    .post(`${USER_BASE}/${reviewId}/comment/${commentId}/like`, {})
     .then((res) => res.data);

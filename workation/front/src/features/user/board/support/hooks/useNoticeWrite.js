@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { createNotice, updateNotice, getNoticeDetail } from '../api/Supportapi';
+import { createNotice, updateNotice, getNoticeDetail } from '../api/supportApi';
 
 function getMemberIdFromToken() {
   const token = localStorage.getItem('accessToken');

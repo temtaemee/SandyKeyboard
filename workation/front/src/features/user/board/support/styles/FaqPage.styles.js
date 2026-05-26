@@ -1,143 +1,14 @@
 import styled from 'styled-components';
-import { useFaq } from '../hooks/useFaq';
 
-export default function FaqPage() {
-  const {
-    pagedList,
-    openId,
-    setOpenId,
-    currentPage,
-    totalPages,
-    showForm,
-    setShowForm,
-    editTarget,
-    formQ,
-    setFormQ,
-    formA,
-    setFormA,
-    deleteId,
-    setDeleteId,
-    submitting,
-    handlePageChange,
-    openWrite,
-    openEdit,
-    handleFormSubmit,
-    handleDelete,
-  } = useFaq();
+export const Wrapper = styled.div``;
 
-  return (
-    <Wrapper>
-      <TopRow>
-        <WriteButton onClick={openWrite}>✏️ 글쓰기</WriteButton>
-      </TopRow>
-
-      <Board>
-        {pagedList.map((faq) => (
-          <Item key={faq.id}>
-            <QuestionRow>
-              <QuestionText
-                onClick={() => setOpenId(openId === faq.id ? null : faq.id)}
-              >
-                <QBadge>Q</QBadge>
-                {faq.question}
-                <Arrow $open={openId === faq.id}>▾</Arrow>
-              </QuestionText>
-              <ItemButtons>
-                <ItemEditBtn onClick={() => openEdit(faq)}>수정</ItemEditBtn>
-                <ItemDeleteBtn onClick={() => setDeleteId(faq.id)}>
-                  삭제
-                </ItemDeleteBtn>
-              </ItemButtons>
-            </QuestionRow>
-            {openId === faq.id && (
-              <Answer>
-                <ABadge>A</ABadge>
-                <AnswerText>{faq.answer}</AnswerText>
-              </Answer>
-            )}
-          </Item>
-        ))}
-        {pagedList.length === 0 && <Empty>등록된 FAQ가 없습니다.</Empty>}
-      </Board>
-
-      {totalPages > 1 && (
-        <Pagination>
-          <PageBtn
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 0}
-          >
-            ‹
-          </PageBtn>
-          {Array.from({ length: totalPages }, (_, i) => (
-            <PageBtn
-              key={i}
-              $active={i === currentPage}
-              onClick={() => handlePageChange(i)}
-            >
-              {i + 1}
-            </PageBtn>
-          ))}
-          <PageBtn
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages - 1}
-          >
-            ›
-          </PageBtn>
-        </Pagination>
-      )}
-
-      {showForm && (
-        <Overlay>
-          <FormModal>
-            <FormTitle>{editTarget ? 'FAQ 수정' : 'FAQ 등록'}</FormTitle>
-            <FormGroup>
-              <FormLabel>질문</FormLabel>
-              <FormInput
-                placeholder="질문을 입력하세요"
-                value={formQ}
-                onChange={(e) => setFormQ(e.target.value)}
-              />
-            </FormGroup>
-            <FormGroup>
-              <FormLabel>답변</FormLabel>
-              <FormTextArea
-                placeholder="답변을 입력하세요"
-                value={formA}
-                onChange={(e) => setFormA(e.target.value)}
-              />
-            </FormGroup>
-            <FormButtons>
-              <ModalCancel onClick={() => setShowForm(false)}>취소</ModalCancel>
-              <ModalConfirm onClick={handleFormSubmit} disabled={submitting}>
-                {submitting ? '저장 중...' : editTarget ? '저장' : '등록'}
-              </ModalConfirm>
-            </FormButtons>
-          </FormModal>
-        </Overlay>
-      )}
-
-      {deleteId && (
-        <Overlay>
-          <Modal>
-            <ModalText>정말 삭제하시겠습니까?</ModalText>
-            <FormButtons>
-              <ModalCancel onClick={() => setDeleteId(null)}>취소</ModalCancel>
-              <ModalDelete onClick={handleDelete}>삭제</ModalDelete>
-            </FormButtons>
-          </Modal>
-        </Overlay>
-      )}
-    </Wrapper>
-  );
-}
-
-const Wrapper = styled.div``;
-const TopRow = styled.div`
+export const TopRow = styled.div`
   display: flex;
   justify-content: flex-end;
   margin-bottom: 16px;
 `;
-const WriteButton = styled.button`
+
+export const WriteButton = styled.button`
   padding: 9px 22px;
   border-radius: ${({ theme }) => theme.radius.full};
   border: none;
@@ -151,20 +22,24 @@ const WriteButton = styled.button`
     background: ${({ theme }) => theme.colors.primaryLight};
   }
 `;
-const Board = styled.div`
+
+export const Board = styled.div`
   border-top: 2px solid ${({ theme }) => theme.colors.textDark};
 `;
-const Item = styled.div`
+
+export const Item = styled.div`
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
 `;
-const QuestionRow = styled.div`
+
+export const QuestionRow = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding-right: 10px;
 `;
-const QuestionText = styled.div`
+
+export const QuestionText = styled.div`
   flex: 1;
   display: flex;
   align-items: center;
@@ -179,7 +54,8 @@ const QuestionText = styled.div`
     color: ${({ theme }) => theme.colors.primary};
   }
 `;
-const QBadge = styled.span`
+
+export const QBadge = styled.span`
   flex-shrink: 0;
   width: 28px;
   height: 28px;
@@ -192,19 +68,22 @@ const QBadge = styled.span`
   align-items: center;
   justify-content: center;
 `;
-const Arrow = styled.span`
+
+export const Arrow = styled.span`
   margin-left: auto;
   font-size: 18px;
   color: ${({ theme }) => theme.colors.textLight};
   transform: ${({ $open }) => ($open ? 'rotate(180deg)' : 'rotate(0deg)')};
   transition: transform 0.2s;
 `;
-const ItemButtons = styled.div`
+
+export const ItemButtons = styled.div`
   display: flex;
   gap: 6px;
   flex-shrink: 0;
 `;
-const ItemEditBtn = styled.button`
+
+export const ItemEditBtn = styled.button`
   padding: 6px 14px;
   border-radius: ${({ theme }) => theme.radius.full};
   border: 1px solid ${({ theme }) => theme.colors.border};
@@ -220,7 +99,8 @@ const ItemEditBtn = styled.button`
     color: ${({ theme }) => theme.colors.primary};
   }
 `;
-const ItemDeleteBtn = styled.button`
+
+export const ItemDeleteBtn = styled.button`
   padding: 6px 14px;
   border-radius: ${({ theme }) => theme.radius.full};
   border: none;
@@ -233,14 +113,16 @@ const ItemDeleteBtn = styled.button`
     background: #dc2626;
   }
 `;
-const Answer = styled.div`
+
+export const Answer = styled.div`
   display: flex;
   gap: 14px;
   align-items: flex-start;
   padding: 0 10px 24px 10px;
   background: ${({ theme }) => theme.colors.bgSection};
 `;
-const ABadge = styled.span`
+
+export const ABadge = styled.span`
   flex-shrink: 0;
   width: 28px;
   height: 28px;
@@ -253,26 +135,30 @@ const ABadge = styled.span`
   align-items: center;
   justify-content: center;
 `;
-const AnswerText = styled.p`
+
+export const AnswerText = styled.p`
   font-size: 14px;
   color: ${({ theme }) => theme.colors.textMid};
   line-height: 1.8;
   padding-top: 4px;
 `;
-const Empty = styled.div`
+
+export const Empty = styled.div`
   padding: 48px 0;
   text-align: center;
   color: ${({ theme }) => theme.colors.textLight};
   font-size: 15px;
 `;
-const Pagination = styled.div`
+
+export const Pagination = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 6px;
   margin-top: 32px;
 `;
-const PageBtn = styled.button`
+
+export const PageBtn = styled.button`
   width: 36px;
   height: 36px;
   border-radius: ${({ theme }) => theme.radius.sm};
@@ -296,7 +182,8 @@ const PageBtn = styled.button`
     cursor: default;
   }
 `;
-const Overlay = styled.div`
+
+export const Overlay = styled.div`
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
@@ -305,7 +192,8 @@ const Overlay = styled.div`
   justify-content: center;
   z-index: 200;
 `;
-const FormModal = styled.div`
+
+export const FormModal = styled.div`
   background: ${({ theme }) => theme.colors.white};
   border-radius: ${({ theme }) => theme.radius.md};
   padding: 40px 48px;
@@ -315,22 +203,26 @@ const FormModal = styled.div`
   gap: 24px;
   box-shadow: ${({ theme }) => theme.shadows.cardHover};
 `;
-const FormTitle = styled.h3`
+
+export const FormTitle = styled.h3`
   font-size: 20px;
   font-weight: 700;
   color: ${({ theme }) => theme.colors.textDark};
 `;
-const FormGroup = styled.div`
+
+export const FormGroup = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
 `;
-const FormLabel = styled.label`
+
+export const FormLabel = styled.label`
   font-size: 13px;
   font-weight: 700;
   color: ${({ theme }) => theme.colors.textLight};
 `;
-const FormInput = styled.input`
+
+export const FormInput = styled.input`
   padding: 12px 16px;
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: ${({ theme }) => theme.radius.sm};
@@ -346,7 +238,8 @@ const FormInput = styled.input`
     color: ${({ theme }) => theme.colors.textLight};
   }
 `;
-const FormTextArea = styled.textarea`
+
+export const FormTextArea = styled.textarea`
   padding: 12px 16px;
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: ${({ theme }) => theme.radius.sm};
@@ -365,12 +258,14 @@ const FormTextArea = styled.textarea`
     color: ${({ theme }) => theme.colors.textLight};
   }
 `;
-const FormButtons = styled.div`
+
+export const FormButtons = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 10px;
 `;
-const Modal = styled.div`
+
+export const Modal = styled.div`
   background: ${({ theme }) => theme.colors.white};
   border-radius: ${({ theme }) => theme.radius.md};
   padding: 40px 48px;
@@ -380,12 +275,14 @@ const Modal = styled.div`
   gap: 28px;
   box-shadow: ${({ theme }) => theme.shadows.cardHover};
 `;
-const ModalText = styled.p`
+
+export const ModalText = styled.p`
   font-size: 18px;
   font-weight: 600;
   color: ${({ theme }) => theme.colors.textDark};
 `;
-const ModalCancel = styled.button`
+
+export const ModalCancel = styled.button`
   padding: 12px 28px;
   border-radius: ${({ theme }) => theme.radius.full};
   border: 1px solid ${({ theme }) => theme.colors.border};
@@ -398,7 +295,8 @@ const ModalCancel = styled.button`
     background: ${({ theme }) => theme.colors.bgSection};
   }
 `;
-const ModalConfirm = styled.button`
+
+export const ModalConfirm = styled.button`
   padding: 12px 28px;
   border-radius: ${({ theme }) => theme.radius.full};
   border: none;
@@ -412,7 +310,8 @@ const ModalConfirm = styled.button`
     background: ${({ theme }) => theme.colors.primaryLight};
   }
 `;
-const ModalDelete = styled.button`
+
+export const ModalDelete = styled.button`
   padding: 12px 28px;
   border-radius: ${({ theme }) => theme.radius.full};
   border: none;

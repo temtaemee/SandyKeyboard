@@ -1,43 +1,26 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import styled from 'styled-components';
 
-export default function SupportHomePage() {
-  return (
-    <Wrapper>
-      <Title>고객지원</Title>
-
-      <TabContainer>
-        <Tab to="/board/support/notice">공지사항</Tab>
-        <Tab to="/board/support/faq">FAQ</Tab>
-      </TabContainer>
-
-      <Content>
-        <Outlet />
-      </Content>
-    </Wrapper>
-  );
-}
-
-const Wrapper = styled.div`
+export const Wrapper = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   padding: 80px 20px;
 `;
 
-const Title = styled.h1`
+export const Title = styled.h1`
   font-size: 40px;
   font-weight: 700;
   margin-bottom: 40px;
   color: ${({ theme }) => theme.colors.textDark};
 `;
 
-const TabContainer = styled.div`
+export const TabContainer = styled.div`
   display: flex;
   gap: 14px;
   margin-bottom: 40px;
 `;
 
-const Tab = styled(NavLink)`
+export const Tab = styled(NavLink)`
   padding: 12px 24px;
   border-radius: ${({ theme }) => theme.radius.full};
   text-decoration: none;
@@ -57,4 +40,4 @@ const Tab = styled(NavLink)`
   }
 `;
 
-const Content = styled.div``;
+export const Content = styled.div``;

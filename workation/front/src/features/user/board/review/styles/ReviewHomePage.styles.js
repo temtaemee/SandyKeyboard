@@ -1,26 +1,7 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import styled from 'styled-components';
 
-export default function ReviewHomePage() {
-  const navigate = useNavigate();
-
-  return (
-    <Wrapper>
-      <Title>참여후기</Title>
-
-      <TabContainer>
-        <Tab to="/board/review/list">후기 목록</Tab>
-        <WriteButton onClick={() => navigate('/board/review/write')}>
-          후기 작성
-        </WriteButton>
-      </TabContainer>
-
-      <Outlet />
-    </Wrapper>
-  );
-}
-
-const Wrapper = styled.div`
+export const Wrapper = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   padding: 80px 20px;
@@ -29,21 +10,21 @@ const Wrapper = styled.div`
   min-height: 100vh;
 `;
 
-const Title = styled.h1`
+export const Title = styled.h1`
   font-size: 40px;
   font-weight: 700;
   margin-bottom: 40px;
   color: ${({ theme }) => theme.colors.textDark};
 `;
 
-const TabContainer = styled.div`
+export const TabContainer = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
   margin-bottom: 40px;
 `;
 
-const Tab = styled(NavLink)`
+export const Tab = styled(NavLink)`
   padding: 10px 24px;
   border-radius: ${({ theme }) => theme.radius.full};
   text-decoration: none;
@@ -63,7 +44,7 @@ const Tab = styled(NavLink)`
   }
 `;
 
-const WriteButton = styled.button`
+export const WriteButton = styled.button`
   padding: 10px 24px;
   border-radius: ${({ theme }) => theme.radius.full};
   border: 1px solid ${({ theme }) => theme.colors.border};

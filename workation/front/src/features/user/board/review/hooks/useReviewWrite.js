@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { createReview, updateReview, getReviewDetail } from '../api/Reviewapi';
+import { createReview, updateReview, getReviewDetail } from '../api/reviewApi';
 
 export function useReviewWrite() {
   const navigate = useNavigate();

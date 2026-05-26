@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getFaqList, createFaq, updateFaq, deleteFaq } from '../api/Supportapi';
+import { getFaqList, createFaq, updateFaq, deleteFaq } from '../api/supportApi';
 
 const TEMP_MEMBER_ID = 1;
 const PAGE_SIZE = 10;

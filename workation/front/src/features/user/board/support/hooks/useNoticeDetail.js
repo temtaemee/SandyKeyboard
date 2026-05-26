@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getNoticeDetail, deleteNotice } from '../api/Supportapi';
+import { getNoticeDetail, deleteNotice } from '../api/supportApi';
 
 export function useNoticeDetail(noticeId) {
   const navigate = useNavigate();

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import eventBanner from '../assets/신규회원.png';
 import returnBanner from '../assets/복귀자.png';
 import reviewBanner from '../assets/베스트리뷰자.png';
-import './EventPage.css';
+import '../styles/EventPage.css';
   
 const EventPage = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
