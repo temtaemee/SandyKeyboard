@@ -8,7 +8,6 @@ function getMemberIdFromToken() {
   if (!token) return null;
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
-    console.log('토큰 payload:', payload); // 어떤 키가 있는지 확인용
     return payload.id ?? payload.memberId ?? payload.sub;
   } catch {
     return null;
@@ -45,7 +44,6 @@ export function useNoticeWrite() {
 
   function handleFileChange(e) {
     const selected = Array.from(e.target.files); // ← 이렇게 변경
-    console.log('파일 선택됨:', selected);
     setFiles((prev) => [...prev, ...selected]);
     e.target.value = '';
   }
@@ -55,9 +53,6 @@ export function useNoticeWrite() {
   }
 
   async function handleSubmit() {
-    console.log('files 상태:', files); // ← 추가
-    console.log('handleSubmit 실행됨!');
-    console.log('title:', title, 'content:', content);
     if (!title.trim()) return alert('제목을 입력해주세요.');
     if (!content.trim()) return alert('내용을 입력해주세요.');
 
