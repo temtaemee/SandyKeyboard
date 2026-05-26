@@ -7,7 +7,6 @@ import HomePage from './home/pages/HomePage';
 
 import UserRouter from './routes/MypageRouter';
 import SellerRouter from './routes/SellerRouter';
-import SellerHomePage from './features/seller/pages/SellerHomePage';
 import AdminRouter from './routes/AdminRouter';
 import MsRouter from './routes/ResvRouter';
 import FindIdPage from './features/member/pages/findId/FindIdPage';
