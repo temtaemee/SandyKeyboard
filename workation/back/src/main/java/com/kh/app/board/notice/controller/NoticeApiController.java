@@ -39,13 +39,19 @@ public class NoticeApiController {
     }
 
     // 등록
-    @PostMapping("/user/board/notice")
+    @PostMapping(value = "/user/board/notice", consumes = "multipart/form-data")
     public ResponseEntity<Long> create(
             @RequestPart("dto") NoticeCreateReqDto dto,
             @RequestPart(value = "files", required = false) List<MultipartFile> files
     ) {
-        Long id = noticeService.create(dto, files);
-        return ResponseEntity.status(HttpStatus.CREATED).body(id);
+        log.info("공지사항 등록 요청 - title: {}, files: {}", dto.getTitle(), files != null ? files.size() : 0);
+        try {
+            Long id = noticeService.create(dto, files);
+            return ResponseEntity.status(HttpStatus.CREATED).body(id);
+        } catch (Exception e) {
+            log.error("공지사항 등록 실패", e);
+            throw e;
+        }
     }
 
     // 수정
@@ -64,4 +70,5 @@ public class NoticeApiController {
         noticeService.delete(id);
         return ResponseEntity.ok().build();
     }
+    
 }

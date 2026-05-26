@@ -50,7 +50,17 @@ export default function NoticeDetailPage() {
                 <FileIcon>📎</FileIcon>
                 <FileName>{file.originalFileName}</FileName>
                 <DownloadBtn
-                  onClick={() => alert(`${file.originalFileName} 다운로드`)}
+                  onClick={async () => {
+                    const url = `https://temp0514-651592874046-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/${file.s3Key}`;
+                    const response = await fetch(url);
+                    const blob = await response.blob();
+                    const blobUrl = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = blobUrl;
+                    a.download = file.originalFileName;
+                    a.click();
+                    URL.revokeObjectURL(blobUrl);
+                  }}
                 >
                   다운로드
                 </DownloadBtn>
