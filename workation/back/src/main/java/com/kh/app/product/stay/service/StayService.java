@@ -1,6 +1,6 @@
 package com.kh.app.product.stay.service;
 
-import com.kh.app.aws.service.S3Service;
+import com.kh.app.product.common.util.S3PictureUploader;
 import com.kh.app.product.exception.ErrorCode;
 import com.kh.app.product.exception.ProductException;
 import com.kh.app.product.space.repository.SpaceRepository;
@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,7 +31,7 @@ public class StayService {
     private final StayOptionRepository stayOptionRepository;
     private final StayExtraPriceRepository stayExtraPriceRepository;
     private final SpaceRepository spaceRepository;
-    private final S3Service s3Service;
+    private final S3PictureUploader s3PictureUploader;
 
     public List<StayResDto> searchList(StaySearchReqDto dto) {
         return stayRepository.searchList(dto).stream()
@@ -58,9 +57,11 @@ public class StayService {
         var space = spaceRepository.findByIdAndDelYn(dto.getSpaceId(), "N")
                 .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
 
+        validateCheckInOutTime(dto.getCheckInTime(), dto.getCheckOutTime());
+
         StayEntity stay = stayRepository.save(dto.toEntity(space));
         insertOptions(stay, dto.getOptionList());
-        insertExtraPrices(stay, dto.getExtraPriceList());
+        insertExtraPrices(stay, stay.getId(), dto.getExtraPriceList());
         uploadAndSavePictures(stay, files);
 
         return stay.getId();
@@ -69,6 +70,9 @@ public class StayService {
     @Transactional
     public void update(Long id, StayUpdateReqDto dto) {
         StayEntity stay = findStay(id);
+
+        validateCheckInOutTime(dto.getCheckInTime(), dto.getCheckOutTime());
+
         stay.update(
                 dto.getName(), dto.getSummary(), dto.getDescription(),
                 dto.getCapacity(), dto.getMaxCapa(),
@@ -104,37 +108,77 @@ public class StayService {
         stayOptionRepository.saveAll(entities);
     }
 
-    private void insertExtraPrices(StayEntity stay, List<StayExtraPriceReqDto> extraPriceList) {
+    /**
+     * ExtraPrice 등록 전 날짜 overlap 검사를 수행한다.
+     * 1) 새로 등록하는 목록 내부에서 서로 겹치는지 확인
+     * 2) 같은 stayId의 기존 추가금액과 겹치는지 확인
+     */
+    private void insertExtraPrices(StayEntity stay, Long stayId, List<StayExtraPriceReqDto> extraPriceList) {
         if (extraPriceList == null || extraPriceList.isEmpty()) return;
+
+        // 1) 입력 목록 내부 overlap 검사
+        for (int i = 0; i < extraPriceList.size(); i++) {
+            StayExtraPriceReqDto a = extraPriceList.get(i);
+            for (int j = i + 1; j < extraPriceList.size(); j++) {
+                StayExtraPriceReqDto b = extraPriceList.get(j);
+                if (isOverlapping(a.getStartDate(), a.getEndDate(), b.getStartDate(), b.getEndDate())) {
+                    throw new IllegalArgumentException("추가 금액 날짜 범위가 기존 설정과 겹칩니다.");
+                }
+            }
+        }
+
+        // 2) DB에 저장된 기존 ExtraPrice와의 overlap 검사
+        for (StayExtraPriceReqDto dto : extraPriceList) {
+            List<StayExtraPriceEntity> conflicts = stayExtraPriceRepository.findOverlapping(
+                    stayId, dto.getStartDate(), dto.getEndDate());
+            if (!conflicts.isEmpty()) {
+                throw new IllegalArgumentException("추가 금액 날짜 범위가 기존 설정과 겹칩니다.");
+            }
+        }
+
         List<StayExtraPriceEntity> entities = extraPriceList.stream()
                 .map(dto -> dto.toEntity(stay))
                 .toList();
         stayExtraPriceRepository.saveAll(entities);
     }
 
+    /** 두 날짜 구간이 겹치는지 확인한다. */
+    private boolean isOverlapping(
+            java.time.LocalDateTime startA, java.time.LocalDateTime endA,
+            java.time.LocalDateTime startB, java.time.LocalDateTime endB
+    ) {
+        return startA != null && endA != null && startB != null && endB != null
+                && !startA.isAfter(endB) && !endA.isBefore(startB);
+    }
+
+    /** 체크인 시간이 체크아웃 시간보다 빠른지 검사한다. */
+    private void validateCheckInOutTime(java.time.LocalTime checkInTime, java.time.LocalTime checkOutTime) {
+        if (checkInTime != null && checkOutTime != null
+                && !checkInTime.isBefore(checkOutTime)) {
+            throw new IllegalArgumentException("체크인 시간은 체크아웃 시간보다 빨라야 합니다.");
+        }
+    }
+
     private void uploadAndSavePictures(StayEntity stay, List<MultipartFile> files) {
         if (files == null || files.isEmpty()) return;
+
+        List<String> s3Keys = s3PictureUploader.upload(files, "stay");
 
         List<StayPictureEntity> entities = new ArrayList<>();
         for (int i = 0; i < files.size(); i++) {
             MultipartFile file = files.get(i);
-            try {
-                String s3key = s3Service.upload(file, "stay");
-                String storedName = s3key.substring(s3key.lastIndexOf("/") + 1);
-                entities.add(StayPictureEntity.builder()
-                        .stay(stay)
-                        .filePath(s3key)
-                        .originName(file.getOriginalFilename())
-                        .storedName(storedName)
-                        .contentType(file.getContentType())
-                        .fileSize(file.getSize())
-                        .mainYn(i == 0 ? "Y" : "N")
-                        .sortOrder(i)
-                        .build());
-            } catch (IOException e) {
-                log.error("S3 upload failed for file: {}", file.getOriginalFilename(), e);
-                throw new ProductException(ErrorCode.FILE_UPLOAD_FAILED);
-            }
+            String s3Key = s3Keys.get(i);
+            String storedName = s3Key.substring(s3Key.lastIndexOf("/") + 1);
+            entities.add(StayPictureEntity.builder()
+                    .stay(stay)
+                    .filePath(s3Key)
+                    .originName(file.getOriginalFilename())
+                    .storedName(storedName)
+                    .contentType(file.getContentType())
+                    .fileSize(file.getSize())
+                    .mainYn(i == 0 ? "Y" : "N")
+                    .sortOrder(i)
+                    .build());
         }
         stayPictureRepository.saveAll(entities);
     }

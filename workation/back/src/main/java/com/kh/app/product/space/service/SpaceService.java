@@ -1,8 +1,8 @@
 package com.kh.app.product.space.service;
 
-import com.kh.app.aws.service.S3Service;
 import com.kh.app.member.entity.MemberEntity;
 import com.kh.app.member.repository.MemberRepository;
+import com.kh.app.product.common.util.S3PictureUploader;
 import com.kh.app.product.exception.ErrorCode;
 import com.kh.app.product.exception.ProductException;
 import com.kh.app.product.space.dto.request.SpaceInsertReqDto;
@@ -14,7 +14,6 @@ import com.kh.app.product.space.repository.SpaceArcadeRepository;
 import com.kh.app.product.space.repository.SpacePictureRepository;
 import com.kh.app.product.space.repository.SpaceRepository;
 import com.kh.app.product.stay.dto.response.StayResDto;
-import com.kh.app.product.stay.entity.StayEntity;
 import com.kh.app.product.stay.entity.StayOption;
 import com.kh.app.product.stay.entity.StayOptionEntity;
 import com.kh.app.product.stay.repository.StayOptionRepository;
@@ -26,7 +25,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,7 +37,7 @@ public class SpaceService {
     private final SpaceRepository spaceRepository;
     private final SpaceArcadeRepository spaceArcadeRepository;
     private final SpacePictureRepository spacePictureRepository;
-    private final S3Service s3Service;
+    private final S3PictureUploader s3PictureUploader;
     private final MemberRepository memberRepository;
     private final StayRepository stayRepository;
     private final StayOptionRepository stayOptionRepository;
@@ -113,27 +111,24 @@ public class SpaceService {
     private void uploadAndSavePictures(SpaceEntity space, List<MultipartFile> files) {
         if (files == null || files.isEmpty()) return;
 
+        List<String> s3Keys = s3PictureUploader.upload(files, "space");
+
         List<SpacePictureEntity> entities = new ArrayList<>();
         for (int i = 0; i < files.size(); i++) {
             MultipartFile file = files.get(i);
-            try {
-                String s3key = s3Service.upload(file, "space");
-                String storedName = s3key.substring(s3key.lastIndexOf("/") + 1);
-                entities.add(SpacePictureEntity.builder()
-                        .space(space)
-                        .filePath(s3key)
-                        .originName(file.getOriginalFilename())
-                        .storedName(storedName)
-                        .contentType(file.getContentType())
-                        .fileSize(file.getSize())
-                        .mainYn(i == 0 ? "Y" : "N")
-                        .sortOrder(i)
-                        .category(SpacePictureCategory.OTHERS)
-                        .build());
-            } catch (IOException e) {
-                log.error("S3 upload failed for file: {}", file.getOriginalFilename(), e);
-                throw new ProductException(ErrorCode.FILE_UPLOAD_FAILED);
-            }
+            String s3Key = s3Keys.get(i);
+            String storedName = s3Key.substring(s3Key.lastIndexOf("/") + 1);
+            entities.add(SpacePictureEntity.builder()
+                    .space(space)
+                    .filePath(s3Key)
+                    .originName(file.getOriginalFilename())
+                    .storedName(storedName)
+                    .contentType(file.getContentType())
+                    .fileSize(file.getSize())
+                    .mainYn(i == 0 ? "Y" : "N")
+                    .sortOrder(i)
+                    .category(SpacePictureCategory.OTHERS)
+                    .build());
         }
         spacePictureRepository.saveAll(entities);
     }
