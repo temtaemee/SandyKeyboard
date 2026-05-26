@@ -1,5 +1,6 @@
 package com.kh.app.product.space.dto.request;
 
+import com.kh.app.member.entity.MemberEntity;
 import com.kh.app.product.space.entity.Area;
 import com.kh.app.product.space.entity.SpaceEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -57,14 +58,14 @@ public class SpaceInsertReqDto {
     @NotNull
     private Area area;
 
-    @Schema(description = "판매자 신청 ID")
-    private Long applyId;
+    @Schema(description = "판매자 회원 ID")
+    @NotNull
+    private Long sellerId;
 
     @Schema(description = "편의시설 ID 목록 (arcade 테이블에 존재하는 ID만 허용)", example = "[]")
     private List<Long> arcadeIdList;
 
-    public SpaceEntity toEntity() {
-
+    public SpaceEntity toEntity(MemberEntity seller) {
         return SpaceEntity.builder()
                 .name(name)
                 .phone(phone)
@@ -77,6 +78,7 @@ public class SpaceInsertReqDto {
                 .longitude(longitude)
                 .area(area)
                 .visibleYn("N")
+                .seller(seller)
                 .build();
     }
 

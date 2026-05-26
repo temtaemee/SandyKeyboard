@@ -8,6 +8,9 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum ErrorCode {
 
+    // MEMBER
+    SELLER_NOT_FOUND(3001, "MEMBER-3001", "존재하지 않는 판매자입니다.", HttpStatus.NOT_FOUND),
+
     // SPACE
     SPACE_NOT_FOUND(4001, "SPACE-4001", "존재하지 않는 공간입니다.", HttpStatus.NOT_FOUND),
     UNIT_NOT_FOUND(4002, "SPACE-4002", "존재하지 않는 유닛입니다.", HttpStatus.NOT_FOUND),

@@ -1,6 +1,7 @@
 package com.kh.app.product.space.entity;
 
 import com.kh.app.common.entity.BaseEntity;
+import com.kh.app.member.entity.MemberEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -59,6 +60,9 @@ public class SpaceEntity extends BaseEntity {
     @Column(name = "area", nullable = false)
     private Area area;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "MEMBER_ID")
+    private MemberEntity seller;
 
     public void changeVisibleYn(String visibleYn) {
         this.visibleYn = visibleYn;

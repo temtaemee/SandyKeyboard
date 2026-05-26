@@ -1,5 +1,6 @@
 package com.kh.app.product.space.repository;
 
+import com.kh.app.member.entity.QMemberEntity;
 import com.kh.app.product.space.dto.request.SpaceSearchReqDto;
 import com.kh.app.product.space.entity.QSpaceEntity;
 import com.kh.app.product.space.entity.SpaceEntity;
@@ -20,9 +21,11 @@ public class SpaceRepositoryImpl implements SpaceRepositoryCustom {
     @Override
     public List<SpaceEntity> searchList(SpaceSearchReqDto dto) {
         QSpaceEntity space = QSpaceEntity.spaceEntity;
+        QMemberEntity member = QMemberEntity.memberEntity;
 
         return queryFactory
                 .selectFrom(space)
+                .leftJoin(space.seller, member).fetchJoin()
                 .where(
                         space.delYn.eq("N"),
                         keywordContains(space, dto.getKeyword()),

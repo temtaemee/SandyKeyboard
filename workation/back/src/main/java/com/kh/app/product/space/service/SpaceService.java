@@ -1,6 +1,8 @@
 package com.kh.app.product.space.service;
 
 import com.kh.app.aws.service.S3Service;
+import com.kh.app.member.entity.MemberEntity;
+import com.kh.app.member.repository.MemberRepository;
 import com.kh.app.product.exception.ErrorCode;
 import com.kh.app.product.exception.ProductException;
 import com.kh.app.product.space.dto.request.SpaceInsertReqDto;
@@ -11,6 +13,13 @@ import com.kh.app.product.space.entity.*;
 import com.kh.app.product.space.repository.SpaceArcadeRepository;
 import com.kh.app.product.space.repository.SpacePictureRepository;
 import com.kh.app.product.space.repository.SpaceRepository;
+import com.kh.app.product.stay.dto.response.StayResDto;
+import com.kh.app.product.stay.entity.StayEntity;
+import com.kh.app.product.stay.entity.StayOption;
+import com.kh.app.product.stay.entity.StayOptionEntity;
+import com.kh.app.product.stay.repository.StayOptionRepository;
+import com.kh.app.product.stay.repository.StayPictureRepository;
+import com.kh.app.product.stay.repository.StayRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -31,6 +40,10 @@ public class SpaceService {
     private final SpaceArcadeRepository spaceArcadeRepository;
     private final SpacePictureRepository spacePictureRepository;
     private final S3Service s3Service;
+    private final MemberRepository memberRepository;
+    private final StayRepository stayRepository;
+    private final StayOptionRepository stayOptionRepository;
+    private final StayPictureRepository stayPictureRepository;
 
     public List<SpaceResDto> searchList(SpaceSearchReqDto dto) {
         return spaceRepository.searchList(dto)
@@ -42,7 +55,17 @@ public class SpaceService {
     public SpaceResDto selectOne(Long id) {
         SpaceEntity space = spaceRepository.findByIdAndDelYn(id, "N")
                 .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
-        return SpaceResDto.from(space);
+
+        List<StayResDto> stays = stayRepository.findBySpaceIdAndDelYn(id, "N")
+                .stream()
+                .map(stay -> {
+                    List<StayOption> options = stayOptionRepository.findByStay(stay)
+                            .stream().map(StayOptionEntity::getStayOption).toList();
+                    return StayResDto.from(stay, options, stayPictureRepository.findByStayOrderBySortOrder(stay));
+                })
+                .toList();
+
+        return SpaceResDto.from(space, stays);
     }
 
     @Transactional
@@ -66,7 +89,9 @@ public class SpaceService {
 
     @Transactional
     public Long insert(SpaceInsertReqDto dto, List<MultipartFile> files) {
-        SpaceEntity space = spaceRepository.save(dto.toEntity());
+        MemberEntity seller = memberRepository.findById(dto.getSellerId())
+                .orElseThrow(() -> new ProductException(ErrorCode.SELLER_NOT_FOUND));
+        SpaceEntity space = spaceRepository.save(dto.toEntity(seller));
         uploadAndSavePictures(space, files);
         insertArcades(space, dto.getArcadeIdList());
         return space.getId();
