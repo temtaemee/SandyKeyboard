@@ -1,5 +1,5 @@
 // src/features/admin/pages/AdminSellersPage.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import {
   Home,
@@ -47,6 +47,18 @@ export default function AdminSellersPage() {
   const {
     sellers,
     customers,
+    sellersTotalPage = 1,
+    sellersTotalCount = 0,
+    sellersUnfilteredTotal = 0,
+    sellersActiveCount = 0,
+    sellersBannedCount = 0,
+    sellersNewCount = 0,
+    customersTotalPage = 1,
+    customersTotalCount = 0,
+    customersUnfilteredTotal = 0,
+    customersActiveCount = 0,
+    customersBannedCount = 0,
+    customersNewCount = 0,
     customerCoupons,
     sellerSuspended,
     customerSuspended,
@@ -54,7 +66,17 @@ export default function AdminSellersPage() {
     suspendCustomer,
     addCoupon,
     deleteCoupon,
+    fetchCustomers,
+    fetchSellers,
+    fetchSellersStats,
+    fetchCustomersStats,
   } = useAdminSellers();
+
+  console.log('=== [AdminSellersPage] ===');
+  console.log('customers:', customers);
+  console.log('sellers:', sellers);
+  console.log('sellersTotalCount:', sellersTotalCount, 'customersTotalCount:', customersTotalCount);
+  console.log('==========================');
 
   const [view, setView] = useState('customer'); // 'customer' | 'seller'
   const [filter, setFilter] = useState('전체');
@@ -66,6 +88,53 @@ export default function AdminSellersPage() {
     goToNext,
     reset: resetPage,
   } = usePagination();
+
+  // 1. 한국어 필터명을 백엔드 상태(ACTIVE, BANNED 등)로 변환하는 함수
+  const getBackendStatus = (korFilter) => {
+    if (korFilter === '활동 중') return 'ACTIVE';
+    if (korFilter === '정지됨') return 'BANNED';
+    return null; // '전체' 및 '신규'는 null 전송으로 처리하여 전체조회
+  };
+
+  // 2. 검색, 필터, 페이징에 따른 동적 API 데이터 fetching
+  useEffect(() => {
+    const params = {
+      page: currentPage,
+      size: 10,
+      keyword: searchQuery || null,
+      status: getBackendStatus(filter),
+    };
+
+    if (view === 'customer') {
+      fetchCustomers(params);
+    } else {
+      fetchSellers(params);
+    }
+  }, [view, currentPage, filter, searchQuery, fetchCustomers, fetchSellers]);
+
+  // 3. 통계 카드용 카운트 fetch (view 전환 시마다 갱신)
+  useEffect(() => {
+    if (view === 'seller') {
+      fetchSellersStats();
+    } else {
+      fetchCustomersStats();
+    }
+  }, [view, fetchSellersStats, fetchCustomersStats]);
+
+  // unfilteredTotal: 필터/검색과 무관한 전체 수 (fetchStats에서 별도 보관)
+  // totalCount는 필터된 fetch 결과로 덮어씌워지므로 "전체" 카드에 사용하지 않음
+  const sellersStats = {
+    total: sellersUnfilteredTotal,
+    active: sellersActiveCount,
+    stopped: sellersBannedCount,
+    new: sellersNewCount,
+  };
+  const customersStats = {
+    total: customersUnfilteredTotal,
+    active: customersActiveCount,
+    stopped: customersBannedCount,
+    new: customersNewCount,
+  };
 
   // UI 전용 상태
   const [confirmTarget, setConfirmTarget] = useState(null);
@@ -135,25 +204,12 @@ export default function AdminSellersPage() {
     resetPage();
   };
 
-  /* 필터링 */
-  const filteredSellers = sellers.filter((s) => {
-    if (filter === '활동 중') return !isSellerSuspended(s);
-    if (filter === '정지됨') return isSellerSuspended(s);
-    if (filter === '신규') return isNewMember(s.joinedAt);
-    return true;
-  }).filter((s) =>
-    !searchQuery || s.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-  const filteredCustomers = customers.filter((c) => {
-    if (filter === '활동 중') return !isCustomerSuspended(c);
-    if (filter === '정지됨') return isCustomerSuspended(c);
-    if (filter === '신규') return isNewMember(c.joinDate);
-    return true;
-  }).filter((c) =>
-    !searchQuery || c.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  /* 필터링 - 백엔드에서 페이징과 필터링 처리가 이미 된 데이터이므로 그대로 주입합니다. */
+  const filteredSellers = sellers;
+  const filteredCustomers = customers;
 
-  const TOTAL = view === 'seller' ? 1284 : 8420;
+  const TOTAL = view === 'seller' ? sellersTotalCount : customersTotalCount;
+  const totalPages = view === 'seller' ? sellersTotalPage : customersTotalPage;
 
   return (
     <PageWrapper>
@@ -192,6 +248,7 @@ export default function AdminSellersPage() {
         view={view}
         filter={filter}
         onFilterChange={setFilter}
+        stats={view === 'seller' ? sellersStats : customersStats}
       />
 
       {/* ── 목록 테이블 ── */}
@@ -224,16 +281,10 @@ export default function AdminSellersPage() {
         )}
 
         <TableFooter>
-          <FooterInfo>
-            SHOWING 1-
-            {view === 'seller'
-              ? filteredSellers.length
-              : filteredCustomers.length}{' '}
-            OF {TOTAL.toLocaleString()} ENTRIES
-          </FooterInfo>
+          <FooterInfo>총 {TOTAL.toLocaleString()}명</FooterInfo>
           <AdminPagination
             currentPage={currentPage}
-            totalPages={TOTAL_PAGES}
+            totalPages={totalPages}
             onPageChange={goToPage}
           />
           <div style={{ width: '200px' }} />{' '}

@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getAdminSpaces } from '../api/adminSpacesApi';
-import { SPACES_LIST } from '../data/adminSpacesData';
 import {
   setSpaces,
   setLoading,
@@ -23,7 +22,6 @@ export default function useAdminSpaces() {
         dispatch(setSpaces(resp.data));
       } catch (err) {
         console.error(err);
-        dispatch(setSpaces(SPACES_LIST));
       } finally {
         dispatch(setLoading(false));
       }

@@ -1,5 +1,5 @@
 // src/features/admin/pages/AdminReservationPage.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Calendar, Building2, Users, X, Pencil, Check, Ban } from 'lucide-react';
 import AdminSearchInput from '../components/common/AdminSearchInput';
@@ -34,10 +34,15 @@ const STATUS_FILTER_TABS = [
 export default function AdminReservationPage() {
   const {
     partners,
+    fetchPartners,
     addPartner,
     updatePartner,
     togglePartnerStatus,
   } = useAdminReservation();
+
+  useEffect(() => {
+    fetchPartners();
+  }, [fetchPartners]);
 
   // UI 전용 상태
   const [search, setSearch] = useState('');
@@ -144,7 +149,7 @@ export default function AdminReservationPage() {
             onChange={(e) => setCompanyName(e.target.value)}
           />
           <FormInput
-            placeholder="사업자번호 (0000-00-0000)"
+            placeholder="사업자번호 '-' 제외하고 숫자만 입력"
             value={companyBizNum}
             onChange={(e) => setCompanyBizNum(e.target.value)}
           />
@@ -237,9 +242,7 @@ export default function AdminReservationPage() {
         </Table>
 
         <TableFooter>
-          <FooterInfo>
-            {TOTAL_RESERVATIONS.toLocaleString()}건 &nbsp;‖&nbsp; 1-10 &nbsp;‖
-          </FooterInfo>
+          <FooterInfo>총 {TOTAL_RESERVATIONS.toLocaleString()}건</FooterInfo>
           <AdminPagination
             currentPage={currentPage}
             totalPages={TOTAL_PAGES}

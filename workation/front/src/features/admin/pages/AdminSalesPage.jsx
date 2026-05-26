@@ -5,13 +5,11 @@ import {
   Wallet,
   Receipt,
   Percent,
-  TrendingUp,
   AlertTriangle,
 } from 'lucide-react';
 import AdminSearchInput from '../components/common/AdminSearchInput';
 import {
   SALES_STAT_CARDS,
-  MONTHLY_CHART_DATA,
   TOP5_SETTLEMENTS,
   URGENT_ALERTS,
   PENDING_LIST,
@@ -21,8 +19,6 @@ import {
   APPROVAL_STATUS_MAP,
 } from '../data/adminSalesConstants';
 import StatusBadge from '../components/common/StatusBadge';
-
-const MAX_COUNT = Math.max(...MONTHLY_CHART_DATA.map((d) => d.count));
 
 export default function AdminSalesPage() {
   const [pendingSearch, setPendingSearch] = useState('');
@@ -80,30 +76,8 @@ export default function AdminSalesPage() {
         </StatCard>
       </StatsSection>
 
-      {/* ── 중단: 차트 + TOP5 + 긴급알림 ── */}
+      {/* ── 중단: TOP5 + 긴급알림 ── */}
       <MidSection>
-        {/* 월별 정산 건수 추이 */}
-        <ChartCard>
-          <ChartTitle>월별 정산 건수 추이</ChartTitle>
-          <BarArea>
-            {MONTHLY_CHART_DATA.map((d) => (
-              <BarCol key={d.month}>
-                <BarWrap>
-                  <Bar
-                    $height={Math.round((d.count / MAX_COUNT) * 100)}
-                    $highlight={d.highlight}
-                  />
-                </BarWrap>
-                <BarLabel $highlight={d.highlight}>{d.month}</BarLabel>
-              </BarCol>
-            ))}
-          </BarArea>
-          <ChartFooterText>
-            이번 달 정산 건수는 전달 대비 <Strong>12%</Strong> <TrendInline />{' '}
-            했습니다.
-          </ChartFooterText>
-        </ChartCard>
-
         {/* 정산 금액 Top 5 거래처 */}
         <Top5Card>
           <Top5Title>정산 금액 Top 5 거래처</Top5Title>
@@ -235,15 +209,6 @@ function ReceiptIcon() {
 function PercentIcon() {
   return <Percent size={20} />;
 }
-function TrendInline() {
-  return (
-    <TrendingUp
-      size={12}
-      color="#16a34a"
-      style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 2 }}
-    />
-  );
-}
 function AlertDiamondIcon() {
   return <AlertTriangle size={16} color="#ef4444" />;
 }
@@ -350,80 +315,12 @@ const StatSubText = styled.p`
   margin-top: 4px;
 `;
 
-/* 중단 3열 */
+/* 중단 2열 */
 const MidSection = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1.2fr 1fr;
+  grid-template-columns: 1.6fr 1fr;
   gap: 16px;
   align-items: start;
-`;
-
-/* 차트 카드 */
-const ChartCard = styled.div`
-  background: ${({ theme }) => theme.colors.white};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 8px;
-  padding: 22px 24px;
-  box-shadow: ${({ theme }) => theme.shadows.card};
-`;
-
-const ChartTitle = styled.p`
-  font-size: 14px;
-  font-weight: 600;
-  color: ${({ theme }) => theme.colors.adminTextDark};
-  margin-bottom: 20px;
-`;
-
-const BarArea = styled.div`
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  height: 120px;
-  gap: 8px;
-  margin-bottom: 16px;
-`;
-
-const BarCol = styled.div`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  height: 100%;
-`;
-
-const BarWrap = styled.div`
-  flex: 1;
-  width: 100%;
-  display: flex;
-  align-items: flex-end;
-`;
-
-const Bar = styled.div`
-  width: 100%;
-  height: ${({ $height }) => $height}%;
-  background: ${({ $highlight, theme }) =>
-    $highlight ? theme.colors.adminPrimary : theme.colors.border};
-  border-radius: 4px 4px 0 0;
-  transition: background 0.2s;
-`;
-
-const BarLabel = styled.span`
-  font-size: 11px;
-  color: ${({ $highlight, theme }) =>
-    $highlight ? theme.colors.adminPrimary : theme.colors.textLight};
-  font-weight: ${({ $highlight }) => ($highlight ? '700' : '500')};
-`;
-
-const ChartFooterText = styled.p`
-  font-size: 12px;
-  color: ${({ theme }) => theme.colors.textMuted};
-  line-height: 1.6;
-`;
-
-const Strong = styled.strong`
-  color: #16a34a;
-  font-weight: 600;
 `;
 
 /* TOP5 카드 */

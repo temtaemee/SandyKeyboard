@@ -1,20 +1,24 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { SELLERS_LIST, CUSTOMER_LIST, CUSTOMER_COUPONS } from '../data/adminSellersData';
-
-const buildSuspendedMap = (list) =>
-  list.reduce((acc, item) => {
-    if (item.status === 'stopped') acc[item.id] = true;
-    return acc;
-  }, {});
-
 const adminSellersSlice = createSlice({
   name: 'adminSellers',
   initialState: {
-    sellers: SELLERS_LIST,
-    customers: CUSTOMER_LIST,
-    customerCoupons: CUSTOMER_COUPONS,
-    sellerSuspended: buildSuspendedMap(SELLERS_LIST),
-    customerSuspended: buildSuspendedMap(CUSTOMER_LIST),
+    sellers: [],
+    customers: [],
+    sellersTotalPage: 1,
+    sellersTotalCount: 0,
+    sellersUnfilteredTotal: 0,
+    sellersActiveCount: 0,
+    sellersBannedCount: 0,
+    sellersNewCount: 0,
+    customersTotalPage: 1,
+    customersTotalCount: 0,
+    customersUnfilteredTotal: 0,
+    customersActiveCount: 0,
+    customersBannedCount: 0,
+    customersNewCount: 0,
+    customerCoupons: {},
+    sellerSuspended: {},
+    customerSuspended: {},
     loading: false,
     error: null,
   },
@@ -24,6 +28,42 @@ const adminSellersSlice = createSlice({
     },
     setCustomers(state, action) {
       state.customers = action.payload;
+    },
+    setSellersMetadata(state, action) {
+      const { totalPage, totalCount } = action.payload;
+      state.sellersTotalPage = totalPage;
+      state.sellersTotalCount = totalCount;
+    },
+    setCustomersMetadata(state, action) {
+      const { totalPage, totalCount } = action.payload;
+      state.customersTotalPage = totalPage;
+      state.customersTotalCount = totalCount;
+    },
+    setSellersStatusCounts(state, action) {
+      state.sellersUnfilteredTotal = action.payload.total;
+      state.sellersActiveCount = action.payload.active;
+      state.sellersBannedCount = action.payload.banned;
+    },
+    setCustomersStatusCounts(state, action) {
+      state.customersUnfilteredTotal = action.payload.total;
+      state.customersActiveCount = action.payload.active;
+      state.customersBannedCount = action.payload.banned;
+    },
+    adjustSellersStatusCounts(state, action) {
+      const { activeDelta, bannedDelta } = action.payload;
+      state.sellersActiveCount = Math.max(0, state.sellersActiveCount + activeDelta);
+      state.sellersBannedCount = Math.max(0, state.sellersBannedCount + bannedDelta);
+    },
+    adjustCustomersStatusCounts(state, action) {
+      const { activeDelta, bannedDelta } = action.payload;
+      state.customersActiveCount = Math.max(0, state.customersActiveCount + activeDelta);
+      state.customersBannedCount = Math.max(0, state.customersBannedCount + bannedDelta);
+    },
+    setSellersNewCount(state, action) {
+      state.sellersNewCount = action.payload;
+    },
+    setCustomersNewCount(state, action) {
+      state.customersNewCount = action.payload;
     },
     setSellerSuspended(state, action) {
       const { id, suspended } = action.payload;
@@ -58,6 +98,14 @@ const adminSellersSlice = createSlice({
 export const {
   setSellers,
   setCustomers,
+  setSellersMetadata,
+  setCustomersMetadata,
+  setSellersStatusCounts,
+  setCustomersStatusCounts,
+  adjustSellersStatusCounts,
+  adjustCustomersStatusCounts,
+  setSellersNewCount,
+  setCustomersNewCount,
   setSellerSuspended,
   setCustomerSuspended,
   addCoupon,

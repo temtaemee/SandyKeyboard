@@ -1,11 +1,10 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { SPACES_LIST, PENDING_SPACES } from '../data/adminSpacesData';
 
 const adminSpacesSlice = createSlice({
   name: 'adminSpaces',
   initialState: {
-    spaces: SPACES_LIST,
-    pendingSpaces: PENDING_SPACES,
+    spaces: [],
+    pendingSpaces: [],
     rejectedSpaces: [],
     blindedIds: {},
     loading: false,

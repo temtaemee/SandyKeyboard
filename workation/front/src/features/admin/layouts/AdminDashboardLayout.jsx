@@ -1,13 +1,65 @@
 // src/features/admin/layouts/AdminDashboardLayout.jsx
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Outlet } from 'react-router-dom';
 import styled from 'styled-components';
 import { Bell, X } from 'lucide-react';
 
-import { NOTIFICATIONS } from '../data/adminDashboardData';
+import {
+  getAdminNotifications,
+  readNotification,
+  readAllNotifications,
+} from '../api/adminNotificationApi';
 import { NOTIF_TYPE_COLOR } from '../data/adminDashboardConstants';
 import AdminSidebar from '../components/dashboard/AdminSidebar';
 import AdminHeader from '../components/dashboard/AdminHeader';
+
+// 알림이 생성된 시각을 현재 기준으로 상대적 텍스트("방금 전", "N분 전", "N시간 전")로 변환하는 헬퍼 함수
+const formatTime = (createdAtStr) => {
+  if (!createdAtStr) return '방금 전';
+  try {
+    const now = new Date();
+    const created = new Date(createdAtStr);
+    const diffMs = now - created;
+    if (isNaN(diffMs) || diffMs < 0) return '방금 전';
+
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return '방금 전';
+    if (diffMins < 60) return `${diffMins}분 전`;
+
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}시간 전`;
+
+    return createdAtStr.split('T')[0].replace(/-/g, '.');
+  } catch (e) {
+    return '방금 전';
+  }
+};
+
+// 백엔드 알림 DTO 규격을 프론트엔드가 요구하는 알림 카드로 매핑하는 변환 함수
+const mapBackendNotificationToFrontend = (item) => {
+  const mapType = (backendType) => {
+    switch (backendType) {
+      case 'RESERVATION_COMPLETE':
+      case 'PAYMENT_COMPLETE':
+        return 'success';
+      case 'RESERVATION_CANCELLED':
+      case 'SYSTEM_ALERT':
+        return 'warning';
+      default:
+        return 'info';
+    }
+  };
+
+  return {
+    id: item.id,
+    type: mapType(item.type),
+    title: item.typeDescription || '새로운 알림',
+    desc: item.content,
+    time: formatTime(item.createdAt),
+    unread: !item.read, // 백엔드 read 여부를 unread로 반전 매핑
+    redirectUrl: item.redirectUrl,
+  };
+};
 
 /**
  * 관리자 대시보드 전용 레이아웃
@@ -17,13 +69,52 @@ import AdminHeader from '../components/dashboard/AdminHeader';
  * 자식 라우트들이 <Outlet /> 자리에 렌더링됩니다.
  */
 export default function AdminDashboardLayout() {
+
   const [notifOpen, setNotifOpen] = useState(false);
-  const [notifs, setNotifs] = useState(NOTIFICATIONS);
+  const [notifs, setNotifs] = useState([]);
 
   const unreadCount = notifs.filter((n) => n.unread).length;
 
-  const handleMarkAllRead = () => {
-    setNotifs((prev) => prev.map((n) => ({ ...n, unread: false })));
+  // 알림 데이터 실시간 조회 함수
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const data = await getAdminNotifications();
+      const mapped = (data || []).map(mapBackendNotificationToFrontend);
+      setNotifs(mapped);
+    } catch (err) {
+      console.error('알림 목록 fetch 에러:', err);
+    }
+  }, []);
+
+  // 마운트 시 알림 조회 및 주기적 풀링(Optional, 30초마다 갱신)
+  useEffect(() => {
+    fetchNotifications();
+    const timer = setInterval(fetchNotifications, 30000); // 30초 풀링
+    return () => clearInterval(timer);
+  }, [fetchNotifications]);
+
+  // 알림 전체 읽음 처리
+  const handleMarkAllRead = async () => {
+    try {
+      await readAllNotifications();
+      setNotifs((prev) => prev.map((n) => ({ ...n, unread: false })));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // 개별 알림 클릭 시 읽음 처리
+  const handleNotifClick = async (n) => {
+    if (n.unread) {
+      try {
+        await readNotification(n.id);
+        setNotifs((prev) =>
+          prev.map((item) => (item.id === n.id ? { ...item, unread: false } : item))
+        );
+      } catch (err) {
+        console.error(err);
+      }
+    }
   };
 
   return (
@@ -62,29 +153,27 @@ export default function AdminDashboardLayout() {
             </NotifModalHeader>
 
             <NotifList>
-              {notifs.map((n) => (
-                <NotifItem
-                  key={n.id}
-                  $unread={n.unread}
-                  onClick={() => setNotifs((prev) =>
-                    prev.map((item) => item.id === n.id ? { ...item, unread: false } : item)
-                  )}
-                >
-                  <NotifDot $type={n.type} $show={n.unread} />
-                  <NotifContent>
-                    <NotifTitle $unread={n.unread}>{n.title}</NotifTitle>
-                    <NotifDesc>{n.desc}</NotifDesc>
-                    <NotifTime>{n.time}</NotifTime>
-                  </NotifContent>
-                </NotifItem>
-              ))}
+              {notifs.length === 0 ? (
+                <EmptyNotifs>수신된 알림이 없습니다.</EmptyNotifs>
+              ) : (
+                notifs.map((n) => (
+                  <NotifItem
+                    key={n.id}
+                    $unread={n.unread}
+                    onClick={() => handleNotifClick(n)}
+                  >
+                    <NotifDot $type={n.type} $show={n.unread} />
+                    <NotifContent>
+                      <NotifTitle $unread={n.unread}>{n.title}</NotifTitle>
+                      <NotifDesc>{n.desc}</NotifDesc>
+                      <NotifTime>{n.time}</NotifTime>
+                    </NotifContent>
+                  </NotifItem>
+                ))
+              )}
             </NotifList>
 
-            <NotifModalFooter>
-              <NotifFooterBtn onClick={() => setNotifOpen(false)}>
-                전체 알림 보기
-              </NotifFooterBtn>
-            </NotifModalFooter>
+
           </NotifModal>
         </NotifOverlay>
       )}
@@ -291,21 +380,11 @@ const NotifTime = styled.p`
   margin-top: 2px;
 `;
 
-const NotifModalFooter = styled.div`
-  border-top: 1px solid ${({ theme }) => theme.colors.borderLight};
-  padding: 12px 20px;
-  display: flex;
-  justify-content: center;
-`;
 
-const NotifFooterBtn = styled.button`
+
+const EmptyNotifs = styled.div`
+  padding: 40px 20px;
+  text-align: center;
   font-size: 13px;
-  font-weight: 500;
-  color: ${({ theme }) => theme.colors.textMid};
-  padding: 6px 16px;
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 6px;
-  font-family: inherit;
-  transition: background 0.15s;
-  &:hover { background: ${({ theme }) => theme.colors.bgSection}; }
+  color: ${({ theme }) => theme.colors.textMuted};
 `;
