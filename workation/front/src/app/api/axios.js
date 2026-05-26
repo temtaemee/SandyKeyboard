@@ -26,7 +26,7 @@ api.interceptors.response.use(
   }, //성공함수
   (error) => {
     const status = error.response?.status;
-    if (status === 401 || status === 403) {
+    if (status === 401) {
       localStorage.removeItem('accessToken');
 
       // 현재 주소가 관리자 페이지(/admin)인 경우 로그인 페이지로 리다이렉트

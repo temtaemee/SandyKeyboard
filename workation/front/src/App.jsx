@@ -1,4 +1,10 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from 'react-router-dom';
 import { ThemeProvider } from 'styled-components';
 import { theme } from './styles/theme';
 import GlobalStyle from './styles/GlobalStyle';
@@ -21,9 +27,27 @@ import useAuth from './features/member/hooks/useAuth';
 import NaverCallback from './features/member/components/login/NaverCallback';
 import KakaoCallback from './features/member/components/login/KakaoCallback';
 import GoogleCallback from './features/member/components/login/GoogleCallback';
+import { useEffect } from 'react';
 
 export default function App() {
-  const { loading, isSeller } = useAuth();
+  const { loading, isSeller, isAdmin } = useAuth();
+  const location = useLocation();
+
+  // 💡 관리자가 일반 유저 영역으로 이동을 시도하면 자동으로 안전 로그아웃 처리
+  useEffect(() => {
+    if (!loading && isAdmin) {
+      // 관리자인데 일반 페이지(/admin이 아닌 곳)로 가려고 할 때
+      if (!location.pathname.startsWith('/admin')) {
+        localStorage.removeItem('accessToken'); // 1. 관리자 토큰 즉시 파괴
+        alert(
+          '일반 서비스 화면으로 이동하여 관리자 세션이 자동 로그아웃 되었습니다.'
+        );
+
+        // 2. 브라우저를 새로고침하여 게스트(비로그인) 상태로 해당 페이지 진입 허용!
+        window.location.reload();
+      }
+    }
+  }, [isAdmin, loading, location.pathname]);
 
   if (loading) {
     return null;
