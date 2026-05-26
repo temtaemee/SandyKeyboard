@@ -17,9 +17,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -140,15 +138,10 @@ public class MemberApiController {
     }
 
     @PostMapping("/guest/kakao")
-    public ResponseEntity<Map<String, String>> kakaoLogin(@RequestBody SocialLoginReqDto dto) {
+    public ResponseEntity<SocialLoginRespDto> kakaoLogin(@RequestBody SocialLoginReqDto dto) {
         // 카카오 인증 및 서비스 JWT 발급 프로세스 진행
-        String appAccessToken = kakaoAuthService.kakaoLogin(dto.getCode());
-
-        // 리액트 규격({ token: '...' })에 맞게 반환 데이터 패키징
-        Map<String, String> result = new HashMap<>();
-        result.getOrDefault("token", appAccessToken); // 혹은 리액트 콜백의 response.data.token 구조에 맞춤
-
-        return ResponseEntity.ok(result);
+        SocialLoginRespDto respDto = kakaoAuthService.kakaoLogin(dto);
+        return ResponseEntity.ok(respDto);
     }
 
 

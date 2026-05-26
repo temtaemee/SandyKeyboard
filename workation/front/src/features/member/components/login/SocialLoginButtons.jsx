@@ -16,7 +16,10 @@ function SocialLoginButtons() {
 
   // 구글은 필수 스코프(이메일, 프로필)를 URL에 명시해줍니다.
   const GOOGLE_AUTH_URL = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${GOOGLE_REDIRECT_URI}&response_type=code&scope=email%20profile`;
+  const KAKAO_REST_API_KEY = 'd9a689a25f662f9366b1e782bce9d86e';
+  const KAKAO_REDIRECT_URI = 'http://localhost:5173/oauth/callback/kakao';
 
+  const KAKAO_AUTH_URL = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_REST_API_KEY}&redirect_uri=${KAKAO_REDIRECT_URI}&response_type=code`;
   const handleNaverLogin = () => {
     window.location.href = NAVER_AUTH_URL;
   };
@@ -25,14 +28,14 @@ function SocialLoginButtons() {
   const handleGoogleLogin = () => {
     window.location.href = GOOGLE_AUTH_URL;
   };
+  const handleKakaoLogin = () => {
+    window.location.href = KAKAO_AUTH_URL;
+  };
 
   return (
     <Wrapper>
       {/* 카카오는 임시 비활성화 */}
-      <SocialButton
-        bg="#FEE500"
-        style={{ opacity: 0.5, cursor: 'not-allowed' }}
-      >
+      <SocialButton bg="#FEE500" onClick={handleKakaoLogin}>
         🟨
       </SocialButton>
 
