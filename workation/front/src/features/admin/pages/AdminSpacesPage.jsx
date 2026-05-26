@@ -14,7 +14,7 @@ import {
   ModalCloseBtn,
 } from '../components/common/AdminModal.styles';
 import useAdminSpaces from '../hooks/useAdminSpaces';
-import { getStaysBySpaceId } from '../api/adminSpacesApi';
+import { getStaysBySpaceId, changeSpaceVisible } from '../api/adminSpacesApi';
 
 
 export default function AdminSpacesPage() {
@@ -23,14 +23,14 @@ export default function AdminSpacesPage() {
     spaces,
     pendingSpaces,
     rejectedSpaces,
-    blindedIds,
-    setBlinded,
+    loading,
+    refetch,
     approveSpaces,
     rejectSpaces,
   } = useAdminSpaces();
 
   // UI 전용 상태
-  const [blindConfirmTarget, setBlindConfirmTarget] = useState(null);
+  const [visibleConfirmTarget, setVisibleConfirmTarget] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalTab, setModalTab] = useState('pending'); // 'pending' | 'rejected'
   const [selectedIds, setSelectedIds] = useState([]);
@@ -58,26 +58,33 @@ export default function AdminSpacesPage() {
     }
   };
 
-  const isBlinded = (space) => blindedIds[space.id] ?? false;
-
   const filteredSpaces = spaces.filter((space) => {
     const matchesSearch = space.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const blinded = isBlinded(space);
     const matchesStatus =
       statusFilter === '전체' ? true :
-      statusFilter === '공개' ? !blinded :
-      blinded;
+      statusFilter === '공개' ? space.visibleYn === 'Y' :
+      space.visibleYn === 'N';
     return matchesSearch && matchesStatus;
   });
 
-  const handleBlindClick = (space) => {
-    setBlindConfirmTarget({ id: space.id, name: space.name, willBlind: !isBlinded(space) });
+  const handleVisibleClick = (space) => {
+    setVisibleConfirmTarget({
+      id: space.id,
+      name: space.name,
+      willHide: space.visibleYn === 'Y',
+    });
   };
 
-  const handleBlindConfirm = () => {
-    if (!blindConfirmTarget) return;
-    setBlinded(blindConfirmTarget.id, blindConfirmTarget.willBlind);
-    setBlindConfirmTarget(null);
+  const handleVisibleConfirm = async () => {
+    if (!visibleConfirmTarget) return;
+    const nextVisible = visibleConfirmTarget.willHide ? 'N' : 'Y';
+    try {
+      await changeSpaceVisible(visibleConfirmTarget.id, nextVisible);
+      await refetch();
+    } catch (err) {
+      console.error(err);
+    }
+    setVisibleConfirmTarget(null);
   };
 
   const toggleSelect = (id) => {
@@ -164,9 +171,9 @@ export default function AdminSpacesPage() {
         <Table>
           <THead>
             <TR>
-              <TH $width="320px">숙소 이름</TH>
-              <TH $width="200px">판매자</TH>
-              <TH $width="130px">1박 요금</TH>
+              <TH $width="300px">숙소 이름</TH>
+              <TH $width="180px">판매자</TH>
+              <TH $width="140px">주소</TH>
               <TH $width="110px">등록일</TH>
               <TH $width="100px">현재상태</TH>
             </TR>
@@ -175,26 +182,25 @@ export default function AdminSpacesPage() {
             {filteredSpaces.length === 0 ? (
                 <TR><TD colSpan={5}><EmptyTableState>검색 결과가 없습니다.</EmptyTableState></TD></TR>
             ) : filteredSpaces.map((space) => {
-              const blinded = isBlinded(space);
+              const hidden = space.visibleYn === 'N';
               return (
                 <TR key={space.id} $hoverable style={{ cursor: 'pointer' }} onClick={() => handleSpaceClick(space)}>
                   <TD>
                     <SpaceCell>
-                      <SpaceThumbnail src={space.thumbnail} alt={space.name} $blinded={blinded} />
+                      <SpaceThumbnail src={space.thumbnailUrl} alt={space.name} $blinded={hidden} />
                       <SpaceInfo>
-                        <SpaceName $blinded={blinded}>{space.name}</SpaceName>
-                        <SpaceLocation>{space.location}</SpaceLocation>
+                        <SpaceName $blinded={hidden}>{space.name}</SpaceName>
+                        <SpaceLocation>{space.address1}</SpaceLocation>
                       </SpaceInfo>
                     </SpaceCell>
                   </TD>
-                  <TD><SellerText>{space.seller}</SellerText></TD>
-                  <TD><PriceText>{space.price}</PriceText></TD>
-                  <TD><DateText>{space.registeredAt}</DateText></TD>
+                  <TD><SellerText>{space.sellerName ?? space.sellerUsername ?? '-'}</SellerText></TD>
+                  <TD><SellerText>{space.area}</SellerText></TD>
+                  <TD><DateText>{space.createdAt?.slice(0, 10).replace(/-/g, '.')}</DateText></TD>
                   <TD onClick={e => e.stopPropagation()}>
-                    {/* labelWidth: '공개'(2자) 보다 여유있게 40px */}
                     <Toggle
-                      on={blinded}
-                      onClick={() => handleBlindClick(space)}
+                      on={hidden}
+                      onClick={() => handleVisibleClick(space)}
                       onLabel="중지"
                       offLabel="공개"
                       labelWidth="40px"
@@ -215,22 +221,22 @@ export default function AdminSpacesPage() {
         </TableFooter>
       </TableSection>
 
-      {/* ── 블라인드 확인 모달 ── */}
+      {/* ── 노출 여부 확인 모달 ── */}
       <ConfirmModal
-        isOpen={blindConfirmTarget !== null}
-        onClose={() => setBlindConfirmTarget(null)}
-        onConfirm={handleBlindConfirm}
-        title={blindConfirmTarget?.willBlind ? '숙소를 블라인드 처리하시겠습니까?' : '블라인드를 해제하시겠습니까?'}
+        isOpen={visibleConfirmTarget !== null}
+        onClose={() => setVisibleConfirmTarget(null)}
+        onConfirm={handleVisibleConfirm}
+        title={visibleConfirmTarget?.willHide ? '숙소를 비공개 처리하시겠습니까?' : '숙소를 공개하시겠습니까?'}
         description={
-          blindConfirmTarget
-            ? blindConfirmTarget.willBlind
-              ? `${blindConfirmTarget.name} 숙소가 사용자에게 노출되지 않습니다.`
-              : `${blindConfirmTarget.name} 숙소가 다시 공개됩니다.`
+          visibleConfirmTarget
+            ? visibleConfirmTarget.willHide
+              ? `${visibleConfirmTarget.name} 숙소가 사용자에게 노출되지 않습니다.`
+              : `${visibleConfirmTarget.name} 숙소가 다시 공개됩니다.`
             : ''
         }
-        isDanger={blindConfirmTarget?.willBlind}
-        confirmText={blindConfirmTarget?.willBlind ? '블라인드' : '공개하기'}
-        icon={<EyeOff size={24} color={blindConfirmTarget?.willBlind ? '#ef4444' : '#64748b'} />}
+        isDanger={visibleConfirmTarget?.willHide}
+        confirmText={visibleConfirmTarget?.willHide ? '비공개' : '공개하기'}
+        icon={<EyeOff size={24} color={visibleConfirmTarget?.willHide ? '#ef4444' : '#64748b'} />}
       />
 
       {/* ── Stay 목록 모달 ── */}

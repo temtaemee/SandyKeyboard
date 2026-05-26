@@ -64,14 +64,24 @@ public class SpaceResDto {
     @Schema(description = "판매자 아이디")
     private String sellerUsername;
 
+    @Schema(description = "판매자 이름 (계좌명의자)")
+    private String sellerName;
+
+    @Schema(description = "대표 썸네일 URL")
+    private String thumbnailUrl;
+
     @Schema(description = "스테이 목록 (상세 조회 시에만 포함)")
     private List<StayResDto> stays;
 
     public static SpaceResDto from(SpaceEntity entity) {
-        return from(entity, null);
+        return from(entity, null, null);
     }
 
     public static SpaceResDto from(SpaceEntity entity, List<StayResDto> stays) {
+        return from(entity, stays, null);
+    }
+
+    public static SpaceResDto from(SpaceEntity entity, List<StayResDto> stays, String thumbnailUrl) {
         return SpaceResDto.builder()
                 .id(entity.getId())
                 .name(entity.getName())
@@ -89,6 +99,9 @@ public class SpaceResDto {
                 .updatedAt(entity.getUpdatedAt())
                 .sellerId(entity.getSeller() != null ? entity.getSeller().getId() : null)
                 .sellerUsername(entity.getSeller() != null ? entity.getSeller().getUsername() : null)
+                .sellerName(entity.getSeller() != null && entity.getSeller().getSeller() != null
+                        ? entity.getSeller().getSeller().getAccountName() : null)
+                .thumbnailUrl(thumbnailUrl)
                 .stays(stays)
                 .build();
     }
