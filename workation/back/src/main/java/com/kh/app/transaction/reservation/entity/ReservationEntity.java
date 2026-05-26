@@ -233,11 +233,16 @@ public class ReservationEntity {
         this.refundAccountHolder = reqDto.getRefundAccountHolder();
     }
 
-    // 수정 가능 여부 검증
     private void validateEditable() {
+        // 1. 아직 결제하지 않은 PENDING 상태일 때 예외 처리
+        if (this.status == ReservationStatus.PENDING) {
+            throw new IllegalStateException("결제 완료 이후에만 예약 정보를 수정할 수 있습니다.");
+        }
 
-        if (this.status != ReservationStatus.PENDING) {
-            throw new IllegalStateException("결제이후 수정불가능");
+        // 2. [방어 코드] 만약 '예약 확정(RESERVED)' 이후 단계나 '취소'된 상태에서도 수정을 막고 싶다면 아래 조건 적용
+        // 오직 PAYMENT_COMPLETED 상태일 때만 수정을 허용합니다.
+        if (this.status != ReservationStatus.PAYMENT_COMPLETED) {
+            throw new IllegalStateException("현재 상태에서는 예약 정보를 수정할 수 없습니다. (현재 상태: " + this.status.getLabel() + ")");
         }
     }
 }

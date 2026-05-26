@@ -45,6 +45,8 @@ public class PaymentService {
     @Transactional
     public void confirmPayment(PaymentConfirmReqDto dto) {
 
+        log.info(">>>> 현재 주입된 토스 키: [{}]", secretKey);
+
         if (paymentRepository.existsByPaymentKey(dto.getPaymentKey())) {
             throw new RuntimeException("이미 승인된 결제");
         }

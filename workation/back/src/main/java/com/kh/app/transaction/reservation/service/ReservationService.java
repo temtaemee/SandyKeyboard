@@ -8,6 +8,7 @@ import com.kh.app.transaction.reservation.dto.request.ReservationCreateReqDto;
 import com.kh.app.transaction.reservation.dto.request.ReservationUpdateReqDto;
 import com.kh.app.transaction.reservation.dto.response.ReservationResDto;
 import com.kh.app.transaction.reservation.entity.ReservationEntity;
+import com.kh.app.transaction.reservation.entity.ReservationStatus;
 import com.kh.app.transaction.reservation.entity.ReserveFileEntity;
 import com.kh.app.transaction.reservation.repository.ReservationRepository;
 import com.kh.app.transaction.reservation.repository.ReserveFileRepository;
@@ -159,58 +160,46 @@ public class ReservationService {
         return reservation.getId();
     }
 
-    @Transactional
-    public void update(Long id,
-                       ReservationUpdateReqDto dto,
-                       List<MultipartFile> newFiles) throws IOException {
-
-        ReservationEntity reservation = reservationRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("RESERVATION NOT FOUND"));
-
-        // 1. 예약 정보 수정
-        reservation.update(dto);
-
-        // 2. 기존 파일 삭제 (DB + S3)
-        List<ReserveFileEntity> oldFiles =
-                reserveFileRepository.findByReservationEntity_Id(id);
-
-        for (ReserveFileEntity file : oldFiles) {
-            s3Service.delete(file.getS3Key()); // S3 삭제
-        }
-
-        reserveFileRepository.deleteAll(oldFiles);
-
-        // 3. 새 파일 업로드
-        if (newFiles != null && !newFiles.isEmpty()) {
-
-            for (MultipartFile file : newFiles) {
-
-                String s3Key = s3Service.upload(file, "reservation");
-
-                reserveFileRepository.save(
-                        ReserveFileEntity.from(reservation, file, s3Key)
-                );
-            }
-        }
-    }
-
     public List<ReservationResDto> getMyReservations(String username) {
-
         return reservationRepository
                 .findByMember_UsernameOrderByIdDesc(username)
                 .stream()
+                // 💡 PENDING(결제 대기) 상태인 예약은 목록에서 제외시킵니다.
+                .filter(reservation -> reservation.getStatus() != ReservationStatus.PENDING)
                 .map(ReservationResDto::from)
                 .toList();
     }
 
+    /**
+     * 💡 [수정] 예약 단건 상세 조회: 결제 완료 전(PENDING)이면 접근 제한
+     */
     public ReservationResDto getOne(Long id) {
-
-
-
         ReservationEntity entity = reservationRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("NOT FOUND"));
+
+        // 💡 아직 결제되지 않은 예약 정보에 접근을 시도하면 예외를 던집니다.
+        if (entity.getStatus() == ReservationStatus.PENDING) {
+            throw new IllegalStateException("결제가 완료되지 않은 예약입니다.");
+        }
 
         return ReservationResDto.from(entity);
     }
 
+    /**
+     * 💡 [수정] 예약 수정: 결제가 완료된 정상 예약 건만 수정 가능하도록 제한
+     */
+    @Transactional
+    public void update(Long id, ReservationUpdateReqDto dto, List<MultipartFile> newFiles) throws IOException {
+        ReservationEntity reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("RESERVATION NOT FOUND"));
+
+        // 💡 결제 완료 전이거나 이미 취소/이용 완료된 상태에서의 비정상적인 수정을 방어합니다.
+        if (reservation.getStatus() == ReservationStatus.PENDING) {
+            throw new IllegalStateException("결제 완료 이후에만 예약 정보를 수정할 수 있습니다.");
+        }
+
+        // 예약 정보 수정
+        reservation.update(dto);
+
+    }
 }
