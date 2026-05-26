@@ -126,6 +126,14 @@ export default function SellerDashboardPage() {
   const navigate = useNavigate();
   const [spaces, setSpaces] = useState([]);
   const [spacesLoading, setSpacesLoading] = useState(true);
+  const [spacesError, setSpacesError] = useState(false);
+  const [togglingIds, setTogglingIds] = useState(new Set());
+  const [toastMsg, setToastMsg] = useState(null);
+
+  const showToast = (msg) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(null), 3000);
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -136,7 +144,7 @@ export default function SellerDashboardPage() {
         ]);
         const me = meRes.data;
         const mySpaces = spacesRes.data
-          .filter((s) => s.sellerUsername === me.username)
+          .filter((s) => s.sellerUsername != null && s.sellerUsername === me.username)
           .map((s) => ({
             id: s.id,
             name: s.name,
@@ -146,6 +154,7 @@ export default function SellerDashboardPage() {
         setSpaces(mySpaces);
       } catch (e) {
         console.error('공간 목록 로딩 실패', e);
+        setSpacesError(true);
       } finally {
         setSpacesLoading(false);
       }
@@ -154,17 +163,25 @@ export default function SellerDashboardPage() {
   }, []);
 
   const toggleVisible = async (id) => {
+    if (togglingIds.has(id)) return;
     const target = spaces.find((s) => s.id === id);
     if (!target) return;
     const nextYn = target.visible ? 'N' : 'Y';
-    // 낙관적 업데이트
+
+    setTogglingIds((prev) => new Set(prev).add(id));
     setSpaces((prev) => prev.map((s) => (s.id === id ? { ...s, visible: !s.visible } : s)));
     try {
       await updateSpaceVisible(id, nextYn);
     } catch (e) {
-      // 실패 시 롤백
       setSpaces((prev) => prev.map((s) => (s.id === id ? { ...s, visible: target.visible } : s)));
+      showToast('노출 상태 변경에 실패했습니다. 다시 시도해 주세요.');
       console.error('노출 상태 변경 실패', e);
+    } finally {
+      setTogglingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     }
   };
 
@@ -193,7 +210,7 @@ export default function SellerDashboardPage() {
     {
       id: 4,
       label: '등록 공간',
-      value: spacesLoading ? '-' : `${spaces.length}개`,
+      value: spacesLoading ? '-' : spacesError ? '-' : `${spaces.length}개`,
       badge: { text: '스테이 준비중', color: 'teal' },
       icon: 'building',
     },
@@ -201,6 +218,8 @@ export default function SellerDashboardPage() {
 
   return (
     <>
+      {toastMsg && <Toast>{toastMsg}</Toast>}
+
       {/* 페이지 헤더 */}
       <PageHeader>
         <PageTitle>대시보드</PageTitle>
@@ -267,6 +286,8 @@ export default function SellerDashboardPage() {
           <SpaceList>
             {spacesLoading ? (
               <SpaceLoadingMsg>불러오는 중...</SpaceLoadingMsg>
+            ) : spacesError ? (
+              <SpaceErrorMsg>공간 목록을 불러오지 못했습니다.</SpaceErrorMsg>
             ) : spaces.length === 0 ? (
               <SpaceEmptyMsg>등록된 공간이 없습니다</SpaceEmptyMsg>
             ) : (
@@ -277,7 +298,12 @@ export default function SellerDashboardPage() {
                     <SpaceName>{space.name}</SpaceName>
                     <SpaceLoc>{space.location}</SpaceLoc>
                   </SpaceInfo>
-                  <Toggle $on={space.visible} onClick={() => toggleVisible(space.id)}>
+                  <Toggle
+                    $on={space.visible}
+                    $loading={togglingIds.has(space.id)}
+                    onClick={() => toggleVisible(space.id)}
+                    disabled={togglingIds.has(space.id)}
+                  >
                     <ToggleThumb $on={space.visible} />
                   </Toggle>
                 </SpaceItem>
@@ -630,6 +656,8 @@ const Toggle = styled.button`
   position: relative;
   flex-shrink: 0;
   transition: background 0.2s;
+  opacity: ${({ $loading }) => ($loading ? 0.5 : 1)};
+  cursor: ${({ $loading }) => ($loading ? 'not-allowed' : 'pointer')};
 `;
 
 const ToggleThumb = styled.div`
@@ -749,4 +777,31 @@ const StatusBadge = styled.span`
   border-radius: 999px;
   background: ${({ $bg }) => $bg};
   color: ${({ $color }) => $color};
+`;
+
+const SpaceErrorMsg = styled.p`
+  font-size: 13px;
+  color: #b91c1c;
+  padding: 32px 24px;
+  text-align: center;
+`;
+
+const Toast = styled.div`
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e293b;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 10px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 9999;
+  animation: fadein 0.2s ease;
+  @keyframes fadein {
+    from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
 `;
