@@ -12,5 +12,13 @@ public interface ReservationRepositoryCustom {
 
     Optional<ReservationEntity> getOneById(Long id);
 
-    Page<ReservationAdminListResDto> findAdminReservationList(PageRequest pageRequest);
+    Page<ReservationAdminListResDto> findAdminReservationList(
+            PageRequest pageRequest,
+            String username,
+            String guestName,
+            Long reservationId,
+            String sellerUsername // 💡 파라미터 추가 맞춤
+    );
+
+    Optional<ReservationEntity> findAdminOneById(Long id);
 }

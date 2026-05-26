@@ -7,6 +7,7 @@ import com.kh.app.transaction.reservation.dto.response.ReservationAdminListResDt
 import com.kh.app.transaction.reservation.dto.response.ReservationResDto;
 import com.kh.app.transaction.reservation.entity.ReservationEntity;
 import com.kh.app.transaction.reservation.service.ReservationService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -91,10 +92,24 @@ public class ReservationApiController {
     //관리자 검색
     @GetMapping("/admin/reservation/list")
     public ResponseEntity<Page<ReservationAdminListResDto>> getAdminReservationList(
-            @RequestParam(defaultValue = "0") int pno
+            @RequestParam(defaultValue = "0") int pno,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String guestName,
+            @RequestParam(required = false) Long reservationId,
+            @RequestParam(required = false) String sellerUsername
     ) {
-        Page<ReservationAdminListResDto> reservationPage = reservationService.getAdminReservationList(pno);
+        Page<ReservationAdminListResDto> reservationPage =
+                reservationService.getAdminReservationList(pno, username, guestName, reservationId, sellerUsername);
         return ResponseEntity.ok(reservationPage);
+    }
+
+    @Operation(summary = "관리자 예약 단건 상세 조회", description = "관리자가 특정 예약의 상세 내역을 조회합니다. (결제 대기 상태 포함)")
+    @GetMapping("/admin/reservation/{id}")
+    public ResponseEntity<ReservationAdminListResDto> getAdminOne(@PathVariable Long id) {
+
+        ReservationAdminListResDto adminDetail = reservationService.getAdminOne(id);
+
+        return ResponseEntity.ok(adminDetail);
     }
 
 
