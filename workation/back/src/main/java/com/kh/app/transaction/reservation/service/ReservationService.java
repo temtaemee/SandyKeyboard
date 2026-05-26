@@ -225,4 +225,35 @@ public class ReservationService {
         // 관리자 전용 DTO 변환 (내부에 username, 결제 정보, 환불 계좌 등이 모두 포함되어 있음)
         return ReservationAdminListResDto.from(entity);
     }
+
+    /**
+     * 💡 판매자(Seller) 전용 예약 목록 조회
+     */
+    /**
+     * 💡 판매자(Seller) 전용 예약 목록 조회 (동적 다중 검색 기능 탑재)
+     */
+    public Page<ReservationAdminListResDto> getSellerReservationList(
+            int pno, String sellerUsername, Long reservationId, String guestName, java.time.LocalDate checkinDate
+    ) {
+        org.springframework.data.domain.PageRequest pageRequest = org.springframework.data.domain.PageRequest.of(pno, 10);
+        return reservationRepository.findSellerReservationList(pageRequest, sellerUsername, reservationId, guestName, checkinDate);
+    }
+
+    /**
+     * 💡 판매자(Seller) 전용 예약 단건 상세 조회 (소유권 검증 포함)
+     */
+    public ReservationAdminListResDto getSellerOne(Long id, String sellerUsername) {
+        // 1. 단건 조회 (연관 엔티티 페치 조인 완료 상태)
+        ReservationEntity entity = reservationRepository.findSellerOneById(id)
+                .orElseThrow(() -> new EntityNotFoundException("해당 예약 내역이 존재하지 않습니다. (ID: " + id + ")"));
+
+        // 2. 💡 [보안 핵심] 해당 예약이 포함된 공간의 판매자 아이디와 로그인한 판매자 아이디 대조
+        String realSellerName = entity.getStay().getSpace().getSeller().getUsername();
+        if (!realSellerName.equals(sellerUsername)) {
+            throw new IllegalArgumentException("해당 예약 내역에 대한 접근 권한이 없습니다.");
+        }
+
+        // 3. DTO 변환 후 리턴
+        return ReservationAdminListResDto.from(entity);
+    }
 }

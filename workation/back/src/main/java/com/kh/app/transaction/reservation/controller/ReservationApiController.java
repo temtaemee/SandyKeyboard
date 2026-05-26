@@ -113,6 +113,39 @@ public class ReservationApiController {
     }
 
 
+    // 판매자 전용 예약 목록 및 동적 조건 검색 조회
+    @Operation(summary = "판매자 보유 숙소 예약 목록 검색 조회", description = "로그인한 판매자가 예약번호, 예약자명, 체크인 날짜로 필터링하여 검색합니다.")
+    @GetMapping("/seller/reservation/list")
+    public ResponseEntity<Page<ReservationAdminListResDto>> getSellerReservationList(
+            @RequestParam(defaultValue = "0") int pno,
+            @AuthenticationPrincipal(expression = "username") String sellerUsername,
+            @RequestParam(required = false) Long reservationId,
+            @RequestParam(required = false) String guestName,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate checkinDate
+    ) {
+        log.info("판매자 예약 동적 검색 요청 - 판매자: {}, 예약번호: {}, 예약자명: {}, 체크인날짜: {}",
+                sellerUsername, reservationId, guestName, checkinDate);
+
+        Page<ReservationAdminListResDto> reservationPage =
+                reservationService.getSellerReservationList(pno, sellerUsername, reservationId, guestName, checkinDate);
+
+        return ResponseEntity.ok(reservationPage);
+    }
+
+    // 판매자 전용 예약 단건 상세 조회
+    @Operation(summary = "판매자 예약 단건 상세 조회", description = "판매자가 본인 숙소에 들어온 특정 예약의 상세 내역을 조회합니다. (소유권 검증 포함)")
+    @GetMapping("/seller/reservation/detail/{id}")
+    public ResponseEntity<ReservationAdminListResDto> getSellerOne(
+            @PathVariable Long id,
+            @AuthenticationPrincipal(expression = "username") String sellerUsername
+    ) {
+        log.info("판매자 예약 상세 조회 요청 - 판매자: {}, 예약 ID: {}", sellerUsername, id);
+
+        ReservationAdminListResDto sellerDetail = reservationService.getSellerOne(id, sellerUsername);
+
+        return ResponseEntity.ok(sellerDetail);
+    }
+
 
 
 

@@ -21,4 +21,14 @@ public interface ReservationRepositoryCustom {
     );
 
     Optional<ReservationEntity> findAdminOneById(Long id);
+
+    Page<ReservationAdminListResDto> findSellerReservationList(
+            org.springframework.data.domain.Pageable pageable,
+            String sellerUsername,
+            Long reservationId,      // 💡 추가
+            String guestName,        // 💡 추가
+            java.time.LocalDate checkinDate // 💡 추가 (날짜 검색용)
+    );
+
+    Optional<ReservationEntity> findSellerOneById(Long id);
 }
