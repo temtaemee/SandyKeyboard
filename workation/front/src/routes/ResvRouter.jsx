@@ -10,7 +10,7 @@ function ResvRouter() {
     <>
       <Routes>
         {/* reservation */}
-        <Route path="insert" element={<ReservationInsertPage />} />
+        <Route path="insert/:stayId" element={<ReservationInsertPage />} />
         <Route path="update" element={<ReservationUpdatePage />} />
         <Route path="payment/success" element={<PaymentSuccessPage />} />
         <Route path="refund/detail/:id" element={<RefundDetailPage />} />

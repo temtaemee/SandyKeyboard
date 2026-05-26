@@ -1,10 +1,13 @@
 package com.kh.app.transaction.reservation.controller;
 
+import com.kh.app.middle.coupon.dto.response.MemberCouponRespDto;
 import com.kh.app.transaction.reservation.dto.request.ReservationCreateReqDto;
 import com.kh.app.transaction.reservation.dto.request.ReservationUpdateReqDto;
 import com.kh.app.transaction.reservation.dto.response.ReservationAdminListResDto;
 import com.kh.app.transaction.reservation.dto.response.ReservationResDto;
+import com.kh.app.transaction.reservation.entity.ReservationEntity;
 import com.kh.app.transaction.reservation.service.ReservationService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -16,7 +19,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -27,31 +32,23 @@ public class ReservationApiController {
     private final ReservationService reservationService;
 
 
-          //stay 완성후 사용
-//  @PostMapping("/user/reservation/{stayId}")
-  @PostMapping("/user/reservation")
-    public ResponseEntity<Long> create(
-          //stay 완성후 사용
-//            @PathVariable Long stayId,
-            @AuthenticationPrincipal(expression = "username") String username,
-            @RequestPart(name = "data") ReservationCreateReqDto dto,
-            @RequestPart(name = "fileList", required = false) List<MultipartFile> fileList
+    @PostMapping("/user/reservation/{stayId}")
+    public ResponseEntity<Map<String, Object>> create(
+            @PathVariable Long stayId,
+            @RequestPart(name = "data") ReservationCreateReqDto dto, // 💡 프론트 폼데이터 네임 매칭
+            @RequestPart(value = "fileList", required = false) List<MultipartFile> fileList,
+            @AuthenticationPrincipal(expression = "username") String username
     ) throws IOException {
 
-        log.info("dto = {}", dto.getCheckinDate());
+        log.info("예약 및 실시간 가격 정산 요청 - 숙소 ID: {}", stayId);
 
-        Long reservationId = reservationService.create(
-                username,
-                //stay 완성후 사용
-//                stayId,
-                dto,
-                fileList
-        );
+        // 💡 서비스가 예약 데이터 저장 및 실시간 방값 연산을 끝내고 Map으로 결과를 리턴합니다.
+        Map<String, Object> result = reservationService.create(username, stayId, dto, fileList);
 
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(reservationId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
+
+
 
 
     //결제 완료후 보기

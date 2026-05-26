@@ -2,6 +2,7 @@ package com.kh.app.transaction.reservation.entity;
 
 import com.kh.app.member.entity.MemberEntity;
 import com.kh.app.middle.coupon.entity.CouponEntity;
+import com.kh.app.product.stay.entity.StayEntity; // 💡 추가
 import com.kh.app.transaction.reservation.dto.request.ReservationUpdateReqDto;
 import jakarta.persistence.*;
 import lombok.*;
@@ -31,13 +32,11 @@ public class ReservationEntity {
     @JoinColumn(name = "COUPON_ID")
     private CouponEntity coupon;
 
-    // 숙소 예약-stay 연결
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "STAY_ID", nullable = false)
-//    private StayEntity stay;
-    @Column(name = "STAY_ID")
-    private Long stayId;
-/// ////////////////////////////
+    // 💡 숙소 예약-stay 연결 복구
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "STAY_ID", nullable = false)
+    private StayEntity stay;
+
     // 인원수
     @Column(nullable = false)
     private Integer guestCount;
@@ -52,7 +51,7 @@ public class ReservationEntity {
 
     // 체크아웃
     @Column(nullable = false)
-    private LocalDate  checkoutDate;
+    private LocalDate checkoutDate;
 
     // 대표 예약자 전화번호
     @Column(nullable = false, length = 11)
@@ -87,19 +86,12 @@ public class ReservationEntity {
 
     private LocalDateTime paidAt;
 
-    // =========================
-    // 페이백 계좌 정보
-    // =========================
-
-    // 환급 은행명
     @Column(length = 50)
     private String refundBankName;
 
-    // 환급 계좌번호
     @Column(length = 50)
     private String refundAccountNumber;
 
-    // 예금주명
     @Column(length = 100)
     private String refundAccountHolder;
 
@@ -107,140 +99,84 @@ public class ReservationEntity {
     private String orderId;
 
     // =========================
-    // 상태 변경
+    // 상태 변경 및 기능 메서드들 (기존과 동일)
     // =========================
 
-    // 결제 완료
     public void completePayment() {
-
         if (this.status != ReservationStatus.PENDING) {
             throw new IllegalStateException("결제 가능한 상태가 아닙니다.");
         }
-
         this.status = ReservationStatus.PAYMENT_COMPLETED;
         this.paidAt = LocalDateTime.now();
     }
 
-    // 사용자 취소
     public void cancelByUser() {
-
-        if (
-                this.status != ReservationStatus.PENDING &&
-                        this.status != ReservationStatus.PAYMENT_COMPLETED
-        ) {
+        if (this.status != ReservationStatus.PENDING && this.status != ReservationStatus.PAYMENT_COMPLETED) {
             throw new IllegalStateException("사용자 취소 가능한 상태가 아닙니다.");
         }
-
         this.status = ReservationStatus.USER_CANCELLED;
     }
 
-    // 판매자 취소
     public void cancelBySeller() {
-
         if (this.status != ReservationStatus.PAYMENT_COMPLETED) {
             throw new IllegalStateException("결제 완료 상태에서만 판매자 취소 가능.");
         }
         this.status = ReservationStatus.SELLER_CANCELLED;
     }
 
-    // 판매자 예약 승인
     public void approveReservation() {
-
         if (this.status != ReservationStatus.PAYMENT_COMPLETED) {
             throw new IllegalStateException("예약 승인 가능한 상태가 아닙니다.");
         }
-
         this.status = ReservationStatus.RESERVED;
     }
 
-    // 이용 완료
     public void complete() {
-
         if (this.status != ReservationStatus.RESERVED) {
             throw new IllegalStateException("이용 완료 처리 가능한 상태가 아닙니다.");
         }
         this.status = ReservationStatus.COMPLETED;
     }
 
-    // 환불 완료
     public void refund() {
-
-        if (
-                this.status != ReservationStatus.USER_CANCELLED &&
-                        this.status != ReservationStatus.SELLER_CANCELLED
-        ) {
+        if (this.status != ReservationStatus.USER_CANCELLED && this.status != ReservationStatus.SELLER_CANCELLED) {
             throw new IllegalStateException("환불 가능한 상태가 아닙니다.");
         }
-
         if (this.paidAt == null) {
             throw new IllegalStateException("결제 이력이 없는 예약입니다.");
         }
-
         this.status = ReservationStatus.REFUND_COMPLETED;
     }
 
-    // =========================
-    // 엔티티 생성
-    // =========================
-
     @PrePersist
     private void prePersist() {
-
-
         if (this.status == null) {
             this.status = ReservationStatus.PENDING;
         }
-
         this.createdAt = LocalDateTime.now();
-        //스테이 연결후 수정
-//        validateTarget();
+        validateTarget();
     }
 
-    /// ////////////////////////////////////////////////////////////
-    /// 스테이 연결후 변경
-//    @PreUpdate
-//    private void preUpdate() {
-//        validateTarget();
-//    }
-
-    // =========================
-    // 예약 대상 검증
-    // =========================
-
-
-//    private void validateTarget() {
-//
-//        if (stay == null) {
-//            throw new IllegalStateException("예약 대상이 없습니다.");
-//        }
-//    }
-
-/// ///////////////////////////////////////////////////////////
-    // =========================
-    // 예약자 정보 수정
-    // =========================
+    private void validateTarget() {
+        if (this.stay == null) {
+            throw new IllegalStateException("예약 대상 숙소가 없습니다.");
+        }
+    }
 
     public void update(ReservationUpdateReqDto reqDto) {
-
         validateEditable();
-
         this.primaryGuestName = reqDto.getPrimaryGuestName();
         this.primaryGuestPhone = reqDto.getPrimaryGuestPhone();
         this.primaryGuestEmail = reqDto.getPrimaryGuestEmail();
-
         this.refundBankName = reqDto.getRefundBankName();
         this.refundAccountNumber = reqDto.getRefundAccountNumber();
         this.refundAccountHolder = reqDto.getRefundAccountHolder();
     }
 
     private void validateEditable() {
-        // 1. 아직 결제하지 않은 PENDING 상태일 때 예외 처리
         if (this.status == ReservationStatus.PENDING) {
             throw new IllegalStateException("결제 완료 이후에만 예약 정보를 수정할 수 있습니다.");
         }
-
-        // 2. [방어 코드] 만약 '예약 확정(RESERVED)' 이후 단계나 '취소'된 상태에서도 수정을 막고 싶다면 아래 조건 적용
-        // 오직 PAYMENT_COMPLETED 상태일 때만 수정을 허용합니다.
         if (this.status != ReservationStatus.PAYMENT_COMPLETED) {
             throw new IllegalStateException("현재 상태에서는 예약 정보를 수정할 수 없습니다. (현재 상태: " + this.status.getLabel() + ")");
         }
