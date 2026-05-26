@@ -2,12 +2,14 @@ package com.kh.app.product.space.dto.response;
 
 import com.kh.app.product.space.entity.Area;
 import com.kh.app.product.space.entity.SpaceEntity;
+import com.kh.app.product.stay.dto.response.StayResDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Builder
@@ -56,7 +58,20 @@ public class SpaceResDto {
     @Schema(description = "수정일")
     private LocalDateTime updatedAt;
 
+    @Schema(description = "판매자 회원 ID")
+    private Long sellerId;
+
+    @Schema(description = "판매자 아이디")
+    private String sellerUsername;
+
+    @Schema(description = "스테이 목록 (상세 조회 시에만 포함)")
+    private List<StayResDto> stays;
+
     public static SpaceResDto from(SpaceEntity entity) {
+        return from(entity, null);
+    }
+
+    public static SpaceResDto from(SpaceEntity entity, List<StayResDto> stays) {
         return SpaceResDto.builder()
                 .id(entity.getId())
                 .name(entity.getName())
@@ -72,6 +87,9 @@ public class SpaceResDto {
                 .area(entity.getArea())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
+                .sellerId(entity.getSeller() != null ? entity.getSeller().getId() : null)
+                .sellerUsername(entity.getSeller() != null ? entity.getSeller().getUsername() : null)
+                .stays(stays)
                 .build();
     }
 }

@@ -1,5 +1,9 @@
 package com.kh.app.product;
 
+import com.kh.app.member.entity.*;
+import com.kh.app.member.repository.BankRepository;
+import com.kh.app.member.repository.MemberRepository;
+import com.kh.app.member.repository.SellerRepository;
 import com.kh.app.product.space.entity.Area;
 import com.kh.app.product.space.entity.SpaceEntity;
 import com.kh.app.product.space.entity.SpacePictureCategory;
@@ -16,12 +20,14 @@ import com.kh.app.product.stay.repository.StayRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -33,6 +39,10 @@ public class DataInitializer implements CommandLineRunner {
     private final StayRepository stayRepository;
     private final StayPictureRepository stayPictureRepository;
     private final StayOptionRepository stayOptionRepository;
+    private final BankRepository bankRepository;
+    private final MemberRepository memberRepository;
+    private final SellerRepository sellerRepository;
+    private final BCryptPasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
@@ -45,6 +55,24 @@ public class DataInitializer implements CommandLineRunner {
 
         log.info("[DataInitializer] 더미 데이터 삽입 시작");
 
+        // ===== 더미 셀러 생성 =====
+        BankEntity kb = bankRepository.save(BankEntity.builder().bankName("국민은행").build());
+
+        MemberEntity sellerMember = memberRepository.save(MemberEntity.builder()
+                .username("seller01")
+                .password(passwordEncoder.encode("seller01!"))
+                .roleSet(Set.of(Role.SELLER))
+                .build());
+
+        sellerRepository.save(SellerEntity.builder()
+                .member(sellerMember)
+                .bank(kb)
+                .businessNo("123-45-67890")
+                .account("12345678901234")
+                .accountName("워케이션셀러")
+                .build());
+
+        // ===== SPACE 더미 데이터 =====
         SpaceEntity jeju = spaceRepository.save(SpaceEntity.builder()
                 .name("제주 바다뷰 워케이션 스페이스")
                 .phone("0647771234")
@@ -57,6 +85,7 @@ public class DataInitializer implements CommandLineRunner {
                 .longitude(new BigDecimal("126.5600000"))
                 .area(Area.JEJU)
                 .visibleYn("Y")
+                .seller(sellerMember)
                 .build());
 
         SpaceEntity gangwon = spaceRepository.save(SpaceEntity.builder()
@@ -71,6 +100,7 @@ public class DataInitializer implements CommandLineRunner {
                 .longitude(new BigDecimal("128.5910000"))
                 .area(Area.GANGWON)
                 .visibleYn("Y")
+                .seller(sellerMember)
                 .build());
 
         SpaceEntity seoul = spaceRepository.save(SpaceEntity.builder()
@@ -85,6 +115,7 @@ public class DataInitializer implements CommandLineRunner {
                 .longitude(new BigDecimal("127.0300000"))
                 .area(Area.SEOUL)
                 .visibleYn("Y")
+                .seller(sellerMember)
                 .build());
 
         SpaceEntity busan = spaceRepository.save(SpaceEntity.builder()
@@ -99,6 +130,7 @@ public class DataInitializer implements CommandLineRunner {
                 .longitude(new BigDecimal("129.1605000"))
                 .area(Area.GYEONGNAM)
                 .visibleYn("Y")
+                .seller(sellerMember)
                 .build());
 
         SpaceEntity jeju2 = spaceRepository.save(SpaceEntity.builder()
@@ -113,9 +145,10 @@ public class DataInitializer implements CommandLineRunner {
                 .longitude(new BigDecimal("126.3500000"))
                 .area(Area.JEJU)
                 .visibleYn("N")
+                .seller(sellerMember)
                 .build());
 
-        // 사진 더미 데이터
+        // ===== SPACE 사진 더미 데이터 =====
         spacePictureRepository.saveAll(List.of(
                 SpacePictureEntity.builder()
                         .space(jeju)
@@ -167,7 +200,6 @@ public class DataInitializer implements CommandLineRunner {
         LocalTime checkIn  = LocalTime.of(15, 0);
         LocalTime checkOut = LocalTime.of(11, 0);
 
-        // 제주 — 워케이션 Stay
         StayEntity jejuStay1 = stayRepository.save(StayEntity.builder()
                 .space(jeju)
                 .name("제주 오션뷰 워케이션 스위트")
@@ -180,7 +212,6 @@ public class DataInitializer implements CommandLineRunner {
                 .workationYn("Y")
                 .build());
 
-        // 제주 — 일반 Stay
         StayEntity jejuStay2 = stayRepository.save(StayEntity.builder()
                 .space(jeju)
                 .name("제주 바다뷰 스탠다드 룸")
@@ -193,7 +224,6 @@ public class DataInitializer implements CommandLineRunner {
                 .workationYn("N")
                 .build());
 
-        // 강원 — 워케이션 Stay
         StayEntity gangwonStay1 = stayRepository.save(StayEntity.builder()
                 .space(gangwon)
                 .name("강원 포레스트 워케이션 캐빈")
@@ -206,7 +236,6 @@ public class DataInitializer implements CommandLineRunner {
                 .workationYn("Y")
                 .build());
 
-        // 강원 — 일반 Stay
         StayEntity gangwonStay2 = stayRepository.save(StayEntity.builder()
                 .space(gangwon)
                 .name("강원 힐링 더블 룸")
@@ -219,7 +248,6 @@ public class DataInitializer implements CommandLineRunner {
                 .workationYn("N")
                 .build());
 
-        // 서울 — 워케이션 Stay
         StayEntity seoulStay = stayRepository.save(StayEntity.builder()
                 .space(seoul)
                 .name("강남 비즈니스 워케이션 스위트")
@@ -232,7 +260,6 @@ public class DataInitializer implements CommandLineRunner {
                 .workationYn("Y")
                 .build());
 
-        // 부산 — 워케이션 Stay
         StayEntity busanStay1 = stayRepository.save(StayEntity.builder()
                 .space(busan)
                 .name("해운대 씨뷰 워케이션 룸")
@@ -245,7 +272,6 @@ public class DataInitializer implements CommandLineRunner {
                 .workationYn("Y")
                 .build());
 
-        // 부산 — 일반 Stay
         StayEntity busanStay2 = stayRepository.save(StayEntity.builder()
                 .space(busan)
                 .name("해운대 오션 트윈 룸")
@@ -288,7 +314,7 @@ public class DataInitializer implements CommandLineRunner {
                 StayOptionEntity.builder().stay(busanStay2).stayOption(StayOption.PRIVATE_BATHROOM).build()
         ));
 
-        // ===== STAY_PICTURE 더미 (category 없음) =====
+        // ===== STAY_PICTURE 더미 =====
         stayPictureRepository.saveAll(List.of(
                 StayPictureEntity.builder().stay(jejuStay1)
                         .filePath("/uploads/stay/jeju_w_main.jpg").originName("jeju_w_main.jpg")
