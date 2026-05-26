@@ -30,6 +30,13 @@ public class FaqService {
                 .toList();
     }
 
+    // 상세 조회 추가
+    public FaqRespDto findById(Long id) {
+        FaqEntity faq = faqRepository.findByIdAndDelYn(id, "N")
+                .orElseThrow(() -> new IllegalArgumentException("FAQ를 찾을 수 없습니다."));
+        return FaqRespDto.from(faq);
+    }
+
     @Transactional
     public Long create(FaqCreateReqDto dto) {
         MemberEntity member = memberRepository.findById(dto.getMemberId())
