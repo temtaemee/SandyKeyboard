@@ -39,6 +39,7 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
                 )
                 .from(member)
                 .leftJoin(member.profile, profile)
+                .leftJoin(member.seller)
                 .where(
                         keywordLike(dto.getKeyword()),
                         statusEq(dto.getStatus())
