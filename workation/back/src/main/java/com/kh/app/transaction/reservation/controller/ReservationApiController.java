@@ -2,10 +2,13 @@ package com.kh.app.transaction.reservation.controller;
 
 import com.kh.app.transaction.reservation.dto.request.ReservationCreateReqDto;
 import com.kh.app.transaction.reservation.dto.request.ReservationUpdateReqDto;
+import com.kh.app.transaction.reservation.dto.response.ReservationAdminListResDto;
 import com.kh.app.transaction.reservation.dto.response.ReservationResDto;
 import com.kh.app.transaction.reservation.service.ReservationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,6 +25,8 @@ import java.util.List;
 public class ReservationApiController {
 
     private final ReservationService reservationService;
+
+
           //stay 완성후 사용
 //  @PostMapping("/user/reservation/{stayId}")
   @PostMapping("/user/reservation")
@@ -84,6 +89,15 @@ public class ReservationApiController {
         reservationService.update(id, dto, fileList);
 
         return ResponseEntity.ok().build();
+    }
+
+    //관리자 검색
+    @GetMapping("/admin/reservation/list")
+    public ResponseEntity<Page<ReservationAdminListResDto>> getAdminReservationList(
+            @RequestParam(defaultValue = "0") int pno
+    ) {
+        Page<ReservationAdminListResDto> reservationPage = reservationService.getAdminReservationList(pno);
+        return ResponseEntity.ok(reservationPage);
     }
 
 
