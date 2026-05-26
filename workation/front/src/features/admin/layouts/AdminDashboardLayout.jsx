@@ -1,6 +1,6 @@
 // src/features/admin/layouts/AdminDashboardLayout.jsx
 import { useState, useEffect, useCallback } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { Bell, X } from 'lucide-react';
 
@@ -69,9 +69,35 @@ const mapBackendNotificationToFrontend = (item) => {
  * 자식 라우트들이 <Outlet /> 자리에 렌더링됩니다.
  */
 export default function AdminDashboardLayout() {
-
+  const navigate = useNavigate();
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifs, setNotifs] = useState([]);
+
+  //에러 발생 시 자동 로그아웃 + 관리자 로그인 페이지로 이동
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+
+    if (!token) {
+      alert('로그인이 필요한 페이지입니다.');
+      navigate('/login');
+      return;
+    }
+    try {
+      // 토큰 디코딩하여 ADMIN 권한 확인
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const roles = payload.roles || [];
+
+      if (!roles.includes('ADMIN')) {
+        alert('관리자만 접근할 수 있습니다.');
+        navigate('/login');
+      }
+    } catch (e) {
+      // 잘못된 형식의 토큰인 경우
+      localStorage.removeItem('accessToken');
+      alert('올바르지 않은 토큰 세션입니다. 다시 로그인해주세요.');
+      navigate('/login');
+    }
+  }, [navigate]);
 
   const unreadCount = notifs.filter((n) => n.unread).length;
 
@@ -109,7 +135,9 @@ export default function AdminDashboardLayout() {
       try {
         await readNotification(n.id);
         setNotifs((prev) =>
-          prev.map((item) => (item.id === n.id ? { ...item, unread: false } : item))
+          prev.map((item) =>
+            item.id === n.id ? { ...item, unread: false } : item
+          )
         );
       } catch (err) {
         console.error(err);
@@ -172,8 +200,6 @@ export default function AdminDashboardLayout() {
                 ))
               )}
             </NotifList>
-
-
           </NotifModal>
         </NotifOverlay>
       )}
@@ -209,14 +235,19 @@ const Fab = styled.button`
   position: fixed;
   bottom: 31.5px;
   right: 32px;
-  width: 56px; height: 56px;
+  width: 56px;
+  height: 56px;
   background: ${({ theme }) => theme.colors.adminPrimary};
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
-  transition: background 0.2s, transform 0.1s;
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  transition:
+    background 0.2s,
+    transform 0.1s;
   z-index: 40;
 
   &:hover {
@@ -311,7 +342,9 @@ const MarkAllBtn = styled.button`
   border-radius: 4px;
   font-family: inherit;
   transition: background 0.15s;
-  &:hover { background: rgba(36,76,84,0.06); }
+  &:hover {
+    background: rgba(36, 76, 84, 0.06);
+  }
 `;
 
 const CloseBtn = styled.button`
@@ -323,7 +356,9 @@ const CloseBtn = styled.button`
   justify-content: center;
   color: ${({ theme }) => theme.colors.textMuted};
   transition: background 0.15s;
-  &:hover { background: ${({ theme }) => theme.colors.borderLight}; }
+  &:hover {
+    background: ${({ theme }) => theme.colors.borderLight};
+  }
 `;
 
 const NotifList = styled.div`
@@ -337,11 +372,16 @@ const NotifItem = styled.div`
   gap: 12px;
   padding: 14px 20px;
   border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
-  background: ${({ $unread }) => ($unread ? 'rgba(36,76,84,0.03)' : 'transparent')};
+  background: ${({ $unread }) =>
+    $unread ? 'rgba(36,76,84,0.03)' : 'transparent'};
   cursor: pointer;
   transition: background 0.1s;
-  &:last-child { border-bottom: none; }
-  &:hover { background: ${({ theme }) => theme.colors.bgSection}; }
+  &:last-child {
+    border-bottom: none;
+  }
+  &:hover {
+    background: ${({ theme }) => theme.colors.bgSection};
+  }
 `;
 
 const NotifDot = styled.div`
@@ -350,7 +390,8 @@ const NotifDot = styled.div`
   border-radius: 50%;
   flex-shrink: 0;
   margin-top: 5px;
-  background: ${({ $type, $show }) => ($show ? NOTIF_TYPE_COLOR[$type] ?? '#3b82f6' : 'transparent')};
+  background: ${({ $type, $show }) =>
+    $show ? (NOTIF_TYPE_COLOR[$type] ?? '#3b82f6') : 'transparent'};
   border: ${({ $show }) => ($show ? 'none' : '1.5px solid #e2e8f0')};
 `;
 
@@ -379,8 +420,6 @@ const NotifTime = styled.p`
   color: ${({ theme }) => theme.colors.textLight};
   margin-top: 2px;
 `;
-
-
 
 const EmptyNotifs = styled.div`
   padding: 40px 20px;

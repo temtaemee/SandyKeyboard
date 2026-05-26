@@ -30,11 +30,11 @@ const mapBackendCustomerToFrontend = (item) => ({
   id: String(item.memberId || ''),
   name: item.name || item.username || '알 수 없음',
   email: item.email || '',
-  phone: '010-XXXX-XXXX', // 백엔드 목록 DTO에는 전화번호가 누락되어 있어 임시 포맷팅 처리
+  phone: item.phone || '등록 없음', // 👈 백엔드 실제 연락처(phone) 매핑
   joinDate: item.createdAt
     ? item.createdAt.split('T')[0].replace(/-/g, '.')
     : '',
-  resvCount: 0, // 백엔드 목록 DTO에는 예약 횟수가 누락되어 있어 기본값 처리
+  resvCount: Number(item.resvCount || 0), // 👈 백엔드 실제 예약 횟수(resvCount) 매핑
   status: item.banYn === 'Y' ? 'stopped' : 'active',
 });
 
@@ -42,12 +42,12 @@ const mapBackendSellerToFrontend = (item) => ({
   id: String(item.memberId || ''),
   name: item.name || '알 수 없는 상호명', // 상호명
   sellerName: item.username || '판매자',
-  businessNo: '000-00-00000', // 백엔드 목록 DTO에는 사업자번호가 누락되어 있어 임시 포맷팅 처리
-  phone: '010-XXXX-XXXX', // 백엔드 목록 DTO에는 연락처가 누락되어 있어 임시 포맷팅 처리
+  businessNo: item.businessNo || '등록 없음', // 👈 백엔드 실제 사업자번호(businessNo) 매핑
+  phone: item.phone || '등록 없음', // 👈 백엔드 실제 연락처(phone) 매핑
   joinedAt: item.createdAt
     ? item.createdAt.split('T')[0].replace(/-/g, '.')
     : '',
-  transactions: 0, // 백엔드 목록 DTO에는 거래 건수가 누락되어 있어 기본값 처리
+  transactions: Number(item.transactions || 0), // 👈 백엔드 실제 거래 건수(transactions) 매핑
   status: item.banYn === 'Y' ? 'stopped' : 'active',
 });
 
