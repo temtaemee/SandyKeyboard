@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { createNotice, updateNotice, getNoticeDetail } from '../api/Supportapi';
 
-// JWT 토큰에서 memberId 추출
 function getMemberIdFromToken() {
   const token = localStorage.getItem('accessToken');
   if (!token) return null;
@@ -23,6 +22,7 @@ export function useNoticeWrite() {
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [pinYn, setPinYn] = useState('N'); // 공지 고정 여부
   const [files, setFiles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [loadingEdit, setLoadingEdit] = useState(isEdit);
@@ -33,6 +33,7 @@ export function useNoticeWrite() {
       .then((data) => {
         setTitle(data.title ?? '');
         setContent(data.content ?? '');
+        setPinYn(data.pinYn ?? 'N');
       })
       .catch((err) => {
         console.error('수정할 공지를 불러오지 못했습니다.', err);
@@ -43,7 +44,7 @@ export function useNoticeWrite() {
   }, [editId]);
 
   function handleFileChange(e) {
-    const selected = Array.from(e.target.files); // ← 이렇게 변경
+    const selected = Array.from(e.target.files);
     setFiles((prev) => [...prev, ...selected]);
     e.target.value = '';
   }
@@ -59,11 +60,11 @@ export function useNoticeWrite() {
     try {
       setSubmitting(true);
       if (isEdit) {
-        await updateNotice(editId, { title, content });
+        await updateNotice(editId, { title, content, pinYn });
       } else {
         const memberId = getMemberIdFromToken();
         if (!memberId) return alert('로그인이 필요합니다.');
-        await createNotice({ memberId, title, content }, files);
+        await createNotice({ memberId, title, content, pinYn }, files);
       }
       navigate('/board/support/notice');
     } catch (err) {
@@ -80,6 +81,8 @@ export function useNoticeWrite() {
     setTitle,
     content,
     setContent,
+    pinYn,
+    setPinYn,
     files,
     submitting,
     loadingEdit,
