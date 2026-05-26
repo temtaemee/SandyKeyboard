@@ -42,13 +42,6 @@ export async function updateReservation(id, formData) {
   });
 }
 
-/**
- * 유저 - 본인 보유 쿠폰 조회 (팀원 API 연동)
- */
-export async function getAvailableCoupons() {
-  return await api.get('/user/memberCoupon?pno=0');
-}
-
 // =========================================================================
 // 2. 판매자(Seller) 관련 API
 // =========================================================================
