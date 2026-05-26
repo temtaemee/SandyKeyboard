@@ -6,6 +6,7 @@ import com.kh.app.member.repository.MemberRepository;
 import com.kh.app.middle.coupon.entity.CouponEntity;
 import com.kh.app.transaction.reservation.dto.request.ReservationCreateReqDto;
 import com.kh.app.transaction.reservation.dto.request.ReservationUpdateReqDto;
+import com.kh.app.transaction.reservation.dto.response.ReservationAdminListResDto;
 import com.kh.app.transaction.reservation.dto.response.ReservationResDto;
 import com.kh.app.transaction.reservation.entity.ReservationEntity;
 import com.kh.app.transaction.reservation.entity.ReservationStatus;
@@ -15,6 +16,7 @@ import com.kh.app.transaction.reservation.repository.ReserveFileRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -201,5 +203,11 @@ public class ReservationService {
         // 예약 정보 수정
         reservation.update(dto);
 
+    }
+    //관리자 예약조회
+    public Page<ReservationAdminListResDto> getAdminReservationList(int pno) {
+        // 한 페이지에 10개씩 보여주도록 설정
+        org.springframework.data.domain.PageRequest pageRequest = org.springframework.data.domain.PageRequest.of(pno, 10);
+        return reservationRepository.findAdminReservationList(pageRequest);
     }
 }
