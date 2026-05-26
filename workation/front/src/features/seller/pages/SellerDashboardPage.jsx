@@ -2,38 +2,123 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { DollarSign, CalendarDays, Star, Building2, ChevronRight } from 'lucide-react';
+import {
+  DollarSign,
+  CalendarDays,
+  Star,
+  Building2,
+  ChevronRight,
+} from 'lucide-react';
 
 /* ── Mock Data (서버 연결 시 삭제/대체 필요) ── */
 
 const STAT_CARDS = [
-  { id: 1, label: '이번달 매출',  value: '₩4,820,000', badge: { text: '+12% 전월 대비', color: 'green'  }, icon: 'revenue'  },
-  { id: 2, label: '이번달 예약',  value: '38건',        badge: { text: '취소 2건 포함',   color: 'orange' }, icon: 'calendar' },
-  { id: 3, label: '최근 리뷰',   value: '12건',        badge: { text: '미답변 3건',      color: 'yellow' }, icon: 'star'     },
-  { id: 4, label: '등록 공간',   value: '3개',         badge: { text: '스테이 9개',      color: 'teal'   }, icon: 'building' },
+  {
+    id: 1,
+    label: '이번달 매출',
+    value: '₩4,820,000',
+    badge: { text: '+12% 전월 대비', color: 'green' },
+    icon: 'revenue',
+  },
+  {
+    id: 2,
+    label: '이번달 예약',
+    value: '38건',
+    badge: { text: '취소 2건 포함', color: 'orange' },
+    icon: 'calendar',
+  },
+  {
+    id: 3,
+    label: '최근 리뷰',
+    value: '12건',
+    badge: { text: '미답변 3건', color: 'yellow' },
+    icon: 'star',
+  },
+  {
+    id: 4,
+    label: '등록 공간',
+    value: '3개',
+    badge: { text: '스테이 9개', color: 'teal' },
+    icon: 'building',
+  },
 ];
 
 const CHART_DATA = [
-  { month: '12월', height: 96  },
-  { month: '1월',  height: 128 },
-  { month: '2월',  height: 112 },
-  { month: '3월',  height: 160 },
-  { month: '4월',  height: 208, highlight: true },
-  { month: '5월',  height: 180 },
+  { month: '12월', height: 96 },
+  { month: '1월', height: 128 },
+  { month: '2월', height: 112 },
+  { month: '3월', height: 160 },
+  { month: '4월', height: 208, highlight: true },
+  { month: '5월', height: 180 },
 ];
 
 const INITIAL_SPACES = [
-  { id: 1, name: '모래 덮인 키보드', location: '서울 · 강남구',  visible: true  },
-  { id: 2, name: '제주 오션뷰 워크', location: '제주 · 서귀포시', visible: true  },
-  { id: 3, name: '숲속 힐링 스테이', location: '강원 · 평창군',  visible: false },
+  { id: 1, name: '모래 덮인 키보드', location: '서울 · 강남구', visible: true },
+  {
+    id: 2,
+    name: '제주 오션뷰 워크',
+    location: '제주 · 서귀포시',
+    visible: true,
+  },
+  {
+    id: 3,
+    name: '숲속 힐링 스테이',
+    location: '강원 · 평창군',
+    visible: false,
+  },
 ];
 
 const RECENT_RESERVATIONS = [
-  { id: '#RV-2405001', guest: '김지수', space: '모래 덮인 키보드', stay: '스탠다드룸', checkIn: '2025.05.10', checkOut: '2025.05.12', amount: '₩180,000', status: 'confirmed' },
-  { id: '#RV-2405002', guest: '이민준', space: '제주 오션뷰 워크', stay: '오션뷰룸',   checkIn: '2025.05.15', checkOut: '2025.05.17', amount: '₩320,000', status: 'confirmed' },
-  { id: '#RV-2405003', guest: '박소연', space: '숲속 힐링 스테이', stay: '패밀리룸',   checkIn: '2025.05.20', checkOut: '2025.05.22', amount: '₩420,000', status: 'pending'   },
-  { id: '#RV-2405004', guest: '최현우', space: '모래 덮인 키보드', stay: '디럭스룸',   checkIn: '2025.05.08', checkOut: '2025.05.09', amount: '₩95,000',  status: 'confirmed' },
-  { id: '#RV-2405005', guest: '정예린', space: '제주 오션뷰 워크', stay: '스탠다드룸', checkIn: '2025.05.25', checkOut: '2025.05.27', amount: '₩240,000', status: 'cancelled' },
+  {
+    id: '#RV-2405001',
+    guest: '김지수',
+    space: '모래 덮인 키보드',
+    stay: '스탠다드룸',
+    checkIn: '2025.05.10',
+    checkOut: '2025.05.12',
+    amount: '₩180,000',
+    status: 'confirmed',
+  },
+  {
+    id: '#RV-2405002',
+    guest: '이민준',
+    space: '제주 오션뷰 워크',
+    stay: '오션뷰룸',
+    checkIn: '2025.05.15',
+    checkOut: '2025.05.17',
+    amount: '₩320,000',
+    status: 'confirmed',
+  },
+  {
+    id: '#RV-2405003',
+    guest: '박소연',
+    space: '숲속 힐링 스테이',
+    stay: '패밀리룸',
+    checkIn: '2025.05.20',
+    checkOut: '2025.05.22',
+    amount: '₩420,000',
+    status: 'pending',
+  },
+  {
+    id: '#RV-2405004',
+    guest: '최현우',
+    space: '모래 덮인 키보드',
+    stay: '디럭스룸',
+    checkIn: '2025.05.08',
+    checkOut: '2025.05.09',
+    amount: '₩95,000',
+    status: 'confirmed',
+  },
+  {
+    id: '#RV-2405005',
+    guest: '정예린',
+    space: '제주 오션뷰 워크',
+    stay: '스탠다드룸',
+    checkIn: '2025.05.25',
+    checkOut: '2025.05.27',
+    amount: '₩240,000',
+    status: 'cancelled',
+  },
 ];
 
 /* ── Style Constants ── */
@@ -41,23 +126,35 @@ const RECENT_RESERVATIONS = [
 const ACCENT = '#3ec9a7';
 
 const STAT_ICON = {
-  revenue:  { el: <DollarSign  size={28} color="#0d9488" strokeWidth={1.8} />, bg: 'rgba(204,251,241,0.5)' },
-  calendar: { el: <CalendarDays size={28} color="#ea580c" strokeWidth={1.8} />, bg: 'rgba(255,237,213,0.5)' },
-  star:     { el: <Star        size={28} color="#ca8a04" strokeWidth={1.8} />, bg: 'rgba(254,252,232,0.5)' },
-  building: { el: <Building2   size={28} color="#0891b2" strokeWidth={1.8} />, bg: 'rgba(224,242,254,0.5)' },
+  revenue: {
+    el: <DollarSign size={28} color="#0d9488" strokeWidth={1.8} />,
+    bg: 'rgba(204,251,241,0.5)',
+  },
+  calendar: {
+    el: <CalendarDays size={28} color="#ea580c" strokeWidth={1.8} />,
+    bg: 'rgba(255,237,213,0.5)',
+  },
+  star: {
+    el: <Star size={28} color="#ca8a04" strokeWidth={1.8} />,
+    bg: 'rgba(254,252,232,0.5)',
+  },
+  building: {
+    el: <Building2 size={28} color="#0891b2" strokeWidth={1.8} />,
+    bg: 'rgba(224,242,254,0.5)',
+  },
 };
 
 const BADGE_STYLE = {
-  green:  { bg: '#f0fdfa', color: '#0d9488' },
+  green: { bg: '#f0fdfa', color: '#0d9488' },
   orange: { bg: '#fff7ed', color: '#ea580c' },
   yellow: { bg: '#fefce8', color: '#ca8a04' },
-  teal:   { bg: '#ecfeff', color: '#0891b2' },
+  teal: { bg: '#ecfeff', color: '#0891b2' },
 };
 
 const STATUS_MAP = {
   confirmed: { label: '예약확정', bg: '#dcfce7', color: '#15803d' },
-  pending:   { label: '대기중',   bg: '#ffedd5', color: '#c2410c' },
-  cancelled: { label: '취소됨',   bg: '#fee2e2', color: '#b91c1c' },
+  pending: { label: '대기중', bg: '#ffedd5', color: '#c2410c' },
+  cancelled: { label: '취소됨', bg: '#fee2e2', color: '#b91c1c' },
 };
 
 /* ── Component ── */
@@ -67,7 +164,9 @@ export default function SellerDashboardPage() {
   const [spaces, setSpaces] = useState(INITIAL_SPACES);
 
   const toggleVisible = (id) =>
-    setSpaces((prev) => prev.map((s) => (s.id === id ? { ...s, visible: !s.visible } : s)));
+    setSpaces((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, visible: !s.visible } : s))
+    );
 
   return (
     <>
@@ -86,7 +185,9 @@ export default function SellerDashboardPage() {
             <StatCard key={card.id}>
               <CardTop>
                 <IconBg $bg={bg}>{el}</IconBg>
-                <Badge $bg={badge.bg} $color={badge.color}>{card.badge.text}</Badge>
+                <Badge $bg={badge.bg} $color={badge.color}>
+                  {card.badge.text}
+                </Badge>
               </CardTop>
               <CardLabel>{card.label}</CardLabel>
               <CardValue>{card.value}</CardValue>
@@ -108,7 +209,9 @@ export default function SellerDashboardPage() {
 
           <BarChart>
             <GridLines>
-              {[0, 1, 2, 3].map((i) => <GridLine key={i} />)}
+              {[0, 1, 2, 3].map((i) => (
+                <GridLine key={i} />
+              ))}
             </GridLines>
             <Bars>
               {CHART_DATA.map((d, i) => (
@@ -134,11 +237,16 @@ export default function SellerDashboardPage() {
             {spaces.map((space) => (
               <SpaceItem key={space.id}>
                 <SpaceIcon>{space.name[0]}</SpaceIcon>
-                <SpaceInfo onClick={() => navigate(`/seller/spaces/${space.id}`)}>
+                <SpaceInfo
+                  onClick={() => navigate(`/seller/spaces/${space.id}`)}
+                >
                   <SpaceName>{space.name}</SpaceName>
                   <SpaceLoc>{space.location}</SpaceLoc>
                 </SpaceInfo>
-                <Toggle $on={space.visible} onClick={() => toggleVisible(space.id)}>
+                <Toggle
+                  $on={space.visible}
+                  onClick={() => toggleVisible(space.id)}
+                >
                   <ToggleThumb $on={space.visible} />
                 </Toggle>
               </SpaceItem>
@@ -146,7 +254,9 @@ export default function SellerDashboardPage() {
           </SpaceList>
 
           <SpaceCardFooter>
-            <FooterBtn onClick={() => navigate('/seller/spaces')}>전체 공간 보기 &gt;</FooterBtn>
+            <FooterBtn onClick={() => navigate('/seller/spaces')}>
+              전체 공간 보기 &gt;
+            </FooterBtn>
           </SpaceCardFooter>
         </SpaceCard>
       </PanelGrid>
@@ -180,13 +290,23 @@ export default function SellerDashboardPage() {
               const s = STATUS_MAP[r.status];
               return (
                 <Tr key={r.id}>
-                  <Td><ResvId>{r.id}</ResvId></Td>
+                  <Td>
+                    <ResvId>{r.id}</ResvId>
+                  </Td>
                   <Td>{r.guest}</Td>
-                  <Td>{r.space} / {r.stay}</Td>
+                  <Td>
+                    {r.space} / {r.stay}
+                  </Td>
                   <Td>{r.checkIn}</Td>
                   <Td>{r.checkOut}</Td>
-                  <Td><Amount>{r.amount}</Amount></Td>
-                  <Td><StatusBadge $bg={s.bg} $color={s.color}>{s.label}</StatusBadge></Td>
+                  <Td>
+                    <Amount>{r.amount}</Amount>
+                  </Td>
+                  <Td>
+                    <StatusBadge $bg={s.bg} $color={s.color}>
+                      {s.label}
+                    </StatusBadge>
+                  </Td>
                 </Tr>
               );
             })}
@@ -234,7 +354,9 @@ const StatCard = styled.div`
   flex-direction: column;
   gap: 4px;
   box-shadow: ${({ theme }) => theme.shadows.card};
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
@@ -415,7 +537,9 @@ const SpaceItem = styled.div`
   gap: 12px;
   padding: 16px 24px;
   border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
-  &:last-child { border-bottom: none; }
+  &:last-child {
+    border-bottom: none;
+  }
 `;
 
 const SpaceIcon = styled.div`
@@ -435,7 +559,9 @@ const SpaceIcon = styled.div`
 const SpaceInfo = styled.div`
   flex: 1;
   cursor: pointer;
-  &:hover p:first-child { color: ${ACCENT}; }
+  &:hover p:first-child {
+    color: ${ACCENT};
+  }
 `;
 
 const SpaceName = styled.p`
@@ -486,7 +612,9 @@ const FooterBtn = styled.button`
   color: ${({ theme }) => theme.colors.textMuted};
   font-family: inherit;
   transition: color 0.15s;
-  &:hover { color: ${ACCENT}; }
+  &:hover {
+    color: ${ACCENT};
+  }
 `;
 
 /* ── Recent Reservations ── */
@@ -518,8 +646,13 @@ const ViewAllBtn = styled.button`
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 6px;
   font-family: inherit;
-  transition: color 0.15s, border-color 0.15s;
-  &:hover { color: ${ACCENT}; border-color: ${ACCENT}; }
+  transition:
+    color 0.15s,
+    border-color 0.15s;
+  &:hover {
+    color: ${ACCENT};
+    border-color: ${ACCENT};
+  }
 `;
 
 const Table = styled.table`
@@ -541,8 +674,12 @@ const Th = styled.th`
 
 const Tr = styled.tr`
   border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
-  &:last-child { border-bottom: none; }
-  &:hover { background: ${({ theme }) => theme.colors.bgSection}; }
+  &:last-child {
+    border-bottom: none;
+  }
+  &:hover {
+    background: ${({ theme }) => theme.colors.bgSection};
+  }
 `;
 
 const Td = styled.td`
