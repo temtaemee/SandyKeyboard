@@ -83,6 +83,16 @@ public class SpaceApiController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "공간 노출 여부 변경", description = "visibleYn 을 Y/N 으로 변경합니다.")
+    @PutMapping("/{id}/visible")
+    public ResponseEntity<Void> changeVisibleYn(
+            @PathVariable Long id,
+            @RequestParam String visibleYn
+    ) {
+        spaceService.changeVisibleYn(id, visibleYn);
+        return ResponseEntity.ok().build();
+    }
+
     @Operation(summary = "공간 삭제 (soft)", description = "공간을 소프트 삭제합니다 (delYn = Y).")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "삭제 성공"),

@@ -11,9 +11,14 @@ export async function getStaysBySpaceId(spaceId) {
   return await api.get('/public/stay', { params: { spaceId } });
 }
 
+/** 공간 노출 여부 변경 (visibleYn: 'Y' | 'N') */
+export async function changeSpaceVisible(spaceId, visibleYn) {
+  return await api.put(`/public/space/${spaceId}/visible`, null, { params: { visibleYn } });
+}
+
 /** 특정 등록 공간 정보 삭제 */
 export async function deleteAdminSpace(spaceId) {
-  return await api.delete(`/api/public/space/${spaceId}`);
+  return await api.delete(`/public/space/${spaceId}`);
 }
 
 /** 등록 공간 전체 통계 정보 조회 */

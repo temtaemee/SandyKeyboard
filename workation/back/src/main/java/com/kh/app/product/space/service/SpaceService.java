@@ -48,7 +48,13 @@ public class SpaceService {
     public List<SpaceResDto> searchList(SpaceSearchReqDto dto) {
         return spaceRepository.searchList(dto)
                 .stream()
-                .map(SpaceResDto::from)
+                .map(space -> {
+                    String thumbnailUrl = spacePictureRepository
+                            .findBySpaceIdAndMainYn(space.getId(), "Y")
+                            .map(SpacePictureEntity::getFilePath)
+                            .orElse(null);
+                    return SpaceResDto.from(space, null, thumbnailUrl);
+                })
                 .toList();
     }
 
@@ -78,6 +84,13 @@ public class SpaceService {
                 dto.getAddress1(), dto.getAddress2(),
                 dto.getLatitude(), dto.getLongitude(), dto.getArea()
         );
+    }
+
+    @Transactional
+    public void changeVisibleYn(Long id, String visibleYn) {
+        SpaceEntity space = spaceRepository.findByIdAndDelYn(id, "N")
+                .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
+        space.changeVisibleYn(visibleYn);
     }
 
     @Transactional
