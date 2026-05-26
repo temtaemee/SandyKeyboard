@@ -183,9 +183,11 @@ public class ReservationService {
     /**
      * 💡 관리자용 예약 목록 페이징 조회
      */
-    public Page<ReservationAdminListResDto> getAdminReservationList(int pno) {
+    public Page<ReservationAdminListResDto> getAdminReservationList(
+            int pno, String username, String guestName, Long reservationId, String sellerUsername
+    ) {
         PageRequest pageRequest = PageRequest.of(pno, 10);
-        return reservationRepository.findAdminReservationList(pageRequest);
+        return reservationRepository.findAdminReservationList(pageRequest, username, guestName, reservationId, sellerUsername);
     }
 
     /**
@@ -211,5 +213,16 @@ public class ReservationService {
             current = current.plusDays(1);
         }
         return sumPrice;
+    }
+
+    /**
+     * 💡 관리자 전용 예약 단건 상세 조회 (PENDING 상태도 조회 가능)
+     */
+    public ReservationAdminListResDto getAdminOne(Long id) {
+        ReservationEntity entity = reservationRepository.findAdminOneById(id)
+                .orElseThrow(() -> new EntityNotFoundException("해당 예약 내역이 존재하지 않습니다. (ID: " + id + ")"));
+
+        // 관리자 전용 DTO 변환 (내부에 username, 결제 정보, 환불 계좌 등이 모두 포함되어 있음)
+        return ReservationAdminListResDto.from(entity);
     }
 }
