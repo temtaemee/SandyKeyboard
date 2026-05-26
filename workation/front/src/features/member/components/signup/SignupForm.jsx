@@ -59,10 +59,12 @@ function SignupForm() {
       // 🟩 소셜 유저라면 비밀번호 검증을 패스하고 전용 API로 발송!
       try {
         await api.post('/guest/social-join', vo);
-        alert(
-          '회원가입이 완료되었습니다! 다시 한번 네이버 로그인을 진행해주세요.'
-        );
-        navi('/login');
+        const tempToken = searchParams.get('tempToken');
+        if (tempToken) {
+          localStorage.setItem('accessToken', tempToken);
+        }
+        alert('방문을 환영합니다! 모래묻은 키보드 연동이 완료되었습니다. 🦀🔵');
+        navi('/');
       } catch (error) {
         console.error(error);
         alert('소셜 회원정보 저장 중 오류가 발생했습니다.');

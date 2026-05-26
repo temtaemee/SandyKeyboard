@@ -4,6 +4,7 @@ import com.kh.app.common.dto.PageRespDto;
 import com.kh.app.member.dto.request.*;
 import com.kh.app.member.dto.response.*;
 import com.kh.app.member.repository.BankRepository;
+import com.kh.app.member.service.GoogleAuthService;
 import com.kh.app.member.service.KakaoAuthService;
 import com.kh.app.member.service.MemberService;
 import com.kh.app.member.service.NaverAuthService;
@@ -30,6 +31,7 @@ public class MemberApiController {
     private final BankRepository bankRepository;
     private final KakaoAuthService kakaoAuthService;
     private final NaverAuthService naverAuthService;
+    private final GoogleAuthService googleAuthService;
 
     @PostMapping("/guest/join")
     public ResponseEntity<Object> join(@RequestBody MemberJoinReqDto dto){
@@ -138,7 +140,7 @@ public class MemberApiController {
     }
 
     @PostMapping("/guest/kakao")
-    public ResponseEntity<Map<String, String>> kakaoLogin(@RequestBody KakaoLoginReqDto dto) {
+    public ResponseEntity<Map<String, String>> kakaoLogin(@RequestBody SocialLoginReqDto dto) {
         // 카카오 인증 및 서비스 JWT 발급 프로세스 진행
         String appAccessToken = kakaoAuthService.kakaoLogin(dto.getCode());
 
@@ -151,7 +153,7 @@ public class MemberApiController {
 
 
     @PostMapping("/guest/naver")
-    public ResponseEntity<SocialLoginRespDto> naverLogin(@RequestBody NaverLoginReqDto dto) {
+    public ResponseEntity<SocialLoginRespDto> naverLogin(@RequestBody SocialLoginReqDto dto) {
         // 공용 소셜 응답 DTO 규격으로 리턴받음 ✨
         SocialLoginRespDto responseDto = naverAuthService.naverLogin(dto);
         System.out.println("responseDto = " + responseDto);
@@ -165,6 +167,14 @@ public class MemberApiController {
         memberService.createSocialProfile(dto);
         return ResponseEntity.ok("소셜 연동 및 가입 완료!");
     }
+
+    @PostMapping("/guest/google")
+    public ResponseEntity<SocialLoginRespDto> googleLogin(@RequestBody SocialLoginReqDto dto) {
+        // 공용 소셜 응답 규격으로 리턴 🔵
+        SocialLoginRespDto responseDto = googleAuthService.googleLogin(dto);
+        return ResponseEntity.ok(responseDto);
+    }
+
 
 
 

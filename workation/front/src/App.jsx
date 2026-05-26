@@ -20,6 +20,8 @@ import MypageRouter from './routes/MypageRouter';
 import SellerSelectionView from './features/member/pages/login/SellerSelectionView';
 import useAuth from './features/member/hooks/useAuth';
 import NaverCallback from './features/member/components/login/NaverCallback';
+import KakaoCallback from './features/member/components/login/KakaoCallback';
+import GoogleCallback from './features/member/components/login/GoogleCallback';
 
 export default function App() {
   const { loading, isSeller } = useAuth();
@@ -48,13 +50,15 @@ export default function App() {
             3. 각 팀원은 본인이 맡은 Router 파일만 수정하여 충돌을 방지합니다.
           */}
 
-          {/* 유저(User) 관련 라우트 - 팀원 <A:blank></A:blank> */}
+          {/* 유저(User) 관련 라우트 - 팀장 박성호 */}
           <Route path="mypage/*" element={<MypageRouter />} />
           <Route path="join" element={<SignupPage />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="find-id" element={<FindIdPage />} />
           <Route path="find-password" element={<FindPassWordPage />} />
           <Route path="oauth/callback/naver" element={<NaverCallback />} />
+          <Route path="oauth/callback/google" element={<GoogleCallback />} />
+          <Route path="oauth/callback/kakao" element={<KakaoCallback />} />
 
           {/* 예약(reservation) 관련 라우트 - 팀원 김민성 */}
           <Route path="resv/*" element={<ResvRouter />} />
