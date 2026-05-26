@@ -3,7 +3,6 @@ import { useState } from 'react';
 import styled from 'styled-components';
 import { Home, CheckCircle, AlertTriangle, EyeOff, X } from 'lucide-react';
 import AdminSearchInput from '../components/common/AdminSearchInput';
-import { SPACES_TOTAL_PAGES } from '../data/adminSpacesData';
 import usePagination from '../hooks/usePagination';
 import AdminPagination from '../components/common/AdminPagination';
 import ConfirmModal from '../components/common/ConfirmModal';
@@ -15,6 +14,7 @@ import {
   ModalCloseBtn,
 } from '../components/common/AdminModal.styles';
 import useAdminSpaces from '../hooks/useAdminSpaces';
+import { getStaysBySpaceId } from '../api/adminSpacesApi';
 
 
 export default function AdminSpacesPage() {
@@ -36,6 +36,27 @@ export default function AdminSpacesPage() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('전체');
+
+  // Stay 모달 상태
+  const [selectedSpace, setSelectedSpace] = useState(null);
+  const [spaceStays, setSpaceStays] = useState([]);
+  const [stayLoading, setStayLoading] = useState(false);
+  const [isStayModalOpen, setIsStayModalOpen] = useState(false);
+
+  const handleSpaceClick = async (space) => {
+    setSelectedSpace(space);
+    setIsStayModalOpen(true);
+    setStayLoading(true);
+    try {
+      const resp = await getStaysBySpaceId(space.id);
+      setSpaceStays(resp.data);
+    } catch (err) {
+      console.error(err);
+      setSpaceStays([]);
+    } finally {
+      setStayLoading(false);
+    }
+  };
 
   const isBlinded = (space) => blindedIds[space.id] ?? false;
 
@@ -156,7 +177,7 @@ export default function AdminSpacesPage() {
             ) : filteredSpaces.map((space) => {
               const blinded = isBlinded(space);
               return (
-                <TR key={space.id} $hoverable>
+                <TR key={space.id} $hoverable style={{ cursor: 'pointer' }} onClick={() => handleSpaceClick(space)}>
                   <TD>
                     <SpaceCell>
                       <SpaceThumbnail src={space.thumbnail} alt={space.name} $blinded={blinded} />
@@ -169,7 +190,7 @@ export default function AdminSpacesPage() {
                   <TD><SellerText>{space.seller}</SellerText></TD>
                   <TD><PriceText>{space.price}</PriceText></TD>
                   <TD><DateText>{space.registeredAt}</DateText></TD>
-                  <TD>
+                  <TD onClick={e => e.stopPropagation()}>
                     {/* labelWidth: '공개'(2자) 보다 여유있게 40px */}
                     <Toggle
                       on={blinded}
@@ -188,7 +209,7 @@ export default function AdminSpacesPage() {
         <TableFooter>
           <AdminPagination
             currentPage={currentPage}
-            totalPages={SPACES_TOTAL_PAGES}
+            totalPages={Math.ceil(filteredSpaces.length / 10) || 1}
             onPageChange={goToPage}
           />
         </TableFooter>
@@ -211,6 +232,46 @@ export default function AdminSpacesPage() {
         confirmText={blindConfirmTarget?.willBlind ? '블라인드' : '공개하기'}
         icon={<EyeOff size={24} color={blindConfirmTarget?.willBlind ? '#ef4444' : '#64748b'} />}
       />
+
+      {/* ── Stay 목록 모달 ── */}
+      {isStayModalOpen && selectedSpace && (
+        <ModalOverlay onClick={() => setIsStayModalOpen(false)}>
+          <ModalContent $width="600px" onClick={e => e.stopPropagation()}>
+            <ModalHeader>
+              <ModalTitle>{selectedSpace.name} — 객실 목록</ModalTitle>
+              <ModalCloseBtn onClick={() => setIsStayModalOpen(false)}>
+                <X size={20} />
+              </ModalCloseBtn>
+            </ModalHeader>
+            <ModalBody>
+              {stayLoading ? (
+                <EmptyState>불러오는 중...</EmptyState>
+              ) : spaceStays.length === 0 ? (
+                <EmptyState>등록된 객실이 없습니다.</EmptyState>
+              ) : (
+                <StayList>
+                  {spaceStays.map(stay => {
+                    const prices = [stay.monPrice, stay.tuePrice, stay.wedPrice, stay.thuPrice, stay.friPrice, stay.satPrice, stay.sunPrice].filter(Boolean);
+                    const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+                    return (
+                      <StayItem key={stay.id}>
+                        <StayItemInfo>
+                          <StayItemName>{stay.name}</StayItemName>
+                          <StayItemMeta>기준 {stay.capacity}인 / 최대 {stay.maxCapa}인</StayItemMeta>
+                        </StayItemInfo>
+                        <StayItemPrice>최저 ₩{minPrice.toLocaleString()}</StayItemPrice>
+                        <StayBadge $visible={stay.visibleYn === 'Y'}>
+                          {stay.visibleYn === 'Y' ? '공개' : '비공개'}
+                        </StayBadge>
+                      </StayItem>
+                    );
+                  })}
+                </StayList>
+              )}
+            </ModalBody>
+          </ModalContent>
+        </ModalOverlay>
+      )}
 
       {/* ── 승인/거절 모달 ── */}
       {isModalOpen && (
@@ -645,4 +706,57 @@ const ApproveBtn = styled(ActionBtn)`
   &:not(:disabled):hover {
     background: #1d4ed8;
   }
+`;
+
+/* ── Stay 모달 전용 ── */
+const StayList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`;
+
+const StayItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  &:hover { background: #f8fafc; }
+`;
+
+const StayItemInfo = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+`;
+
+const StayItemName = styled.span`
+  font-size: 14px;
+  font-weight: 600;
+  color: #0d1c2e;
+`;
+
+const StayItemMeta = styled.span`
+  font-size: 12px;
+  color: #94a3b8;
+`;
+
+const StayItemPrice = styled.span`
+  font-size: 13px;
+  font-weight: 600;
+  color: #0d1c2e;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  white-space: nowrap;
+`;
+
+const StayBadge = styled.span`
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background: ${({ $visible }) => ($visible ? 'rgba(34,197,94,0.1)' : 'rgba(148,163,184,0.15)')};
+  color: ${({ $visible }) => ($visible ? '#16a34a' : '#64748b')};
+  white-space: nowrap;
 `;

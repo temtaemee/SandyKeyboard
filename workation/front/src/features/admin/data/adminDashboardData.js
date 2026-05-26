@@ -121,6 +121,54 @@ export const RECENT_PAYMENTS = [
   },
 ];
 
+/* ── 관리 활동 내역 목데이터 ── */
+export const ADMIN_ACTIVITY_LOGS = [
+  {
+    id: 'ACT-20230520-001',
+    avatarBg: '#dbeafe',
+    avatarColor: '#1d4ed8',
+    adminInitials: '김',
+    adminName: '김관리자',
+    action: '숙소 승인 처리',
+    target: '오션 브리즈 리조트 #SP-1024',
+    datetime: '2023.05.20 14:30',
+    status: 'success',
+  },
+  {
+    id: 'ACT-20230520-002',
+    avatarBg: '#dcfce7',
+    avatarColor: '#15803d',
+    adminInitials: '이',
+    adminName: '이담당자',
+    action: '판매자 계정 정지',
+    target: '포레스트 캠핑 (ID: MB-2041)',
+    datetime: '2023.05.20 13:15',
+    status: 'success',
+  },
+  {
+    id: 'ACT-20230520-003',
+    avatarBg: '#fef9c3',
+    avatarColor: '#a16207',
+    adminInitials: '박',
+    adminName: '박슈퍼바이저',
+    action: '정산 승인 요청',
+    target: '마운틴 뷰 빌라 정산 ST-20230520',
+    datetime: '2023.05.20 11:50',
+    status: 'pending',
+  },
+  {
+    id: 'ACT-20230520-004',
+    avatarBg: '#fee2e2',
+    avatarColor: '#b91c1c',
+    adminInitials: '최',
+    adminName: '최어드민',
+    action: '쿠폰 일괄 발급',
+    target: '신규 가입 웰컴 쿠폰 (대상 342명)',
+    datetime: '2023.05.20 10:05',
+    status: 'failed',
+  },
+];
+
 /* ── 알림 목데이터 ── */
 export const NOTIFICATIONS = [
   { id: 1, type: 'warning', title: '긴급 정산 지연 건 발생', desc: 'ST-20231115 해변의 정원 — 3일 이상 지연 중', time: '방금 전', unread: true },

@@ -14,10 +14,6 @@ import {
   Trash2,
   X,
   Eye,
-  ChevronLeft as LucideChevronLeft,
-  ChevronRight as LucideChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
 } from 'lucide-react';
 import { BOARD_TABS } from '../data/adminBoardConstants';
 import useAdminBoard from '../hooks/useAdminBoard';
@@ -325,7 +321,7 @@ export default function AdminBoardPage() {
 
         {/* footer: 페이지네이션 */}
         <TableFooter>
-          <FooterInfo>‖ {TOTAL}개 &nbsp;‖&nbsp; 1-10 &nbsp;‖</FooterInfo>
+          <FooterInfo>총 {TOTAL}개</FooterInfo>
           <AdminPagination
             currentPage={currentPage}
             totalPages={TOTAL_PAGES}

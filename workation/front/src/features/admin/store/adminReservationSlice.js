@@ -1,10 +1,9 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { PARTNER_COMPANIES } from '../data/adminReservationData';
 
 const adminReservationSlice = createSlice({
   name: 'adminReservation',
   initialState: {
-    partners: PARTNER_COMPANIES,
+    partners: [],
     loading: false,
     error: null,
   },
