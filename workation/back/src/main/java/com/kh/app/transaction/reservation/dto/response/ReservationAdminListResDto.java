@@ -43,7 +43,7 @@ public class ReservationAdminListResDto {
                 .orderId(entity.getOrderId())
                 .memberId(entity.getMember().getId())
                 .username(entity.getMember().getUsername()) // 💡 nickname 대신 username 매핑
-                .stayId(entity.getStayId())
+                .stayId(entity.getStay().getId())
                 .guestCount(entity.getGuestCount())
                 .primaryGuestName(entity.getPrimaryGuestName())
                 .primaryGuestPhone(entity.getPrimaryGuestPhone())

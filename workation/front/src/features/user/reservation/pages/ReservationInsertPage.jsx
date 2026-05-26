@@ -1,17 +1,20 @@
 // src/features/reservation/pages/ReservationInsertPage.jsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { loadTossPayments } from '@tosspayments/payment-sdk';
 
 import useReservationInsert from '../hooks/useReservationInsert';
+import { getAvailableCoupons } from '../api/reservationApi';
 
 function ReservationInsertPage() {
   const clientKey = 'test_ck_5OWRapdA8djRAOLzPxRYVo1zEqZK';
   const { stayId } = useParams();
 
   const { insertReservation } = useReservationInsert();
+
+  const [coupons, setCoupons] = useState([]);
 
   const [vo, setVo] = useState({
     couponId: '',
@@ -28,6 +31,18 @@ function ReservationInsertPage() {
 
   const [fileList, setFileList] = useState([]);
 
+  useEffect(() => {
+    async function fetchCoupons() {
+      try {
+        const resp = await getAvailableCoupons();
+        setCoupons(resp.data.content || []);
+      } catch (err) {
+        console.error('쿠폰 목록을 불러오는 중 오류 발생:', err);
+      }
+    }
+    fetchCoupons();
+  }, []);
+
   function handleChange(e) {
     setVo({
       ...vo,
@@ -43,32 +58,35 @@ function ReservationInsertPage() {
     e.preventDefault();
 
     try {
-      // 1. 예약 생성
-      const reservationId = await insertReservation(stayId, vo, fileList);
+      // 1. 백엔드에서 생성된 객체로부터 ID와 계산된 실제 금액을 안전하게 구조 분해 할당합니다.
+      const { reservationId, totalPrice } = await insertReservation(
+        stayId,
+        vo,
+        fileList
+      );
 
-      // 2. 결제창 호출
-      await requestPayment(reservationId);
+      // 💡 [수정완료] 브라우저 환경에 맞게 console.log로 정정
+      console.log('백엔드 정산 금액 확인: ', totalPrice);
+
+      // 2. 받아온 실제 정산 금액을 결제창 함수로 토스합니다.
+      await requestPayment(reservationId, totalPrice);
     } catch (err) {
       console.error(err);
     }
   }
-  async function requestPayment(reservationId) {
+
+  async function requestPayment(reservationId, totalPrice) {
     const tossPayments = await loadTossPayments(clientKey);
+    const currentOrigin = window.location.origin;
 
     await tossPayments.requestPayment('CARD', {
-      amount: 100,
-
+      amount: totalPrice, // 백엔드가 검증한 실거래 금액 주입
       orderId: `ORDER_${reservationId}_${Date.now()}`,
-
       orderName: '숙소 예약 결제',
-
       customerName: vo.primaryGuestName,
-
       customerEmail: vo.primaryGuestEmail,
-
-      successUrl: `http://localhost:5173/resv/payment/success?reservationId=${reservationId}`,
-
-      failUrl: 'http://localhost:5173/payment/fail',
+      successUrl: `${currentOrigin}/resv/payment/success?reservationId=${reservationId}`,
+      failUrl: `${currentOrigin}/payment/fail`,
     });
   }
 
@@ -83,20 +101,23 @@ function ReservationInsertPage() {
             <SectionTitle>예약 정보</SectionTitle>
 
             <InputGroup>
-              <Label>쿠폰 ID</Label>
-
-              <Input
-                type="number"
+              <Label>적용 가능한 쿠폰</Label>
+              <Select
                 name="couponId"
-                placeholder="쿠폰 ID 입력"
                 value={vo.couponId}
                 onChange={handleChange}
-              />
+              >
+                <option value="">=== 쿠폰 선택 안함 ===</option>
+                {coupons.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.couponName} ({c.discountRate}% 할인)
+                  </option>
+                ))}
+              </Select>
             </InputGroup>
 
             <InputGroup>
               <Label>인원 수</Label>
-
               <Input
                 type="number"
                 name="guestCount"
@@ -108,7 +129,6 @@ function ReservationInsertPage() {
 
             <InputGroup>
               <Label>대표 예약자 이름</Label>
-
               <Input
                 type="text"
                 name="primaryGuestName"
@@ -121,7 +141,6 @@ function ReservationInsertPage() {
             <Row>
               <InputGroup>
                 <Label>체크인 날짜</Label>
-
                 <Input
                   type="date"
                   name="checkinDate"
@@ -132,7 +151,6 @@ function ReservationInsertPage() {
 
               <InputGroup>
                 <Label>체크아웃 날짜</Label>
-
                 <Input
                   type="date"
                   name="checkoutDate"
@@ -144,7 +162,6 @@ function ReservationInsertPage() {
 
             <InputGroup>
               <Label>전화번호</Label>
-
               <Input
                 type="text"
                 name="primaryGuestPhone"
@@ -156,7 +173,6 @@ function ReservationInsertPage() {
 
             <InputGroup>
               <Label>이메일</Label>
-
               <Input
                 type="email"
                 name="primaryGuestEmail"
@@ -173,7 +189,6 @@ function ReservationInsertPage() {
 
             <InputGroup>
               <Label>은행명</Label>
-
               <Input
                 type="text"
                 name="refundBankName"
@@ -185,7 +200,6 @@ function ReservationInsertPage() {
 
             <InputGroup>
               <Label>계좌번호</Label>
-
               <Input
                 type="text"
                 name="refundAccountNumber"
@@ -197,7 +211,6 @@ function ReservationInsertPage() {
 
             <InputGroup>
               <Label>예금주명</Label>
-
               <Input
                 type="text"
                 name="refundAccountHolder"
@@ -309,19 +322,33 @@ const Label = styled.label`
   color: ${({ theme }) => theme.colors.textMid};
 `;
 
+const Select = styled.select`
+  width: 100%;
+  height: 54px;
+  padding: 0 16px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.radius.md};
+  background: ${({ theme }) => theme.colors.white};
+  font-size: 15px;
+  color: ${({ theme }) => theme.colors.textDark};
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.colors.primary};
+    box-shadow: 0 0 0 4px rgba(44, 100, 128, 0.12);
+  }
+`;
+
 const Input = styled.input`
   width: 100%;
   height: 54px;
   padding: 0 16px;
-
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: ${({ theme }) => theme.radius.md};
-
   background: ${({ theme }) => theme.colors.white};
-
   font-size: 15px;
   color: ${({ theme }) => theme.colors.textDark};
-
   transition: all 0.2s ease;
 
   &:focus {
@@ -343,18 +370,12 @@ const FileBox = styled.div`
 
 const FileLabel = styled.label`
   width: fit-content;
-
   padding: 12px 20px;
-
   border-radius: ${({ theme }) => theme.radius.full};
-
   background: ${({ theme }) => theme.gradients.hero};
-
   font-size: 14px;
   font-weight: 600;
-
   color: ${({ theme }) => theme.colors.textDark};
-
   cursor: pointer;
 `;
 
@@ -370,16 +391,11 @@ const FileText = styled.p`
 const SubmitButton = styled.button`
   width: 100%;
   height: 60px;
-
   border-radius: ${({ theme }) => theme.radius.full};
-
   background: ${({ theme }) => theme.colors.primary};
-
   color: ${({ theme }) => theme.colors.white};
-
   font-size: 17px;
   font-weight: 700;
-
   transition: all 0.2s ease;
 
   &:hover {
