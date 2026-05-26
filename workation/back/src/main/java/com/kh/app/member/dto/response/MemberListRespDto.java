@@ -18,6 +18,12 @@ public class MemberListRespDto {
     private String email;
     private String name;
 
+    private String phone;
+    private String resvCount;
+
+    private String businessNo;
+    private String transactions;
+
     private String banYn;
     private LocalDateTime deletedAt;
 

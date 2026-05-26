@@ -9,15 +9,10 @@ function useLogin() {
         try {
 
             const data = await login(vo);
-
             if (data.result === "success") {
-
                 localStorage.setItem("accessToken", data.token);
-
                 console.log("로그인 성공");
-
                 navi(`/`);
-
             }
 
         } catch (err) {

@@ -1,11 +1,17 @@
-// components/signup/SignupForm.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // 💡 useEffect 추가
+import { useSearchParams } from 'react-router-dom'; // 💡 쿼리 스트링 파싱용 추가
 import styled from 'styled-components';
 import useJoin from '../../hooks/useJoin';
 import AddressSearchModal from '../../../../home/components/AddressSearchModal';
+import api from '../../../../app/api/axios';
 
 function SignupForm() {
   const { fetchJoin, navi } = useJoin();
+  // 💡 주소창의 ?type=social&email=xxx 값을 읽어오기 위한 훅
+  const [searchParams] = useSearchParams();
+  const isSocial = searchParams.get('type') === 'social';
+  const socialEmail = searchParams.get('email') || '';
+
   const [vo, setVo] = useState({
     name: '',
     username: '',
@@ -20,6 +26,19 @@ function SignupForm() {
 
   const [passwordCheck, setPasswordCheck] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // 💡 소셜 로그인으로 강제 이동해온 경우, 이메일과 유저네임을 미리 주입해줍니다.
+  useEffect(() => {
+    if (isSocial && socialEmail) {
+      setVo((prev) => ({
+        ...prev,
+        username: socialEmail, // 백엔드 username 컬럼에 이메일 저장 규격 매칭
+        email: socialEmail,
+        password: 'SOCIAL_AUTHENTICATED_BY_NAVER', // 백엔드 필수 제약 조건 통과용 더미 값
+      }));
+      setPasswordCheck('SOCIAL_AUTHENTICATED_BY_NAVER');
+    }
+  }, [isSocial, socialEmail]);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -36,88 +55,114 @@ function SignupForm() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (vo.password !== passwordCheck) {
-      alert('비밀번호가 일치하지 않습니다.');
-      return;
+    if (isSocial) {
+      // 🟩 소셜 유저라면 비밀번호 검증을 패스하고 전용 API로 발송!
+      try {
+        await api.post('/guest/social-join', vo);
+        alert(
+          '회원가입이 완료되었습니다! 다시 한번 네이버 로그인을 진행해주세요.'
+        );
+        navi('/login');
+      } catch (error) {
+        console.error(error);
+        alert('소셜 회원정보 저장 중 오류가 발생했습니다.');
+      }
+    } else {
+      // ⬜️ 일반 유저 가입 로직 기존 유지
+      if (vo.password !== passwordCheck) {
+        alert('비밀번호가 일치하지 않습니다.');
+        return;
+      }
+      await fetchJoin(vo);
     }
-
-    await fetchJoin(vo);
   }
 
   return (
     <Card>
-      <Title>계정 만들기</Title>
-
-      <SubTitle>모래묻은 키보드에 오신 것을 환영합니다!</SubTitle>
+      <Title>{isSocial ? '프로필 완성하기' : '계정 만들기'}</Title>
+      <SubTitle>
+        {isSocial
+          ? '안전한 거래를 위해 추가 정보를 입력해주세요!'
+          : '모래묻은 키보드에 오신 것을 환영합니다!'}
+      </SubTitle>
 
       <Form onSubmit={handleSubmit}>
         <InputWrapper>
           <Label>이름</Label>
-
           <Input
             type="text"
             name="name"
             value={vo.name}
             placeholder="홍길동"
             onChange={handleChange}
+            required
           />
         </InputWrapper>
 
-        <InputWrapper>
-          <Label>아이디</Label>
+        {/* 🚨 소셜 가입 모드가 아닐 때만 아이디/비밀번호 칸을 보여줍니다! */}
+        {!isSocial && (
+          <>
+            <InputWrapper>
+              <Label>아이디</Label>
+              <Input
+                type="text"
+                name="username"
+                value={vo.username}
+                placeholder="ID입력"
+                onChange={handleChange}
+                required
+              />
+            </InputWrapper>
 
-          <Input
-            type="text"
-            name="username"
-            placeholder="ID입력"
-            onChange={handleChange}
-          />
-        </InputWrapper>
+            <InputWrapper>
+              <Label>비밀번호</Label>
+              <Input
+                type="password"
+                name="password"
+                placeholder="••••••••"
+                onChange={handleChange}
+                required
+              />
+            </InputWrapper>
 
-        <InputWrapper>
-          <Label>비밀번호</Label>
-
-          <Input
-            type="password"
-            name="password"
-            placeholder="••••••••"
-            onChange={handleChange}
-          />
-        </InputWrapper>
-
-        <InputWrapper>
-          <Label>비밀번호 확인</Label>
-
-          <Input
-            type="password"
-            name="password2"
-            placeholder="••••••••"
-            onChange={(e) => setPasswordCheck(e.target.value)}
-          />
-        </InputWrapper>
+            <InputWrapper>
+              <Label>비밀번호 확인</Label>
+              <Input
+                type="password"
+                name="password2"
+                placeholder="••••••••"
+                onChange={(e) => setPasswordCheck(e.target.value)}
+                required
+              />
+            </InputWrapper>
+          </>
+        )}
 
         <InputWrapper>
           <Label>연락처</Label>
-
           <Input
             type="number"
             name="phone"
+            value={vo.phone}
             placeholder="숫자만 입력"
             onChange={handleChange}
+            required
           />
         </InputWrapper>
 
         <InputWrapper>
           <Label>이메일</Label>
-
           <Input
             type="email"
             name="email"
+            value={vo.email}
             placeholder="example@naver.com"
             onChange={handleChange}
+            disabled={isSocial} // 소셜 계정은 이메일 수정 불가 처리
+            required
           />
         </InputWrapper>
-        {/* 주소 입력 컴포넌트 부분 */}
+
         <InputWrapper>
           <Label>주소</Label>
           <AddressRow>
@@ -127,6 +172,7 @@ function SignupForm() {
               value={vo.zonecode}
               placeholder="우편번호"
               readOnly
+              required
             />
             <AddressButton type="button" onClick={() => setIsModalOpen(true)}>
               주소 검색
@@ -140,6 +186,7 @@ function SignupForm() {
             placeholder="기본 주소"
             readOnly
             style={{ marginTop: '10px' }}
+            required
           />
           <Input
             type="text"
@@ -148,23 +195,24 @@ function SignupForm() {
             placeholder="상세 주소를 입력하세요"
             onChange={handleChange}
             style={{ marginTop: '10px' }}
+            required
           />
         </InputWrapper>
 
-        {/* 💡 깔끔하게 컴포넌트 한 줄로 호출 */}
         {isModalOpen && (
           <AddressSearchModal
             onClose={() => setIsModalOpen(false)}
             onSelect={handleAddressSelect}
           />
         )}
+
         <InputWrapper>
           <Label>선호 지역</Label>
-
           <Select
             name="preferredArea"
             value={vo.preferredArea}
             onChange={handleChange}
+            required
           >
             <option value="">지역 선택</option>
             <option value="SEOUL">서울</option>
@@ -182,32 +230,37 @@ function SignupForm() {
 
         <AgreeArea>
           <input type="checkbox" required />
-
           <span>이용약관 및 개인정보처리방침에 동의합니다.</span>
         </AgreeArea>
 
-        <SignupButton type="submit">가입하기</SignupButton>
+        <SignupButton type="submit">
+          {isSocial ? '연동 완료하기' : '가입하기'}
+        </SignupButton>
       </Form>
 
-      <LoginText>
-        이미 계정이 있으신가요?
-        <LoginLink>로그인</LoginLink>
-      </LoginText>
-
-      <Divider>
-        <span>간편 가입</span>
-      </Divider>
-
-      <SocialArea>
-        <SocialButton>🟨</SocialButton>
-
-        <SocialButton>🔵</SocialButton>
-      </SocialArea>
+      {/* 소셜 가입자에게 하단 간편로그인 유도는 불필요하므로 숨김 */}
+      {!isSocial && (
+        <>
+          <LoginText>
+            이미 계정이 있으신가요?
+            <LoginLink onClick={() => navi('/login')}>로그인</LoginLink>
+          </LoginText>
+          <Divider>
+            <span>간편 가입</span>
+          </Divider>
+          <SocialArea>
+            <SocialButton type="button">🟨</SocialButton>
+            <SocialButton type="button">🔵</SocialButton>
+          </SocialArea>
+        </>
+      )}
     </Card>
   );
 }
 
 export default SignupForm;
+
+// 이하 스타일 코드는 기존과 완벽히 동일하므로 생략합니다.
 
 const Card = styled.section`
   width: 100%;
