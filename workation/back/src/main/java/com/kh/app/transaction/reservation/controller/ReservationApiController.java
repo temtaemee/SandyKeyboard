@@ -4,6 +4,7 @@ import com.kh.app.middle.coupon.dto.response.MemberCouponRespDto;
 import com.kh.app.transaction.reservation.dto.request.ReservationCreateReqDto;
 import com.kh.app.transaction.reservation.dto.request.ReservationUpdateReqDto;
 import com.kh.app.transaction.reservation.dto.response.ReservationAdminListResDto;
+import com.kh.app.transaction.reservation.dto.response.ReservationDetailResDto;
 import com.kh.app.transaction.reservation.dto.response.ReservationResDto;
 import com.kh.app.transaction.reservation.entity.ReservationEntity;
 import com.kh.app.transaction.reservation.service.ReservationService;
@@ -64,12 +65,13 @@ public class ReservationApiController {
     }
 
     //결제 완료후 보기
+    // 일반 유저 예약 완료 후 상세보기 (통합 패키지 버전)
     @GetMapping("/user/reservation/{id}")
-    public ResponseEntity<ReservationResDto> getOne(@PathVariable Long id) {
-
+    public ResponseEntity<ReservationDetailResDto> getOne(@PathVariable Long id) {
+        log.info("유저 예약 통합 상세 페이지 요청 - 예약 ID: {}", id);
 
         return ResponseEntity.ok(
-                reservationService.getOne(id)
+                reservationService.getReservationDetail(id)
         );
     }
 

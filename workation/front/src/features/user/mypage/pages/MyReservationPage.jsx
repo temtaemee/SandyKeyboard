@@ -1,112 +1,187 @@
+import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { MapPin, CalendarDays, Users, ChevronDown } from 'lucide-react';
 import MyPageSidebar from '../components/MyPageSidebar';
+import { getMyReservations } from '../../reservation/api/reservationApi';
+import { useNavigate } from 'react-router-dom';
 
 function MyReservationPage() {
-  const reservationList = [
-    {
-      id: 1,
-      title: '부산 씨사이드 허브',
-      location: '부산 해운대',
-      room: '오션뷰 스튜디오',
-      date: '10.24 - 10.31',
-      people: '성인 2명',
-      price: '₩1,240,000',
-      status: '예약 완료',
-      image:
-        'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1200',
-    },
-    {
-      id: 2,
-      title: '제주 파인 포레스트 리트릿',
-      location: '제주 서귀포',
-      room: '숲속 1동',
-      date: '08.12 - 08.16',
-      people: '성인 1명',
-      price: '₩890,000',
-      status: '이용 예정',
-      image:
-        'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?q=80&w=1200',
-    },
-    {
-      id: 3,
-      title: '강릉 웨이브 포트',
-      location: '강릉 경포대',
-      room: '복층 오션뷰',
-      date: '12.15 - 12.22',
-      people: '성인 4명',
-      price: '₩2,100,000',
-      status: '예약 완료',
-      image:
-        'https://images.unsplash.com/photo-1494526585095-c41746248156?q=80&w=1200',
-    },
-  ];
+  // 🟩 상태 관리 (State)
+  const [reservationList, setReservationList] = useState([]);
+  const [activeTab, setActiveTab] = useState('전체 예약'); // 현재 활성화된 탭 상태
+  const [loading, setLoading] = useState(true);
+  const navi = useNavigate();
+
+  // 🟩 1. 백엔드 API로부터 로그인된 유저의 예약 내역 가져오기
+  useEffect(() => {
+    // 세션스토리지든 로컬스토리지든 토큰이 있는 상태이므로 인터셉터가 헤더에 자동으로 실어 보냅니다.
+    getMyReservations()
+      .then((response) => {
+        const targetData = response.data ? response.data : response;
+        setReservationList(targetData);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error('예약 내역 로딩 실패:', error);
+        setLoading(false);
+      });
+  }, []);
+
+  // 🟩 2. 데이터 포맷터 함수들 (백엔드 규격을 화면 규격으로 변환)
+
+  // 날짜 변환 (2026-05-26 -> 05.26)
+  const formatDateRange = (checkin, checkout) => {
+    if (!checkin || !checkout) return '';
+    const start = checkin.split('-'); // ['2026', '05', '26']
+    const end = checkout.split('-');
+    return `${start[1]}.${start[2]} - ${end[1]}.${end[2]}`;
+  };
+
+  // 가격 변환 (1240000 -> ₩1,240,000)
+  const formatPrice = (price) => {
+    if (price === undefined || price === null) return '₩0';
+    return `₩${price.toLocaleString()}`;
+  };
+
+  // 🟩 3. 탭 클릭 시 화면에 필터링해서 보여줄 리스트 추출 로직
+  const getFilteredList = () => {
+    if (activeTab === '전체 예약') return reservationList;
+
+    return reservationList.filter((item) => {
+      // 1. 확정된 예약 탭: 결제 완료(PAYMENT_COMPLETED) 또는 판매자 승인으로 확정된 상태(RESERVED)
+      if (activeTab === '확정된 예약') {
+        return (
+          item.status === 'PAYMENT_COMPLETED' || item.status === 'RESERVED'
+        );
+      }
+
+      // 2. 이용 완료 탭: 숙소 이용이 완전히 끝난 상태(COMPLETED)
+      if (activeTab === '이용 완료') {
+        return item.status === 'COMPLETED';
+      }
+
+      // 3. 취소 내역 탭: 유저 취소(USER_CANCELLED), 판매자 취소(SELLER_CANCELLED), 환불 완료(REFUND_COMPLETED) 통합
+      if (activeTab === '취소 내역') {
+        return (
+          item.status === 'USER_CANCELLED' ||
+          item.status === 'SELLER_CANCELLED' ||
+          item.status === 'REFUND_COMPLETED'
+        );
+      }
+
+      return true;
+    });
+  };
+
+  const filteredReservations = getFilteredList();
+
+  if (loading) {
+    return (
+      <Container>
+        <MyPageSidebar />
+        <Main
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <h3>예약 정보를 불러오는 중입니다... 🦀</h3>
+        </Main>
+      </Container>
+    );
+  }
 
   return (
     <Container>
       <MyPageSidebar />
       <Main>
         <PageTitle>나의 예약 내역</PageTitle>
-
         <PageDesc>
           다가올 워케이션을 관리하고 지난 추억을 확인해 보세요.
         </PageDesc>
 
+        {/* 🟩 4. 탭 구역 동적 렌더링 및 활성화 이벤트 등록 */}
         <TabArea>
-          <TabButton active>전체 예약</TabButton>
-          <TabButton>확정된 예약</TabButton>
-          <TabButton>이용 완료</TabButton>
-          <TabButton>취소 내역</TabButton>
+          {['전체 예약', '확정된 예약', '이용 완료', '취소 내역'].map((tab) => (
+            <TabButton
+              key={tab}
+              $active={activeTab === tab}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab}
+            </TabButton>
+          ))}
         </TabArea>
 
+        {/* 🟩 5. 카드 리스트 데이터 바인딩 */}
         <CardList>
-          {reservationList.map((item) => (
-            <ReservationCard key={item.id}>
-              <Thumbnail src={item.image} alt="" />
+          {filteredReservations.length === 0 ? (
+            <EmptyBox>해당하는 예약 내역이 존재하지 않습니다.</EmptyBox>
+          ) : (
+            filteredReservations.map((item) => (
+              <ReservationCard key={item.id}>
+                {/* 💡 숙소 썸네일 이미지는 일단 Unsplash 플레이스홀더를 유지하거나, 백엔드 확장 시 item.stayImage 등으로 갈아끼우시면 됩니다! */}
+                <Thumbnail
+                  src="https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1200"
+                  alt=""
+                />
 
-              <Content>
-                <TopRow>
-                  <div>
-                    <Title>{item.title}</Title>
+                <Content>
+                  <TopRow>
+                    <div>
+                      {/* 백엔드 DTO: stayName 매핑 */}
+                      <Title>{item.stayName || '등록되지 않은 숙소'}</Title>
 
-                    <Location>
-                      <MapPin size={14} />
-                      {item.location}
-                    </Location>
-                  </div>
+                      {/* 💡 DTO에 location이나 address가 당장 없으니, 예약자 이름이나 기본 텍스트로 보완 또는 주소 필드 추가 요청 */}
+                      <Location>
+                        <MapPin size={14} />
+                        워케이션 파트너 스페이스
+                      </Location>
+                    </div>
 
-                  <PriceArea>
-                    <PriceLabel>결제 금액</PriceLabel>
-                    <Price>{item.price}</Price>
-                  </PriceArea>
-                </TopRow>
+                    <PriceArea>
+                      <PriceLabel>결제 금액</PriceLabel>
+                      {/* 백엔드 DTO: totalPrice 포맷팅 매핑 */}
+                      <Price>{formatPrice(item.totalPrice)}</Price>
+                    </PriceArea>
+                  </TopRow>
 
-                <InfoRow>
-                  <InfoItem>
-                    <CalendarDays size={14} />
-                    {item.date}
-                  </InfoItem>
+                  <InfoRow>
+                    <InfoItem>
+                      <CalendarDays size={14} />
+                      {/* 백엔드 DTO: checkinDate, checkoutDate 포맷팅 매핑 */}
+                      {formatDateRange(item.checkinDate, item.checkoutDate)}
+                    </InfoItem>
 
-                  <Divider />
+                    <Divider />
 
-                  <InfoItem>
-                    <Users size={14} />
-                    {item.people}
-                  </InfoItem>
+                    <InfoItem>
+                      <Users size={14} />
+                      {/* 백엔드 DTO: guestCount 매핑 */}
+                      성인 {item.guestCount || 1}명
+                    </InfoItem>
 
-                  <Divider />
+                    <Divider />
 
-                  <RoomText>{item.room}</RoomText>
-                </InfoRow>
+                    {/* 💡 룸 명칭은 현재 DTO에 없으므로 예약 대표자명(primaryGuestName)을 보여주거나 텍스트로 대체 */}
+                    <RoomText>예약자: {item.primaryGuestName}</RoomText>
+                  </InfoRow>
 
-                <BottomRow>
-                  <StatusBadge>{item.status}</StatusBadge>
+                  <BottomRow>
+                    {/* 백엔드 DTO: statusLabel(한글 라벨명) 바인딩 */}
+                    <StatusBadge>{item.statusLabel || '상태 없음'}</StatusBadge>
 
-                  <DetailButton>상세</DetailButton>
-                </BottomRow>
-              </Content>
-            </ReservationCard>
-          ))}
+                    <DetailButton
+                      onClick={() => navi(`/mypage/reservation/${item.id}`)}
+                    >
+                      상세
+                    </DetailButton>
+                  </BottomRow>
+                </Content>
+              </ReservationCard>
+            ))
+          )}
         </CardList>
 
         <MoreButton>
@@ -121,6 +196,7 @@ function MyReservationPage() {
 export default MyReservationPage;
 
 /* ================= styled ================= */
+// 🚨 아까 콘솔창에서 리액트가 툴툴거렸던 속성 에러 방지를 위해 active 앞에 $를 붙여 Transient Props로 교체했습니다!
 
 const Main = styled.main`
   flex: 1;
@@ -153,16 +229,16 @@ const TabArea = styled.div`
 
 const TabButton = styled.button`
   border: none;
-  background-color: ${({ active }) => (active ? '#3f6971' : 'white')};
-  color: ${({ active }) => (active ? 'white' : '#6b7280')};
+  background-color: ${({ $active }) => ($active ? '#3f6971' : 'white')};
+  color: ${({ $active }) => ($active ? 'white' : '#6b7280')};
 
   padding: 10px 18px;
   border-radius: 999px;
   font-size: 13px;
   cursor: pointer;
 
-  box-shadow: ${({ active }) =>
-    active ? 'none' : '0 1px 3px rgba(0,0,0,0.05)'};
+  box-shadow: ${({ $active }) =>
+    $active ? 'none' : '0 1px 3px rgba(0,0,0,0.05)'};
 `;
 
 const CardList = styled.div`
@@ -291,4 +367,14 @@ const MoreButton = styled.button`
   align-items: center;
   gap: 6px;
   cursor: pointer;
+`;
+
+const EmptyBox = styled.div`
+  background-color: white;
+  border-radius: 20px;
+  padding: 50px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 15px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 `;

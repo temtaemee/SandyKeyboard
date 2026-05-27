@@ -7,11 +7,20 @@ import com.kh.app.middle.coupon.entity.CouponEntity;
 import com.kh.app.middle.coupon.entity.MemberCouponEntity;
 import com.kh.app.middle.coupon.repository.CouponRepository; // 💡 쿠폰 레포지토리 주입 추가
 import com.kh.app.middle.coupon.repository.MemberCouponRepository;
+import com.kh.app.product.space.dto.response.SpaceResDto;
+import com.kh.app.product.stay.dto.response.StayResDto;
 import com.kh.app.product.stay.entity.StayEntity;               // 💡 숙소 엔티티 추가
+import com.kh.app.product.stay.entity.StayOption;
+import com.kh.app.product.stay.entity.StayPictureEntity;
+import com.kh.app.product.stay.repository.StayOptionRepository;
+import com.kh.app.product.stay.repository.StayPictureRepository;
 import com.kh.app.product.stay.repository.StayRepository;
+import com.kh.app.transaction.payment.entity.PaymentEntity;
+import com.kh.app.transaction.payment.repository.PaymentRepository;
 import com.kh.app.transaction.reservation.dto.request.ReservationCreateReqDto;
 import com.kh.app.transaction.reservation.dto.request.ReservationUpdateReqDto;
 import com.kh.app.transaction.reservation.dto.response.ReservationAdminListResDto;
+import com.kh.app.transaction.reservation.dto.response.ReservationDetailResDto;
 import com.kh.app.transaction.reservation.dto.response.ReservationResDto;
 import com.kh.app.transaction.reservation.entity.ReservationEntity;
 import com.kh.app.transaction.reservation.entity.ReservationStatus;
@@ -46,6 +55,10 @@ public class ReservationService {
     private final S3Service s3Service;
     private final StayRepository stayRepository;
     private final MemberCouponRepository memberCouponRepository;
+    private final PaymentRepository paymentRepository;
+    private final StayPictureRepository stayPictureRepository;
+    private final StayOptionRepository stayOptionRepository;
+
 
     /**
      * 💡 [수정] 숙소 및 쿠폰 연동 완료된 예약 생성 로직
@@ -151,15 +164,44 @@ public class ReservationService {
     /**
      * 💡 예약 단건 상세 조회 (PENDING 상태 접근 차단)
      */
-    public ReservationResDto getOne(Long id) {
-        ReservationEntity entity = reservationRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("NOT FOUND"));
+    public ReservationDetailResDto getReservationDetail(Long id) {
 
-        if (entity.getStatus() == ReservationStatus.PENDING) {
-            throw new IllegalStateException("결제가 완료되지 않은 예약입니다.");
+        // 1. 예약 데이터 기본 조회
+        ReservationEntity reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("해당 예약 정보가 존재하지 않습니다."));
+
+        if (reservation.getStatus() == ReservationStatus.PENDING) {
+            throw new IllegalStateException("결제가 완료되지 않은 예약 내역입니다.");
         }
 
-        return ReservationResDto.from(entity);
+        // 2. 예약 연동 숙소 엔티티 추출
+        StayEntity stayEntity = reservation.getStay();
+        if (stayEntity == null) {
+            throw new EntityNotFoundException("연결된 숙소 상품 정보가 없습니다.");
+        }
+        com.kh.app.product.space.entity.SpaceEntity spaceEntity = stayEntity.getSpace();
+
+        List<com.kh.app.product.stay.entity.StayOptionEntity> optionEntities = stayOptionRepository.findByStay(stayEntity);
+        List<com.kh.app.product.stay.entity.StayPictureEntity> pictures = stayPictureRepository.findByStayOrderBySortOrder(stayEntity);
+
+        List<com.kh.app.product.stay.entity.StayOption> options = optionEntities.stream()
+                .map(com.kh.app.product.stay.entity.StayOptionEntity::getStayOption)
+                .toList();
+
+        StayResDto stayResDto = StayResDto.from(stayEntity, options, pictures);
+
+        // 4. Space 전용 정보 바인딩
+        String spaceThumbnail = (pictures != null && !pictures.isEmpty()) ? pictures.get(0).getFilePath() : null;
+        SpaceResDto spaceResDto = SpaceResDto.from(spaceEntity, List.of(stayResDto), spaceThumbnail);
+
+        // 5. 결제 원장 연동 조회
+        PaymentEntity paymentEntity = paymentRepository.findByReservation(reservation).orElse(null);
+
+        // 💡 추가: 5-2. 예약 첨부파일 데이터 연동 조회
+        List<ReserveFileEntity> reserveFiles = reserveFileRepository.findByReservationEntity(reservation);
+
+        // 6. 최종 번들링 리턴 (reserveFiles와 s3Service 파라미터 추가)
+        return ReservationDetailResDto.of(reservation, spaceResDto, stayResDto, paymentEntity, reserveFiles, s3Service);
     }
 
     /**

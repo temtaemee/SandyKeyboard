@@ -14,13 +14,14 @@ public class NoticeCreateReqDto {
     private Long memberId;
     private String title;
     private String content;
+    private String pinYn = "N"; // 공지 고정 여부 (기본값: N)
 
     public NoticeEntity toEntity(MemberEntity member) {
         return NoticeEntity.builder()
                 .member(member)
                 .title(title)
                 .content(content)
+                .pinYn(pinYn != null ? pinYn : "N")
                 .build();
     }
 }
-

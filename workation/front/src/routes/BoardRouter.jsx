@@ -1,20 +1,20 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 
 // 고객지원
-import SupportHomePage from '../features/user/board/support/SupportHomePage';
-import NoticePage from '../features/user/board/support/NoticePage';
-import NoticeDetailPage from '../features/user/board/support/NoticeDetailPage';
-import NoticeWritePage from '../features/user/board/support/NoticeWritePage';
-import FaqPage from '../features/user/board/support/FaqPage';
+import SupportHomePage from '../features/user/board/support/pages/SupportHomePage';
+import NoticePage from '../features/user/board/support/pages/NoticePage';
+import NoticeDetailPage from '../features/user/board/support/pages/NoticeDetailPage';
+import NoticeWritePage from '../features/user/board/support/pages/NoticeWritePage';
+import FaqPage from '../features/user/board/support/pages/FaqPage';
 
 // 참여후기
-import ReviewHomePage from '../features/user/board/reviewboard/ReviewHomePage';
-import ReviewListPage from '../features/user/board/reviewboard/ReviewListPage';
-import ReviewWritePage from '../features/user/board/reviewboard/ReviewWritePage';
+import ReviewHomePage from '../features/user/board/review/pages/ReviewHomePage';
+import ReviewListPage from '../features/user/board/review/pages/ReviewListPage';
+import ReviewWritePage from '../features/user/board/review/pages/ReviewWritePage';
 
 // 이벤트
-import EventPage from '../features/user/board/event/EventPage';
-import ReviewDetailPage from '../features/user/board/reviewboard/ReviewDetailPage';
+import EventPage from '../features/user/board/event/pages/EventPage';
+import ReviewDetailPage from '../features/user/board/review/pages/ReviewDetailPage';
 
 function BoardRouter() {
   return (

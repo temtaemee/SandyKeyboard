@@ -1,5 +1,5 @@
 // src/features/reservation/api/reservationApi.js
-import api from './../../../../app/api/axios'; // 💡 제공해주신 공통 인스턴스 임포트
+import api from './../../../../app/api/axios'; // 공통 인스턴스 임포트
 
 // =========================================================================
 // 1. 일반 유저(User) 관련 API
@@ -15,6 +15,14 @@ export async function createReservation(stayId, formData) {
       'Content-Type': 'multipart/form-data',
     },
   });
+}
+
+/**
+ * 유저 - 본인 보유 쿠폰 조회 (팀원 API 연동)
+ * 💡 [복구 완료] 이 부분이 누락되어 있어 ReservationInsertPage에서 에러가 터졌습니다!
+ */
+export async function getAvailableCoupons() {
+  return await api.get('/user/memberCoupon?pno=0');
 }
 
 /**
@@ -40,13 +48,6 @@ export async function updateReservation(id, formData) {
       'Content-Type': 'multipart/form-data',
     },
   });
-}
-
-/**
- * 유저 - 본인 보유 쿠폰 조회 (팀원 API 연동)
- */
-export async function getAvailableCoupons() {
-  return await api.get('/user/memberCoupon?pno=0');
 }
 
 // =========================================================================
