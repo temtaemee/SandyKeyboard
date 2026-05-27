@@ -23,6 +23,13 @@ public class S3Service {
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
 
+    @Value("${cloud.aws.s3.base-url}")
+    private String baseUrl;
+
+    public String getFileUrl(String s3key){
+        return baseUrl+"/"+s3key;
+    }
+
     public String upload(MultipartFile file , String folder) throws IOException {
 
         String ext = extractExtension(file.getOriginalFilename());
