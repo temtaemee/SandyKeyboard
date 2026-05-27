@@ -7,7 +7,6 @@ import com.kh.app.transaction.reservation.entity.ReservationEntity;
 import com.kh.app.transaction.reservation.entity.ReserveFileEntity;
 import lombok.Builder;
 import lombok.Getter;
-import org.apache.tomcat.jni.FileInfo;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

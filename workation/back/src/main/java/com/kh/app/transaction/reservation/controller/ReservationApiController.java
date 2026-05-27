@@ -105,12 +105,12 @@ public class ReservationApiController {
         return ResponseEntity.ok(reservationPage);
     }
 
-    @Operation(summary = "관리자 예약 단건 상세 조회", description = "관리자가 특정 예약의 상세 내역을 조회합니다. (결제 대기 상태 포함)")
+    @Operation(summary = "관리자 예약 단건 상세 조회", description = "관리자가 특정 예약의 상세 내역을 조회합니다. (첨부파일 및 숙소 정보 포함)")
     @GetMapping("/admin/reservation/{id}")
-    public ResponseEntity<ReservationAdminListResDto> getAdminOne(@PathVariable Long id) {
+    public ResponseEntity<ReservationDetailResDto> getAdminOne(@PathVariable Long id) {
+        log.info("관리자 예약 상세 페이지 요청 - 예약 ID: {}", id);
 
-        ReservationAdminListResDto adminDetail = reservationService.getAdminOne(id);
-
+        ReservationDetailResDto adminDetail = reservationService.getAdminReservationDetail(id);
         return ResponseEntity.ok(adminDetail);
     }
 
@@ -135,16 +135,15 @@ public class ReservationApiController {
     }
 
     // 판매자 전용 예약 단건 상세 조회
-    @Operation(summary = "판매자 예약 단건 상세 조회", description = "판매자가 본인 숙소에 들어온 특정 예약의 상세 내역을 조회합니다. (소유권 검증 포함)")
+    @Operation(summary = "판매자 예약 단건 상세 조회", description = "판매자가 본인 숙소에 들어온 특정 예약의 상세 내역을 조회합니다. (소유권 검증 및 첨부파일 포함)")
     @GetMapping("/seller/reservation/detail/{id}")
-    public ResponseEntity<ReservationAdminListResDto> getSellerOne(
+    public ResponseEntity<ReservationDetailResDto> getSellerOne(
             @PathVariable Long id,
             @AuthenticationPrincipal(expression = "username") String sellerUsername
     ) {
         log.info("판매자 예약 상세 조회 요청 - 판매자: {}, 예약 ID: {}", sellerUsername, id);
 
-        ReservationAdminListResDto sellerDetail = reservationService.getSellerOne(id, sellerUsername);
-
+        ReservationDetailResDto sellerDetail = reservationService.getSellerReservationDetail(id, sellerUsername);
         return ResponseEntity.ok(sellerDetail);
     }
 

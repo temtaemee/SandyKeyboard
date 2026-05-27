@@ -260,12 +260,14 @@ public class ReservationService {
     /**
      * 💡 관리자 전용 예약 단건 상세 조회 (PENDING 상태도 조회 가능)
      */
-    public ReservationAdminListResDto getAdminOne(Long id) {
-        ReservationEntity entity = reservationRepository.findAdminOneById(id)
-                .orElseThrow(() -> new EntityNotFoundException("해당 예약 내역이 존재하지 않습니다. (ID: " + id + ")"));
+    public ReservationDetailResDto getAdminReservationDetail(Long id) {
+        // 1. 예약 데이터 기본 조회 (관리자 전용 레포지토리 메서드 활용 가능)
+        ReservationEntity reservation = reservationRepository.findAdminOneById(id)
+                .orElseThrow(() -> new EntityNotFoundException("해당 예약 정보가 존재하지 않습니다. (ID: " + id + ")"));
 
-        // 관리자 전용 DTO 변환 (내부에 username, 결제 정보, 환불 계좌 등이 모두 포함되어 있음)
-        return ReservationAdminListResDto.from(entity);
+        // 💡 관리자는 PENDING(결제대기) 상태여도 상세 정보를 볼 수 있어야 하므로 유저와 달리 상태 체크 통과
+
+        return bundleReservationDetail(reservation);
     }
 
     /**
@@ -284,18 +286,48 @@ public class ReservationService {
     /**
      * 💡 판매자(Seller) 전용 예약 단건 상세 조회 (소유권 검증 포함)
      */
-    public ReservationAdminListResDto getSellerOne(Long id, String sellerUsername) {
-        // 1. 단건 조회 (연관 엔티티 페치 조인 완료 상태)
-        ReservationEntity entity = reservationRepository.findSellerOneById(id)
+    public ReservationDetailResDto getSellerReservationDetail(Long id, String sellerUsername) {
+        // 1. 단건 조회
+        ReservationEntity reservation = reservationRepository.findSellerOneById(id)
                 .orElseThrow(() -> new EntityNotFoundException("해당 예약 내역이 존재하지 않습니다. (ID: " + id + ")"));
 
-        // 2. 💡 [보안 핵심] 해당 예약이 포함된 공간의 판매자 아이디와 로그인한 판매자 아이디 대조
-        String realSellerName = entity.getStay().getSpace().getSeller().getUsername();
+        // 2. 💡 [보안 검증] 해당 예약이 포함된 공간의 판매자 아이디와 로그인한 판매자 아이디 대조
+        String realSellerName = reservation.getStay().getSpace().getSeller().getUsername();
         if (!realSellerName.equals(sellerUsername)) {
             throw new IllegalArgumentException("해당 예약 내역에 대한 접근 권한이 없습니다.");
         }
 
-        // 3. DTO 변환 후 리턴
-        return ReservationAdminListResDto.from(entity);
+        return bundleReservationDetail(reservation);
+    }
+    private ReservationDetailResDto bundleReservationDetail(ReservationEntity reservation) {
+        // 1. 예약 연동 숙소 엔티티 추출 및 검증
+        StayEntity stayEntity = reservation.getStay();
+        if (stayEntity == null) {
+            throw new EntityNotFoundException("연결된 숙소 상품 정보가 없습니다.");
+        }
+        com.kh.app.product.space.entity.SpaceEntity spaceEntity = stayEntity.getSpace();
+
+        // 2. 숙소 옵션 및 사진 정보 로드
+        List<com.kh.app.product.stay.entity.StayOptionEntity> optionEntities = stayOptionRepository.findByStay(stayEntity);
+        List<com.kh.app.product.stay.entity.StayPictureEntity> pictures = stayPictureRepository.findByStayOrderBySortOrder(stayEntity);
+
+        List<com.kh.app.product.stay.entity.StayOption> options = optionEntities.stream()
+                .map(com.kh.app.product.stay.entity.StayOptionEntity::getStayOption)
+                .toList();
+
+        StayResDto stayResDto = StayResDto.from(stayEntity, options, pictures);
+
+        // 3. Space 정보 및 섬네일 바인딩
+        String spaceThumbnail = (pictures != null && !pictures.isEmpty()) ? pictures.get(0).getFilePath() : null;
+        SpaceResDto spaceResDto = SpaceResDto.from(spaceEntity, List.of(stayResDto), spaceThumbnail);
+
+        // 4. 결제 원장 조회
+        PaymentEntity paymentEntity = paymentRepository.findByReservation(reservation).orElse(null);
+
+        // 5. 예약 첨부파일 조회
+        List<ReserveFileEntity> reserveFiles = reserveFileRepository.findByReservationEntity(reservation);
+
+        // 6. 작성하신 팩토리 메서드로 통합 조립 후 리턴
+        return ReservationDetailResDto.of(reservation, spaceResDto, stayResDto, paymentEntity, reserveFiles, s3Service);
     }
 }
