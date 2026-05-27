@@ -8,6 +8,6 @@ import lombok.ToString;
 @Setter
 @ToString
 public class SocialLoginReqDto {
-    private String code;  // 네이버 인가 코드
-    private String state; // 네이버 상태 토큰
+    private String code;  // 인가 코드
+    private String state; // 상태 토큰
 }

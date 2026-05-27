@@ -9,6 +9,7 @@ import {
   ShieldAlert,
   CheckCircle,
   CreditCard,
+  FileDown, // 신청서 다운로드 아이콘 추가
 } from 'lucide-react';
 import MyPageSidebar from '../components/MyPageSidebar';
 // 팀원 API 모듈 임포트
@@ -31,553 +32,676 @@ function MyReservationDetailPage() {
     primaryGuestName: '',
     primaryGuestPhone: '',
     primaryGuestEmail: '',
-    refundBankName: '',
-    refundAccountNumber: '',
-    refundAccountHolder: '',
   });
 
   // 🟩 1. 데이터 로드 (단건 상세 조회)
   useEffect(() => {
     getReservationOne(id)
       .then((response) => {
-        const data = response.data ? response.data : response;
+        // 백엔드 응답 구조: response.data 혹은 response 자체가 DTO인 경우 확인 필요
+        const data = response.data || response;
         setReservation(data);
 
-        // 수정 폼의 초기값 세팅 (엔티티 필드 스펙 기준)
+        // 수정 폼 기본값 초기화
         setFormData({
           primaryGuestName: data.primaryGuestName || '',
           primaryGuestPhone: data.primaryGuestPhone || '',
           primaryGuestEmail: data.primaryGuestEmail || '',
-          refundBankName: data.refundBankName || '',
-          refundAccountNumber: data.refundAccountNumber || '',
-          refundAccountHolder: data.refundAccountHolder || '',
         });
         setLoading(false);
       })
       .catch((error) => {
-        console.error('예약 상세 정보 로드 실패:', error);
-        alert('존재하지 않거나 접근 권한이 없는 예약입니다.');
-        navigate('/mypage/reservation');
+        console.error('예약 상세 조회 실패:', error);
+        alert('예약 정보를 불러오는데 실패했습니다.');
         setLoading(false);
       });
-  }, [id, navigate]);
+  }, [id]);
 
-  // 🟩 2. 핸들러 함수들
+  // 🟩 2. 입력값 변경 핸들러
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  // 정보 수정 요청 (PUT)
-  const handleUpdateSubmit = (e) => {
-    e.preventDefault();
-
-    // 엔티티 updateReqDto 제약조건 검증 (전화번호 11자리 등 간단 가드)
-    if (formData.primaryGuestPhone.length > 11) {
-      alert('전화번호는 하이픈(-) 없이 최대 11자리로 입력해 주세요.');
-      return;
+  // 🟩 3. 수정 취소
+  const handleCancel = () => {
+    if (reservation) {
+      setFormData({
+        primaryGuestName: reservation.primaryGuestName || '',
+        primaryGuestPhone: reservation.primaryGuestPhone || '',
+        primaryGuestEmail: reservation.primaryGuestEmail || '',
+      });
     }
+    setIsEdit(false);
+  };
 
-    // 파일 첨부가 포함될 수 있는 구조이므로 가볍게 FormData 객체로 래핑하여 전송
-    const sendData = new FormData();
-    sendData.append('primaryGuestName', formData.primaryGuestName);
-    sendData.append('primaryGuestPhone', formData.primaryGuestPhone);
-    sendData.append('primaryGuestEmail', formData.primaryGuestEmail);
-    sendData.append('refundBankName', formData.refundBankName);
-    sendData.append('refundAccountNumber', formData.refundAccountNumber);
-    sendData.append('refundAccountHolder', formData.refundAccountHolder);
+  // 🟩 4. 수정 완료 요청 (저장)
+  const handleSave = () => {
+    if (!formData.primaryGuestName.trim())
+      return alert('예약자 이름을 입력해주세요.');
+    if (!formData.primaryGuestPhone.trim())
+      return alert('연락처를 입력해주세요.');
+    if (!formData.primaryGuestEmail.trim())
+      return alert('이메일을 입력해주세요.');
 
-    updateReservation(id, sendData)
+    // 기존 데이터에 수정 폼 값을 덮어씌워 전송 데이터 조립
+    const updateData = {
+      ...reservation,
+      ...formData,
+    };
+
+    updateReservation(id, updateData)
       .then(() => {
         alert('예약 정보가 성공적으로 수정되었습니다.');
-        // 최신 수정을 반영하기 위해 화면 강제 갱신 및 조회 모드 전환
-        setReservation((prev) => ({ ...prev, ...formData }));
+        setReservation(updateData);
         setIsEdit(false);
       })
       .catch((error) => {
-        console.error('예약 정보 수정 중 오류 발생:', error);
-        alert(
-          '정보 수정에 실패했습니다. (결제 완료 상태에서만 수정이 가능합니다.)'
-        );
+        console.error('예약 수정 실패:', error);
+        alert('예약 정보 수정에 실패했습니다.');
       });
   };
 
-  // 🟩 3. 포맷터 공통 로직
-  const formatPrice = (price) => (price ? `₩${price.toLocaleString()}` : '₩0');
-
   if (loading) {
     return (
-      <Container>
+      <LayoutContainer>
         <MyPageSidebar />
-        <Main
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <h3>예약 상세 정보를 분석 중입니다... 🔍</h3>
-        </Main>
-      </Container>
+        <MainContent style={{ justifyContent: 'center', alignItems: 'center' }}>
+          <LoadingText>예약 상세 정보를 불러오는 중입니다...</LoadingText>
+        </MainContent>
+      </LayoutContainer>
     );
   }
 
-  // 엔티티의 수정 가능 상태 분기 가드 조율
-  // (PAYMENT_COMPLETED 상태일 때만 수정을 허용하는 엔티티 로직 반영)
-  const isEditableStatus = reservation.status === 'PAYMENT_COMPLETED';
+  if (!reservation) {
+    return (
+      <LayoutContainer>
+        <MyPageSidebar />
+        <MainContent style={{ justifyContent: 'center', alignItems: 'center' }}>
+          <LoadingText>
+            존재하지 않거나 불러올 수 없는 예약 정보입니다.
+          </LoadingText>
+        </MainContent>
+      </LayoutContainer>
+    );
+  }
+
+  // 데이터 접근 편의를 위한 비구조화 할당 (안전한 옵셔널 체이닝 기본 적용)
+  const stay = reservation.stay || {};
+  const space = reservation.space || {};
+  const payment = reservation.payment || {};
 
   return (
-    <Container>
+    <LayoutContainer>
       <MyPageSidebar />
-      <Main>
-        {/* 상단 네비게이션 바 */}
-        <BackButton onClick={() => navigate('/mypage/reservation')}>
-          <ArrowLeft size={16} /> 예약 목록으로 돌아가기
-        </BackButton>
 
-        <HeaderRow>
-          <div>
-            <PageTitle>예약 상세 내역</PageTitle>
-            <OrderNo>
-              주문번호: {reservation.orderId || `RES-${reservation.id}`}
-            </OrderNo>
-          </div>
-          <StatusBadge>
-            {reservation.statusLabel || '상태 정보 없음'}
-          </StatusBadge>
-        </HeaderRow>
+      <MainContent>
+        {/* 상단 네비게이션 헤더 */}
+        <PageHeader>
+          <BackButton onClick={() => navigate(-1)}>
+            <ArrowLeft size={20} />
+            <span>목록으로</span>
+          </BackButton>
+          <PageTitle>예약 상세 내역</PageTitle>
+        </PageHeader>
 
-        <GridContainer onSubmit={handleUpdateSubmit}>
-          {/* 왼쪽 컬럼: 핵심 컨텐츠 */}
+        <ContentGrid>
+          {/* 왼쪽 컬럼: 상품 및 예약자 정보 */}
           <LeftColumn>
-            {/* 섹션 1: 숙소 정보 */}
-            <SectionCard>
-              <SectionTitle>숙소 정보</SectionTitle>
-              <StayHeader>
-                <StayTitle>
-                  {reservation.stayName || '예약된 워케이션 공간'}
-                </StayTitle>
+            {/* 1. 숙소/공간 카드 */}
+            <ProductCard>
+              <ProductImage
+                src={
+                  stay.imageUrl ||
+                  space.imageUrl ||
+                  'https://via.placeholder.com/800x450?text=No+Image'
+                }
+                alt={stay.name || space.name || '상품 이미지'}
+              />
+              <ProductInfoArea>
+                <ProductBadge>
+                  {reservation.statusLabel || '예약 완료'}
+                </ProductBadge>
+                <ProductName>
+                  {stay.name || space.name || '지정되지 않은 상품'}
+                </ProductName>
+                <ProductLocation>
+                  <MapPin size={16} />
+                  <span>
+                    {space.address1 || '주소 정보 없음'}
+                    {space?.address2 && `${space.address2}`}
+                  </span>
+                </ProductLocation>
+              </ProductInfoArea>
+            </ProductCard>
+
+            {/* 💡 특이사항 요구사항: 정부지원 워케이션 신청서 다운로드 영역 */}
+            {reservation.files && reservation.files.length > 0 && (
+              <DocumentCard>
+                <SectionTitle style={{ marginBottom: '12px' }}>
+                  💼 워케이션 제출 서류
+                </SectionTitle>
+                <DocumentDescription>
+                  본 워케이션 예약 시 함께 등록된 정부지원 워케이션 참가 신청서
+                  파일입니다.
+                </DocumentDescription>
+                <FileList>
+                  {reservation.files.map((file) => (
+                    <FileItem
+                      key={file.id}
+                      href={file.fileUrl}
+                      download={file.originalFileName}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <FileDown size={18} />
+                      <FileName>{file.originalFileName}</FileName>
+                    </FileItem>
+                  ))}
+                </FileList>
+              </DocumentCard>
+            )}
+
+            {/* 2. 일정 및 인원 상세 */}
+            <DetailCard>
+              <SectionTitle>이용 정보</SectionTitle>
+              <InfoGrid>
                 <InfoRow>
-                  <InfoItem>
-                    <CalendarDays size={14} /> {reservation.checkinDate} ~{' '}
-                    {reservation.checkoutDate}
-                  </InfoItem>
-                  <Divider />
-                  <InfoItem>
-                    <Users size={14} /> 성인 {reservation.guestCount}명
-                  </InfoItem>
+                  <IconWrapper>
+                    <CalendarDays size={18} />
+                  </IconWrapper>
+                  <InfoTextArea>
+                    <InfoLabel>체크인 / 체크아웃</InfoLabel>
+                    <InfoValue>
+                      {reservation.checkinDate} ~ {reservation.checkoutDate}
+                    </InfoValue>
+                  </InfoTextArea>
                 </InfoRow>
-              </StayHeader>
-              <NoticeBox>
-                <CheckCircle size={16} color="#3f6971" />
-                <span>
-                  체크인 <b>15:00</b> / 체크아웃 <b>11:00</b> (현지 숙소 규정을
-                  준수해 주세요.)
-                </span>
-              </NoticeBox>
-            </SectionCard>
+                <InfoRow>
+                  <IconWrapper>
+                    <Users size={18} />
+                  </IconWrapper>
+                  <InfoTextArea>
+                    <InfoLabel>이용 인원</InfoLabel>
+                    <InfoValue>총 {reservation.guestCount}명</InfoValue>
+                  </InfoTextArea>
+                </InfoRow>
+              </InfoGrid>
+            </DetailCard>
 
-            {/* 섹션 2: 예약자 정보 (조회 / 수정 모드 분기 스위칭 영역) */}
-            <SectionCard>
-              <SectionHeader>
-                <SectionTitle>예약자 정보</SectionTitle>
-                {isEditableStatus && !isEdit && (
-                  <InlineEditButton
-                    type="button"
-                    onClick={() => setIsEdit(true)}
-                  >
-                    정보 변경하기
-                  </InlineEditButton>
+            {/* 3. 예약자 정보 (수정 가능 영역) */}
+            <DetailCard>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '20px',
+                }}
+              >
+                <SectionTitle style={{ margin: 0 }}>예약자 정보</SectionTitle>
+                {!isEdit && (
+                  <EditToggleButton onClick={() => setIsEdit(true)}>
+                    정보 변경
+                  </EditToggleButton>
                 )}
-              </SectionHeader>
+              </div>
 
-              <FormGrid>
-                <FormGroup>
-                  <label>대표 투숙객 이름</label>
-                  {isEdit ? (
-                    <Input
+              {isEdit ? (
+                <EditFormContainer>
+                  <InputGroup>
+                    <label>예약자 성함</label>
+                    <input
+                      type="text"
                       name="primaryGuestName"
                       value={formData.primaryGuestName}
                       onChange={handleInputChange}
-                      required
                     />
-                  ) : (
-                    <TextValue>{reservation.primaryGuestName}</TextValue>
-                  )}
-                </FormGroup>
-
-                <FormGroup>
-                  <label>연락처</label>
-                  {isEdit ? (
-                    <Input
+                  </InputGroup>
+                  <InputGroup>
+                    <label>연락처</label>
+                    <input
+                      type="text"
                       name="primaryGuestPhone"
                       value={formData.primaryGuestPhone}
                       onChange={handleInputChange}
-                      placeholder="하이픈 없이 입력"
-                      required
                     />
-                  ) : (
-                    <TextValue>{reservation.primaryGuestPhone}</TextValue>
-                  )}
-                </FormGroup>
-
-                <FormGroup className="full-width">
-                  <label>이메일 주소</label>
-                  {isEdit ? (
-                    <Input
+                  </InputGroup>
+                  <InputGroup>
+                    <label>이메일</label>
+                    <input
                       type="email"
                       name="primaryGuestEmail"
                       value={formData.primaryGuestEmail}
                       onChange={handleInputChange}
-                      required
                     />
-                  ) : (
-                    <TextValue>{reservation.primaryGuestEmail}</TextValue>
-                  )}
-                </FormGroup>
-              </FormGrid>
-            </SectionCard>
+                  </InputGroup>
+                  <FormActionButtons>
+                    <CancelButton onClick={handleCancel}>취소</CancelButton>
+                    <SaveButton onClick={handleSave}>변경 내용 저장</SaveButton>
+                  </FormActionButtons>
+                </EditFormContainer>
+              ) : (
+                <InfoGrid>
+                  <InfoRow>
+                    <InfoTextArea>
+                      <InfoLabel>예약자명</InfoLabel>
+                      <InfoValue>{reservation.primaryGuestName}</InfoValue>
+                    </InfoTextArea>
+                  </InfoRow>
+                  <InfoRow>
+                    <InfoTextArea>
+                      <InfoLabel>연락처</InfoLabel>
+                      <InfoValue>{reservation.primaryGuestPhone}</InfoValue>
+                    </InfoTextArea>
+                  </InfoRow>
+                  <InfoRow>
+                    <InfoTextArea>
+                      <InfoLabel>이메일</InfoLabel>
+                      <InfoValue>{reservation.primaryGuestEmail}</InfoValue>
+                    </InfoTextArea>
+                  </InfoRow>
+                </InfoGrid>
+              )}
+            </DetailCard>
 
-            {/* 섹션 3: 환불 계좌 정보 */}
-            <SectionCard>
-              <SectionTitle>환불 계좌 설정</SectionTitle>
-              <p
-                style={{
-                  fontSize: '12px',
-                  color: '#94a3b8',
-                  marginBottom: '14px',
-                }}
-              >
-                * 판매자 거절이나 예약 취소 시 환불 처리가 진행될 계좌
-                정보입니다.
+            {/* 취소 규정 고지 */}
+            <NoticeBox>
+              <ShieldAlert size={18} />
+              <p>
+                정부지원 워케이션 사업 지침에 따라 이용일 7일 전 취소 시 신청
+                자격 제한 및 위약금이 발생할 수 있습니다.
               </p>
-              <FormGrid>
-                <FormGroup>
-                  <label>은행명</label>
-                  {isEdit ? (
-                    <Input
-                      name="refundBankName"
-                      value={formData.refundBankName}
-                      onChange={handleInputChange}
-                      placeholder="예: 국민은행"
-                    />
-                  ) : (
-                    <TextValue>
-                      {reservation.refundBankName || '(등록된 은행 없음)'}
-                    </TextValue>
-                  )}
-                </FormGroup>
-
-                <FormGroup>
-                  <label>예금주</label>
-                  {isEdit ? (
-                    <Input
-                      name="refundAccountHolder"
-                      value={formData.refundAccountHolder}
-                      onChange={handleInputChange}
-                    />
-                  ) : (
-                    <TextValue>
-                      {reservation.refundAccountHolder ||
-                        '(등록된 예금주 없음)'}
-                    </TextValue>
-                  )}
-                </FormGroup>
-
-                <FormGroup className="full-width">
-                  <label>계좌번호</label>
-                  {isEdit ? (
-                    <Input
-                      name="refundAccountNumber"
-                      value={formData.refundAccountNumber}
-                      onChange={handleInputChange}
-                      placeholder="하이픈 없이 입력"
-                    />
-                  ) : (
-                    <TextValue>
-                      {reservation.refundAccountNumber ||
-                        '(등록된 계좌번호 없음)'}
-                    </TextValue>
-                  )}
-                </FormGroup>
-              </FormGrid>
-            </SectionCard>
+            </NoticeBox>
           </LeftColumn>
 
-          {/* 오른쪽 컬럼: 결제 요약 영수증 및 제어 액션 패널 */}
+          {/* 오른쪽 컬럼: 영수증 및 결제 내역 */}
           <RightColumn>
             <ReceiptCard>
-              <ReceiptTitle>
-                <CreditCard size={18} /> 결제 영수증
-              </ReceiptTitle>
+              <ReceiptTitle>결제 금액 상세</ReceiptTitle>
 
               <ReceiptRow>
-                <span>객실 원가 금액</span>
-                <span>
-                  {formatPrice(
-                    reservation.totalPrice + (reservation.discountAmount || 0)
-                  )}
-                </span>
+                <span>기본 이용 금액</span>
+                <span>{reservation.originalPrice?.toLocaleString()}원</span>
               </ReceiptRow>
 
               <ReceiptRow className="discount">
-                <span>쿠폰/프로모션 할인</span>
-                <span>-{formatPrice(reservation.discountAmount)}</span>
+                <span>정부 지원 / 회원 할인 적용</span>
+                <span>-{reservation.discountAmount?.toLocaleString()}원</span>
               </ReceiptRow>
 
               <DividerLine />
 
               <TotalRow>
                 <span>최종 결제 금액</span>
-                <TotalPrice>{formatPrice(reservation.totalPrice)}</TotalPrice>
+                <TotalPrice>
+                  {reservation.totalPrice?.toLocaleString()}원
+                </TotalPrice>
               </TotalRow>
 
-              {/* 하단 동적 제어 버튼 컨트롤 구역 */}
+              {/* 연동된 실시간 결제 승인 정보 */}
+              {payment.orderId && (
+                <PaymentDetailBox>
+                  <div className="detail-title">
+                    <CreditCard size={14} />
+                    <span>
+                      실시간 승인 내역 ({payment.paymentStatus || '승인'})
+                    </span>
+                  </div>
+                  <div className="detail-row">
+                    <span>결제 수단</span>
+                    <span>
+                      {payment.paymentMethod === 'CARD'
+                        ? `신용카드 (${payment.cardCompany || '현대'})`
+                        : payment.paymentMethod || '일반결제'}
+                    </span>
+                  </div>
+                  {payment.cardNumber && (
+                    <div className="detail-row">
+                      <span>카드 번호</span>
+                      <span>{payment.cardNumber}</span>
+                    </div>
+                  )}
+                  <div className="detail-row">
+                    <span>주문 번호</span>
+                    <span className="order-id">{payment.orderId}</span>
+                  </div>
+                </PaymentDetailBox>
+              )}
+
               <ActionArea>
-                {isEdit ? (
-                  <>
-                    <SubmitButton type="submit">변경 내용 저장</SubmitButton>
-                    <CancelButton
-                      type="button"
-                      onClick={() => setIsEdit(false)}
-                    >
-                      수정 취소
-                    </CancelButton>
-                  </>
-                ) : (
-                  <>
-                    {!isEditableStatus && (
-                      <WarningNotice>
-                        <ShieldAlert size={14} />
-                        <span>
-                          이용 완료 또는 취소된 내역은 정보 수정이 제한됩니다.
-                        </span>
-                      </WarningNotice>
-                    )}
-                  </>
-                )}
+                <SubmitButton>
+                  <CheckCircle size={18} />
+                  <span>이용 의사 확정완료</span>
+                </SubmitButton>
               </ActionArea>
             </ReceiptCard>
           </RightColumn>
-        </GridContainer>
-      </Main>
-    </Container>
+        </ContentGrid>
+      </MainContent>
+    </LayoutContainer>
   );
 }
 
 export default MyReservationDetailPage;
 
-/* ================= Styled Components ================= */
+// =========================================================================
+// 🟩 STYLED COMPONENTS (스타일 구조 정의)
+// =========================================================================
 
-const Container = styled.div`
+const LayoutContainer = styled.div`
   display: flex;
-  min-height: calc(100vh - 160px);
-  background-color: #f7f9fb;
+  min-height: 100vh;
+  background-color: #f8fafc;
 `;
 
-const Main = styled.main`
+const MainContent = styled.div`
   flex: 1;
-  padding: 42px;
+  padding: 40px 50px;
+  overflow-y: auto;
+`;
+
+const LoadingText = styled.div`
+  font-size: 16px;
+  color: #64748b;
+  font-weight: 500;
+`;
+
+const PageHeader = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 32px;
 `;
 
 const BackButton = styled.button`
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: none;
   border: none;
   color: #64748b;
   font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  margin-bottom: 20px;
+  width: fit-content;
   padding: 0;
   &:hover {
-    color: #3f6971;
+    color: #334155;
   }
 `;
 
-const HeaderRow = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 32px;
-`;
-
 const PageTitle = styled.h1`
-  font-size: 28px;
-  color: #374151;
+  font-size: 24px;
   font-weight: 700;
-  margin-bottom: 6px;
+  color: #1e293b;
+  margin: 0;
 `;
 
-const OrderNo = styled.span`
-  font-size: 13px;
-  color: #94a3b8;
-`;
-
-const StatusBadge = styled.div`
-  background-color: #eef5f6;
-  color: #3f6971;
-  padding: 10px 20px;
-  border-radius: 999px;
-  font-size: 14px;
-  font-weight: 600;
-  box-shadow: 0 2px 4px rgba(63, 105, 113, 0.05);
-`;
-
-const GridContainer = styled.form`
-  display: flex;
-  gap: 28px;
-  align-items: flex-start;
+const ContentGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 30px;
+  align-items: start;
 `;
 
 const LeftColumn = styled.div`
-  flex: 2;
   display: flex;
   flex-direction: column;
   gap: 24px;
 `;
 
 const RightColumn = styled.div`
-  flex: 1;
   position: sticky;
-  top: 20px;
+  top: 40px;
 `;
 
-const SectionCard = styled.div`
-  background: white;
-  border-radius: 20px;
-  padding: 28px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+const ProductCard = styled.div`
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 `;
 
-const SectionHeader = styled.div`
+const ProductImage = styled.img`
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+`;
+
+const ProductInfoArea = styled.div`
+  padding: 24px;
+`;
+
+const ProductBadge = styled.span`
+  display: inline-block;
+  padding: 6px 12px;
+  background-color: #f0fdf4;
+  color: #16a34a;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  margin-bottom: 12px;
+`;
+
+const ProductName = styled.h2`
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 10px 0;
+`;
+
+const ProductLocation = styled.div`
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  gap: 6px;
+  color: #64748b;
+  font-size: 14px;
+`;
+
+const DocumentCard = styled.div`
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #cbd5e1;
+  padding: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+`;
+
+const DocumentDescription = styled.p`
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 16px 0;
+  line-height: 1.5;
+`;
+
+const FileList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`;
+
+const FileItem = styled.a`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  color: #3f6971;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: #f0f5f6;
+    border-color: #3f6971;
+  }
+`;
+
+const FileName = styled.span`
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
+
+const DetailCard = styled.div`
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  padding: 24px;
 `;
 
 const SectionTitle = styled.h3`
-  font-size: 18px;
-  color: #374151;
-  font-weight: 600;
-  margin-bottom: 20px;
-  ${SectionHeader} & {
-    margin-bottom: 0;
-  }
-`;
-
-const InlineEditButton = styled.button`
-  background-color: white;
-  border: 1px solid #3f6971;
-  color: #3f6971;
-  padding: 6px 14px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  &:hover {
-    background-color: #3f6971;
-    color: white;
-  }
-`;
-
-const StayHeader = styled.div`
-  margin-bottom: 20px;
-`;
-
-const StayTitle = styled.h4`
-  font-size: 22px;
-  color: #1f2937;
+  font-size: 16px;
   font-weight: 700;
-  margin-bottom: 10px;
+  color: #1e293b;
+  margin: 0 0 20px 0;
+`;
+
+const InfoGrid = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 `;
 
 const InfoRow = styled.div`
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 14px;
-  color: #4b5563;
-  font-size: 14px;
 `;
 
-const InfoItem = styled.div`
+const IconWrapper = styled.div`
+  color: #64748b;
+  padding-top: 2px;
+`;
+
+const InfoTextArea = styled.div`
   display: flex;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  gap: 4px;
 `;
 
-const Divider = styled.div`
-  width: 1px;
-  height: 12px;
-  background-color: #d1d5db;
+const InfoLabel = styled.span`
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 500;
+`;
+
+const InfoValue = styled.span`
+  font-size: 15px;
+  color: #334155;
+  font-weight: 600;
+`;
+
+const EditToggleButton = styled.button`
+  background: none;
+  border: 1px solid #cbd5e1;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #475569;
+  font-weight: 500;
+  cursor: pointer;
+  &:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+  }
+`;
+
+const EditFormContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`;
+
+const InputGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  label {
+    font-size: 13px;
+    color: #475569;
+    font-weight: 600;
+  }
+  input {
+    padding: 10px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #334155;
+    outline: none;
+    &:focus {
+      border-color: #3f6971;
+    }
+  }
+`;
+
+const FormActionButtons = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+`;
+
+const CancelButton = styled.button`
+  background: #f1f5f9;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #475569;
+  font-weight: 600;
+  cursor: pointer;
+  &:hover {
+    background: #e2e8f0;
+  }
+`;
+
+const SaveButton = styled.button`
+  background: #3f6971;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+  &:hover {
+    background: #2c4a50;
+  }
 `;
 
 const NoticeBox = styled.div`
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
-  background-color: #f0f7f8;
-  padding: 14px 18px;
+  padding: 16px;
+  background-color: #fff1f2;
   border-radius: 12px;
-  color: #3f6971;
-  font-size: 13px;
-`;
-
-const FormGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  .full-width {
-    grid-column: span 2;
-  }
-`;
-
-const FormGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  label {
+  color: #e11d48;
+  p {
+    margin: 0;
     font-size: 13px;
-    font-weight: 600;
-    color: #6b7280;
-  }
-`;
-
-const TextValue = styled.div`
-  font-size: 15px;
-  color: #1f2937;
-  padding: 10px 0;
-  border-bottom: 1px solid #f1f5f9;
-`;
-
-const Input = styled.input`
-  padding: 10px 14px;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  font-size: 15px;
-  color: #334155;
-  outline: none;
-  &:focus {
-    border-color: #3f6971;
-    box-shadow: 0 0 0 1px #3f6971;
+    line-height: 1.5;
+    font-weight: 500;
   }
 `;
 
 const ReceiptCard = styled.div`
-  background: white;
-  border-radius: 20px;
-  padding: 28px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
-  border: 1px solid #edf2f7;
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  padding: 26px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
 `;
 
-const ReceiptTitle = styled.h4`
-  display: flex;
-  align-items: center;
-  gap: 8px;
+const ReceiptTitle = styled.h3`
   font-size: 16px;
   color: #374151;
   font-weight: 600;
@@ -619,6 +743,37 @@ const TotalPrice = styled.div`
   color: #3f6971;
 `;
 
+const PaymentDetailBox = styled.div`
+  background-color: #f8fafc;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 24px;
+  font-size: 12px;
+  color: #64748b;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  .detail-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 4px;
+  }
+
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .order-id {
+    font-family: monospace;
+    color: #94a3b8;
+  }
+`;
+
 const ActionArea = styled.div`
   display: flex;
   flex-direction: column;
@@ -626,40 +781,21 @@ const ActionArea = styled.div`
 `;
 
 const SubmitButton = styled.button`
-  background-color: #3f6971;
-  color: white;
-  border: none;
-  padding: 14px;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  &:hover {
-    background-color: #2d4f55;
-  }
-`;
-
-const CancelButton = styled.button`
-  background-color: #f1f5f9;
-  color: #64748b;
-  border: none;
-  padding: 14px;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  &:hover {
-    background-color: #e2e8f0;
-  }
-`;
-
-const WarningNotice = styled.div`
   display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 8px;
-  background-color: #fff7ed;
-  color: #c2410c;
-  padding: 12px;
+  width: 100%;
+  background: #3f6971;
+  color: #ffffff;
+  border: none;
+  padding: 14px;
   border-radius: 10px;
-  font-size: 12px;
-  line-height: 1.4;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  &:hover {
+    background: #2c4a50;
+  }
 `;
