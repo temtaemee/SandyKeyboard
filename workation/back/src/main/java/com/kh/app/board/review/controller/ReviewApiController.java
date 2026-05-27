@@ -30,6 +30,7 @@ public class ReviewApiController {
     // 공개 조회 API
     // ─────────────────────────────────────────
 
+    // 전체 목록 조회  GET /api/public/board/review?page=0
     @GetMapping("/api/public/board/review")
     public ResponseEntity<Page<ReviewListRespDto>> findAll(
             @RequestParam(defaultValue = "0") int page
@@ -37,11 +38,13 @@ public class ReviewApiController {
         return ResponseEntity.ok(reviewService.findAll(page));
     }
 
+    // 상세 조회  GET /api/public/board/review/{id}
     @GetMapping("/api/public/board/review/{id}")
     public ResponseEntity<ReviewRespDto> findById(@PathVariable Long id) {
         return ResponseEntity.ok(reviewService.findById(id));
     }
 
+    // 댓글 목록  GET /api/public/board/review/{id}/comment
     @GetMapping("/api/public/board/review/{id}/comment")
     public ResponseEntity<List<CommentRespDto>> findComments(@PathVariable Long id) {
         return ResponseEntity.ok(reviewService.findComments(id));
@@ -51,6 +54,17 @@ public class ReviewApiController {
     // 로그인 필요 API
     // ─────────────────────────────────────────
 
+    // 내 리뷰 목록  GET /api/user/board/review/my?page=0
+    @GetMapping("/api/user/board/review/my")
+    public ResponseEntity<Page<ReviewListRespDto>> findMyReview(
+            @RequestParam(defaultValue = "0") int page,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long memberId = userDetails.getUserVo().getId();
+        return ResponseEntity.ok(reviewService.findMyReview(memberId, page));
+    }
+
+    // 등록  POST /api/user/board/review
     @PostMapping("/api/user/board/review")
     public ResponseEntity<Long> create(
             @RequestPart("dto") ReviewCreateReqDto dto,
@@ -62,6 +76,7 @@ public class ReviewApiController {
         return ResponseEntity.status(HttpStatus.CREATED).body(id);
     }
 
+    // 수정  PUT /api/user/board/review/{id}
     @PutMapping("/api/user/board/review/{id}")
     public ResponseEntity<Void> update(
             @PathVariable Long id,
@@ -74,6 +89,7 @@ public class ReviewApiController {
         return ResponseEntity.ok().build();
     }
 
+    // 삭제  DELETE /api/user/board/review/{id}
     @DeleteMapping("/api/user/board/review/{id}")
     public ResponseEntity<Void> delete(
             @PathVariable Long id,
@@ -83,6 +99,7 @@ public class ReviewApiController {
         return ResponseEntity.ok().build();
     }
 
+    // 댓글 등록  POST /api/user/board/review/{id}/comment
     @PostMapping("/api/user/board/review/{id}/comment")
     public ResponseEntity<Long> createComment(
             @PathVariable Long id,
@@ -94,6 +111,7 @@ public class ReviewApiController {
         return ResponseEntity.status(HttpStatus.CREATED).body(commentId);
     }
 
+    // 댓글 삭제  DELETE /api/user/board/review/{id}/comment/{commentId}
     @DeleteMapping("/api/user/board/review/{id}/comment/{commentId}")
     public ResponseEntity<Void> deleteComment(
             @PathVariable Long id,

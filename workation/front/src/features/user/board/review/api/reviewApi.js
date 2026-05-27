@@ -43,6 +43,14 @@ export const getReviewList = (page = 0) =>
   api.get(PUBLIC_BASE, { params: { page } }).then((res) => res.data);
 
 /**
+ * 내 리뷰 목록 조회 (로그인 필요)
+ *
+ * page : 페이지 번호
+ */
+export const getMyReviewList = (page = 0) =>
+  api.get(`${USER_BASE}/my`, { params: { page } }).then((res) => res.data);
+
+/**
  * 리뷰 상세 조회
  *
  * id : 리뷰 게시글 번호
