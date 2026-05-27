@@ -79,14 +79,16 @@ public class ReservationApiController {
 
     //결제 완료후 보기
     @PutMapping("/user/reservation/{id}")
+    @Operation(summary = "유저 예약 정보 수정 (파일 수정 불가)", description = "결제 완료(PAYMENT_COMPLETED) 상태에서만 예약자 연락처 정보(3개 필드) 변경이 가능합니다.")
     public ResponseEntity<Void> update(
             @PathVariable Long id,
-            @RequestPart("data") ReservationUpdateReqDto dto,
-            @RequestPart(value = "fileList", required = false) List<MultipartFile> fileList,
+            @RequestBody ReservationUpdateReqDto dto, // 💡 @RequestPart 대신 @RequestBody 사용
             @AuthenticationPrincipal(expression = "username") String username
-    ) throws IOException {
+    ) {
+        log.info("유저 예약 정보 수정 요청 (텍스트 전용) - 예약 ID: {}, 요청자: {}", id, username);
 
-        reservationService.update(id, dto, fileList);
+        // 서비스 단에 id와 dto만 전송
+        reservationService.update(id, dto);
 
         return ResponseEntity.ok().build();
     }

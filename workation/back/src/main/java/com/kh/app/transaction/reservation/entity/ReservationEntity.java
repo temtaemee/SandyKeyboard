@@ -168,9 +168,7 @@ public class ReservationEntity {
         this.primaryGuestName = reqDto.getPrimaryGuestName();
         this.primaryGuestPhone = reqDto.getPrimaryGuestPhone();
         this.primaryGuestEmail = reqDto.getPrimaryGuestEmail();
-        this.refundBankName = reqDto.getRefundBankName();
-        this.refundAccountNumber = reqDto.getRefundAccountNumber();
-        this.refundAccountHolder = reqDto.getRefundAccountHolder();
+
     }
 
     private void validateEditable() {

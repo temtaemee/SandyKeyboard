@@ -42,12 +42,8 @@ export async function getReservationOne(id) {
 /**
  * 유저 - 예약 정보 수정
  */
-export async function updateReservation(id, formData) {
-  return await api.put(`/user/reservation/${id}`, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+export async function updateReservation(id, updateData) {
+  return await api.put(`/user/reservation/${id}`, updateData);
 }
 
 // =========================================================================
