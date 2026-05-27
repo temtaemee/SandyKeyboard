@@ -28,6 +28,7 @@ public class ReservationResDto {
     private String status;            // enum name (PENDING, PAYMENT_COMPLETED 등)
     private String statusLabel;       // 한글 라벨 (예약 대기, 결제 완료 등)
 
+
     public static ReservationResDto from(ReservationEntity entity) {
         // 💡 널 포인터 예외(NPE)를 방지하기 위한 안전한 숙소 정보 추출
         Long extractedStayId = null;
