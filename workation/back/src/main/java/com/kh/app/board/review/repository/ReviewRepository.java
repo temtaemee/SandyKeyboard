@@ -1,6 +1,7 @@
 package com.kh.app.board.review.repository;
 
 import com.kh.app.board.review.entity.ReviewEntity;
+import com.kh.app.member.entity.MemberEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,8 +12,11 @@ import java.util.Optional;
 @Repository
 public interface ReviewRepository extends JpaRepository<ReviewEntity, Long> {
 
-    // 페이징 목록 조회 (delYn = 'N' 인 것만, 최신순)
+    // 전체 목록 (최신순 페이징)
     Page<ReviewEntity> findAllByDelYnOrderByCreatedAtDesc(String delYn, Pageable pageable);
+
+    // 내 리뷰 목록 (최신순 페이징)
+    Page<ReviewEntity> findAllByMemberAndDelYnOrderByCreatedAtDesc(MemberEntity member, String delYn, Pageable pageable);
 
     Optional<ReviewEntity> findByIdAndDelYn(Long id, String delYn);
 }

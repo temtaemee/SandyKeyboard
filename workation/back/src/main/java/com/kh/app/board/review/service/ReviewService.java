@@ -39,6 +39,7 @@ public class ReviewService {
     private final MemberRepository memberRepository;
     private final S3Service s3Service;
 
+    // 전체 목록 조회 (페이징)
     @Transactional(readOnly = true)
     public Page<ReviewListRespDto> findAll(int page) {
         Pageable pageable = PageRequest.of(page, 10);
@@ -50,6 +51,22 @@ public class ReviewService {
                 });
     }
 
+    // 내 리뷰 목록 조회 (페이징)
+    @Transactional(readOnly = true)
+    public Page<ReviewListRespDto> findMyReview(Long memberId, int page) {
+        MemberEntity member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+
+        Pageable pageable = PageRequest.of(page, 10);
+        return reviewRepository.findAllByMemberAndDelYnOrderByCreatedAtDesc(member, "N", pageable)
+                .map(review -> {
+                    List<ReviewImageEntity> images =
+                            reviewImageRepository.findAllByReviewIdAndDelYn(review.getId(), "N");
+                    return ReviewListRespDto.from(review, images);
+                });
+    }
+
+    // 상세 조회
     @Transactional(readOnly = true)
     public ReviewRespDto findById(Long id) {
         ReviewEntity review = reviewRepository.findByIdAndDelYn(id, "N")
@@ -58,6 +75,7 @@ public class ReviewService {
         return ReviewRespDto.from(review, images);
     }
 
+    // 등록
     public Long create(ReviewCreateReqDto dto, List<MultipartFile> images, Long memberId) {
         MemberEntity member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("member not found"));
@@ -83,6 +101,7 @@ public class ReviewService {
         return review.getId();
     }
 
+    // 수정
     public void update(Long id, ReviewUpdateReqDto dto, List<MultipartFile> images, List<Long> deletedImageIds) {
         ReviewEntity review = reviewRepository.findByIdAndDelYn(id, "N")
                 .orElseThrow(() -> new IllegalArgumentException("후기를 찾을 수 없습니다."));
@@ -114,18 +133,21 @@ public class ReviewService {
         }
     }
 
+    // 삭제
     public void delete(Long id) {
         ReviewEntity review = reviewRepository.findByIdAndDelYn(id, "N")
                 .orElseThrow(() -> new IllegalArgumentException("후기를 찾을 수 없습니다."));
         review.delete();
     }
 
+    // 댓글 목록
     @Transactional(readOnly = true)
     public List<CommentRespDto> findComments(Long reviewId) {
         return commentRepository.findAllByReviewIdAndDelYnOrderByCreatedAtAsc(reviewId, "N")
                 .stream().map(CommentRespDto::from).toList();
     }
 
+    // 댓글 등록
     public Long createComment(Long reviewId, CommentCreateReqDto dto, Long memberId) {
         ReviewEntity review = reviewRepository.findByIdAndDelYn(reviewId, "N")
                 .orElseThrow(() -> new IllegalArgumentException("후기를 찾을 수 없습니다."));
@@ -136,6 +158,7 @@ public class ReviewService {
         return comment.getId();
     }
 
+    // 댓글 삭제
     public void deleteComment(Long commentId) {
         CommentEntity comment = commentRepository.findByIdAndDelYn(commentId, "N")
                 .orElseThrow(() -> new IllegalArgumentException("댓글을 찾을 수 없습니다."));
