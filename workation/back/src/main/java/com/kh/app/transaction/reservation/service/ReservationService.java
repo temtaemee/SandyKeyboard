@@ -59,6 +59,7 @@ public class ReservationService {
     private final StayPictureRepository stayPictureRepository;
     private final StayOptionRepository stayOptionRepository;
 
+
     /**
      * 💡 [수정] 숙소 및 쿠폰 연동 완료된 예약 생성 로직
      */
@@ -184,10 +185,11 @@ public class ReservationService {
         List<com.kh.app.product.stay.entity.StayPictureEntity> pictures = stayPictureRepository.findByStayOrderBySortOrder(stayEntity);
 
         List<com.kh.app.product.stay.entity.StayOption> options = optionEntities.stream()
-                .map(com.kh.app.product.stay.entity.StayOptionEntity::getStayOption) // 💡 엔티티 내부의 Enum 필드 추출!
+                .map(com.kh.app.product.stay.entity.StayOptionEntity::getStayOption)
                 .toList();
 
         StayResDto stayResDto = StayResDto.from(stayEntity, options, pictures);
+
         // 4. Space 전용 정보 바인딩
         String spaceThumbnail = (pictures != null && !pictures.isEmpty()) ? pictures.get(0).getFilePath() : null;
         SpaceResDto spaceResDto = SpaceResDto.from(spaceEntity, List.of(stayResDto), spaceThumbnail);
@@ -195,8 +197,11 @@ public class ReservationService {
         // 5. 결제 원장 연동 조회
         PaymentEntity paymentEntity = paymentRepository.findByReservation(reservation).orElse(null);
 
-        // 6. 최종 번들링 리턴
-        return ReservationDetailResDto.of(reservation, spaceResDto, stayResDto, paymentEntity);
+        // 💡 추가: 5-2. 예약 첨부파일 데이터 연동 조회
+        List<ReserveFileEntity> reserveFiles = reserveFileRepository.findByReservationEntity(reservation);
+
+        // 6. 최종 번들링 리턴 (reserveFiles와 s3Service 파라미터 추가)
+        return ReservationDetailResDto.of(reservation, spaceResDto, stayResDto, paymentEntity, reserveFiles, s3Service);
     }
 
     /**

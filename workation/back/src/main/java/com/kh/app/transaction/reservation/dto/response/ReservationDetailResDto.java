@@ -4,11 +4,14 @@ import com.kh.app.product.space.dto.response.SpaceResDto;
 import com.kh.app.product.stay.dto.response.StayResDto;
 import com.kh.app.transaction.payment.entity.PaymentEntity;
 import com.kh.app.transaction.reservation.entity.ReservationEntity;
+import com.kh.app.transaction.reservation.entity.ReserveFileEntity;
 import lombok.Builder;
 import lombok.Getter;
+import org.apache.tomcat.jni.FileInfo;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Builder
@@ -39,6 +42,9 @@ public class ReservationDetailResDto {
     // 4. 💡 요구사항: 실시간 결제 정보 포함
     private PaymentInfo payment;
 
+    // 💡 5.  첨부파일 목록 정보
+    private List<FileInfo> files;
+
     @Getter
     @Builder
     public static class PaymentInfo {
@@ -51,6 +57,15 @@ public class ReservationDetailResDto {
         private LocalDateTime approvedAt;
     }
 
+    // 💡  파일 정보를 프론트에 내려줄 구조
+    @Getter
+    @Builder
+    public static class FileInfo {
+        private Long id;
+        private String originalFileName;
+        private String fileUrl; // S3 전체 주소
+    }
+
     // =========================================================================
     // 💡 팩토리 메서드로 모든 도메인 데이터 한방에 조립
     // =========================================================================
@@ -58,9 +73,11 @@ public class ReservationDetailResDto {
             ReservationEntity entity,
             SpaceResDto spaceResDto,
             StayResDto stayResDto,
-            PaymentEntity paymentEntity
+            PaymentEntity paymentEntity,
+            List<ReserveFileEntity> reserveFiles, // 추가
+            com.kh.app.aws.service.S3Service s3Service // 추가 (URL 변환용)
     ) {
-        // 결제 정보 매핑 (결제가 아직 없는 PENDING 상태 등 예외 방지 널 체크)
+        // 결제 정보 매핑
         PaymentInfo paymentInfo = null;
         if (paymentEntity != null) {
             paymentInfo = PaymentInfo.builder()
@@ -72,6 +89,18 @@ public class ReservationDetailResDto {
                     .cardNumber(paymentEntity.getCardNumber())
                     .approvedAt(paymentEntity.getApprovedAt())
                     .build();
+        }
+
+        // 💡 첨부파일 정보 매핑 (s3Service를 이용해 완전한 URL 생성)
+        List<FileInfo> fileInfoList = null;
+        if (reserveFiles != null) {
+            fileInfoList = reserveFiles.stream()
+                    .map(file -> FileInfo.builder()
+                            .id(file.getID())
+                            .originalFileName(file.getOriginalFileName())
+                            .fileUrl(s3Service.getFileUrl(file.getS3Key())) // s3Key -> URL 변환
+                            .build())
+                    .toList();
         }
 
         return ReservationDetailResDto.builder()
@@ -90,10 +119,10 @@ public class ReservationDetailResDto {
                 .statusLabel(entity.getStatus() != null ? entity.getStatus().getLabel() : null)
                 .createdAt(entity.getCreatedAt())
 
-                // 도메인 가공 DTO 주입
                 .space(spaceResDto)
                 .stay(stayResDto)
                 .payment(paymentInfo)
+                .files(fileInfoList) // 💡 파일 목록 주입
                 .build();
     }
 }
