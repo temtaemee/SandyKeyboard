@@ -208,18 +208,12 @@ public class ReservationService {
      * 💡 예약 정보 수정 (결제 완료 상태에서만 허용)
      */
     @Transactional
-    public void update(Long id, ReservationUpdateReqDto dto, List<MultipartFile> newFiles) throws IOException {
+    public void update(Long id, ReservationUpdateReqDto dto) {
         ReservationEntity reservation = reservationRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("RESERVATION NOT FOUND"));
+                .orElseThrow(() -> new EntityNotFoundException("예약 내역을 찾을 수 없습니다. (ID: " + id + ")"));
 
-        if (reservation.getStatus() == ReservationStatus.PENDING) {
-            throw new IllegalStateException("결제 완료 이후에만 예약 정보를 수정할 수 있습니다.");
-        }
-
-        // 예약자 정보 및 페이백 계좌 수정 (내부에서 상태 추가 검증 수행)
+        // 엔티티 내부의 상태 검증(PAYMENT_COMPLETED 인지 확인) 및 3개 필드 수정 실행
         reservation.update(dto);
-
-        // 여기에 필요 시 새 파일 수정 업로드 로직(기존 S3 파일 제거 루프 등)을 붙이시면 됩니다.
     }
 
     /**
