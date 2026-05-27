@@ -1,9 +1,15 @@
 package com.kh.app.transaction.refund.service;
 
+import com.kh.app.product.stay.dto.response.StayResDto;
+import com.kh.app.product.stay.entity.StayEntity;
+import com.kh.app.product.stay.repository.StayOptionRepository;
+import com.kh.app.product.stay.repository.StayPictureRepository;
 import com.kh.app.transaction.payment.entity.PaymentEntity;
 import com.kh.app.transaction.payment.repository.PaymentRepository; // 💡 결제 레포지토리 주입 필요
 import com.kh.app.transaction.refund.dto.request.RefundRequestDto;
 import com.kh.app.transaction.refund.dto.request.TossCancelReqDto;
+import com.kh.app.transaction.refund.dto.response.RefundDetailResDto;
+import com.kh.app.transaction.refund.dto.response.RefundListResDto;
 import com.kh.app.transaction.refund.entity.RefundEntity;
 import com.kh.app.transaction.refund.repository.RefundRepository;
 import com.kh.app.transaction.reservation.entity.ReservationEntity;
@@ -13,6 +19,8 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +42,9 @@ public class RefundService {
     private final ReservationRepository reservationRepository;
     private final PaymentRepository paymentRepository; // 💡 추가: 결제 정보 조회용
     private final RestTemplate restTemplate = new RestTemplate();
+
+    private final StayOptionRepository stayOptionRepository;
+    private final StayPictureRepository stayPictureRepository;
 
     @Value("${toss.secret-key}")
     private String tossSecretKey;
@@ -121,4 +132,74 @@ public class RefundService {
             throw new IllegalStateException("외부 결제사 취소 거부: " + e.getMessage());
         }
     }
+    public List<RefundListResDto> getMyRefunds(String username) {
+        return refundRepository.findMyRefunds(username).stream()
+                .map(RefundListResDto::from)
+                .toList();
+    }
+
+    public RefundDetailResDto getUserRefundDetail(Long id, String username) {
+        RefundEntity refund = refundRepository.findDetailById(id)
+                .orElseThrow(() -> new EntityNotFoundException("환불 내역이 존재하지 않습니다."));
+
+        // 보안 검증: 본인의 환불 내역인지 확인
+        if (!refund.getReservation().getMember().getUsername().equals(username)) {
+            throw new IllegalArgumentException("본인의 환불 내역만 조회할 수 있습니다.");
+        }
+        return bundleRefundDetail(refund);
+    }
+
+    // =========================================================================
+    // 💡 [판매자 / SELLER] 영역
+    // =========================================================================
+    public Page<RefundListResDto> getSellerRefunds(String sellerUsername, int pno) {
+        PageRequest pageRequest = PageRequest.of(pno, 10);
+        return refundRepository.findSellerRefunds(sellerUsername, pageRequest).map(RefundListResDto::from);
+    }
+
+    public RefundDetailResDto getSellerRefundDetail(Long id, String sellerUsername) {
+        RefundEntity refund = refundRepository.findDetailById(id)
+                .orElseThrow(() -> new EntityNotFoundException("환불 내역이 존재하지 않습니다."));
+
+        // 보안 검증: 해당 환불 건 숙소의 판매자가 로그인한 판매자와 일치하는지 대조
+        String realSeller = refund.getReservation().getStay().getSpace().getSeller().getUsername();
+        if (!realSeller.equals(sellerUsername)) {
+            throw new IllegalArgumentException("해당 환불 내역에 대한 접근 권한이 없습니다.");
+        }
+        return bundleRefundDetail(refund);
+    }
+
+    // =========================================================================
+    // 💡 [관리자 / ADMIN] 영역
+    // =========================================================================
+    public Page<RefundListResDto> getAdminRefunds(int pno) {
+        PageRequest pageRequest = PageRequest.of(pno, 10);
+        return refundRepository.findAllAdminRefunds(pageRequest).map(RefundListResDto::from);
+    }
+
+    public RefundDetailResDto getAdminRefundDetail(Long id) {
+        RefundEntity refund = refundRepository.findDetailById(id)
+                .orElseThrow(() -> new EntityNotFoundException("환불 내역이 존재하지 않습니다."));
+        return bundleRefundDetail(refund);
+    }
+
+    // =========================================================================
+    // 💡 [공통 헬퍼] 숙소 사진 옵션을 바인딩하여 최종 디테일 DTO 조합
+    // =========================================================================
+    private RefundDetailResDto bundleRefundDetail(RefundEntity refund) {
+        StayEntity stayEntity = refund.getReservation().getStay();
+
+        var optionEntities = stayOptionRepository.findByStay(stayEntity);
+        var pictures = stayPictureRepository.findByStayOrderBySortOrder(stayEntity);
+
+        var options = optionEntities.stream()
+                .map(com.kh.app.product.stay.entity.StayOptionEntity::getStayOption)
+                .toList();
+
+        StayResDto stayResDto = StayResDto.from(stayEntity, options, pictures);
+        return RefundDetailResDto.of(refund, stayResDto);
+    }
+
+
+
 }
