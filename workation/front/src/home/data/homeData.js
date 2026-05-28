@@ -5,7 +5,7 @@
 export const NAV_LINKS = [
   {
     label: '여행지',
-    path: `/resv`,
+    path: `/resv/destination`,
   },
   {
     label: '참여후기',

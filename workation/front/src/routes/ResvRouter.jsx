@@ -11,10 +11,12 @@ import RefundRequestPage from '../features/refund/pages/RefundRequestPage';
 
 import RefundDetailPage from '../features/refund/pages/RefundDetailPage';
 import RefundListPage from '../features/refund/pages/RefundListPage';
+import DestinationPage from './../features/user/destination/pages/DestinationPage';
 
 function ResvRouter() {
   return (
     <Routes>
+      <Route path="destination" element={<DestinationPage />} />
       {/* =========================================================================
           예약(Reservation) 관련 라우팅
          ========================================================================= */}
