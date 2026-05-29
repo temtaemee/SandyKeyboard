@@ -26,99 +26,117 @@ public class ReviewApiController {
 
     private final ReviewService reviewService;
 
-    // ─────────────────────────────────────────
-    // 공개 조회 API
-    // ─────────────────────────────────────────
-
-    // 전체 목록 조회  GET /api/public/board/review?page=0
-    @GetMapping("/api/public/review")
+    // 전체 목록 조회
+    @GetMapping("/api/public/reviews")
     public ResponseEntity<Page<ReviewListRespDto>> findAll(
             @RequestParam(defaultValue = "0") int page
     ) {
         return ResponseEntity.ok(reviewService.findAll(page));
     }
 
-    // 상세 조회  GET /api/public/board/review/{id}
-    @GetMapping("/api/public/review/{id}")
+    // 상세 조회
+    @GetMapping("/api/public/reviews/{id}")
     public ResponseEntity<ReviewRespDto> findById(@PathVariable Long id) {
         return ResponseEntity.ok(reviewService.findById(id));
     }
 
-    // 댓글 목록  GET /api/public/board/review/{id}/comment
-    @GetMapping("/api/public/review/{id}/comment")
-    public ResponseEntity<List<CommentRespDto>> findComments(@PathVariable Long id) {
+    // 댓글 목록 조회
+    @GetMapping("/api/public/reviews/{id}/comments")
+    public ResponseEntity<List<CommentRespDto>> findComments(
+            @PathVariable Long id
+    ) {
         return ResponseEntity.ok(reviewService.findComments(id));
     }
 
-    // ─────────────────────────────────────────
-    // 로그인 필요 API
-    // ─────────────────────────────────────────
-
-    // 내 리뷰 목록  GET /api/user/board/review/my?page=0
-    @GetMapping("/api/user/review/my")
+    // 내 리뷰 목록
+    @GetMapping("/api/user/reviews/my")
     public ResponseEntity<Page<ReviewListRespDto>> findMyReview(
             @RequestParam(defaultValue = "0") int page,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
+
         Long memberId = userDetails.getUserVo().getId();
-        return ResponseEntity.ok(reviewService.findMyReview(memberId, page));
+
+        return ResponseEntity.ok(
+                reviewService.findMyReview(memberId, page)
+        );
     }
 
-    // 등록  POST /api/user/board/review
-    @PostMapping("/api/user/review")
+    // 리뷰 등록
+    @PostMapping("/api/user/reviews")
     public ResponseEntity<Long> create(
             @RequestPart("dto") ReviewCreateReqDto dto,
-            @RequestPart(value = "images", required = false) List<MultipartFile> images,
+            @RequestPart(value = "images", required = false)
+            List<MultipartFile> images,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
+
         Long memberId = userDetails.getUserVo().getId();
+
         Long id = reviewService.create(dto, images, memberId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(id);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(id);
     }
 
-    // 수정  PUT /api/user/board/review/{id}
-    @PutMapping("/api/user/review/{id}")
+    // 리뷰 수정
+    @PutMapping("/api/user/reviews/{id}")
     public ResponseEntity<Void> update(
             @PathVariable Long id,
             @RequestPart("dto") ReviewUpdateReqDto dto,
-            @RequestPart(value = "images", required = false) List<MultipartFile> images,
-            @RequestParam(value = "deletedImageIds", required = false) List<Long> deletedImageIds,
+            @RequestPart(value = "images", required = false)
+            List<MultipartFile> images,
+            @RequestParam(value = "deletedImageIds", required = false)
+            List<Long> deletedImageIds,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
+
         reviewService.update(id, dto, images, deletedImageIds);
+
         return ResponseEntity.ok().build();
     }
 
-    // 삭제  DELETE /api/user/board/review/{id}
-    @DeleteMapping("/api/user/review/{id}")
+    // 리뷰 삭제
+    @DeleteMapping("/api/user/reviews/{id}")
     public ResponseEntity<Void> delete(
             @PathVariable Long id,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
+
         reviewService.delete(id);
+
         return ResponseEntity.ok().build();
     }
 
-    // 댓글 등록  POST /api/user/board/review/{id}/comment
-    @PostMapping("/api/user/review/{id}/comment")
+    // 댓글 등록
+    @PostMapping("/api/user/reviews/{id}/comments")
     public ResponseEntity<Long> createComment(
             @PathVariable Long id,
             @RequestBody CommentCreateReqDto dto,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
+
         Long memberId = userDetails.getUserVo().getId();
-        Long commentId = reviewService.createComment(id, dto, memberId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(commentId);
+
+        Long commentId =
+                reviewService.createComment(id, dto, memberId);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(commentId);
     }
 
-    // 댓글 삭제  DELETE /api/user/board/review/{id}/comment/{commentId}
-    @DeleteMapping("/api/user/review/{id}/comment/{commentId}")
+    // 댓글 삭제
+    @DeleteMapping("/api/user/reviews/{id}/comments/{commentId}")
     public ResponseEntity<Void> deleteComment(
             @PathVariable Long id,
             @PathVariable Long commentId,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
+
         reviewService.deleteComment(commentId);
+
         return ResponseEntity.ok().build();
     }
 }
