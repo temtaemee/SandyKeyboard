@@ -1,16 +1,48 @@
 import { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
+  getAdminReservations,
   getAdminPartnerCompanies,
   createPartnerCompany,
   updatePartnerCompany,
   togglePartnerCompanyStatus,
 } from '../api/adminReservationApi';
 import {
+  setReservations,
+  setReservationsMetadata,
+  setAllReservations,
   setPartners,
   setLoading,
   setError,
 } from '../store/adminReservationSlice';
+
+// ─── 아바타 컬러 팔레트 ───
+const AVATAR_COLORS = ['#a5cdd6', '#c3edf6', '#d4b8e0', '#f9c6c6', '#b8d8c6', '#fbd38d'];
+
+// 백엔드 ReservationAdminListResDto → 프론트 테이블 필드명으로 변환하는 매핑 함수
+const mapBackendReservationToFrontend = (item, index) => ({
+  id: String(item.id ?? ''),
+  orderId: item.orderId ?? '',
+  // 대표 예약자명 우선, 없으면 계정 아이디로 fallback
+  customerName: item.primaryGuestName ?? item.username ?? '알 수 없음',
+  customerInitial: (item.primaryGuestName ?? item.username ?? 'U')[0],
+  customerEmail: item.primaryGuestEmail ?? '',
+  customerPhone: item.primaryGuestPhone ?? '',
+  username: item.username ?? '',
+  guestCount: item.guestCount ?? 0,
+  spaceName: item.spaceName ?? '정보 없음',
+  stayName: item.stayName ?? '정보 없음',
+  date: `${item.checkinDate ?? ''} ~ ${item.checkoutDate ?? ''}`,
+  createdAt: item.createdAt ?? null,
+  amount: item.totalPrice != null
+    ? `₩${Number(item.totalPrice).toLocaleString()}`
+    : '—',
+  // status는 Enum name (RESERVATION_STATUS_MAP 키와 일치)
+  status: item.status ?? 'PAYMENT_COMPLETED',
+  // statusLabel은 서버에서 한글로 내려오므로 직접 사용 가능
+  statusLabel: item.statusLabel ?? '',
+  avatarColor: AVATAR_COLORS[index % AVATAR_COLORS.length],
+});
 
 // 백엔드 CompanyRespDto 필드를 프론트엔드 파트너 목록 규격으로 변환하는 매핑 함수
 const mapBackendCompanyToFrontend = (item, index) => {
@@ -25,15 +57,72 @@ const mapBackendCompanyToFrontend = (item, index) => {
     iconBg: iconBgs[index % iconBgs.length],
     iconColor: iconColors[index % iconColors.length],
     partnerSince: item.createdAt ? item.createdAt.split('T')[0].replace(/-/g, '.') : '',
-    updatedAt: item.updatedAt ? item.updatedAt.split('T')[0].replace(/-/g, '.') : (item.createdAt ? item.createdAt.split('T')[0].replace(/-/g, '.') : ''),
+    updatedAt: item.updatedAt
+      ? item.updatedAt.split('T')[0].replace(/-/g, '.')
+      : (item.createdAt ? item.createdAt.split('T')[0].replace(/-/g, '.') : ''),
     created_at: item.createdAt || '',
   };
 };
 
 export default function useAdminReservation() {
   const dispatch = useDispatch();
-  const { partners, loading, error } = useSelector((state) => state.admin.reservation);
+  const {
+    partners,
+    reservations,
+    reservationsTotalPage,
+    reservationsTotalCount,
+    allReservations,
+    loading,
+    error,
+  } = useSelector((state) => state.admin.reservation);
 
+  // ─── 이번 달 예약 건수 계산 ───
+  const now = new Date();
+  const thisMonthCount = allReservations.filter(r => {
+    if (!r.createdAt) return false;
+    const d = new Date(r.createdAt);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }).length;
+
+  // ─── 환불 완료 목록 ───
+  const refundedList = allReservations.filter(r => r.status === 'REFUND_COMPLETED');
+
+  // ─── 예약 목록 조회 ───
+  const fetchReservations = useCallback(async (params = {}) => {
+    dispatch(setLoading(true));
+    try {
+      const resp = await getAdminReservations(params);
+      const data = resp.data;
+      // 백엔드가 Page 객체 또는 배열로 응답하는 경우 모두 대응
+      const content = Array.isArray(data) ? data : (data.content ?? []);
+      const mapped = content.map(mapBackendReservationToFrontend).filter(r => r.status !== 'PENDING');
+      dispatch(setReservations(mapped));
+      dispatch(setReservationsMetadata({
+        totalPage: data.totalPages ?? data.totalPage ?? 1,
+        totalCount: data.totalElements ?? data.totalCount ?? mapped.length,
+      }));
+    } catch (err) {
+      console.error('예약 목록 fetch 에러:', err);
+      dispatch(setError(err.message));
+    } finally {
+      dispatch(setLoading(false));
+    }
+  }, [dispatch]);
+
+  // ─── 전체 예약 조회 (통계/환불 모달용, size=1000) ───
+  const fetchAllReservations = useCallback(async () => {
+    try {
+      const resp = await getAdminReservations({ pno: 0, size: 1000 });
+      const data = resp.data;
+      const content = Array.isArray(data) ? data : (data.content ?? []);
+      const mapped = content.map(mapBackendReservationToFrontend).filter(r => r.status !== 'PENDING');
+      dispatch(setAllReservations(mapped));
+    } catch (err) {
+      console.error('전체 예약 fetch 에러:', err);
+    }
+  }, [dispatch]);
+
+  // ─── 파트너사 목록 조회 ───
   const fetchPartners = useCallback(async () => {
     dispatch(setLoading(true));
     try {
@@ -48,6 +137,7 @@ export default function useAdminReservation() {
     }
   }, [dispatch]);
 
+  // ─── 파트너사 등록 ───
   const addPartner = useCallback(async (partner) => {
     dispatch(setLoading(true));
     try {
@@ -64,6 +154,7 @@ export default function useAdminReservation() {
     }
   }, [dispatch, fetchPartners]);
 
+  // ─── 파트너사 수정 ───
   const updatePartner = useCallback(async (id, changes) => {
     dispatch(setLoading(true));
     try {
@@ -80,6 +171,7 @@ export default function useAdminReservation() {
     }
   }, [dispatch, fetchPartners]);
 
+  // ─── 파트너사 활성/비활성 토글 ───
   const togglePartnerStatus = useCallback(async (id) => {
     dispatch(setLoading(true));
     try {
@@ -95,8 +187,16 @@ export default function useAdminReservation() {
 
   return {
     partners,
+    reservations,
+    reservationsTotalPage,
+    reservationsTotalCount,
+    allReservations,
+    thisMonthCount,
+    refundedList,
     loading,
     error,
+    fetchReservations,
+    fetchAllReservations,
     fetchPartners,
     addPartner,
     updatePartner,

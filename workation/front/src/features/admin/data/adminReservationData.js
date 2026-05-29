@@ -8,12 +8,12 @@ export const RESERVATION_STAT_CARDS = [
   {
     id: 1,
     label: '이번 달 예약',
-    value: '1,284',
+    value: '1,284건',
     badge: { text: '+12%', color: 'green' },
   },
   {
     id: 2,
-    label: '결제 취소',
+    label: '이번 달 결제 취소',
     value: '₩42,500,000',
     badge: { text: '-2%', color: 'red' },
   },
@@ -28,7 +28,7 @@ export const RESERVATION_LIST = [
     spaceName: '오션블루 스위트',
     date: '2023.10.15\n10:18',
     amount: '₩780,000',
-    status: 'confirmed',
+    status: 'RESERVED',
     avatarColor: '#a5cdd6',
   },
   {
@@ -39,7 +39,7 @@ export const RESERVATION_LIST = [
     spaceName: '포레스트 캐빈 102',
     date: '2023.10.20\n12:22',
     amount: '₩420,000',
-    status: 'waiting',
+    status: 'PAYMENT_COMPLETED',
     avatarColor: '#c3edf6',
   },
   {
@@ -50,7 +50,7 @@ export const RESERVATION_LIST = [
     spaceName: '시티뷰 펜트하우스',
     date: '2023.10.25\n15:30',
     amount: '₩1,250,000',
-    status: 'cancelled',
+    status: 'USER_CANCELLED',
     avatarColor: '#d4b8e0',
   },
 ];
