@@ -38,7 +38,7 @@ export function useNoticeWrite() {
       .catch((err) => {
         console.error('수정할 공지를 불러오지 못했습니다.', err);
         alert('공지 정보를 불러오지 못했습니다.');
-        navigate('/board/support/notice');
+        navigate('/notice');
       })
       .finally(() => setLoadingEdit(false));
   }, [editId]);
@@ -66,7 +66,7 @@ export function useNoticeWrite() {
         if (!memberId) return alert('로그인이 필요합니다.');
         await createNotice({ memberId, title, content, pinYn }, files);
       }
-      navigate('/board/support/notice');
+      navigate('/notice');
     } catch (err) {
       console.error('공지 저장 실패', err);
       alert(isEdit ? '수정에 실패했습니다.' : '등록에 실패했습니다.');

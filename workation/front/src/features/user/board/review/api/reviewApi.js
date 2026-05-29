@@ -5,10 +5,10 @@ import api from '../../../../../app/api/axios';
 // ================================
 
 // 사용자 전체 공개 조회용
-const PUBLIC_BASE = '/public/board/review';
+const PUBLIC_BASE = '/public/reviews';
 
 // 로그인 사용자 기능용
-const USER_BASE = '/user/board/review';
+const USER_BASE = '/user/reviews';
 
 // ================================
 // 이미지 URL 변환 함수
@@ -130,7 +130,7 @@ export const deleteReview = (id) =>
  * reviewId : 리뷰 게시글 번호
  */
 export const getComments = (reviewId) =>
-  api.get(`${PUBLIC_BASE}/${reviewId}/comment`).then((res) => res.data);
+  api.get(`${PUBLIC_BASE}/${reviewId}/comments`).then((res) => res.data);
 
 /**
  * 댓글 등록
@@ -139,7 +139,16 @@ export const getComments = (reviewId) =>
  * dto      : 댓글 데이터
  */
 export const createComment = (reviewId, dto) =>
-  api.post(`${USER_BASE}/${reviewId}/comment`, dto).then((res) => res.data);
+  api.post(`${USER_BASE}/${reviewId}/comments`, dto).then((res) => res.data);
+
+/**
+ * 댓글 수정
+ *
+ * commentId : 댓글 번호
+ * dto       : 댓글 데이터
+ */
+export const updateComment = (commentId, dto) =>
+  api.put(`/user/comments/${commentId}`, dto).then((res) => res.data);
 
 /**
  * 댓글 삭제
@@ -148,9 +157,15 @@ export const createComment = (reviewId, dto) =>
  * commentId : 댓글 번호
  */
 export const deleteComment = (reviewId, commentId) =>
-  api
-    .delete(`${USER_BASE}/${reviewId}/comment/${commentId}`)
-    .then((res) => res.data);
+  api.delete(`/user/comments/${commentId}`).then((res) => res.data);
+
+/**
+ * 댓글 숨김 처리
+ *
+ * commentId : 댓글 번호
+ */
+export const hideComment = (commentId) =>
+  api.put(`/admin/comments/${commentId}/hide`, {}).then((res) => res.data);
 
 // ================================
 // 게시글 좋아요 API
@@ -165,15 +180,18 @@ export const getReviewLike = (reviewId) =>
   api.get(`${PUBLIC_BASE}/${reviewId}/like`).then((res) => res.data);
 
 /**
- * 게시글 좋아요 토글
- *
- * - 이미 좋아요면 취소
- * - 아니면 좋아요 추가
+ * 게시글 좋아요 토글 (기능명세서 상 추가/삭제로 분기)
  *
  * reviewId : 리뷰 번호
+ * liked    : 현재 좋아요 상태
  */
-export const toggleReviewLike = (reviewId) =>
-  api.post(`${USER_BASE}/${reviewId}/like`, {}).then((res) => res.data);
+export const toggleReviewLike = (reviewId, liked) => {
+  if (liked) {
+    return api.delete(`${USER_BASE}/${reviewId}/like`).then((res) => res.data);
+  } else {
+    return api.post(`${USER_BASE}/${reviewId}/like`, {}).then((res) => res.data);
+  }
+};
 
 // ================================
 // 댓글 좋아요 API
@@ -187,19 +205,34 @@ export const toggleReviewLike = (reviewId) =>
  */
 export const getCommentLike = (reviewId, commentId) =>
   api
-    .get(`${PUBLIC_BASE}/${reviewId}/comment/${commentId}/like`)
+    .get(`${PUBLIC_BASE}/${reviewId}/comments/${commentId}/like`)
     .then((res) => res.data);
 
 /**
  * 댓글 좋아요 토글
- *
- * - 이미 좋아요면 취소
- * - 아니면 좋아요 추가
  *
  * reviewId  : 리뷰 번호
  * commentId : 댓글 번호
  */
 export const toggleCommentLike = (reviewId, commentId) =>
   api
-    .post(`${USER_BASE}/${reviewId}/comment/${commentId}/like`, {})
+    .post(`${USER_BASE}/${reviewId}/comments/${commentId}/like`, {})
     .then((res) => res.data);
+
+// ================================
+// 별점 API (기능명세서 추가)
+// ================================
+
+export const addReviewRating = (reviewId, rating) =>
+  api.post(`${USER_BASE}/${reviewId}/rating`, { rating }).then((res) => res.data);
+
+export const updateReviewRating = (reviewId, rating) =>
+  api.put(`${USER_BASE}/${reviewId}/rating`, { rating }).then((res) => res.data);
+
+// ================================
+// 리뷰 관리자 API (기능명세서 추가)
+// ================================
+
+export const hideReview = (reviewId) =>
+  api.put(`/admin/reviews/${reviewId}/hide`, {}).then((res) => res.data);
+

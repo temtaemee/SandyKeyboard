@@ -98,13 +98,13 @@ export default function NoticeDetailPage() {
       )}
 
       <ActionRow>
-        <BackButton onClick={() => navigate('/board/support/notice')}>
+        <BackButton onClick={() => navigate('/notice')}>
           ← 목록으로
         </BackButton>
         <RightButtons>
           <EditButton
             onClick={() =>
-              navigate(`/board/support/notice/write?id=${noticeId}`)
+              navigate(`/notice/write?id=${noticeId}`)
             }
           >
             수정

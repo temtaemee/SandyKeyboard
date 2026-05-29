@@ -470,7 +470,7 @@ export default function ReviewListPage() {
             key={review.id}
             review={review}
             onDelete={handleDelete}
-            onEdit={(id) => navigate(`/board/review/write?id=${id}`)}
+            onEdit={(id) => navigate(`/review/edit/${id}`)}
           />
         ))}
       </FeedList>

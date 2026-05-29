@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { createReview, updateReview, getReviewDetail } from '../api/reviewApi';
 
 export function useReviewWrite() {
   const navigate = useNavigate();
+  const { reviewId: paramReviewId } = useParams();
   const [searchParams] = useSearchParams();
 
-  const editId = searchParams.get('id');
+  // /review/edit/:reviewId 또는 ?id= 쿼리 파라미터 모두 지원
+  const editId = paramReviewId ?? searchParams.get('id');
   const isEdit = !!editId;
 
   const [title, setTitle] = useState('');
@@ -77,7 +79,7 @@ export function useReviewWrite() {
         await createReview(dto, imageFiles);
       }
 
-      navigate('/board/review/list');
+      navigate('/board/review');
     } catch (err) {
       console.error(err);
       alert(isEdit ? '수정에 실패했습니다.' : '등록에 실패했습니다.');

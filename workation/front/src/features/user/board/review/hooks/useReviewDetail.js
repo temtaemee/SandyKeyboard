@@ -36,7 +36,7 @@ export function useReviewDetail(reviewId) {
     try {
       await deleteReview(reviewId);
       setShowConfirm(false);
-      navigate('/board/review/list');
+      navigate('/board/review');
     } catch (err) {
       console.error(err);
       alert('삭제에 실패했습니다.');

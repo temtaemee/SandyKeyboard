@@ -19,6 +19,16 @@ import FindIdPage from './features/member/pages/findId/FindIdPage';
 import FindPassWordPage from './features/member/pages/findPw/FindPassWordPage';
 import SignupPage from './features/member/pages/singup/SignupPage';
 import BoardRouter from './routes/BoardRouter';
+import SupportHomePage from './features/user/board/support/pages/SupportHomePage';
+import NoticePage from './features/user/board/support/pages/NoticePage';
+import NoticeDetailPage from './features/user/board/support/pages/NoticeDetailPage';
+import NoticeWritePage from './features/user/board/support/pages/NoticeWritePage';
+import FaqPage from './features/user/board/support/pages/FaqPage';
+import ReviewHomePage from './features/user/board/review/pages/ReviewHomePage';
+import ReviewListPage from './features/user/board/review/pages/ReviewListPage';
+import ReviewWritePage from './features/user/board/review/pages/ReviewWritePage';
+import ReviewDetailPage from './features/user/board/review/pages/ReviewDetailPage';
+import EventPage from './features/user/board/event/pages/EventPage';
 import ResvRouter from './routes/ResvRouter';
 import LoginPage from './features/member/pages/login/LoginPage';
 import MypageRouter from './routes/MypageRouter';
@@ -86,7 +96,27 @@ export default function App() {
           {/* 예약(reservation) 관련 라우트 - 팀원 김민성 */}
           <Route path="resv/*" element={<ResvRouter />} />
           {/* 게시판(board) 관련 라우트 - 팀원 양희우 */}
+          {/* 기존 /board/* 하위 라우트 유지 (하위 호환) */}
           <Route path="board/*" element={<BoardRouter />} />
+
+          {/* 공지사항 라우트 */}
+          <Route element={<SupportHomePage />}>
+            <Route path="notice" element={<NoticePage />} />
+            <Route path="notice/write" element={<NoticeWritePage />} />
+            <Route path="notice/:noticeId" element={<NoticeDetailPage />} />
+            <Route path="faq" element={<FaqPage />} />
+          </Route>
+
+          {/* 참여후기 라우트 */}
+          <Route path="board/review" element={<ReviewHomePage />}>
+            <Route index element={<ReviewListPage />} />
+          </Route>
+          <Route path="review/create" element={<ReviewWritePage />} />
+          <Route path="review/edit/:reviewId" element={<ReviewWritePage />} />
+          <Route path="review/:reviewId" element={<ReviewDetailPage />} />
+
+          {/* 이벤트 라우트 */}
+          <Route path="event" element={<EventPage />} />
         </Route>
 
         {/* 판매자(Seller) 관련 라우트 - 팀원 김영욱 */}

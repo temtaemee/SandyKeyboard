@@ -20,27 +20,27 @@ public class FaqApiController {
 
     private final FaqService faqService;
 
-    // GET /api/public/faq
-    @GetMapping("/public/faq")
+    // GET /api/public/faqs
+    @GetMapping("/public/faqs")
     public ResponseEntity<List<FaqRespDto>> findAll() {
         return ResponseEntity.ok(faqService.findAll());
     }
 
-    // GET /api/public/faq/{id}
-    @GetMapping("/public/faq/{id}")
+    // GET /api/public/faqs/{id}
+    @GetMapping("/public/faqs/{id}")
     public ResponseEntity<FaqRespDto> findById(@PathVariable Long id) {
         return ResponseEntity.ok(faqService.findById(id));
     }
 
-    // POST /api/admin/faq
-    @PostMapping("/admin/faq")
+    // POST /api/admin/faqs
+    @PostMapping("/admin/faqs")
     public ResponseEntity<Long> create(@RequestBody FaqCreateReqDto dto) {
         Long id = faqService.create(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(id);
     }
 
-    // PUT /api/admin/faq/{id}
-    @PutMapping("/admin/faq/{id}")
+    // PUT /api/admin/faqs/{id}
+    @PutMapping("/admin/faqs/{id}")
     public ResponseEntity<Void> update(
             @PathVariable Long id,
             @RequestBody FaqUpdateReqDto dto
@@ -49,8 +49,8 @@ public class FaqApiController {
         return ResponseEntity.ok().build();
     }
 
-    // DELETE /api/admin/faq/{id}
-    @DeleteMapping("/admin/faq/{id}")
+    // DELETE /api/admin/faqs/{id}
+    @DeleteMapping("/admin/faqs/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         faqService.delete(id);
         return ResponseEntity.ok().build();

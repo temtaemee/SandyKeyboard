@@ -31,7 +31,7 @@ public class ReviewApiController {
     // ─────────────────────────────────────────
 
     // 전체 목록 조회  GET /api/public/board/review?page=0
-    @GetMapping("/api/public/board/review")
+    @GetMapping("/api/public/review")
     public ResponseEntity<Page<ReviewListRespDto>> findAll(
             @RequestParam(defaultValue = "0") int page
     ) {
@@ -39,13 +39,13 @@ public class ReviewApiController {
     }
 
     // 상세 조회  GET /api/public/board/review/{id}
-    @GetMapping("/api/public/board/review/{id}")
+    @GetMapping("/api/public/review/{id}")
     public ResponseEntity<ReviewRespDto> findById(@PathVariable Long id) {
         return ResponseEntity.ok(reviewService.findById(id));
     }
 
     // 댓글 목록  GET /api/public/board/review/{id}/comment
-    @GetMapping("/api/public/board/review/{id}/comment")
+    @GetMapping("/api/public/review/{id}/comment")
     public ResponseEntity<List<CommentRespDto>> findComments(@PathVariable Long id) {
         return ResponseEntity.ok(reviewService.findComments(id));
     }
@@ -55,7 +55,7 @@ public class ReviewApiController {
     // ─────────────────────────────────────────
 
     // 내 리뷰 목록  GET /api/user/board/review/my?page=0
-    @GetMapping("/api/user/board/review/my")
+    @GetMapping("/api/user/review/my")
     public ResponseEntity<Page<ReviewListRespDto>> findMyReview(
             @RequestParam(defaultValue = "0") int page,
             @AuthenticationPrincipal CustomUserDetails userDetails
@@ -65,7 +65,7 @@ public class ReviewApiController {
     }
 
     // 등록  POST /api/user/board/review
-    @PostMapping("/api/user/board/review")
+    @PostMapping("/api/user/review")
     public ResponseEntity<Long> create(
             @RequestPart("dto") ReviewCreateReqDto dto,
             @RequestPart(value = "images", required = false) List<MultipartFile> images,
@@ -77,7 +77,7 @@ public class ReviewApiController {
     }
 
     // 수정  PUT /api/user/board/review/{id}
-    @PutMapping("/api/user/board/review/{id}")
+    @PutMapping("/api/user/review/{id}")
     public ResponseEntity<Void> update(
             @PathVariable Long id,
             @RequestPart("dto") ReviewUpdateReqDto dto,
@@ -90,7 +90,7 @@ public class ReviewApiController {
     }
 
     // 삭제  DELETE /api/user/board/review/{id}
-    @DeleteMapping("/api/user/board/review/{id}")
+    @DeleteMapping("/api/user/review/{id}")
     public ResponseEntity<Void> delete(
             @PathVariable Long id,
             @AuthenticationPrincipal CustomUserDetails userDetails
@@ -100,7 +100,7 @@ public class ReviewApiController {
     }
 
     // 댓글 등록  POST /api/user/board/review/{id}/comment
-    @PostMapping("/api/user/board/review/{id}/comment")
+    @PostMapping("/api/user/review/{id}/comment")
     public ResponseEntity<Long> createComment(
             @PathVariable Long id,
             @RequestBody CommentCreateReqDto dto,
@@ -112,7 +112,7 @@ public class ReviewApiController {
     }
 
     // 댓글 삭제  DELETE /api/user/board/review/{id}/comment/{commentId}
-    @DeleteMapping("/api/user/board/review/{id}/comment/{commentId}")
+    @DeleteMapping("/api/user/review/{id}/comment/{commentId}")
     public ResponseEntity<Void> deleteComment(
             @PathVariable Long id,
             @PathVariable Long commentId,

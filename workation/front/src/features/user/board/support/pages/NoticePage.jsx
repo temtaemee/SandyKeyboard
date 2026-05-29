@@ -34,7 +34,7 @@ export default function NoticePage() {
   return (
     <Wrapper>
       <TopRow>
-        <WriteButton onClick={() => navigate('/board/support/notice/write')}>
+        <WriteButton onClick={() => navigate('/notice/write')}>
           ✏️ 글쓰기
         </WriteButton>
       </TopRow>
@@ -50,7 +50,7 @@ export default function NoticePage() {
         {fixedNotices.map((item) => (
           <PinnedRow
             key={item.id}
-            onClick={() => navigate(`/board/support/notice/${item.id}`)}
+            onClick={() => navigate(`/notice/${item.id}`)}
           >
             <ColNum>—</ColNum>
             <ColTitle>
@@ -71,7 +71,7 @@ export default function NoticePage() {
         {normalNotices.map((item, idx) => (
           <Row
             key={item.id}
-            onClick={() => navigate(`/board/support/notice/${item.id}`)}
+            onClick={() => navigate(`/notice/${item.id}`)}
           >
             <ColNum>{currentPage * 10 + idx + 1}</ColNum>
             <ColTitle>{item.title}</ColTitle>
