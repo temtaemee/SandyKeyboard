@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { COUPON_TEMPLATES } from '../data/adminSellersData';
 import useAdminSellers from '../hooks/useAdminSellers';
+import useAdminSellersUI from '../hooks/useAdminSellersUI';
 import {
   SELLER_STATUS_MAP,
   TOTAL_PAGES,
@@ -78,9 +79,6 @@ export default function AdminSellersPage() {
   console.log('sellersTotalCount:', sellersTotalCount, 'customersTotalCount:', customersTotalCount);
   console.log('==========================');
 
-  const [view, setView] = useState('customer'); // 'customer' | 'seller'
-  const [filter, setFilter] = useState('전체');
-  const [searchQuery, setSearchQuery] = useState('');
   const {
     currentPage,
     goToPage,
@@ -88,6 +86,40 @@ export default function AdminSellersPage() {
     goToNext,
     reset: resetPage,
   } = usePagination();
+
+  // 통합 UI 훅 도입으로 복잡한 useState 제거 및 모달 제어 격리
+  const {
+    view,
+    filter,
+    setFilter,
+    searchQuery,
+    setSearchQuery,
+    handleViewChange,
+    confirmTarget,
+    isSellerSuspended,
+    isCustomerSuspended,
+    handleToggleClick,
+    handleConfirm,
+    selectedCustomer,
+    setSelectedCustomer,
+    showIssuePanel,
+    setShowIssuePanel,
+    selectedTemplate,
+    setSelectedTemplate,
+    handleCloseCustomerModal,
+    handleDeleteCoupon,
+    handleIssueCoupon,
+  } = useAdminSellersUI({
+    sellers,
+    customers,
+    sellerSuspended,
+    customerSuspended,
+    suspendSeller,
+    suspendCustomer,
+    addCoupon,
+    deleteCoupon,
+    resetPage,
+  });
 
   // 1. 한국어 필터명을 백엔드 상태(ACTIVE, BANNED 등)로 변환하는 함수
   const getBackendStatus = (korFilter) => {
@@ -134,74 +166,6 @@ export default function AdminSellersPage() {
     active: customersActiveCount,
     stopped: customersBannedCount,
     new: customersNewCount,
-  };
-
-  // UI 전용 상태
-  const [confirmTarget, setConfirmTarget] = useState(null);
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [showIssuePanel, setShowIssuePanel] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState(COUPON_TEMPLATES[0].id);
-
-  const isSellerSuspended = (s) =>
-    sellerSuspended[s.id] ?? s.status === 'stopped';
-  const isCustomerSuspended = (c) =>
-    customerSuspended[c.id] ?? c.status === 'stopped';
-
-  const handleToggleClick = (item, isCurrent) => {
-    setConfirmTarget({
-      id: item.id,
-      name: item.name,
-      willSuspend: !isCurrent,
-      view,
-    });
-  };
-
-  const handleConfirm = () => {
-    if (!confirmTarget) return;
-    if (confirmTarget.view === 'seller') {
-      suspendSeller(confirmTarget.id, confirmTarget.willSuspend);
-    } else {
-      suspendCustomer(confirmTarget.id, confirmTarget.willSuspend);
-    }
-    setConfirmTarget(null);
-  };
-
-  const handleCloseCustomerModal = () => {
-    setSelectedCustomer(null);
-    setShowIssuePanel(false);
-    setSelectedTemplate(COUPON_TEMPLATES[0].id);
-  };
-
-  const handleDeleteCoupon = (customerId, couponId) => {
-    deleteCoupon(customerId, couponId);
-  };
-
-  const handleIssueCoupon = () => {
-    if (!selectedCustomer) return;
-    const tpl = COUPON_TEMPLATES.find((t) => t.id === selectedTemplate);
-    if (!tpl) return;
-    const today = new Date();
-    const expire = new Date(today);
-    expire.setDate(expire.getDate() + tpl.validDays);
-    const fmt = (d) =>
-      `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
-    const newCoupon = {
-      id: `CPN-${Date.now()}`,
-      title: tpl.title,
-      discount: tpl.discount,
-      issuedAt: fmt(today),
-      expireAt: fmt(expire),
-    };
-    addCoupon(selectedCustomer.id, newCoupon);
-    setShowIssuePanel(false);
-    setSelectedTemplate(COUPON_TEMPLATES[0].id);
-  };
-
-  const handleViewChange = (v) => {
-    setView(v);
-    setFilter('전체');
-    setSearchQuery('');
-    resetPage();
   };
 
   /* 필터링 - 백엔드에서 페이징과 필터링 처리가 이미 된 데이터이므로 그대로 주입합니다. */

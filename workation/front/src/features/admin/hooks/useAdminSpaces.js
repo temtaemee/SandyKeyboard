@@ -4,8 +4,8 @@ import { getAdminSpaces } from '../api/adminSpacesApi';
 import {
   setSpaces,
   setLoading,
-  approveSpaces,
-  rejectSpaces,
+  approveSpaces as approveSpacesAction,
+  rejectSpaces as rejectSpacesAction,
 } from '../store/adminSpacesSlice';
 
 export default function useAdminSpaces() {
@@ -29,14 +29,26 @@ export default function useAdminSpaces() {
     fetchSpaces();
   }, [fetchSpaces]);
 
+  const refetch = fetchSpaces;
+
+  const approveSpaces = useCallback(
+    (ids, fromTab) => dispatch(approveSpacesAction({ ids, fromTab })),
+    [dispatch]
+  );
+
+  const rejectSpaces = useCallback(
+    (ids) => dispatch(rejectSpacesAction(ids)),
+    [dispatch]
+  );
+
   return {
     spaces,
     pendingSpaces,
     rejectedSpaces,
     loading,
     error,
-    refetch: fetchSpaces,
-    approveSpaces: (ids, fromTab) => dispatch(approveSpaces({ ids, fromTab })),
-    rejectSpaces: (ids) => dispatch(rejectSpaces(ids)),
+    refetch,
+    approveSpaces,
+    rejectSpaces,
   };
 }

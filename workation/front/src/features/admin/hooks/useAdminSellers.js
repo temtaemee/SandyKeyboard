@@ -20,8 +20,8 @@ import {
   setCustomersNewCount,
   setSellerSuspended,
   setCustomerSuspended,
-  addCoupon,
-  deleteCoupon,
+  addCoupon as addCouponAction,
+  deleteCoupon as deleteCouponAction,
   setLoading,
 } from '../store/adminSellersSlice';
 
@@ -217,6 +217,16 @@ export default function useAdminSellers() {
     [dispatch]
   );
 
+  const addCoupon = useCallback(
+    (customerId, coupon) => dispatch(addCouponAction({ customerId, coupon })),
+    [dispatch]
+  );
+
+  const deleteCoupon = useCallback(
+    (customerId, couponId) => dispatch(deleteCouponAction({ customerId, couponId })),
+    [dispatch]
+  );
+
   return {
     sellers,
     customers,
@@ -243,9 +253,7 @@ export default function useAdminSellers() {
     fetchCustomersStats,
     suspendSeller,
     suspendCustomer,
-    addCoupon: (customerId, coupon) =>
-      dispatch(addCoupon({ customerId, coupon })),
-    deleteCoupon: (customerId, couponId) =>
-      dispatch(deleteCoupon({ customerId, couponId })),
+    addCoupon,
+    deleteCoupon,
   };
 }

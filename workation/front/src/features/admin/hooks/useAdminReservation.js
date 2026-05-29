@@ -48,7 +48,7 @@ export default function useAdminReservation() {
     }
   }, [dispatch]);
 
-  const handleAddPartner = useCallback(async (partner) => {
+  const addPartner = useCallback(async (partner) => {
     dispatch(setLoading(true));
     try {
       await createPartnerCompany({
@@ -64,7 +64,7 @@ export default function useAdminReservation() {
     }
   }, [dispatch, fetchPartners]);
 
-  const handleUpdatePartner = useCallback(async (id, changes) => {
+  const updatePartner = useCallback(async (id, changes) => {
     dispatch(setLoading(true));
     try {
       await updatePartnerCompany(id, {
@@ -80,7 +80,7 @@ export default function useAdminReservation() {
     }
   }, [dispatch, fetchPartners]);
 
-  const handleTogglePartnerStatus = useCallback(async (id) => {
+  const togglePartnerStatus = useCallback(async (id) => {
     dispatch(setLoading(true));
     try {
       await togglePartnerCompanyStatus(id);
@@ -98,8 +98,8 @@ export default function useAdminReservation() {
     loading,
     error,
     fetchPartners,
-    addPartner: handleAddPartner,
-    updatePartner: handleUpdatePartner,
-    togglePartnerStatus: handleTogglePartnerStatus,
+    addPartner,
+    updatePartner,
+    togglePartnerStatus,
   };
 }

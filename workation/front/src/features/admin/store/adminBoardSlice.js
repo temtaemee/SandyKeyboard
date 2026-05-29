@@ -4,7 +4,9 @@ import { BOARD_POSTS } from '../data/adminBoardData';
 const initPinnedIds = () => {
   const ids = [];
   Object.values(BOARD_POSTS).forEach((posts) =>
-    posts.forEach((p) => { if (p.isFixed) ids.push(p.id); })
+    posts.forEach((p) => {
+      if (p.isFixed) ids.push(p.id);
+    })
   );
   return ids;
 };
@@ -30,8 +32,15 @@ const adminBoardSlice = createSlice({
     },
     deletePostFromTab(state, action) {
       const { tab, postId } = action.payload;
-      state.posts[tab] = state.posts[tab].filter((p) => p.id !== postId);
-      state.pinnedIds = state.pinnedIds.filter((id) => id !== postId);
+      if (tab === '쿠폰') {
+        // 쿠폰은 Soft Delete이므로 목록에서 제거하지 않고 delYn = 'Y' 상태로 변경하여 삭제 카테고리에만 노출시킵니다.
+        state.posts[tab] = (state.posts[tab] || []).map((p) =>
+          p.id === postId ? { ...p, delYn: 'Y' } : p
+        );
+      } else {
+        state.posts[tab] = (state.posts[tab] || []).filter((p) => p.id !== postId);
+        state.pinnedIds = state.pinnedIds.filter((id) => id !== postId);
+      }
     },
     togglePin(state, action) {
       const id = action.payload;

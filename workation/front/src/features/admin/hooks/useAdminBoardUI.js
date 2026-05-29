@@ -1,0 +1,188 @@
+import { useState } from 'react';
+
+/**
+ * AdminBoardPage의 UI 로직(검색, 필터링, 다양한 모달 창 제어, 폼 입력)을 전담하는 커스텀 훅입니다.
+ *
+ * @param {Object} params
+ * @param {Array} params.tabPosts - 현재 탭의 게시글 목록
+ * @param {string} params.activeTab - 현재 선택된 활성 탭명
+ * @param {Function} params.updatePost - 게시글 정보를 업데이트하는 서버 디스패치 함수
+ * @param {Function} params.deletePost - 게시글을 삭제하는 서버 디스패치 함수
+ * @param {Function} params.createPost - 게시글을 생성하는 서버 디스패치 함수
+ * @returns {Object} AdminBoardPage에서 사용할 UI 상태 및 핸들러 객체
+ */
+export default function useAdminBoardUI({
+  tabPosts,
+  activeTab,
+  updatePost,
+  deletePost,
+  createPost,
+}) {
+  // ─── 1. 검색 및 필터 상태 ───
+  const [searchQuery, setSearchQuery] = useState('');
+  const [couponFilter, setCouponFilter] = useState('전체');
+
+  // 검색 및 쿠폰 상태 필터링 연산 (백엔드 JPA delYn 필드 기준으로 소프트 딜리트 완벽 판별)
+  const filteredPosts = tabPosts.filter((p) => {
+    if (activeTab === '쿠폰') {
+      const matchSearch = (p.couponName || '')
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
+
+      // '삭제' 카테고리는 오직 삭제된 쿠폰(delYn === 'Y')만 표시합니다.
+      if (couponFilter === '삭제') {
+        return matchSearch && p.delYn === 'Y';
+      }
+
+      // '전체', '활성', '소진' 카테고리에서는 소프트 삭제된 쿠폰(delYn === 'Y')을 완벽히 제외합니다.
+      if (p.delYn === 'Y') return false;
+
+      if (couponFilter === '전체') return matchSearch;
+
+      // '활성' 필터 조건: delYn === 'N' 이면서 (ACTIVE이거나 남은 수량이 0보다 큰 경우)
+      if (couponFilter === '활성') {
+        const isQtyActive = p.remainQty !== undefined && p.remainQty > 0;
+        return matchSearch && (p.couponStatus === 'ACTIVE' || isQtyActive);
+      }
+
+      // '소진' 필터 조건: delYn === 'N' 이면서 (EXHAUSTED이거나 남은 수량이 0 이하인 경우)
+      if (couponFilter === '소진') {
+        const isQtyExhausted = p.remainQty !== undefined && p.remainQty <= 0;
+        return (
+          matchSearch && (p.couponStatus === 'EXHAUSTED' || isQtyExhausted)
+        );
+      }
+
+      return matchSearch;
+    } else {
+      const matchSearch = (p.title || '')
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
+      return matchSearch;
+    }
+  });
+
+  // 검색 및 쿠폰 필터 상태 초기화
+  const resetFilters = () => {
+    setSearchQuery('');
+    setCouponFilter('전체');
+  };
+
+  // ─── 2. 신규 등록 / 수정 모달 & 폼 상태 ───
+  const [registerModal, setRegisterModal] = useState(null); // null | tabName string
+  const [editingPost, setEditingPost] = useState(null); // 현재 수정 중인 post 객체
+  const [formData, setFormData] = useState({}); // 작성 중인 폼 입력 값 객체
+
+  // 등록 모달 열기
+  const openRegisterModal = (type) => {
+    setRegisterModal(type);
+    setEditingPost(null);
+    setFormData({});
+  };
+
+  // 수정 모달 열기 (상세 모달은 자동으로 닫힘)
+  const openEditModal = (post) => {
+    setDetailPost(null);
+    setRegisterModal(activeTab);
+    setEditingPost(post);
+    if (activeTab === '쿠폰') {
+      setFormData({
+        name: post.couponName ?? '',
+        discountRate: post.discountRate ?? '',
+        quantity: post.remainQty ?? '',
+        validDays: post.validDays ?? '',
+      });
+    } else {
+      setFormData({ title: post.title, content: post.content || '' });
+    }
+  };
+
+  // 등록/수정 모달 닫기
+  const closeRegisterModal = () => {
+    setRegisterModal(null);
+    setEditingPost(null);
+    setFormData({});
+  };
+
+  // 폼 입력 필드 변경 핸들러
+  const handleFormChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // 등록/수정 완료 제출 핸들러
+  const handleRegisterSubmit = () => {
+    if (editingPost) {
+      if (activeTab === '쿠폰') {
+        updatePost(editingPost.id, {
+          couponName: formData.name || editingPost.couponName,
+          discountRate: formData.discountRate
+            ? Number(formData.discountRate)
+            : editingPost.discountRate,
+          remainQty: formData.quantity
+            ? Number(formData.quantity)
+            : editingPost.remainQty,
+          validDays: formData.validDays
+            ? Number(formData.validDays)
+            : editingPost.validDays,
+        });
+      } else {
+        updatePost(editingPost.id, {
+          title: formData.title || editingPost.title,
+        });
+      }
+    } else {
+      if (activeTab === '쿠폰') {
+        createPost({
+          couponName: formData.name,
+          discountRate: Number(formData.discountRate),
+          remainQty: Number(formData.quantity),
+          validDays: Number(formData.validDays),
+        });
+      }
+    }
+    closeRegisterModal();
+  };
+
+  // ─── 3. 상세보기 모달 상태 ───
+  const [detailPost, setDetailPost] = useState(null); // null | post 객체
+
+  // ─── 4. 삭제 확인 모달 상태 ───
+  const [deleteTarget, setDeleteTarget] = useState(null); // null | post 객체
+
+  // 삭제 확인 완료 제출 핸들러 (실제 서버 DELETE API 호출)
+  const handleDeleteConfirm = () => {
+    if (!deleteTarget) return;
+    deletePost(deleteTarget.id);
+    setDeleteTarget(null);
+    setDetailPost(null);
+  };
+
+  return {
+    // 1. 검색 및 필터
+    searchQuery,
+    setSearchQuery,
+    couponFilter,
+    setCouponFilter,
+    posts: filteredPosts,
+    resetFilters,
+
+    // 2. 신규 등록 및 수정
+    registerModal,
+    editingPost,
+    formData,
+    openRegisterModal,
+    openEditModal,
+    closeRegisterModal,
+    handleFormChange,
+    handleRegisterSubmit,
+
+    // 3. 상세보기
+    detailPost,
+    setDetailPost,
+
+    // 4. 삭제 확인
+    deleteTarget,
+    setDeleteTarget,
+    handleDeleteConfirm,
+  };
+}
