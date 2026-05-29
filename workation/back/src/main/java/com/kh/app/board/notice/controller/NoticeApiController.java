@@ -25,7 +25,7 @@ public class NoticeApiController {
 
     // 목록 조회 (페이징)
     // GET /api/public/board/notice?page=0
-    @GetMapping("/public/board/notice")
+    @GetMapping("/public/notice")
     public ResponseEntity<Page<NoticeListRespDto>> findAll(
             @RequestParam(defaultValue = "0") int page
     ) {
@@ -33,13 +33,13 @@ public class NoticeApiController {
     }
 
     // 상세 조회
-    @GetMapping("/public/board/notice/{id}")
+    @GetMapping("/public/notice/{id}")
     public ResponseEntity<NoticeRespDto> findById(@PathVariable Long id) {
         return ResponseEntity.ok(noticeService.findById(id));
     }
 
     // 등록
-    @PostMapping(value = "/user/board/notice", consumes = "multipart/form-data")
+    @PostMapping(value = "/user/notice", consumes = "multipart/form-data")
     public ResponseEntity<Long> create(
             @RequestPart("dto") NoticeCreateReqDto dto,
             @RequestPart(value = "files", required = false) List<MultipartFile> files
@@ -55,7 +55,7 @@ public class NoticeApiController {
     }
 
     // 수정
-    @PutMapping("/user/board/notice/{id}")
+    @PutMapping("/user/notice/{id}")
     public ResponseEntity<Void> update(
             @PathVariable Long id,
             @RequestBody NoticeUpdateReqDto dto
@@ -65,7 +65,7 @@ public class NoticeApiController {
     }
 
     // 삭제
-    @DeleteMapping("/user/board/notice/{id}")
+    @DeleteMapping("/user/notice/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         noticeService.delete(id);
         return ResponseEntity.ok().build();

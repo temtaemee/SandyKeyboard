@@ -9,7 +9,7 @@ export default function ReviewHomePage() {
       <Title>참여후기</Title>
 
       <TabContainer>
-        <Tab to="/board/review/list">후기 목록</Tab>
+        <Tab to="/board/review">후기 목록</Tab>
         <WriteButton onClick={() => navigate('/board/review/write')}>
           후기 작성
         </WriteButton>

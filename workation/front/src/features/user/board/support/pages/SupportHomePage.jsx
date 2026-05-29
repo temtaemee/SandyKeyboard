@@ -7,8 +7,8 @@ export default function SupportHomePage() {
       <Title>고객지원</Title>
 
       <TabContainer>
-        <Tab to="/board/support/notice">공지사항</Tab>
-        <Tab to="/board/support/faq">FAQ</Tab>
+        <Tab to="/notice">공지사항</Tab>
+        <Tab to="/faq">FAQ</Tab>
       </TabContainer>
 
       <Content>

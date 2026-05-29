@@ -129,7 +129,7 @@ export default function ReviewDetailPage() {
         </HeaderLeft>
         <ActionButtons>
           <EditBtn
-            onClick={() => navigate(`/board/review/write?id=${reviewId}`)}
+            onClick={() => navigate(`/review/edit/${reviewId}`)}
           >
             수정
           </EditBtn>
@@ -164,7 +164,7 @@ export default function ReviewDetailPage() {
 
       {/* ── 목록으로 ── */}
       <BackRow>
-        <BackBtn onClick={() => navigate('/board/review/list')}>
+        <BackBtn onClick={() => navigate('/board/review')}>
           ← 목록으로
         </BackBtn>
       </BackRow>

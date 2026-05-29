@@ -23,7 +23,7 @@ export function useNoticeDetail(noticeId) {
     try {
       await deleteNotice(noticeId);
       setShowConfirm(false);
-      navigate('/board/support/notice');
+      navigate('/notice');
     } catch (err) {
       console.error('공지 삭제 실패', err);
       alert('삭제에 실패했습니다.');

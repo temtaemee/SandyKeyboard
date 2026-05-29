@@ -5,16 +5,16 @@ import api from '../../../../../app/api/axios';
 // ================================
 
 // 사용자(비회원 포함) 공지 조회용
-const PUBLIC_NOTICE = '/public/notice';
+const PUBLIC_NOTICE = '/public/notices';
 
 // 관리자 공지 관리용
-const ADMIN_NOTICE = '/admin/notice';
+const ADMIN_NOTICE = '/admin/notices';
 
 // 사용자 FAQ 조회용
-const PUBLIC_FAQ = '/public/faq';
+const PUBLIC_FAQ = '/public/faqs';
 
 // 관리자 FAQ 관리용
-const ADMIN_FAQ = '/admin/faq';
+const ADMIN_FAQ = '/admin/faqs';
 
 // ─────────────────────────────────────────
 // Notice API (공지사항 API)
@@ -126,3 +126,11 @@ export const updateFaq = (id, dto) =>
  */
 export const deleteFaq = (id) =>
   api.delete(`${ADMIN_FAQ}/${id}`).then((res) => res.data);
+
+/**
+ * 공지사항 상단 고정 설정
+ *
+ * id : 공지사항 번호
+ */
+export const toggleNoticePin = (id) =>
+  api.put(`${ADMIN_NOTICE}/${id}/pin`).then((res) => res.data);
