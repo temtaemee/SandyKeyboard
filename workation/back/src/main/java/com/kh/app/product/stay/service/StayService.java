@@ -72,6 +72,11 @@ public class StayService {
     public StayResDto selectOneForPublic(Long id) {
         StayEntity stay = stayRepository.findByIdAndDelYnAndVisibleYn(id, "N", "Y")
                 .orElseThrow(() -> new ProductException(ErrorCode.STAY_NOT_FOUND));
+        if (stay.getSpace() == null
+                || !"Y".equals(stay.getSpace().getVisibleYn())
+                || "Y".equals(stay.getSpace().getDelYn())) {
+            throw new ProductException(ErrorCode.STAY_NOT_FOUND);
+        }
         List<StayPictureEntity> pictures = stayPictureRepository.findByStayOrderBySortOrder(stay);
         List<StayOption> options = stayOptionRepository.findByStay(stay).stream()
                 .map(StayOptionEntity::getStayOption).toList();

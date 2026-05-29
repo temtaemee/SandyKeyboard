@@ -16,6 +16,8 @@ public class StayResDto {
 
     private Long id;
     private Long spaceId;
+    private String spaceName;
+    private String spaceVisibleYn;
     private String name;
     private String summary;
     private String description;
@@ -54,6 +56,8 @@ public class StayResDto {
         return StayResDto.builder()
                 .id(entity.getId())
                 .spaceId(entity.getSpace().getId())
+                .spaceName(entity.getSpace().getName())
+                .spaceVisibleYn(entity.getSpace().getVisibleYn())
                 .name(entity.getName())
                 .summary(entity.getSummary())
                 .description(entity.getDescription())

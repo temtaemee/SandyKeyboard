@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import { Eye, Pencil, Trash2 } from 'lucide-react';
+import { Eye, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 import Badge from '../common/Badge';
 import ToggleSwitch from '../common/ToggleSwitch';
 
@@ -68,6 +68,12 @@ export default function StayTable({
                       loading={togglingIds.has(stay.id)}
                       onChange={(next) => onToggleVisible?.(stay.id, next ? 'Y' : 'N')}
                     />
+                    {stay.spaceVisibleYn === 'N' && (
+                      <SpaceHiddenBadge title="공간(Space)이 비노출 상태여서 이 스테이도 실제로는 노출되지 않습니다">
+                        <AlertTriangle size={11} />
+                        공간 비노출
+                      </SpaceHiddenBadge>
+                    )}
                   </VisibleCell>
                 </Td>
                 <Td>
@@ -181,6 +187,22 @@ const VisibleCell = styled.div`
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
+`;
+
+const SpaceHiddenBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
+  cursor: default;
+  white-space: nowrap;
 `;
 
 const PriceText = styled.span`
