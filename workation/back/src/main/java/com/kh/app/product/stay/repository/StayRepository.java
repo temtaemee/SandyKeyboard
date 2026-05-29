@@ -8,5 +8,6 @@ import java.util.Optional;
 
 public interface StayRepository extends JpaRepository<StayEntity, Long>, StayRepositoryCustom {
     Optional<StayEntity> findByIdAndDelYn(Long id, String delYn);
+    Optional<StayEntity> findByIdAndDelYnAndVisibleYn(Long id, String delYn, String visibleYn);
     List<StayEntity> findBySpaceIdAndDelYn(Long spaceId, String delYn);
 }

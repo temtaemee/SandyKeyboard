@@ -26,4 +26,8 @@ public class StaySearchReqDto {
     private Integer capacity;
 
     private List<StayOption> options;
+
+    private String visibleYn;
+
+    private String delYn;
 }

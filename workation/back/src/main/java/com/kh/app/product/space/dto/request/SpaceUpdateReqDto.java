@@ -40,8 +40,7 @@ public class SpaceUpdateReqDto {
     @NotBlank
     private String address1;
 
-    @Schema(description = "상세 주소", example = "123-45")
-    @NotBlank
+    @Schema(description = "상세 주소 (선택)", example = "123-45")
     private String address2;
 
     @Schema(description = "위도", example = "33.4996213")

@@ -2,6 +2,8 @@ package com.kh.app.product.space.dto.response;
 
 import com.kh.app.product.space.entity.Area;
 import com.kh.app.product.space.entity.SpaceEntity;
+import com.kh.app.product.space.entity.SpacePictureCategory;
+import com.kh.app.product.space.entity.SpacePictureEntity;
 import com.kh.app.product.stay.dto.response.StayResDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -73,15 +75,33 @@ public class SpaceResDto {
     @Schema(description = "스테이 목록 (상세 조회 시에만 포함)")
     private List<StayResDto> stays;
 
+    @Schema(description = "사진 목록 (상세 조회 시에만 포함)")
+    private List<PictureInfo> pictures;
+
+    @Getter
+    @Builder
+    public static class PictureInfo {
+        private Long id;
+        private String filePath;
+        private String mainYn;
+        private Integer sortOrder;
+        private SpacePictureCategory category;
+    }
+
     public static SpaceResDto from(SpaceEntity entity) {
-        return from(entity, null, null);
+        return from(entity, null, null, null);
     }
 
     public static SpaceResDto from(SpaceEntity entity, List<StayResDto> stays) {
-        return from(entity, stays, null);
+        return from(entity, stays, null, null);
     }
 
     public static SpaceResDto from(SpaceEntity entity, List<StayResDto> stays, String thumbnailUrl) {
+        return from(entity, stays, thumbnailUrl, null);
+    }
+
+    public static SpaceResDto from(SpaceEntity entity, List<StayResDto> stays, String thumbnailUrl,
+                                    List<SpacePictureEntity> pictures) {
         return SpaceResDto.builder()
                 .id(entity.getId())
                 .name(entity.getName())
@@ -103,6 +123,15 @@ public class SpaceResDto {
                         ? entity.getSeller().getSeller().getAccountName() : null)
                 .thumbnailUrl(thumbnailUrl)
                 .stays(stays)
+                .pictures(pictures == null ? null : pictures.stream()
+                        .map(p -> PictureInfo.builder()
+                                .id(p.getId())
+                                .filePath(p.getFilePath())
+                                .mainYn(p.getMainYn())
+                                .sortOrder(p.getSortOrder())
+                                .category(p.getCategory())
+                                .build())
+                        .toList())
                 .build();
     }
 }

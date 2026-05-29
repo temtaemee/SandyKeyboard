@@ -3,6 +3,7 @@ package com.kh.app.product.stay.service;
 import com.kh.app.product.common.util.S3PictureUploader;
 import com.kh.app.product.exception.ErrorCode;
 import com.kh.app.product.exception.ProductException;
+import com.kh.app.product.space.entity.SpaceEntity;
 import com.kh.app.product.space.repository.SpaceRepository;
 import com.kh.app.product.stay.dto.request.StayExtraPriceReqDto;
 import com.kh.app.product.stay.dto.request.StayInsertReqDto;
@@ -19,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Transactional(readOnly = true)
@@ -32,6 +34,8 @@ public class StayService {
     private final StayExtraPriceRepository stayExtraPriceRepository;
     private final SpaceRepository spaceRepository;
     private final S3PictureUploader s3PictureUploader;
+
+    // ========== 기존 메서드 (하위 호환) ==========
 
     public List<StayResDto> searchList(StaySearchReqDto dto) {
         return stayRepository.searchList(dto).stream()
@@ -52,9 +56,176 @@ public class StayService {
         return StayResDto.from(stay, options, pictures);
     }
 
+    // ========== Public 전용 메서드 ==========
+
+    public List<StayResDto> searchListForPublic(StaySearchReqDto dto) {
+        return stayRepository.searchListForPublic(dto).stream()
+                .map(stay -> {
+                    List<StayPictureEntity> pictures = stayPictureRepository.findByStayOrderBySortOrder(stay);
+                    List<StayOption> options = stayOptionRepository.findByStay(stay).stream()
+                            .map(StayOptionEntity::getStayOption).toList();
+                    return StayResDto.from(stay, options, pictures);
+                })
+                .toList();
+    }
+
+    public StayResDto selectOneForPublic(Long id) {
+        StayEntity stay = stayRepository.findByIdAndDelYnAndVisibleYn(id, "N", "Y")
+                .orElseThrow(() -> new ProductException(ErrorCode.STAY_NOT_FOUND));
+        List<StayPictureEntity> pictures = stayPictureRepository.findByStayOrderBySortOrder(stay);
+        List<StayOption> options = stayOptionRepository.findByStay(stay).stream()
+                .map(StayOptionEntity::getStayOption).toList();
+        return StayResDto.from(stay, options, pictures);
+    }
+
+    // ========== Seller 전용 메서드 ==========
+
+    @Transactional
+    public Long insert(StayInsertReqDto dto, List<MultipartFile> files, Long memberId) {
+        SpaceEntity space = spaceRepository.findByIdAndDelYn(dto.getSpaceId(), "N")
+                .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
+
+        verifySpaceOwnership(space, memberId);
+        validateCheckInOutTime(dto.getCheckInTime(), dto.getCheckOutTime());
+
+        StayEntity stay = stayRepository.save(dto.toEntity(space));
+        insertOptions(stay, dto.getOptionList());
+        insertExtraPrices(stay, stay.getId(), dto.getExtraPriceList());
+        uploadAndSavePictures(stay, files);
+
+        return stay.getId();
+    }
+
+    public List<StayResDto> searchMyStays(Long memberId) {
+        return stayRepository.searchMyStays(memberId).stream()
+                .map(stay -> {
+                    List<StayPictureEntity> pictures = stayPictureRepository.findByStayOrderBySortOrder(stay);
+                    List<StayOption> options = stayOptionRepository.findByStay(stay).stream()
+                            .map(StayOptionEntity::getStayOption).toList();
+                    return StayResDto.from(stay, options, pictures);
+                })
+                .toList();
+    }
+
+    public StayResDto selectOneForSeller(Long id, Long memberId) {
+        StayEntity stay = stayRepository.findById(id)
+                .orElseThrow(() -> new ProductException(ErrorCode.STAY_NOT_FOUND));
+        verifyStayOwnership(stay, memberId);
+
+        List<StayPictureEntity> pictures = stayPictureRepository.findByStayOrderBySortOrder(stay);
+        List<StayOption> options = stayOptionRepository.findByStay(stay).stream()
+                .map(StayOptionEntity::getStayOption).toList();
+        return StayResDto.from(stay, options, pictures);
+    }
+
+    @Transactional
+    public void update(Long id, StayUpdateReqDto dto, Long memberId) {
+        StayEntity stay = findStay(id);
+        verifyStayOwnership(stay, memberId);
+
+        validateCheckInOutTime(dto.getCheckInTime(), dto.getCheckOutTime());
+
+        stay.update(
+                dto.getName(), dto.getSummary(), dto.getDescription(),
+                dto.getCapacity(), dto.getMaxCapa(),
+                dto.getCheckInTime(), dto.getCheckOutTime(),
+                dto.getMonPrice(), dto.getTuePrice(), dto.getWedPrice(), dto.getThuPrice(),
+                dto.getFriPrice(), dto.getSatPrice(), dto.getSunPrice(), dto.getHolidayPrice(),
+                dto.getWorkationYn()
+        );
+        stayOptionRepository.deleteAllByStay(stay);
+        insertOptions(stay, dto.getOptionList());
+    }
+
+    @Transactional
+    public void changeVisibleYn(Long id, String visibleYn, Long memberId) {
+        StayEntity stay = findStay(id);
+        verifyStayOwnership(stay, memberId);
+        stay.changeVisibleYn(visibleYn);
+    }
+
+    @Transactional
+    public void delete(Long id, Long memberId) {
+        StayEntity stay = findStay(id);
+        verifyStayOwnership(stay, memberId);
+        stay.delete();
+    }
+
+    // ========== Admin 전용 메서드 ==========
+
+    @Transactional
+    public Long insertByAdmin(StayInsertReqDto dto, List<MultipartFile> files) {
+        SpaceEntity space = spaceRepository.findByIdAndDelYn(dto.getSpaceId(), "N")
+                .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
+
+        validateCheckInOutTime(dto.getCheckInTime(), dto.getCheckOutTime());
+
+        StayEntity stay = stayRepository.save(dto.toEntity(space));
+        insertOptions(stay, dto.getOptionList());
+        insertExtraPrices(stay, stay.getId(), dto.getExtraPriceList());
+        uploadAndSavePictures(stay, files);
+
+        return stay.getId();
+    }
+
+    public List<StayResDto> searchListForAdmin(StaySearchReqDto dto) {
+        return stayRepository.searchListForAdmin(dto).stream()
+                .map(stay -> {
+                    List<StayPictureEntity> pictures = stayPictureRepository.findByStayOrderBySortOrder(stay);
+                    List<StayOption> options = stayOptionRepository.findByStay(stay).stream()
+                            .map(StayOptionEntity::getStayOption).toList();
+                    return StayResDto.from(stay, options, pictures);
+                })
+                .toList();
+    }
+
+    public StayResDto selectOneForAdmin(Long id) {
+        StayEntity stay = stayRepository.findById(id)
+                .orElseThrow(() -> new ProductException(ErrorCode.STAY_NOT_FOUND));
+        List<StayPictureEntity> pictures = stayPictureRepository.findByStayOrderBySortOrder(stay);
+        List<StayOption> options = stayOptionRepository.findByStay(stay).stream()
+                .map(StayOptionEntity::getStayOption).toList();
+        return StayResDto.from(stay, options, pictures);
+    }
+
+    @Transactional
+    public void updateByAdmin(Long id, StayUpdateReqDto dto) {
+        StayEntity stay = stayRepository.findById(id)
+                .orElseThrow(() -> new ProductException(ErrorCode.STAY_NOT_FOUND));
+
+        validateCheckInOutTime(dto.getCheckInTime(), dto.getCheckOutTime());
+
+        stay.update(
+                dto.getName(), dto.getSummary(), dto.getDescription(),
+                dto.getCapacity(), dto.getMaxCapa(),
+                dto.getCheckInTime(), dto.getCheckOutTime(),
+                dto.getMonPrice(), dto.getTuePrice(), dto.getWedPrice(), dto.getThuPrice(),
+                dto.getFriPrice(), dto.getSatPrice(), dto.getSunPrice(), dto.getHolidayPrice(),
+                dto.getWorkationYn()
+        );
+        stayOptionRepository.deleteAllByStay(stay);
+        insertOptions(stay, dto.getOptionList());
+    }
+
+    @Transactional
+    public void changeVisibleYnByAdmin(Long id, String visibleYn) {
+        StayEntity stay = stayRepository.findById(id)
+                .orElseThrow(() -> new ProductException(ErrorCode.STAY_NOT_FOUND));
+        stay.changeVisibleYn(visibleYn);
+    }
+
+    @Transactional
+    public void deleteByAdmin(Long id) {
+        StayEntity stay = stayRepository.findById(id)
+                .orElseThrow(() -> new ProductException(ErrorCode.STAY_NOT_FOUND));
+        stay.delete();
+    }
+
+    // ========== 기존 호환 메서드 ==========
+
     @Transactional
     public Long insert(StayInsertReqDto dto, List<MultipartFile> files) {
-        var space = spaceRepository.findByIdAndDelYn(dto.getSpaceId(), "N")
+        SpaceEntity space = spaceRepository.findByIdAndDelYn(dto.getSpaceId(), "N")
                 .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
 
         validateCheckInOutTime(dto.getCheckInTime(), dto.getCheckOutTime());
@@ -95,9 +266,25 @@ public class StayService {
         findStay(id).delete();
     }
 
+    // ========== Private 헬퍼 ==========
+
     private StayEntity findStay(Long id) {
         return stayRepository.findByIdAndDelYn(id, "N")
                 .orElseThrow(() -> new ProductException(ErrorCode.STAY_NOT_FOUND));
+    }
+
+    private void verifySpaceOwnership(SpaceEntity space, Long memberId) {
+        if (space.getSeller() == null || !Objects.equals(space.getSeller().getId(), memberId)) {
+            throw new ProductException(ErrorCode.SPACE_ACCESS_DENIED);
+        }
+    }
+
+    private void verifyStayOwnership(StayEntity stay, Long memberId) {
+        SpaceEntity space = stay.getSpace();
+        if (space == null || space.getSeller() == null
+                || !Objects.equals(space.getSeller().getId(), memberId)) {
+            throw new ProductException(ErrorCode.STAY_ACCESS_DENIED);
+        }
     }
 
     private void insertOptions(StayEntity stay, List<StayOption> optionList) {

@@ -8,4 +8,10 @@ import java.util.List;
 public interface StayRepositoryCustom {
 
     List<StayEntity> searchList(StaySearchReqDto dto);
+
+    List<StayEntity> searchListForPublic(StaySearchReqDto dto);
+
+    List<StayEntity> searchMyStays(Long memberId);
+
+    List<StayEntity> searchListForAdmin(StaySearchReqDto dto);
 }
