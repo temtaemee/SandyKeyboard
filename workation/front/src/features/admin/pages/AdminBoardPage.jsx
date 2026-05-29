@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { BOARD_TABS } from '../data/adminBoardConstants';
 import useAdminBoard from '../hooks/useAdminBoard';
+import useAdminBoardUI from '../hooks/useAdminBoardUI';
 import usePagination from '../hooks/usePagination';
 import AdminPagination from '../components/common/AdminPagination';
 import AdminSearchInput from '../components/common/AdminSearchInput';
@@ -31,17 +32,17 @@ import {
 const TOTAL = 124;
 const TOTAL_PAGES = 3;
 
-const STATUS_LABEL = { published: '게시 중', ended: '종료', active: '활성', expired: '만료', exhausted: '소진' };
+const STATUS_LABEL = { published: '게시 중', ended: '종료', active: '활성', deleted: '삭제', exhausted: '소진' };
 const STATUS_COLORS = {
   published: { bg: '#dcfce7', color: '#16a34a' },
   ended:     { bg: '#f1f5f9', color: '#64748b' },
   active:    { bg: '#dcfce7', color: '#16a34a' },
-  expired:   { bg: '#f1f5f9', color: '#64748b' },
+  deleted:   { bg: '#fee2e2', color: '#dc2626' },
   exhausted: { bg: '#fff7ed', color: '#ea580c' },
 };
 
-const COUPON_FILTERS = ['전체', '활성', '만료', '소진'];
-const COUPON_STATUS_MAP = { 활성: 'active', 만료: 'expired', 소진: 'exhausted' };
+const COUPON_FILTERS = ['전체', '활성', '소진', '삭제'];
+const COUPON_STATUS_MAP = { 활성: 'active', 소진: 'exhausted', 삭제: 'deleted' };
 
 
 export default function AdminBoardPage() {
@@ -51,71 +52,40 @@ export default function AdminBoardPage() {
     pinnedIds,
     updatePost,
     deletePost: dispatchDeletePost,
+    softDeleteCoupon: dispatchSoftDeleteCoupon,
     togglePin,
   } = useAdminBoard(activeTab);
 
   const { currentPage, goToPage, reset: resetPage } = usePagination();
 
-  // 검색
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // 쿠폰 필터
-  const [couponFilter, setCouponFilter] = useState('전체');
-
-  const rawPosts = tabPosts;
-  const posts = rawPosts.filter((p) => {
-    const matchSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase());
-    if (activeTab !== '쿠폰' || couponFilter === '전체') return matchSearch;
-    return matchSearch && p.status === COUPON_STATUS_MAP[couponFilter];
+  // 통합 UI 훅 도입으로 복잡한 useState 제거 및 비즈니스 로직 격리
+  const {
+    searchQuery,
+    setSearchQuery,
+    couponFilter,
+    setCouponFilter,
+    posts,
+    resetFilters,
+    registerModal,
+    editingPost,
+    formData,
+    openRegisterModal,
+    openEditModal,
+    closeRegisterModal,
+    handleFormChange,
+    handleRegisterSubmit,
+    detailPost,
+    setDetailPost,
+    deleteTarget,
+    setDeleteTarget,
+    handleDeleteConfirm,
+  } = useAdminBoardUI({
+    tabPosts,
+    activeTab,
+    updatePost,
+    dispatchDeletePost,
+    dispatchSoftDeleteCoupon,
   });
-
-  // 신규 등록 / 수정 모달
-  const [registerModal, setRegisterModal] = useState(null); // null | type string
-  const [editingPost, setEditingPost] = useState(null); // 수정 중인 post
-  const [formData, setFormData] = useState({});
-
-  const openRegisterModal = (type) => {
-    setRegisterModal(type);
-    setEditingPost(null);
-    setFormData({});
-  };
-
-  const openEditModal = (post) => {
-    setDetailPost(null);
-    setRegisterModal(activeTab);
-    setEditingPost(post);
-    setFormData({ title: post.title, content: post.content || '' });
-  };
-
-  const closeRegisterModal = () => {
-    setRegisterModal(null);
-    setEditingPost(null);
-    setFormData({});
-  };
-
-  const handleFormChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleRegisterSubmit = () => {
-    if (editingPost) {
-      updatePost(editingPost.id, { title: formData.title || editingPost.title });
-    }
-    closeRegisterModal();
-  };
-
-  // 상세보기 모달
-  const [detailPost, setDetailPost] = useState(null);
-
-  // 삭제 확인 모달
-  const [deleteTarget, setDeleteTarget] = useState(null);
-
-  const handleDeleteConfirm = () => {
-    if (!deleteTarget) return;
-    dispatchDeletePost(deleteTarget.id);
-    setDeleteTarget(null);
-    setDetailPost(null);
-  };
 
   const handlePin = (id) => {
     togglePin(id);
@@ -123,8 +93,7 @@ export default function AdminBoardPage() {
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    setSearchQuery('');
-    setCouponFilter('전체');
+    resetFilters();
     resetPage();
   };
 
@@ -339,7 +308,12 @@ export default function AdminBoardPage() {
             <ModalHeader $align="flex-start" $gap="12px">
               <ModalTitleGroup>
                 <ModalTabBadge>{activeTab}</ModalTabBadge>
-                <ModalTitle>{detailPost.title}</ModalTitle>
+                <ModalTitleRow>
+                  <ModalTitle>{detailPost.title}</ModalTitle>
+                  {activeTab === '쿠폰' && detailPost.couponCode && (
+                    <CouponCodeBadge>{detailPost.couponCode}</CouponCodeBadge>
+                  )}
+                </ModalTitleRow>
               </ModalTitleGroup>
               <ModalCloseBtn onClick={() => setDetailPost(null)}>
                 <X size={18} />
@@ -347,42 +321,65 @@ export default function AdminBoardPage() {
             </ModalHeader>
 
             <ModalBody>
-              <DetailMetaRow>
-                <DetailMeta>
-                  <DetailMetaLabel>작성자</DetailMetaLabel>
-                  <DetailMetaValue>{detailPost.author}</DetailMetaValue>
-                </DetailMeta>
-                <DetailMeta>
-                  <DetailMetaLabel>등록일</DetailMetaLabel>
-                  <DetailMetaValue>{detailPost.date}</DetailMetaValue>
-                </DetailMeta>
-                <DetailMeta>
-                  <DetailMetaLabel>조회수</DetailMetaLabel>
-                  <DetailMetaValue>
-                    {detailPost.views?.toLocaleString() ?? 0}
-                  </DetailMetaValue>
-                </DetailMeta>
-                <DetailMeta>
-                  <DetailMetaLabel>상태</DetailMetaLabel>
-                  <StatusChip
-                    $bg={STATUS_COLORS[detailPost.status]?.bg ?? '#f1f5f9'}
-                    $color={
-                      STATUS_COLORS[detailPost.status]?.color ?? '#64748b'
-                    }
-                  >
-                    {STATUS_LABEL[detailPost.status] ?? detailPost.status}
-                  </StatusChip>
-                </DetailMeta>
-              </DetailMetaRow>
+              {activeTab === '쿠폰' ? (
+                <DetailMetaGrid>
+                  <DetailMetaItem>
+                    <DetailMetaLabel>쿠폰이름</DetailMetaLabel>
+                    <DetailMetaValue>{detailPost.couponName ?? detailPost.title}</DetailMetaValue>
+                  </DetailMetaItem>
+                  <DetailMetaItem>
+                    <DetailMetaLabel>할인율</DetailMetaLabel>
+                    <DetailMetaValue>{detailPost.discountRate != null ? `${detailPost.discountRate}%` : '-'}</DetailMetaValue>
+                  </DetailMetaItem>
+                  <DetailMetaItem>
+                    <DetailMetaLabel>생성일자</DetailMetaLabel>
+                    <DetailMetaValue $mono>{detailPost.createdAt ?? detailPost.date ?? '-'}</DetailMetaValue>
+                  </DetailMetaItem>
+                  <DetailMetaItem>
+                    <DetailMetaLabel>수정일자</DetailMetaLabel>
+                    <DetailMetaValue $mono>{detailPost.updatedAt ?? '-'}</DetailMetaValue>
+                  </DetailMetaItem>
+                </DetailMetaGrid>
+              ) : (
+                <>
+                  <DetailMetaRow>
+                    <DetailMeta>
+                      <DetailMetaLabel>작성자</DetailMetaLabel>
+                      <DetailMetaValue>{detailPost.author}</DetailMetaValue>
+                    </DetailMeta>
+                    <DetailMeta>
+                      <DetailMetaLabel>등록일</DetailMetaLabel>
+                      <DetailMetaValue>{detailPost.date}</DetailMetaValue>
+                    </DetailMeta>
+                    <DetailMeta>
+                      <DetailMetaLabel>조회수</DetailMetaLabel>
+                      <DetailMetaValue>
+                        {detailPost.views?.toLocaleString() ?? 0}
+                      </DetailMetaValue>
+                    </DetailMeta>
+                    <DetailMeta>
+                      <DetailMetaLabel>상태</DetailMetaLabel>
+                      <StatusChip
+                        $bg={STATUS_COLORS[detailPost.status]?.bg ?? '#f1f5f9'}
+                        $color={
+                          STATUS_COLORS[detailPost.status]?.color ?? '#64748b'
+                        }
+                      >
+                        {STATUS_LABEL[detailPost.status] ?? detailPost.status}
+                      </StatusChip>
+                    </DetailMeta>
+                  </DetailMetaRow>
 
-              <DetailDivider />
+                  <DetailDivider />
 
-              <DetailContentPlaceholder>
-                <Eye size={20} color="#cbd5e1" />
-                <DetailContentNote>
-                  실제 내용은 서버 연동 후 표시됩니다.
-                </DetailContentNote>
-              </DetailContentPlaceholder>
+                  <DetailContentPlaceholder>
+                    <Eye size={20} color="#cbd5e1" />
+                    <DetailContentNote>
+                      실제 내용은 서버 연동 후 표시됩니다.
+                    </DetailContentNote>
+                  </DetailContentPlaceholder>
+                </>
+              )}
             </ModalBody>
 
             <ModalFooter>
@@ -515,10 +512,12 @@ export default function AdminBoardPage() {
         isOpen={deleteTarget !== null}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDeleteConfirm}
-        title="게시글을 삭제하시겠습니까?"
+        title={activeTab === '쿠폰' ? '쿠폰을 삭제하시겠습니까?' : '게시글을 삭제하시겠습니까?'}
         description={
           deleteTarget
-            ? `"${deleteTarget.title}" 게시글이 영구적으로 삭제됩니다.`
+            ? activeTab === '쿠폰'
+              ? `"${deleteTarget.couponName ?? deleteTarget.title}" 쿠폰이 삭제됩니다.`
+              : `"${deleteTarget.title}" 게시글이 영구적으로 삭제됩니다.`
             : ''
         }
         isDanger
@@ -895,6 +894,25 @@ const ModalTabBadge = styled.span`
   width: fit-content;
 `;
 
+const ModalTitleRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+`;
+
+const CouponCodeBadge = styled.span`
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0369a1;
+  background: #e0f2fe;
+  padding: 3px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+  font-family: ${({ theme }) => theme.fonts.number};
+`;
+
 const ModalTitle = styled.h2`
   font-size: 15px;
   font-weight: 600;
@@ -925,6 +943,19 @@ const DetailMeta = styled.div`
   gap: 4px;
 `;
 
+/* 쿠폰 상세용 그리드 */
+const DetailMetaGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 24px;
+`;
+
+const DetailMetaItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+`;
+
 const DetailMetaLabel = styled.span`
   font-size: 11px;
   color: #94a3b8;
@@ -937,6 +968,7 @@ const DetailMetaValue = styled.span`
   font-size: 13px;
   color: #334155;
   font-weight: 500;
+  font-family: ${({ $mono, theme }) => $mono ? theme.fonts.number : 'inherit'};
 `;
 
 const StatusChip = styled.span`

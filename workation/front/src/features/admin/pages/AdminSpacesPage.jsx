@@ -14,6 +14,7 @@ import {
   ModalCloseBtn,
 } from '../components/common/AdminModal.styles';
 import useAdminSpaces from '../hooks/useAdminSpaces';
+import useAdminSpacesUI from '../hooks/useAdminSpacesUI';
 import { getStaysBySpaceId, changeSpaceVisible } from '../api/adminSpacesApi';
 
 
@@ -29,80 +30,41 @@ export default function AdminSpacesPage() {
     rejectSpaces,
   } = useAdminSpaces();
 
-  // UI 전용 상태
-  const [visibleConfirmTarget, setVisibleConfirmTarget] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalTab, setModalTab] = useState('pending'); // 'pending' | 'rejected'
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('전체');
-
-  // Stay 모달 상태
-  const [selectedSpace, setSelectedSpace] = useState(null);
-  const [spaceStays, setSpaceStays] = useState([]);
-  const [stayLoading, setStayLoading] = useState(false);
-  const [isStayModalOpen, setIsStayModalOpen] = useState(false);
-
-  const handleSpaceClick = async (space) => {
-    setSelectedSpace(space);
-    setIsStayModalOpen(true);
-    setStayLoading(true);
-    try {
-      const resp = await getStaysBySpaceId(space.id);
-      setSpaceStays(resp.data);
-    } catch (err) {
-      console.error(err);
-      setSpaceStays([]);
-    } finally {
-      setStayLoading(false);
-    }
-  };
-
-  const filteredSpaces = spaces.filter((space) => {
-    const matchesSearch = space.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus =
-      statusFilter === '전체' ? true :
-      statusFilter === '공개' ? space.visibleYn === 'Y' :
-      space.visibleYn === 'N';
-    return matchesSearch && matchesStatus;
+  // 통합 UI 훅 도입으로 모달, 비동기 Stay 목록, 다중 선택 등의 useState 제거 및 비즈니스 로직 격리
+  const {
+    searchQuery,
+    setSearchQuery,
+    statusFilter,
+    setStatusFilter,
+    spaces: filteredSpaces,
+    visibleConfirmTarget,
+    handleVisibleClick,
+    handleVisibleConfirm,
+    isModalOpen,
+    setIsModalOpen,
+    modalTab,
+    setModalTab,
+    selectedIds,
+    toggleSelect,
+    handleApproveSelected,
+    handleRejectSelected,
+    currentModalList,
+    selectedSpace,
+    spaceStays,
+    stayLoading,
+    isStayModalOpen,
+    setIsStayModalOpen,
+    handleSpaceClick,
+  } = useAdminSpacesUI({
+    spaces,
+    pendingSpaces,
+    rejectedSpaces,
+    refetch,
+    approveSpaces,
+    rejectSpaces,
+    getStaysBySpaceId,
+    changeSpaceVisible,
   });
-
-  const handleVisibleClick = (space) => {
-    setVisibleConfirmTarget({
-      id: space.id,
-      name: space.name,
-      willHide: space.visibleYn === 'Y',
-    });
-  };
-
-  const handleVisibleConfirm = async () => {
-    if (!visibleConfirmTarget) return;
-    const nextVisible = visibleConfirmTarget.willHide ? 'N' : 'Y';
-    try {
-      await changeSpaceVisible(visibleConfirmTarget.id, nextVisible);
-      await refetch();
-    } catch (err) {
-      console.error(err);
-    }
-    setVisibleConfirmTarget(null);
-  };
-
-  const toggleSelect = (id) => {
-    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
-  };
-
-  const handleApproveSelected = () => {
-    approveSpaces(selectedIds, modalTab);
-    setSelectedIds([]);
-  };
-
-  const handleRejectSelected = () => {
-    if (modalTab !== 'pending') return;
-    rejectSpaces(selectedIds);
-    setSelectedIds([]);
-  };
-
-  const currentModalList = modalTab === 'pending' ? pendingSpaces : rejectedSpaces;
 
   return (
     <PageWrapper>

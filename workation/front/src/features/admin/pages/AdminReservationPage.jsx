@@ -8,6 +8,7 @@ import {
   RESERVATION_LIST,
 } from '../data/adminReservationData';
 import useAdminReservation from '../hooks/useAdminReservation';
+import useAdminReservationUI from '../hooks/useAdminReservationUI';
 import {
   RESERVATION_STATUS_MAP,
   TOTAL_RESERVATIONS,
@@ -44,60 +45,39 @@ export default function AdminReservationPage() {
     fetchPartners();
   }, [fetchPartners]);
 
-  // UI 전용 상태
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [partnerSearch, setPartnerSearch] = useState('');
-  const [companyName, setCompanyName] = useState('');
-  const [companyBizNum, setCompanyBizNum] = useState('');
+  // 통합 UI 훅으로 모달 제어 및 인라인 에디팅 상태 분리
+  const {
+    search,
+    setSearch,
+    statusFilter,
+    setStatusFilter,
+    partnerModalOpen,
+    setPartnerModalOpen,
+    partnerSearch,
+    setPartnerSearch,
+    filteredPartners,
+    companyName,
+    setCompanyName,
+    companyBizNum,
+    setCompanyBizNum,
+    handleRegisterCompany,
+    editingId,
+    editForm,
+    setEditForm,
+    startEdit,
+    saveEdit,
+    cancelEdit,
+  } = useAdminReservationUI({
+    partners,
+    addPartner,
+    updatePartner,
+  });
+
   const { currentPage, goToPage, goToPrev, goToNext } = usePagination();
-  const [partnerModalOpen, setPartnerModalOpen] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [editForm, setEditForm] = useState({});
 
   const totalPartners = partners.length;
   const activePartners = partners.filter(p => p.status === 'active').length;
   const activePercent = totalPartners > 0 ? Math.round((activePartners / totalPartners) * 100) : 0;
-
-  const handleRegisterCompany = () => {
-    if (companyName.trim()) {
-      const today = new Date().toISOString().slice(0, 10);
-      const newCompany = {
-        id: Date.now(),
-        name: companyName,
-        businessNumber: companyBizNum.trim(),
-        reservationCount: 0,
-        status: 'active',
-        iconBg: '#e2e8f0',
-        iconColor: '#475569',
-        partnerSince: today,
-        updatedAt: today,
-        created_at: new Date().toISOString(),
-      };
-      addPartner(newCompany);
-      setCompanyName('');
-      setCompanyBizNum('');
-    }
-  };
-
-  const startEdit = (company) => {
-    setEditingId(company.id);
-    setEditForm({
-      name: company.name,
-      businessNumber: company.businessNumber || '',
-    });
-  };
-
-  const saveEdit = (id) => {
-    const today = new Date().toISOString().slice(0, 10);
-    updatePartner(id, { ...editForm, updatedAt: today });
-    setEditingId(null);
-  };
-
-  const cancelEdit = () => setEditingId(null);
-
-
-  const filteredPartners = partners.filter(p => p.name.toLowerCase().includes(partnerSearch.toLowerCase()));
 
   return (
     <PageWrapper>
