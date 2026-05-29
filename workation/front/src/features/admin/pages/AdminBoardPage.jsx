@@ -32,18 +32,28 @@ import {
 const TOTAL = 124;
 const TOTAL_PAGES = 3;
 
-const STATUS_LABEL = { published: '게시 중', ended: '종료', active: '활성', deleted: '삭제', exhausted: '소진' };
+const STATUS_LABEL = {
+  published: '게시 중',
+  ended: '종료',
+  active: '활성',
+  deleted: '삭제',
+  exhausted: '소진',
+  ACTIVE: '활성',
+  EXPIRED: '만료',
+  EXHAUSTED: '소진',
+};
 const STATUS_COLORS = {
   published: { bg: '#dcfce7', color: '#16a34a' },
-  ended:     { bg: '#f1f5f9', color: '#64748b' },
-  active:    { bg: '#dcfce7', color: '#16a34a' },
-  deleted:   { bg: '#fee2e2', color: '#dc2626' },
+  ended: { bg: '#f1f5f9', color: '#64748b' },
+  active: { bg: '#dcfce7', color: '#16a34a' },
+  deleted: { bg: '#fee2e2', color: '#dc2626' },
   exhausted: { bg: '#fff7ed', color: '#ea580c' },
+  ACTIVE: { bg: '#dcfce7', color: '#16a34a' },
+  EXPIRED: { bg: '#f1f5f9', color: '#64748b' },
+  EXHAUSTED: { bg: '#fff7ed', color: '#ea580c' },
 };
 
 const COUPON_FILTERS = ['전체', '활성', '소진', '삭제'];
-const COUPON_STATUS_MAP = { 활성: 'active', 소진: 'exhausted', 삭제: 'deleted' };
-
 
 export default function AdminBoardPage() {
   const [activeTab, setActiveTab] = useState('공지사항');
@@ -51,8 +61,8 @@ export default function AdminBoardPage() {
     posts: tabPosts,
     pinnedIds,
     updatePost,
-    deletePost: dispatchDeletePost,
-    softDeleteCoupon: dispatchSoftDeleteCoupon,
+    deletePost,
+    createPost,
     togglePin,
   } = useAdminBoard(activeTab);
 
@@ -83,8 +93,8 @@ export default function AdminBoardPage() {
     tabPosts,
     activeTab,
     updatePost,
-    dispatchDeletePost,
-    dispatchSoftDeleteCoupon,
+    deletePost,
+    createPost,
   });
 
   const handlePin = (id) => {
@@ -242,28 +252,40 @@ export default function AdminBoardPage() {
                     <TD>
                       <TitleCell>
                         {post.isFixed && <FixedBadge>필독</FixedBadge>}
-                        <TitleText>{post.title}</TitleText>
+                        <TitleText>
+                          {activeTab === '쿠폰' ? post.couponName : post.title}
+                        </TitleText>
                         {post.hasAttachment && <AttachIcon />}
                       </TitleCell>
                     </TD>
                     {activeTab === '쿠폰' ? (
                       <>
                         <TD>
-                          <QtyText>{post.remainingQty ?? '-'} 매</QtyText>
+                          <QtyText>{post.remainQty ?? '-'} 매</QtyText>
                         </TD>
                         <TD>
                           <ValidDaysText>
-                            {post.validDays != null ? `${post.validDays}일` : '-'}
+                            {post.validDays != null
+                              ? `${post.validDays}일`
+                              : '-'}
                           </ValidDaysText>
                         </TD>
                       </>
                     ) : activeTab === '리뷰' ? (
                       <>
-                        <TD><AuthorText>{post.author}</AuthorText></TD>
-                        <TD><DateText>{post.date}</DateText></TD>
+                        <TD>
+                          <AuthorText>{post.author}</AuthorText>
+                        </TD>
+                        <TD>
+                          <DateText>{post.date}</DateText>
+                        </TD>
                         <TD>
                           <RowActions onClick={(e) => e.stopPropagation()}>
-                            <PinBtn $pinned={pinned} onClick={() => handlePin(post.id)} title={pinned ? '고정 해제' : '고정'}>
+                            <PinBtn
+                              $pinned={pinned}
+                              onClick={() => handlePin(post.id)}
+                              title={pinned ? '고정 해제' : '고정'}
+                            >
                               <PinSvg $pinned={pinned} />
                             </PinBtn>
                           </RowActions>
@@ -271,10 +293,16 @@ export default function AdminBoardPage() {
                       </>
                     ) : (
                       <>
-                        <TD><DateText>{post.date}</DateText></TD>
+                        <TD>
+                          <DateText>{post.date}</DateText>
+                        </TD>
                         <TD>
                           <RowActions onClick={(e) => e.stopPropagation()}>
-                            <PinBtn $pinned={pinned} onClick={() => handlePin(post.id)} title={pinned ? '고정 해제' : '고정'}>
+                            <PinBtn
+                              $pinned={pinned}
+                              onClick={() => handlePin(post.id)}
+                              title={pinned ? '고정 해제' : '고정'}
+                            >
                               <PinSvg $pinned={pinned} />
                             </PinBtn>
                           </RowActions>
@@ -309,7 +337,11 @@ export default function AdminBoardPage() {
               <ModalTitleGroup>
                 <ModalTabBadge>{activeTab}</ModalTabBadge>
                 <ModalTitleRow>
-                  <ModalTitle>{detailPost.title}</ModalTitle>
+                  <ModalTitle>
+                    {activeTab === '쿠폰'
+                      ? detailPost.couponName
+                      : detailPost.title}
+                  </ModalTitle>
                   {activeTab === '쿠폰' && detailPost.couponCode && (
                     <CouponCodeBadge>{detailPost.couponCode}</CouponCodeBadge>
                   )}
@@ -325,19 +357,27 @@ export default function AdminBoardPage() {
                 <DetailMetaGrid>
                   <DetailMetaItem>
                     <DetailMetaLabel>쿠폰이름</DetailMetaLabel>
-                    <DetailMetaValue>{detailPost.couponName ?? detailPost.title}</DetailMetaValue>
+                    <DetailMetaValue>{detailPost.couponName}</DetailMetaValue>
                   </DetailMetaItem>
                   <DetailMetaItem>
                     <DetailMetaLabel>할인율</DetailMetaLabel>
-                    <DetailMetaValue>{detailPost.discountRate != null ? `${detailPost.discountRate}%` : '-'}</DetailMetaValue>
+                    <DetailMetaValue>
+                      {detailPost.discountRate != null
+                        ? `${detailPost.discountRate}%`
+                        : '-'}
+                    </DetailMetaValue>
                   </DetailMetaItem>
                   <DetailMetaItem>
                     <DetailMetaLabel>생성일자</DetailMetaLabel>
-                    <DetailMetaValue $mono>{detailPost.createdAt ?? detailPost.date ?? '-'}</DetailMetaValue>
+                    <DetailMetaValue $mono>
+                      {detailPost.createdAt ?? detailPost.date ?? '-'}
+                    </DetailMetaValue>
                   </DetailMetaItem>
                   <DetailMetaItem>
                     <DetailMetaLabel>수정일자</DetailMetaLabel>
-                    <DetailMetaValue $mono>{detailPost.updatedAt ?? '-'}</DetailMetaValue>
+                    <DetailMetaValue $mono>
+                      {detailPost.updatedAt ?? '-'}
+                    </DetailMetaValue>
                   </DetailMetaItem>
                 </DetailMetaGrid>
               ) : (
@@ -512,7 +552,11 @@ export default function AdminBoardPage() {
         isOpen={deleteTarget !== null}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDeleteConfirm}
-        title={activeTab === '쿠폰' ? '쿠폰을 삭제하시겠습니까?' : '게시글을 삭제하시겠습니까?'}
+        title={
+          activeTab === '쿠폰'
+            ? '쿠폰을 삭제하시겠습니까?'
+            : '게시글을 삭제하시겠습니까?'
+        }
         description={
           deleteTarget
             ? activeTab === '쿠폰'
@@ -708,11 +752,16 @@ const CouponFilterBtn = styled.button`
   font-family: inherit;
   cursor: pointer;
   transition: all 0.15s;
-  background: ${({ $active, theme }) => $active ? theme.colors.adminPrimary : theme.colors.white};
-  color: ${({ $active, theme }) => $active ? theme.colors.white : theme.colors.textMuted};
-  border: 1px solid ${({ $active, theme }) => $active ? theme.colors.adminPrimary : theme.colors.border};
+  background: ${({ $active, theme }) =>
+    $active ? theme.colors.adminPrimary : theme.colors.white};
+  color: ${({ $active, theme }) =>
+    $active ? theme.colors.white : theme.colors.textMuted};
+  border: 1px solid
+    ${({ $active, theme }) =>
+      $active ? theme.colors.adminPrimary : theme.colors.border};
   &:hover {
-    background: ${({ $active, theme }) => $active ? theme.colors.adminPrimary : theme.colors.bgSection};
+    background: ${({ $active, theme }) =>
+      $active ? theme.colors.adminPrimary : theme.colors.bgSection};
   }
 `;
 
@@ -921,7 +970,6 @@ const ModalTitle = styled.h2`
   word-break: break-word;
 `;
 
-
 const ModalBody = styled.div`
   padding: 24px;
   display: flex;
@@ -968,7 +1016,8 @@ const DetailMetaValue = styled.span`
   font-size: 13px;
   color: #334155;
   font-weight: 500;
-  font-family: ${({ $mono, theme }) => $mono ? theme.fonts.number : 'inherit'};
+  font-family: ${({ $mono, theme }) =>
+    $mono ? theme.fonts.number : 'inherit'};
 `;
 
 const StatusChip = styled.span`
