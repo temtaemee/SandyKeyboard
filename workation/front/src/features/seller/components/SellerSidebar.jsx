@@ -1,39 +1,54 @@
 // src/features/seller/components/SellerSidebar.jsx
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import {
-  LayoutDashboard, Building2, BedDouble, CalendarDays,
-  TrendingUp, CreditCard, Star, Tag, User,
-  ExternalLink, LogOut,
+  LayoutDashboard,
+  Building2,
+  BedDouble,
+  CalendarDays,
+  TrendingUp,
+  CreditCard,
+  Star,
+  Tag,
+  User,
+  ExternalLink,
+  LogOut,
 } from 'lucide-react';
 import { SELLER_NAV_ITEMS } from '../data/sellerConstants';
 
 const ICONS = {
-  chart:    <LayoutDashboard size={18} />,
+  chart: <LayoutDashboard size={18} />,
   building: <Building2 size={18} />,
-  bed:      <BedDouble size={18} />,
+  bed: <BedDouble size={18} />,
   calendar: <CalendarDays size={18} />,
   trending: <TrendingUp size={18} />,
-  credit:   <CreditCard size={18} />,
-  star:     <Star size={18} />,
-  tag:      <Tag size={18} />,
-  user:     <User size={18} />,
+  credit: <CreditCard size={18} />,
+  star: <Star size={18} />,
+  tag: <Tag size={18} />,
+  user: <User size={18} />,
   external: <ExternalLink size={18} />,
-  logout:   <LogOut size={18} />,
+  logout: <LogOut size={18} />,
 };
 
 // 셀러 사이드바 전용 색상 (dark navy theme)
 const C = {
-  bg:        '#1c3442',
-  accent:    '#3ec9a7',
-  text:      'rgba(255,255,255,0.80)',
+  bg: '#1c3442',
+  accent: '#3ec9a7',
+  text: 'rgba(255,255,255,0.80)',
   textMuted: 'rgba(255,255,255,0.50)',
-  hover:     'rgba(255,255,255,0.06)',
-  active:    'rgba(255,255,255,0.10)',
-  divider:   'rgba(255,255,255,0.12)',
+  hover: 'rgba(255,255,255,0.06)',
+  active: 'rgba(255,255,255,0.10)',
+  divider: 'rgba(255,255,255,0.12)',
 };
 
 export default function SellerSidebar() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem('accessToken');
+    navigate('/home');
+  };
+
   return (
     <Aside>
       {/* 로고 */}
@@ -68,10 +83,10 @@ export default function SellerSidebar() {
           <IconWrap>{ICONS.external}</IconWrap>
           <NavLabel>유저 홈으로</NavLabel>
         </BottomItem>
-        <BottomItem to="/logout">
+        <LogoutBtn type="button" onClick={handleLogout}>
           <IconWrap>{ICONS.logout}</IconWrap>
           <NavLabel>로그아웃</NavLabel>
-        </BottomItem>
+        </LogoutBtn>
       </BottomNav>
     </Aside>
   );
@@ -192,6 +207,26 @@ const BottomItem = styled(NavLink)`
     background 0.15s,
     color 0.15s;
   border-left: 4px solid transparent;
+
+  &:hover {
+    background: ${C.hover};
+    color: white;
+  }
+`;
+
+const LogoutBtn = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  width: 100%;
+  color: ${C.text};
+  border-left: 4px solid transparent;
+  transition:
+    background 0.15s,
+    color 0.15s;
+  font-family: inherit;
+  cursor: pointer;
 
   &:hover {
     background: ${C.hover};

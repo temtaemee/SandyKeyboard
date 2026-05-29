@@ -3,6 +3,10 @@ import reservationCReducer from '../../features/user/reservation/store/reservati
 import notificationReducer from '../../home/store/notificationSlice';
 import adminReducer from '../../features/admin/store/adminReducer';
 import refundReducer from '../../features/refund/store/refundSlice';
+import spaceReducer from '../../features/seller/store/spaceSlice';
+import stayReducer from '../../features/seller/store/staySlice';
+
+// reducer 객체에 추가:
 
 const store = configureStore({
   reducer: {
@@ -10,6 +14,8 @@ const store = configureStore({
     notification: notificationReducer,
     admin: adminReducer,
     refund: refundReducer,
+    space: spaceReducer,
+    stay: stayReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

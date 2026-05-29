@@ -1,16 +1,33 @@
 // src/features/seller/layouts/SellerDefaltLayout.jsx
-import { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Outlet, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { Bell, X } from 'lucide-react';
 
-import { SELLER_NOTIFICATIONS, SELLER_NOTIF_TYPE_COLOR } from '../data/sellerConstants';
+import useAuth from '../../member/hooks/useAuth';
+import {
+  SELLER_NOTIFICATIONS,
+  SELLER_NOTIF_TYPE_COLOR,
+} from '../data/sellerConstants';
 import SellerSidebar from '../components/SellerSidebar';
 import SellerHeader from '../components/SellerHeader';
 
 export default function SellerDefaltLayout() {
+  const navigate = useNavigate();
+  const { isLoggedIn, isSeller, loading: authLoading } = useAuth();
+
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifs, setNotifs] = useState(SELLER_NOTIFICATIONS);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!isLoggedIn || !isSeller) {
+      navigate('/home', { replace: true });
+    }
+  }, [authLoading, isLoggedIn, isSeller, navigate]);
+
+  if (authLoading) return <AuthScreen>로딩 중...</AuthScreen>;
+  if (!isLoggedIn || !isSeller) return null;
 
   const unreadCount = notifs.filter((n) => n.unread).length;
 
@@ -92,6 +109,16 @@ export default function SellerDefaltLayout() {
 
 const SELLER_ACCENT = '#3ec9a7';
 
+const AuthScreen = styled.div`
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: ${({ theme }) => theme.colors.bgSection};
+  font-size: 14px;
+  color: ${({ theme }) => theme.colors.textMuted};
+`;
+
 const Wrapper = styled.div`
   display: flex;
   min-height: 100vh;
@@ -125,8 +152,12 @@ const Fab = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  transition: background 0.2s, transform 0.1s;
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  transition:
+    background 0.2s,
+    transform 0.1s;
   z-index: 40;
 
   &:hover {
@@ -251,7 +282,8 @@ const NotifItem = styled.div`
   gap: 12px;
   padding: 14px 20px;
   border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
-  background: ${({ $unread }) => ($unread ? 'rgba(62,201,167,0.04)' : 'transparent')};
+  background: ${({ $unread }) =>
+    $unread ? 'rgba(62,201,167,0.04)' : 'transparent'};
   cursor: pointer;
   transition: background 0.1s;
   &:last-child {

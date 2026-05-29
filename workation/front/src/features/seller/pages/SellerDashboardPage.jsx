@@ -3,8 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { DollarSign, CalendarDays, Star, Building2, ChevronRight } from 'lucide-react';
-import api from '../../../app/api/axios';
-import { getSpaces, updateSpaceVisible } from '../api/spaceApi';
+import { spaceApi } from '../api/spaceApi';
 
 /* ── 지역 라벨 맵 ── */
 const AREA_LABEL = {
@@ -138,19 +137,13 @@ export default function SellerDashboardPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [meRes, spacesRes] = await Promise.all([
-          api.get('/auth/me'),
-          getSpaces(),
-        ]);
-        const me = meRes.data;
-        const mySpaces = spacesRes.data
-          .filter((s) => s.sellerUsername != null && s.sellerUsername === me.username)
-          .map((s) => ({
-            id: s.id,
-            name: s.name,
-            location: formatLocation(s.area, s.address1),
-            visible: s.visibleYn === 'Y',
-          }));
+        const spacesRes = await spaceApi.getMySpaces();
+        const mySpaces = spacesRes.data.map((s) => ({
+          id: s.id,
+          name: s.name,
+          location: formatLocation(s.area, s.address1),
+          visible: s.visibleYn === 'Y',
+        }));
         setSpaces(mySpaces);
       } catch (e) {
         console.error('공간 목록 로딩 실패', e);
@@ -171,7 +164,7 @@ export default function SellerDashboardPage() {
     setTogglingIds((prev) => new Set(prev).add(id));
     setSpaces((prev) => prev.map((s) => (s.id === id ? { ...s, visible: !s.visible } : s)));
     try {
-      await updateSpaceVisible(id, nextYn);
+      await spaceApi.toggleVisible(id, nextYn);
     } catch (e) {
       setSpaces((prev) => prev.map((s) => (s.id === id ? { ...s, visible: target.visible } : s)));
       showToast('노출 상태 변경에 실패했습니다. 다시 시도해 주세요.');
