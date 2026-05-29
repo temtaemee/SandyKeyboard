@@ -4,6 +4,7 @@ import { getAdminSpaces } from '../api/adminSpacesApi';
 import {
   setSpaces,
   setLoading,
+  toggleSpaceVisible as toggleSpaceVisibleAction,
   approveSpaces as approveSpacesAction,
   rejectSpaces as rejectSpacesAction,
 } from '../store/adminSpacesSlice';
@@ -41,6 +42,11 @@ export default function useAdminSpaces() {
     [dispatch]
   );
 
+  const optimisticToggleVisible = useCallback(
+    (id, visibleYn) => dispatch(toggleSpaceVisibleAction({ id, visibleYn })),
+    [dispatch]
+  );
+
   return {
     spaces,
     pendingSpaces,
@@ -50,5 +56,6 @@ export default function useAdminSpaces() {
     refetch,
     approveSpaces,
     rejectSpaces,
+    optimisticToggleVisible,
   };
 }

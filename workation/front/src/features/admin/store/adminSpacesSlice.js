@@ -40,6 +40,11 @@ const adminSpacesSlice = createSlice({
       state.rejectedSpaces = [...toReject, ...state.rejectedSpaces];
       state.pendingSpaces = state.pendingSpaces.filter((s) => !ids.includes(s.id));
     },
+    toggleSpaceVisible(state, action) {
+      const { id, visibleYn } = action.payload;
+      const target = state.spaces.find((s) => s.id === id);
+      if (target) target.visibleYn = visibleYn;
+    },
     setLoading(state, action) {
       state.loading = action.payload;
     },
@@ -53,6 +58,7 @@ export const {
   setSpaces,
   setPendingSpaces,
   setBlinded,
+  toggleSpaceVisible,
   approveSpaces,
   rejectSpaces,
   setLoading,

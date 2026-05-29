@@ -21,6 +21,7 @@ export default function useAdminSpacesUI({
   refetch,
   approveSpaces,
   rejectSpaces,
+  optimisticToggleVisible,
   getStaysBySpaceId,
   changeSpaceVisible,
 }) {
@@ -30,6 +31,7 @@ export default function useAdminSpacesUI({
 
   // 숙소 이름 및 공개여부 기반 필터링 연산
   const filteredSpaces = spaces.filter((space) => {
+    if (space['del_yn'] === 'Y') return false;
     const matchesSearch = space.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus =
       statusFilter === '전체' ? true :
@@ -53,14 +55,20 @@ export default function useAdminSpacesUI({
   // 공개 토글 최종 변경 확인 처리 핸들러
   const handleVisibleConfirm = async () => {
     if (!visibleConfirmTarget) return;
-    const nextVisible = visibleConfirmTarget.willHide ? 'N' : 'Y';
-    try {
-      await changeSpaceVisible(visibleConfirmTarget.id, nextVisible);
-      await refetch();
-    } catch (err) {
-      console.error(err);
-    }
+    const { id, willHide } = visibleConfirmTarget;
+    const nextVisible = willHide ? 'N' : 'Y';
+
+    // 낙관적 업데이트: API 완료 전에 UI 즉시 반영
+    optimisticToggleVisible(id, nextVisible);
     setVisibleConfirmTarget(null);
+
+    try {
+      await changeSpaceVisible(id, nextVisible);
+    } catch (err) {
+      // 실패 시 원래 상태로 롤백
+      console.error('노출 상태 변경 실패:', err);
+      optimisticToggleVisible(id, willHide ? 'Y' : 'N');
+    }
   };
 
   // ─── 3. 숙소 등록 승인/거절 모달 & 다중 체크박스 선택 상태 ───

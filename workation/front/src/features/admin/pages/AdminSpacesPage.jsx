@@ -1,5 +1,5 @@
 // src/features/admin/pages/AdminSpacesPage.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Home, CheckCircle, AlertTriangle, EyeOff, X } from 'lucide-react';
 import AdminSearchInput from '../components/common/AdminSearchInput';
@@ -15,11 +15,21 @@ import {
 } from '../components/common/AdminModal.styles';
 import useAdminSpaces from '../hooks/useAdminSpaces';
 import useAdminSpacesUI from '../hooks/useAdminSpacesUI';
-import { getStaysBySpaceId, changeSpaceVisible } from '../api/adminSpacesApi';
+import { getStaysBySpaceId, changeSpaceVisible, getAdminSpaces } from '../api/adminSpacesApi';
 
 
 export default function AdminSpacesPage() {
   const { currentPage, goToPage } = usePagination();
+
+  const [deletedSpaces, setDeletedSpaces] = useState([]);
+  const [isDeletedModalOpen, setIsDeletedModalOpen] = useState(false);
+
+  useEffect(() => {
+    getAdminSpaces({ delYn: 'Y' })
+      .then(res => setDeletedSpaces(Array.isArray(res.data) ? res.data : []))
+      .catch(() => setDeletedSpaces([]));
+  }, []);
+
   const {
     spaces,
     pendingSpaces,
@@ -28,6 +38,7 @@ export default function AdminSpacesPage() {
     refetch,
     approveSpaces,
     rejectSpaces,
+    optimisticToggleVisible,
   } = useAdminSpaces();
 
   // 통합 UI 훅 도입으로 모달, 비동기 Stay 목록, 다중 선택 등의 useState 제거 및 비즈니스 로직 격리
@@ -38,6 +49,7 @@ export default function AdminSpacesPage() {
     setStatusFilter,
     spaces: filteredSpaces,
     visibleConfirmTarget,
+    setVisibleConfirmTarget,
     handleVisibleClick,
     handleVisibleConfirm,
     isModalOpen,
@@ -62,6 +74,7 @@ export default function AdminSpacesPage() {
     refetch,
     approveSpaces,
     rejectSpaces,
+    optimisticToggleVisible,
     getStaysBySpaceId,
     changeSpaceVisible,
   });
@@ -85,17 +98,17 @@ export default function AdminSpacesPage() {
             </StatIconWrap>
           </StatCardTop>
           <StatLabel>전체 숙소 수</StatLabel>
-          <StatValue>1,284</StatValue>
+          <StatValue>{spaces.filter(s => s['del_yn'] === 'N').length.toLocaleString()}</StatValue>
         </StatCard>
 
-        <StatCard>
+        <StatCard style={{ cursor: 'pointer' }} onClick={() => setIsDeletedModalOpen(true)}>
           <StatCardTop>
             <StatIconWrap $bg="rgba(59,130,246,0.1)" $color="#2563eb">
               <CheckCircleIcon />
             </StatIconWrap>
           </StatCardTop>
-          <StatLabel>운영 중인 숙소</StatLabel>
-          <StatValue>{spaces.length.toLocaleString()}</StatValue>
+          <StatLabel>비 운영 숙소</StatLabel>
+          <StatValue>{deletedSpaces.length.toLocaleString()}</StatValue>
         </StatCard>
 
         <StatCard style={{ cursor: 'pointer' }} onClick={() => setIsModalOpen(true)}>
@@ -235,6 +248,38 @@ export default function AdminSpacesPage() {
                     );
                   })}
                 </StayList>
+              )}
+            </ModalBody>
+          </ModalContent>
+        </ModalOverlay>
+      )}
+
+      {/* ── 비 운영 숙소 모달 ── */}
+      {isDeletedModalOpen && (
+        <ModalOverlay onClick={() => setIsDeletedModalOpen(false)}>
+          <ModalContent $width="600px" onClick={e => e.stopPropagation()}>
+            <ModalHeader>
+              <ModalTitle>비 운영 숙소 목록</ModalTitle>
+              <ModalCloseBtn onClick={() => setIsDeletedModalOpen(false)}>
+                <X size={20} />
+              </ModalCloseBtn>
+            </ModalHeader>
+            <ModalBody>
+              {deletedSpaces.length === 0 ? (
+                <EmptyState>비 운영 숙소가 없습니다.</EmptyState>
+              ) : (
+                <DeletedSpaceList>
+                  {deletedSpaces.map(space => (
+                    <DeletedSpaceItem key={space.id}>
+                      <SpaceThumbnail src={space.thumbnailUrl} alt={space.name} $blinded />
+                      <SpaceInfo>
+                        <SpaceName $blinded>{space.name}</SpaceName>
+                        <SpaceLocation>{space.area} · {space.address1}</SpaceLocation>
+                      </SpaceInfo>
+                      <DeletedBadge>비운영</DeletedBadge>
+                    </DeletedSpaceItem>
+                  ))}
+                </DeletedSpaceList>
               )}
             </ModalBody>
           </ModalContent>
@@ -727,4 +772,31 @@ const StayBadge = styled.span`
   background: ${({ $visible }) => ($visible ? 'rgba(34,197,94,0.1)' : 'rgba(148,163,184,0.15)')};
   color: ${({ $visible }) => ($visible ? '#16a34a' : '#64748b')};
   white-space: nowrap;
+`;
+
+const DeletedSpaceList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`;
+
+const DeletedSpaceItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fafbfc;
+`;
+
+const DeletedBadge = styled.span`
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background: rgba(239,68,68,0.1);
+  color: #dc2626;
+  white-space: nowrap;
+  flex-shrink: 0;
 `;
