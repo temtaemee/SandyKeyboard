@@ -7,6 +7,9 @@ import com.kh.app.middle.coupon.entity.CouponEntity;
 import com.kh.app.middle.coupon.entity.MemberCouponEntity;
 import com.kh.app.middle.coupon.repository.CouponRepository; // 💡 쿠폰 레포지토리 주입 추가
 import com.kh.app.middle.coupon.repository.MemberCouponRepository;
+import com.kh.app.notification.dto.request.NotificationCreateReqDto;
+import com.kh.app.notification.entity.NotificationType;
+import com.kh.app.notification.service.NotificationService;
 import com.kh.app.product.space.dto.response.SpaceResDto;
 import com.kh.app.product.stay.dto.response.StayResDto;
 import com.kh.app.product.stay.entity.StayEntity;               // 💡 숙소 엔티티 추가
@@ -17,6 +20,8 @@ import com.kh.app.product.stay.repository.StayPictureRepository;
 import com.kh.app.product.stay.repository.StayRepository;
 import com.kh.app.transaction.payment.entity.PaymentEntity;
 import com.kh.app.transaction.payment.repository.PaymentRepository;
+import com.kh.app.transaction.payout.service.PayoutService;
+import com.kh.app.transaction.refund.service.RefundService;
 import com.kh.app.transaction.reservation.dto.request.ReservationCreateReqDto;
 import com.kh.app.transaction.reservation.dto.request.ReservationUpdateReqDto;
 import com.kh.app.transaction.reservation.dto.response.ReservationAdminListResDto;
@@ -27,6 +32,7 @@ import com.kh.app.transaction.reservation.entity.ReservationStatus;
 import com.kh.app.transaction.reservation.entity.ReserveFileEntity;
 import com.kh.app.transaction.reservation.repository.ReservationRepository;
 import com.kh.app.transaction.reservation.repository.ReserveFileRepository;
+import com.kh.app.transaction.sales.service.SalesService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -58,6 +64,11 @@ public class ReservationService {
     private final PaymentRepository paymentRepository;
     private final StayPictureRepository stayPictureRepository;
     private final StayOptionRepository stayOptionRepository;
+    private final NotificationService notificationService;
+    private final SalesService salesService;
+    private final PayoutService payoutService;
+    private final RefundService refundService;
+
 
 
     /**
@@ -323,5 +334,123 @@ public class ReservationService {
 
         // 6. 작성하신 팩토리 메서드로 통합 조립 후 리턴
         return ReservationDetailResDto.of(reservation, spaceResDto, stayResDto, paymentEntity, reserveFiles, s3Service);
+    }
+
+    @Transactional
+    public void approveReservation(Long id, String sellerUsername) {
+        ReservationEntity reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("예약 건을 찾을 수 없습니다."));
+
+        // 소유권 검증 (내 공간에 들어온 예약인지 확인)
+        if (!reservation.getStay().getSpace().getSeller().getUsername().equals(sellerUsername)) {
+            throw new IllegalArgumentException("해당 예약에 대한 승인 권한이 없습니다.");
+        }
+
+        reservation.approveBySeller(); // RESERVED 상태 전환
+
+        // 구매자에게 예약이 확정되었다고 알림 전송 (선택 구현 가능)
+        NotificationCreateReqDto notifyUser = NotificationCreateReqDto.builder()
+                .memberId(reservation.getMember().getId())
+                .type(NotificationType.RESERVATION_COMPLETE) // 적절한 유형 매핑
+                .content("[" + reservation.getStay().getName() + "] 숙소 예약이 판매자에 의해 확정되었습니다!")
+                .redirectUrl("/mypage/reservation")
+                .referenceId(reservation.getId())
+                .build();
+        notificationService.createNotification(notifyUser);
+    }
+
+    @Transactional
+    public void cancelReservationBySeller(Long id, String sellerUsername) {
+        ReservationEntity reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("예약 건을 찾을 수 없습니다."));
+
+        // 소유권 검증
+        if (!reservation.getStay().getSpace().getSeller().getUsername().equals(sellerUsername)) {
+            throw new IllegalArgumentException("해당 예약에 대한 취소 권한이 없습니다.");
+        }
+
+        // 💡 [정책 반영] 판매자가 이미 승인 완료(RESERVED)를 누른 상태라면 취소 불가능하게 차단
+        if (reservation.getStatus() == ReservationStatus.RESERVED) {
+            throw new IllegalStateException("이미 승인 확정된 예약은 취소할 수 없습니다. 고객센터에 문의하세요.");
+        }
+
+        // 판매자 취소 상태 변이 (PAYMENT_COMPLETED 상태에서만 가능)
+        reservation.cancelBySeller(); // SELLER_CANCELLED로 변경
+
+        // 💡 [해결] 판매자가 승인 전에 거절했으므로 무조건 100% 자동 전액 환불 실행
+        refundService.processFullRefundBySystem(reservation);
+    }
+
+    /**
+     * 💡 구매자(또는 시스템 스케줄러) 전용: 이용 완료 확정 기능 (★정산 연동 시점)
+     */
+    @Transactional
+    public void completeReservation(Long id, String username) {
+        ReservationEntity reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("예약 건을 찾을 수 없습니다."));
+
+        if (!reservation.getMember().getUsername().equals(username)) {
+            throw new IllegalArgumentException("본인의 예약만 이용 완료 처리를 할 수 있습니다.");
+        }
+
+        reservation.completeUsage(); // COMPLETED 상태 전환
+
+        // 💡 [수정] 예약에 연동된 실제 결제(Payment) 엔티티를 가져옵니다.
+        // 예약 상세 조회 시 사용하셨던 paymentRepository 조회를 활용합니다.
+        com.kh.app.transaction.payment.entity.PaymentEntity payment = paymentRepository.findByReservation(reservation)
+                .orElseThrow(() -> new EntityNotFoundException("연 연동된 결제 내역을 찾을 수 없습니다."));
+
+        // 💡 결제 엔티티의 실제 PK ID를 파라미터로 전달하여 매출 원장을 꺼내옵니다.
+        com.kh.app.transaction.sales.entity.SalesEntity sales = salesService.findByPaymentId(payment.getId());
+
+        // 정산 대상 타겟 생성
+        payoutService.createPayoutTarget(sales);
+    }
+
+    /**
+     * 💡 구매자 전용: 변동 패널티 정책 적용 예약 취소 및 환불 연동
+     */
+    @Transactional
+    public void cancelReservationByUser(Long id, String username) {
+        ReservationEntity reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("예약 내역을 찾을 수 없습니다."));
+
+        if (!reservation.getMember().getUsername().equals(username)) {
+            throw new IllegalArgumentException("본인의 예약만 취소할 수 있습니다.");
+        }
+
+        // 이미 취소되었거나 이용 완료된 건인지 검증
+        if (reservation.getStatus() == ReservationStatus.USER_CANCELLED ||
+                reservation.getStatus() == ReservationStatus.COMPLETED ||
+                reservation.getStatus() == ReservationStatus.REFUND_COMPLETED) {
+            throw new IllegalStateException("취소 가능한 상태의 예약이 아닙니다.");
+        }
+
+        // 1. 환불 정책 비율 계산기 호출 (100%, 50%, 0%)
+        int refundRate = refundService.calculateRefundRate(reservation);
+
+        if (refundRate == 0) {
+            throw new IllegalStateException("본 예약 건은 환불 정책상 취소가 불가능한 기간(또는 노쇼)에 진입했습니다.");
+        }
+
+        // 2. 최종 환불 금액 계산
+        long originalTotalPrice = reservation.getTotalPrice();
+        long finalRefundAmount = (originalTotalPrice * refundRate) / 100;
+
+        // 3. 예약 상태 변이 (환불 완료 또는 유저 취소 상태 매핑)
+        // 환불이 전액 혹은 부분이라도 진행되므로 REFUND_COMPLETED 또는 USER_CANCELLED 지정
+        reservation.updateStatus(ReservationStatus.USER_CANCELLED);
+
+        // 4. [해결] 환불 서비스 트리거 가동 (새로 만든 헬퍼 메서드 호출)
+        refundService.processTossCancelByRate(reservation, finalRefundAmount, "구매자 변동 패널티 취소");
+
+        // 5. [해결] 예약에 연동된 실제 결제 원장(Payment)을 추적하여 결제 PK ID 추출
+        com.kh.app.transaction.payment.entity.PaymentEntity payment = paymentRepository.findByReservation(reservation)
+                .orElseThrow(() -> new EntityNotFoundException("연동된 결제 내역을 찾을 수 없습니다."));
+
+        // 6. 매출 원장 차감 반영 (예약 ID가 아닌 결제 ID를 전달하여 컴파일 에러 해결!)
+        salesService.handleCancel(payment.getId(), finalRefundAmount);
+
+        log.info("▶️ [취소 완료] 구매자 취소 완료: 환불율 {}% / 총 환불금액: {}원", refundRate, finalRefundAmount);
     }
 }
