@@ -348,7 +348,7 @@ public class ReservationService {
 
         reservation.approveBySeller(); // RESERVED 상태 전환
 
-        // 구매자에게 예약이 확정되었다고 알림 전송 (선택 구현 가능)
+        // 구매자 예약이 확정되었다고 알림 전송 (선택 구현 가능)
         NotificationCreateReqDto notifyUser = NotificationCreateReqDto.builder()
                 .memberId(reservation.getMember().getId())
                 .type(NotificationType.RESERVATION_COMPLETE) // 적절한 유형 매핑

@@ -150,11 +150,11 @@ public class PaymentService {
             salesService.recordSales(payment);
 
             NotificationCreateReqDto notificationCreateReqDto = NotificationCreateReqDto.builder()
-                    .memberId(1L) //알림 받을 멤버id 번호 Long타입 변수로 처리하면 L안붙여도 됩니다!
-                    .type(NotificationType.RESERVATION_COMPLETE) // 알림타입
-                    .content("테스트 알림입니다.") // 알림 내용
-                    .redirectUrl("/mypage") // 알림 클릭햇을시 보내고 싶은 url(셀러 승인거절 페이지 만들기)
-                    .referenceId(1L) // 알림관련 식별번호 예약번호 or 상품번호 or 쿠폰번호 or 결제번호
+                    .memberId(reservation.getStay().getSpace().getSeller().getId()) //알림 받을 멤버id 번호 Long타입 변수로 처리하면 L안붙여도 됩니다!
+                    .type(NotificationType.PAYMENT_SUCCESS) // 알림타입
+                    .content("[" + reservation.getStay().getName() + "] 숙소 결제가 완료되어 예약 승인 요청 중입니다.") // [수정] 동적 문구 변경
+                    .redirectUrl("/seller/reservations") // 알림 클릭햇을시 보내고 싶은 url(셀러 승인거절 페이지 만들기)
+                    .referenceId(reservation.getId()) // 알림관련 식별번호 예약번호 or 상품번호 or 쿠폰번호 or 결제번호
                     .build();
 
             notificationService.createNotification(notificationCreateReqDto);
