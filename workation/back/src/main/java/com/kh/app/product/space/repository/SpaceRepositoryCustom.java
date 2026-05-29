@@ -8,4 +8,10 @@ import java.util.List;
 public interface SpaceRepositoryCustom {
 
     List<SpaceEntity> searchList(SpaceSearchReqDto dto);
+
+    List<SpaceEntity> searchListForPublic(SpaceSearchReqDto dto);
+
+    List<SpaceEntity> searchListForSeller(Long memberId);
+
+    List<SpaceEntity> searchListForAdmin(SpaceSearchReqDto dto);
 }

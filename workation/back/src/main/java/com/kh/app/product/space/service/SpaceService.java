@@ -5,11 +5,16 @@ import com.kh.app.member.repository.MemberRepository;
 import com.kh.app.product.common.util.S3PictureUploader;
 import com.kh.app.product.exception.ErrorCode;
 import com.kh.app.product.exception.ProductException;
+import com.kh.app.product.space.dto.request.ArcadeInsertReqDto;
+import com.kh.app.product.space.dto.request.PictureMetaReqDto;
 import com.kh.app.product.space.dto.request.SpaceInsertReqDto;
+import com.kh.app.product.space.dto.request.SpacePictureUpdateReqDto;
 import com.kh.app.product.space.dto.request.SpaceSearchReqDto;
 import com.kh.app.product.space.dto.request.SpaceUpdateReqDto;
+import com.kh.app.product.space.dto.response.ArcadeResDto;
 import com.kh.app.product.space.dto.response.SpaceResDto;
 import com.kh.app.product.space.entity.*;
+import com.kh.app.product.space.repository.ArcadeRepository;
 import com.kh.app.product.space.repository.SpaceArcadeRepository;
 import com.kh.app.product.space.repository.SpacePictureRepository;
 import com.kh.app.product.space.repository.SpaceRepository;
@@ -27,6 +32,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Transactional(readOnly = true)
@@ -35,6 +41,7 @@ import java.util.List;
 public class SpaceService {
 
     private final SpaceRepository spaceRepository;
+    private final ArcadeRepository arcadeRepository;
     private final SpaceArcadeRepository spaceArcadeRepository;
     private final SpacePictureRepository spacePictureRepository;
     private final S3PictureUploader s3PictureUploader;
@@ -42,6 +49,8 @@ public class SpaceService {
     private final StayRepository stayRepository;
     private final StayOptionRepository stayOptionRepository;
     private final StayPictureRepository stayPictureRepository;
+
+    // ========== 기존 메서드 (하위 호환) ==========
 
     public List<SpaceResDto> searchList(SpaceSearchReqDto dto) {
         return spaceRepository.searchList(dto)
@@ -72,6 +81,210 @@ public class SpaceService {
         return SpaceResDto.from(space, stays);
     }
 
+    // ========== Public 전용 메서드 ==========
+
+    public List<SpaceResDto> searchListForPublic(SpaceSearchReqDto dto) {
+        return spaceRepository.searchListForPublic(dto)
+                .stream()
+                .map(space -> {
+                    String thumbnailUrl = spacePictureRepository
+                            .findBySpaceIdAndMainYn(space.getId(), "Y")
+                            .map(SpacePictureEntity::getFilePath)
+                            .orElse(null);
+                    return SpaceResDto.from(space, null, thumbnailUrl);
+                })
+                .toList();
+    }
+
+    public SpaceResDto selectOneForPublic(Long id) {
+        SpaceEntity space = spaceRepository.findByIdAndDelYnAndVisibleYn(id, "N", "Y")
+                .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
+
+        List<StayResDto> stays = stayRepository.findBySpaceIdAndDelYn(id, "N")
+                .stream()
+                .map(stay -> {
+                    List<StayOption> options = stayOptionRepository.findByStay(stay)
+                            .stream().map(StayOptionEntity::getStayOption).toList();
+                    return StayResDto.from(stay, options, stayPictureRepository.findByStayOrderBySortOrder(stay));
+                })
+                .toList();
+
+        return SpaceResDto.from(space, stays);
+    }
+
+    // ========== Seller 전용 메서드 ==========
+
+    @Transactional
+    public Long insert(SpaceInsertReqDto dto, List<MultipartFile> files, Long memberId) {
+        MemberEntity seller = memberRepository.findById(memberId)
+                .orElseThrow(() -> new ProductException(ErrorCode.SELLER_NOT_FOUND));
+        SpaceEntity space = spaceRepository.save(dto.toEntity(seller));
+        uploadAndSavePictures(space, files, dto.getPictureList());
+        insertArcades(space, dto.getArcadeIdList());
+        return space.getId();
+    }
+
+    public List<ArcadeResDto> getAllArcades() {
+        return arcadeRepository.findAll()
+                .stream()
+                .map(ArcadeResDto::from)
+                .toList();
+    }
+
+    @Transactional
+    public ArcadeResDto createArcade(ArcadeInsertReqDto dto) {
+        ArcadeEntity arcade = arcadeRepository.save(
+                ArcadeEntity.builder().name(dto.getName()).build()
+        );
+        return ArcadeResDto.from(arcade);
+    }
+
+    public List<SpaceResDto> searchListForSeller(Long memberId) {
+        return spaceRepository.searchListForSeller(memberId)
+                .stream()
+                .map(space -> {
+                    String thumbnailUrl = spacePictureRepository
+                            .findBySpaceIdAndMainYn(space.getId(), "Y")
+                            .map(SpacePictureEntity::getFilePath)
+                            .orElse(null);
+                    return SpaceResDto.from(space, null, thumbnailUrl);
+                })
+                .toList();
+    }
+
+    public SpaceResDto selectOneForSeller(Long id, Long memberId) {
+        SpaceEntity space = spaceRepository.findById(id)
+                .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
+        verifySpaceOwnership(space, memberId);
+
+        List<StayResDto> stays = stayRepository.findBySpaceIdAndDelYn(id, "N")
+                .stream()
+                .map(stay -> {
+                    List<StayOption> options = stayOptionRepository.findByStay(stay)
+                            .stream().map(StayOptionEntity::getStayOption).toList();
+                    return StayResDto.from(stay, options, stayPictureRepository.findByStayOrderBySortOrder(stay));
+                })
+                .toList();
+
+        List<SpacePictureEntity> pictures = spacePictureRepository.findBySpaceIdOrderBySortOrder(id);
+        return SpaceResDto.from(space, stays, null, pictures);
+    }
+
+    @Transactional
+    public void updatePictures(Long spaceId, SpacePictureUpdateReqDto dto,
+                                List<MultipartFile> files, Long memberId) {
+        SpaceEntity space = spaceRepository.findByIdAndDelYn(spaceId, "N")
+                .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
+        verifySpaceOwnership(space, memberId);
+
+        List<Long> keepIds = dto.getKeepPictureIds();
+        if (keepIds == null || keepIds.isEmpty()) {
+            spacePictureRepository.deleteBySpaceId(spaceId);
+        } else {
+            spacePictureRepository.deleteBySpaceIdAndIdNotIn(spaceId, keepIds);
+        }
+
+        uploadAndSavePictures(space, files, dto.getNewPictures());
+    }
+
+    @Transactional
+    public void update(Long id, SpaceUpdateReqDto dto, Long memberId) {
+        SpaceEntity space = spaceRepository.findByIdAndDelYn(id, "N")
+                .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
+        verifySpaceOwnership(space, memberId);
+        space.update(
+                dto.getName(), dto.getPhone(), dto.getEmail(),
+                dto.getSummary(), dto.getDescription(),
+                dto.getAddress1(), dto.getAddress2(),
+                dto.getLatitude(), dto.getLongitude(), dto.getArea()
+        );
+    }
+
+    @Transactional
+    public void delete(Long id, Long memberId) {
+        SpaceEntity space = spaceRepository.findByIdAndDelYn(id, "N")
+                .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
+        verifySpaceOwnership(space, memberId);
+        space.delete();
+    }
+
+    @Transactional
+    public void changeVisibleYn(Long id, String visibleYn, Long memberId) {
+        SpaceEntity space = spaceRepository.findByIdAndDelYn(id, "N")
+                .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
+        verifySpaceOwnership(space, memberId);
+        space.changeVisibleYn(visibleYn);
+    }
+
+    // ========== Admin 전용 메서드 ==========
+
+    public List<SpaceResDto> searchListForAdmin(SpaceSearchReqDto dto) {
+        return spaceRepository.searchListForAdmin(dto)
+                .stream()
+                .map(space -> {
+                    String thumbnailUrl = spacePictureRepository
+                            .findBySpaceIdAndMainYn(space.getId(), "Y")
+                            .map(SpacePictureEntity::getFilePath)
+                            .orElse(null);
+                    return SpaceResDto.from(space, null, thumbnailUrl);
+                })
+                .toList();
+    }
+
+    public SpaceResDto selectOneForAdmin(Long id) {
+        SpaceEntity space = spaceRepository.findById(id)
+                .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
+
+        List<StayResDto> stays = stayRepository.findBySpaceIdAndDelYn(id, "N")
+                .stream()
+                .map(stay -> {
+                    List<StayOption> options = stayOptionRepository.findByStay(stay)
+                            .stream().map(StayOptionEntity::getStayOption).toList();
+                    return StayResDto.from(stay, options, stayPictureRepository.findByStayOrderBySortOrder(stay));
+                })
+                .toList();
+
+        return SpaceResDto.from(space, stays);
+    }
+
+    @Transactional
+    public void updateByAdmin(Long id, SpaceUpdateReqDto dto) {
+        SpaceEntity space = spaceRepository.findById(id)
+                .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
+        space.update(
+                dto.getName(), dto.getPhone(), dto.getEmail(),
+                dto.getSummary(), dto.getDescription(),
+                dto.getAddress1(), dto.getAddress2(),
+                dto.getLatitude(), dto.getLongitude(), dto.getArea()
+        );
+    }
+
+    @Transactional
+    public void deleteByAdmin(Long id) {
+        SpaceEntity space = spaceRepository.findById(id)
+                .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
+        space.delete();
+    }
+
+    @Transactional
+    public void changeVisibleYnByAdmin(Long id, String visibleYn) {
+        SpaceEntity space = spaceRepository.findById(id)
+                .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
+        space.changeVisibleYn(visibleYn);
+    }
+
+    // ========== 기존 호환 메서드 (sellerId DTO 기반 — 내부 사용 가능성 유지) ==========
+
+    @Transactional
+    public Long insert(SpaceInsertReqDto dto, List<MultipartFile> files) {
+        MemberEntity seller = memberRepository.findById(1L)
+                .orElseThrow(() -> new ProductException(ErrorCode.SELLER_NOT_FOUND));
+        SpaceEntity space = spaceRepository.save(dto.toEntity(seller));
+        uploadAndSavePictures(space, files, dto.getPictureList());
+        insertArcades(space, dto.getArcadeIdList());
+        return space.getId();
+    }
+
     @Transactional
     public void update(Long id, SpaceUpdateReqDto dto) {
         SpaceEntity space = spaceRepository.findByIdAndDelYn(id, "N")
@@ -98,17 +311,15 @@ public class SpaceService {
         space.delete();
     }
 
-    @Transactional
-    public Long insert(SpaceInsertReqDto dto, List<MultipartFile> files) {
-        MemberEntity seller = memberRepository.findById(dto.getSellerId())
-                .orElseThrow(() -> new ProductException(ErrorCode.SELLER_NOT_FOUND));
-        SpaceEntity space = spaceRepository.save(dto.toEntity(seller));
-        uploadAndSavePictures(space, files);
-        insertArcades(space, dto.getArcadeIdList());
-        return space.getId();
+    // ========== Private 헬퍼 ==========
+
+    private void verifySpaceOwnership(SpaceEntity space, Long memberId) {
+        if (space.getSeller() == null || !Objects.equals(space.getSeller().getId(), memberId)) {
+            throw new ProductException(ErrorCode.SPACE_ACCESS_DENIED);
+        }
     }
 
-    private void uploadAndSavePictures(SpaceEntity space, List<MultipartFile> files) {
+    private void uploadAndSavePictures(SpaceEntity space, List<MultipartFile> files, List<PictureMetaReqDto> pictureMeta) {
         if (files == null || files.isEmpty()) return;
 
         List<String> s3Keys = s3PictureUploader.upload(files, "space");
@@ -118,6 +329,18 @@ public class SpaceService {
             MultipartFile file = files.get(i);
             String s3Key = s3Keys.get(i);
             String storedName = s3Key.substring(s3Key.lastIndexOf("/") + 1);
+
+            String mainYn = (i == 0) ? "Y" : "N";
+            int sortOrder = i;
+            SpacePictureCategory category = SpacePictureCategory.OTHERS;
+
+            if (pictureMeta != null && i < pictureMeta.size()) {
+                PictureMetaReqDto meta = pictureMeta.get(i);
+                if (meta.getMainYn() != null) mainYn = meta.getMainYn();
+                if (meta.getSortOrder() != null) sortOrder = meta.getSortOrder();
+                if (meta.getCategory() != null) category = meta.getCategory();
+            }
+
             entities.add(SpacePictureEntity.builder()
                     .space(space)
                     .filePath(s3Key)
@@ -125,20 +348,15 @@ public class SpaceService {
                     .storedName(storedName)
                     .contentType(file.getContentType())
                     .fileSize(file.getSize())
-                    .mainYn(i == 0 ? "Y" : "N")
-                    .sortOrder(i)
-                    .category(SpacePictureCategory.OTHERS)
+                    .mainYn(mainYn)
+                    .sortOrder(sortOrder)
+                    .category(category)
                     .build());
         }
         spacePictureRepository.saveAll(entities);
     }
 
-    //    insertArcade 처리
-    private void insertArcades(
-            SpaceEntity space,
-            List<Long> arcadeIdList
-    ) {
-
+    private void insertArcades(SpaceEntity space, List<Long> arcadeIdList) {
         if (arcadeIdList == null || arcadeIdList.isEmpty()) {
             return;
         }
@@ -159,5 +377,4 @@ public class SpaceService {
 
         spaceArcadeRepository.saveAll(entityList);
     }
-
 }

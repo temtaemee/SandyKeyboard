@@ -44,6 +44,66 @@ public class StayRepositoryImpl implements StayRepositoryCustom {
                 .fetch();
     }
 
+    @Override
+    public List<StayEntity> searchListForPublic(StaySearchReqDto dto) {
+        QStayEntity stay = QStayEntity.stayEntity;
+
+        return queryFactory
+                .selectFrom(stay)
+                .join(stay.space).fetchJoin()
+                .where(
+                        stay.delYn.eq("N"),
+                        stay.visibleYn.eq("Y"),
+                        keywordContains(stay, dto.getKeyword()),
+                        spaceIdEq(stay, dto.getSpaceId()),
+                        workationYnEq(stay, dto.getWorkationYn()),
+                        areaEq(stay, dto),
+                        minPriceLoe(stay, dto.getMinPrice()),
+                        maxPriceGoe(stay, dto.getMaxPrice()),
+                        capacityGoe(stay, dto.getCapacity()),
+                        optionsIn(stay, dto.getOptions())
+                )
+                .orderBy(stay.createdAt.desc())
+                .fetch();
+    }
+
+    @Override
+    public List<StayEntity> searchMyStays(Long memberId) {
+        QStayEntity stay = QStayEntity.stayEntity;
+
+        return queryFactory
+                .selectFrom(stay)
+                .join(stay.space).fetchJoin()
+                .where(
+                        stay.space.seller.id.eq(memberId)
+                )
+                .orderBy(stay.createdAt.desc())
+                .fetch();
+    }
+
+    @Override
+    public List<StayEntity> searchListForAdmin(StaySearchReqDto dto) {
+        QStayEntity stay = QStayEntity.stayEntity;
+
+        return queryFactory
+                .selectFrom(stay)
+                .join(stay.space).fetchJoin()
+                .where(
+                        keywordContains(stay, dto.getKeyword()),
+                        spaceIdEq(stay, dto.getSpaceId()),
+                        workationYnEq(stay, dto.getWorkationYn()),
+                        areaEq(stay, dto),
+                        minPriceLoe(stay, dto.getMinPrice()),
+                        maxPriceGoe(stay, dto.getMaxPrice()),
+                        capacityGoe(stay, dto.getCapacity()),
+                        optionsIn(stay, dto.getOptions()),
+                        visibleYnEq(stay, dto.getVisibleYn()),
+                        delYnEq(stay, dto.getDelYn())
+                )
+                .orderBy(stay.createdAt.desc())
+                .fetch();
+    }
+
     private BooleanExpression keywordContains(QStayEntity stay, String keyword) {
         if (!StringUtils.hasText(keyword)) return null;
         return stay.name.containsIgnoreCase(keyword);
@@ -62,6 +122,16 @@ public class StayRepositoryImpl implements StayRepositoryCustom {
     private BooleanExpression areaEq(QStayEntity stay, StaySearchReqDto dto) {
         if (dto.getArea() == null) return null;
         return stay.space.area.eq(dto.getArea());
+    }
+
+    private BooleanExpression visibleYnEq(QStayEntity stay, String visibleYn) {
+        if (!StringUtils.hasText(visibleYn)) return null;
+        return stay.visibleYn.eq(visibleYn);
+    }
+
+    private BooleanExpression delYnEq(QStayEntity stay, String delYn) {
+        if (!StringUtils.hasText(delYn)) return null;
+        return stay.delYn.eq(delYn);
     }
 
     // monPrice ~ sunPrice 중 최솟값 >= minPrice

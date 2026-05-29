@@ -13,4 +13,6 @@ public class SpaceSearchReqDto {
     private Area area;
 
     private String visibleYn;
+
+    private String delYn;
 }
