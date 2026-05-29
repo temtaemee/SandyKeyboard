@@ -1,5 +1,6 @@
 package com.kh.app.product.space.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.kh.app.product.space.entity.Area;
 import com.kh.app.product.space.entity.SpaceEntity;
 import com.kh.app.product.space.entity.SpacePictureCategory;
@@ -50,6 +51,10 @@ public class SpaceResDto {
 
     @Schema(description = "노출 여부")
     private String visibleYn;
+
+    @JsonProperty("del_yn")
+    @Schema(description = "삭제 여부")
+    private String delYn;
 
     @Schema(description = "지역")
     private Area area;
@@ -114,6 +119,7 @@ public class SpaceResDto {
                 .latitude(entity.getLatitude())
                 .longitude(entity.getLongitude())
                 .visibleYn(entity.getVisibleYn())
+                .delYn(entity.getDelYn())
                 .area(entity.getArea())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
