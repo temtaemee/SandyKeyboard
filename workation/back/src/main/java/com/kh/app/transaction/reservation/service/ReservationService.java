@@ -234,6 +234,8 @@ public class ReservationService {
             int pno, String username, String guestName, Long reservationId, String sellerUsername
     ) {
         PageRequest pageRequest = PageRequest.of(pno, 10);
+        // 💡 내부 RepositoryImpl에서 findAdminReservationList가 작동할 때
+        // 리스트 안의 stream().map(ReservationAdminListResDto::from)을 거치며 stayName과 spaceName이 주입됩니다.
         return reservationRepository.findAdminReservationList(pageRequest, username, guestName, reservationId, sellerUsername);
     }
 

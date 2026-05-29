@@ -14,7 +14,7 @@ public class ReservationAdminListResDto {
     private Long id;                  // 예약 번호 (PK)
     private String orderId;           // 토스페이먼츠 주문 번호
     private Long memberId;            // 회원 고유 번호
-    private String username;          // 💡 예약자 계정 아이디 (memberEntity.username)
+    private String username;          // 예약자 계정 아이디 (memberEntity.username)
     private Long stayId;              // 숙소 고유 번호
 
     private Integer guestCount;       // 인원수
@@ -34,16 +34,33 @@ public class ReservationAdminListResDto {
     private String refundAccountNumber;  // 환급 계좌번호
     private String refundAccountHolder;  // 예금주명
 
+    private String stayName;  // 💡 숙소명
+    private String spaceName; // 💡 장소(공간)명
+
     /**
      * 엔티티 데이터를 DTO로 안전하게 변환하는 매핑 메서드
      */
     public static ReservationAdminListResDto from(ReservationEntity entity) {
+
+        // 💡 널 포인터 예외(NPE)를 방지하면서 안전하게 상위 객체의 이름 추출
+        String extractedStayName = null;
+        String extractedSpaceName = null;
+
+        if (entity.getStay() != null) {
+            extractedStayName = entity.getStay().getName(); // 숙소명 추출
+
+            // 숙소(Stay)가 소속된 공간(Space)의 이름 추출
+            if (entity.getStay().getSpace() != null) {
+                extractedSpaceName = entity.getStay().getSpace().getName();
+            }
+        }
+
         return ReservationAdminListResDto.builder()
                 .id(entity.getId())
                 .orderId(entity.getOrderId())
-                .memberId(entity.getMember().getId())
-                .username(entity.getMember().getUsername()) // 💡 nickname 대신 username 매핑
-                .stayId(entity.getStay().getId())
+                .memberId(entity.getMember() != null ? entity.getMember().getId() : null)
+                .username(entity.getMember() != null ? entity.getMember().getUsername() : null)
+                .stayId(entity.getStay() != null ? entity.getStay().getId() : null)
                 .guestCount(entity.getGuestCount())
                 .primaryGuestName(entity.getPrimaryGuestName())
                 .primaryGuestPhone(entity.getPrimaryGuestPhone())
@@ -51,12 +68,15 @@ public class ReservationAdminListResDto {
                 .checkinDate(entity.getCheckinDate())
                 .checkoutDate(entity.getCheckoutDate())
                 .totalPrice(entity.getTotalPrice())
-                .status(entity.getStatus().name())
-                .statusLabel(entity.getStatus().getLabel())
+                .status(entity.getStatus() != null ? entity.getStatus().name() : null)
+                .statusLabel(entity.getStatus() != null ? entity.getStatus().getLabel() : null)
                 .createdAt(entity.getCreatedAt())
                 .refundBankName(entity.getRefundBankName())
                 .refundAccountNumber(entity.getRefundAccountNumber())
                 .refundAccountHolder(entity.getRefundAccountHolder())
+                // 💡 [추가] 추출한 동적 필드 바인딩 완성
+                .stayName(extractedStayName)
+                .spaceName(extractedSpaceName)
                 .build();
     }
 }
