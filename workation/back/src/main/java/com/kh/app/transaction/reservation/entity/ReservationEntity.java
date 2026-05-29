@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
+@Setter
 public class ReservationEntity {
 
     @Id
@@ -117,26 +118,6 @@ public class ReservationEntity {
         this.status = ReservationStatus.USER_CANCELLED;
     }
 
-    public void cancelBySeller() {
-        if (this.status != ReservationStatus.PAYMENT_COMPLETED) {
-            throw new IllegalStateException("결제 완료 상태에서만 판매자 취소 가능.");
-        }
-        this.status = ReservationStatus.SELLER_CANCELLED;
-    }
-
-    public void approveReservation() {
-        if (this.status != ReservationStatus.PAYMENT_COMPLETED) {
-            throw new IllegalStateException("예약 승인 가능한 상태가 아닙니다.");
-        }
-        this.status = ReservationStatus.RESERVED;
-    }
-
-    public void complete() {
-        if (this.status != ReservationStatus.RESERVED) {
-            throw new IllegalStateException("이용 완료 처리 가능한 상태가 아닙니다.");
-        }
-        this.status = ReservationStatus.COMPLETED;
-    }
 
     public void refund() {
         if (this.status != ReservationStatus.USER_CANCELLED && this.status != ReservationStatus.SELLER_CANCELLED) {
@@ -178,5 +159,38 @@ public class ReservationEntity {
         if (this.status != ReservationStatus.PAYMENT_COMPLETED) {
             throw new IllegalStateException("현재 상태에서는 예약 정보를 수정할 수 없습니다. (현재 상태: " + this.status.getLabel() + ")");
         }
+    }
+
+    /**
+     * 💡 판매자가 예약을 최종 승인할 때
+     */
+    public void approveBySeller() {
+        if (this.status != ReservationStatus.PAYMENT_COMPLETED) {
+            throw new IllegalStateException("결제가 완료된 예약만 승인할 수 있습니다.");
+        }
+        this.status = ReservationStatus.RESERVED; // "예약 확정"
+    }
+
+    /**
+     * 💡 판매자가 예약을 거절/취소할 때
+     */
+    public void cancelBySeller() {
+        if (this.status != ReservationStatus.PAYMENT_COMPLETED && this.status != ReservationStatus.RESERVED) {
+            throw new IllegalStateException("취소 가능한 예약 상태가 아닙니다.");
+        }
+        this.status = ReservationStatus.SELLER_CANCELLED; // "판매자 취소"
+    }
+
+    /**
+     * 💡 구매자가 예약을 온전히 이행 완료(체크아웃 이후 완료 처리)했을 때
+     */
+    public void completeUsage() {
+        if (this.status != ReservationStatus.RESERVED) {
+            throw new IllegalStateException("확정된 예약 건만 이용 완료 처리가 가능합니다.");
+        }
+        this.status = ReservationStatus.COMPLETED; // "이용 완료" -> 이후 리뷰 작성 가능 상태
+    }
+    public void updateStatus(ReservationStatus status) {
+        this.status = status;
     }
 }

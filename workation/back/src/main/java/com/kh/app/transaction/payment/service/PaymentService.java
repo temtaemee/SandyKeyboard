@@ -10,8 +10,11 @@ import com.kh.app.transaction.payment.entity.PaymentEntity;
 import com.kh.app.transaction.payment.enums.PaymentMethod;
 import com.kh.app.transaction.payment.enums.PaymentStatus;
 import com.kh.app.transaction.payment.repository.PaymentRepository;
+import com.kh.app.transaction.payout.service.PayoutService;
 import com.kh.app.transaction.reservation.entity.ReservationEntity;
 import com.kh.app.transaction.reservation.repository.ReservationRepository;
+import com.kh.app.transaction.sales.service.SalesService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,6 +43,8 @@ public class PaymentService {
     private final ReservationRepository reservationRepository;
     private final ObjectMapper objectMapper = new ObjectMapper(); // JSON 파싱용
     private final NotificationService notificationService;
+    private final SalesService salesService;
+    private final PayoutService payoutService;
 
 
     @Transactional
@@ -141,16 +146,18 @@ public class PaymentService {
             paymentRepository.save(payment);
             reservation.completePayment();
 
-            //stay 완성후 연걸
-//            NotificationCreateReqDto notificationCreateReqDto = NotificationCreateReqDto.builder()
-//                    .memberId(1L) //알림 받을 멤버id 번호 Long타입 변수로 처리하면 L안붙여도 됩니다!
-//                    .type(NotificationType.RESERVATION_COMPLETE) // 알림타입
-//                    .content("테스트 알림입니다.") // 알림 내용
-//                    .redirectUrl("/mypage") // 알림 클릭햇을시 보내고 싶은 url
-//                    .referenceId(1L) // 알림관련 식별번호 예약번호 or 상품번호 or 쿠폰번호 or 결제번호
-//                    .build();
-//
-//            notificationService.createNotification(notificationCreateReqDto);
+            // 1. 매출 원장 즉시 자동 생성
+            salesService.recordSales(payment);
+
+            NotificationCreateReqDto notificationCreateReqDto = NotificationCreateReqDto.builder()
+                    .memberId(1L) //알림 받을 멤버id 번호 Long타입 변수로 처리하면 L안붙여도 됩니다!
+                    .type(NotificationType.RESERVATION_COMPLETE) // 알림타입
+                    .content("테스트 알림입니다.") // 알림 내용
+                    .redirectUrl("/mypage") // 알림 클릭햇을시 보내고 싶은 url(셀러 승인거절 페이지 만들기)
+                    .referenceId(1L) // 알림관련 식별번호 예약번호 or 상품번호 or 쿠폰번호 or 결제번호
+                    .build();
+
+            notificationService.createNotification(notificationCreateReqDto);
 
         } catch (Exception e) {
             log.error("결제 승인 중 예외 발생 -> 실패 기록 작업을 별도 트랜잭션으로 진행", e);
@@ -267,5 +274,69 @@ public class PaymentService {
             case "72": return "우체국";
             default: return "기타카드(" + code + ")"; // 혹시 모를 신규 카드사 대응
         }
+    }
+
+    /**
+     * 💡 판매자 전용: 예약 확정 승인 기능
+     */
+    @Transactional
+    public void approveReservation(Long id, String sellerUsername) {
+        ReservationEntity reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("예약 건을 찾을 수 없습니다."));
+
+        // 소유권 검증 (내 공간에 들어온 예약인지 확인)
+        if (!reservation.getStay().getSpace().getSeller().getUsername().equals(sellerUsername)) {
+            throw new IllegalArgumentException("해당 예약에 대한 승인 권한이 없습니다.");
+        }
+
+        reservation.approveBySeller(); // RESERVED 상태 전환
+
+        // 구매자에게 예약이 확정되었다고 알림 전송 (선택 구현 가능)
+        NotificationCreateReqDto notifyUser = NotificationCreateReqDto.builder()
+                .memberId(reservation.getMember().getId())
+                .type(NotificationType.RESERVATION_COMPLETE) // 적절한 유형 매핑
+                .content("[" + reservation.getStay().getName() + "] 숙소 예약이 판매자에 의해 확정되었습니다!")
+                .redirectUrl("/mypage/reservation")
+                .referenceId(reservation.getId())
+                .build();
+        notificationService.createNotification(notifyUser);
+    }
+
+    /**
+     * 💡 판매자 전용: 예약 거절 및 취소 기능
+     */
+    @Transactional
+    public void cancelReservationBySeller(Long id, String sellerUsername) {
+        ReservationEntity reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("예약 건을 찾을 수 없습니다."));
+
+        if (!reservation.getStay().getSpace().getSeller().getUsername().equals(sellerUsername)) {
+            throw new IllegalArgumentException("해당 예약에 대한 취소 권한이 없습니다.");
+        }
+
+        reservation.cancelBySeller(); // SELLER_CANCELLED 상태 전환
+
+        // ⚠️ 중요: 판매자가 취소했으므로 전액 환불 로직 연동 필요
+        // 기존에 만드신 환불 서비스가 있다면 여기서 연이어 호출해 줍니다.
+        // refundService.processRefundBySystem(reservation);
+    }
+
+    /**
+     * 💡 구매자(또는 시스템 스케줄러) 전용: 이용 완료 확정 기능 (★정산 연동 시점)
+     */
+    @Transactional
+    public void completeReservation(Long id, String username) {
+        ReservationEntity reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("예약 정보를 찾을 수 없습니다."));
+        if (!reservation.getMember().getUsername().equals(username)) {
+            throw new IllegalArgumentException("권한이 없습니다.");
+        }
+        reservation.completeUsage(); // COMPLETED 상태 변경
+
+        PaymentEntity payment = paymentRepository.findByReservation(reservation)
+                .orElseThrow(() -> new EntityNotFoundException("결제 내역이 존재하지 않습니다."));
+
+        com.kh.app.transaction.sales.entity.SalesEntity sales = salesService.findByPaymentId(payment.getId());
+        payoutService.createPayoutTarget(sales);
     }
 }
