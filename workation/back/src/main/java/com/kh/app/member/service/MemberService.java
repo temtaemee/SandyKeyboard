@@ -55,26 +55,26 @@ public class MemberService {
 
     }
 
-        @Transactional
-        public void registerSeller(SellerApplyReqDto reqDto, Long memberId) {
-            // 1. 이미 판매자인지 중복 체크
-            if (sellerRepository.existsById(memberId)) {
-                throw new RuntimeException("이미 등록된 판매자입니다.");
-            }
-            // 2. MemberEntity 조회
-            MemberEntity member = memberRepository.findById(memberId)
-                    .orElseThrow(() -> new RuntimeException("존재하지 않는 회원입니다."));
-            // 3. BankEntity 조회 (reqDto에 담긴 bankId 활용)
-            BankEntity bank = bankRepository.findById(reqDto.getBankId())
-                    .orElseThrow(() -> new RuntimeException("존재하지 않는 은행 정보입니다."));
-            // 4. 권한 추가 (SELLER 권한 부여)
-            // 중복 추가 방지를 위해 contains 체크를 하거나 Set의 특성을 활용합니다.
-            if (!member.getRoleSet().contains(Role.SELLER)) {
-                member.getRoleSet().add(Role.SELLER);
-            }
-            SellerEntity sellerEntity = reqDto.toSellerEntity(bank, member);
-            sellerRepository.save(sellerEntity);
+    @Transactional
+    public void registerSeller(SellerApplyReqDto reqDto, Long memberId) {
+        // 1. 이미 판매자인지 중복 체크
+        if (sellerRepository.existsById(memberId)) {
+            throw new RuntimeException("이미 등록된 판매자입니다.");
         }
+        // 2. MemberEntity 조회
+        MemberEntity member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 회원입니다."));
+        // 3. BankEntity 조회 (reqDto에 담긴 bankId 활용)
+        BankEntity bank = bankRepository.findById(reqDto.getBankId())
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 은행 정보입니다."));
+        // 4. 권한 추가 (SELLER 권한 부여)
+        // 중복 추가 방지를 위해 contains 체크를 하거나 Set의 특성을 활용합니다.
+        if (!member.getRoleSet().contains(Role.SELLER)) {
+            member.getRoleSet().add(Role.SELLER);
+        }
+        SellerEntity sellerEntity = reqDto.toSellerEntity(bank, member);
+        sellerRepository.save(sellerEntity);
+    }
 
     public MemberMeRespDto getMyInfo(String username) {
 

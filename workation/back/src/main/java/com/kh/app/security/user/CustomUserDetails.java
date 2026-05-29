@@ -60,9 +60,10 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return vo.getDeletedAt() == null;
     }
     public Long getMemberId() {
         return vo.getId();
     }
+
 }

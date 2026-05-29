@@ -33,6 +33,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .id(entity.getId())
                 .username(entity.getUsername())
                 .password(entity.getPassword())
+                .deletedAt(entity.getDeletedAt())
                 .roles(roles) // 임시
                 .banYn(entity.getBanYn())
                 .build();
