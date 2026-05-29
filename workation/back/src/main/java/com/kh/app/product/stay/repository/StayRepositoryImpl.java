@@ -54,6 +54,8 @@ public class StayRepositoryImpl implements StayRepositoryCustom {
                 .where(
                         stay.delYn.eq("N"),
                         stay.visibleYn.eq("Y"),
+                        stay.space.visibleYn.eq("Y"),
+                        stay.space.delYn.eq("N"),
                         keywordContains(stay, dto.getKeyword()),
                         spaceIdEq(stay, dto.getSpaceId()),
                         workationYnEq(stay, dto.getWorkationYn()),

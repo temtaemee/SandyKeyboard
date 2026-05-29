@@ -3,8 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { DollarSign, CalendarDays, Star, Building2, ChevronRight } from 'lucide-react';
-import api from '../../../app/api/axios';
-import { getSpaces, updateSpaceVisible } from '../api/spaceApi';
+import { spaceApi } from '../api/spaceApi';
 
 /* ── 지역 라벨 맵 ── */
 const AREA_LABEL = {
@@ -107,13 +106,6 @@ const STAT_ICON = {
   },
 };
 
-const BADGE_STYLE = {
-  green:  { bg: '#f0fdfa', color: '#0d9488' },
-  orange: { bg: '#fff7ed', color: '#ea580c' },
-  yellow: { bg: '#fefce8', color: '#ca8a04' },
-  teal:   { bg: '#ecfeff', color: '#0891b2' },
-};
-
 const STATUS_MAP = {
   confirmed: { label: '예약확정', bg: '#dcfce7', color: '#15803d' },
   pending:   { label: '대기중',   bg: '#ffedd5', color: '#c2410c' },
@@ -138,19 +130,13 @@ export default function SellerDashboardPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [meRes, spacesRes] = await Promise.all([
-          api.get('/auth/me'),
-          getSpaces(),
-        ]);
-        const me = meRes.data;
-        const mySpaces = spacesRes.data
-          .filter((s) => s.sellerUsername != null && s.sellerUsername === me.username)
-          .map((s) => ({
-            id: s.id,
-            name: s.name,
-            location: formatLocation(s.area, s.address1),
-            visible: s.visibleYn === 'Y',
-          }));
+        const spacesRes = await spaceApi.getMySpaces();
+        const mySpaces = spacesRes.data.map((s) => ({
+          id: s.id,
+          name: s.name,
+          location: formatLocation(s.area, s.address1),
+          visible: s.visibleYn === 'Y',
+        }));
         setSpaces(mySpaces);
       } catch (e) {
         console.error('공간 목록 로딩 실패', e);
@@ -171,7 +157,7 @@ export default function SellerDashboardPage() {
     setTogglingIds((prev) => new Set(prev).add(id));
     setSpaces((prev) => prev.map((s) => (s.id === id ? { ...s, visible: !s.visible } : s)));
     try {
-      await updateSpaceVisible(id, nextYn);
+      await spaceApi.toggleVisible(id, nextYn);
     } catch (e) {
       setSpaces((prev) => prev.map((s) => (s.id === id ? { ...s, visible: target.visible } : s)));
       showToast('노출 상태 변경에 실패했습니다. 다시 시도해 주세요.');
@@ -186,32 +172,13 @@ export default function SellerDashboardPage() {
   };
 
   const statCards = [
-    {
-      id: 1,
-      label: '이번달 매출',
-      value: '₩4,820,000',
-      badge: { text: '+12% 전월 대비', color: 'green' },
-      icon: 'revenue',
-    },
-    {
-      id: 2,
-      label: '이번달 예약',
-      value: '38건',
-      badge: { text: '취소 2건 포함', color: 'orange' },
-      icon: 'calendar',
-    },
-    {
-      id: 3,
-      label: '최근 리뷰',
-      value: '12건',
-      badge: { text: '미답변 3건', color: 'yellow' },
-      icon: 'star',
-    },
+    { id: 1, label: '이번달 매출', value: '₩4,820,000', icon: 'revenue' },
+    { id: 2, label: '이번달 예약', value: '38건',        icon: 'calendar' },
+    { id: 3, label: '최근 리뷰',  value: '12건',        icon: 'star' },
     {
       id: 4,
       label: '등록 공간',
       value: spacesLoading ? '-' : spacesError ? '-' : `${spaces.length}개`,
-      badge: { text: '스테이 준비중', color: 'teal' },
       icon: 'building',
     },
   ];
@@ -230,14 +197,10 @@ export default function SellerDashboardPage() {
       <StatGrid>
         {statCards.map((card) => {
           const { el, bg } = STAT_ICON[card.icon];
-          const badge = BADGE_STYLE[card.badge.color];
           return (
             <StatCard key={card.id}>
               <CardTop>
                 <IconBg $bg={bg}>{el}</IconBg>
-                <Badge $bg={badge.bg} $color={badge.color}>
-                  {card.badge.text}
-                </Badge>
               </CardTop>
               <CardLabel>{card.label}</CardLabel>
               <CardValue>{card.value}</CardValue>
@@ -434,15 +397,6 @@ const IconBg = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-`;
-
-const Badge = styled.span`
-  font-size: 11px;
-  font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: ${({ $bg }) => $bg};
-  color: ${({ $color }) => $color};
 `;
 
 const CardLabel = styled.p`
