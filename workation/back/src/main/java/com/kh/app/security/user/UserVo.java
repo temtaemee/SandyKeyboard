@@ -3,12 +3,13 @@ package com.kh.app.security.user;
 import lombok.*;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Getter
 public class UserVo {
 
     private Long id;
@@ -16,6 +17,8 @@ public class UserVo {
     private String username;
 
     private String password;
+
+    private LocalDateTime deletedAt;
 
     private List<String> roles;
 
