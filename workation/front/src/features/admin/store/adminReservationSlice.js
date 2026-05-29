@@ -4,10 +4,25 @@ const adminReservationSlice = createSlice({
   name: 'adminReservation',
   initialState: {
     partners: [],
+    reservations: [],
+    reservationsTotalPage: 1,
+    reservationsTotalCount: 0,
+    allReservations: [],   // 통계/환불 모달용 전체 데이터
     loading: false,
     error: null,
   },
   reducers: {
+    setReservations(state, action) {
+      state.reservations = action.payload;
+    },
+    setReservationsMetadata(state, action) {
+      const { totalPage, totalCount } = action.payload;
+      state.reservationsTotalPage = totalPage;
+      state.reservationsTotalCount = totalCount;
+    },
+    setAllReservations(state, action) {
+      state.allReservations = action.payload;
+    },
     setPartners(state, action) {
       state.partners = action.payload;
     },
@@ -36,6 +51,9 @@ const adminReservationSlice = createSlice({
 });
 
 export const {
+  setReservations,
+  setReservationsMetadata,
+  setAllReservations,
   setPartners,
   addPartner,
   updatePartner,
