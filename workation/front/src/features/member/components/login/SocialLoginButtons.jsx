@@ -35,16 +35,16 @@ function SocialLoginButtons() {
   return (
     <Wrapper>
       {/* 카카오는 임시 비활성화 */}
-      <SocialButton bg="#FEE500" onClick={handleKakaoLogin}>
+      <SocialButton bg="#FEE500" $border onClick={handleKakaoLogin}>
         🟨
       </SocialButton>
 
       {/* 네이버 로그인 활성화! 🟩 */}
-      <SocialButton bg="#03C75A" onClick={handleNaverLogin}>
+      <SocialButton bg="#03C75A" $border onClick={handleNaverLogin}>
         🟩
       </SocialButton>
 
-      <SocialButton bg="#FFFFFF" border onClick={handleGoogleLogin}>
+      <SocialButton bg="#FFFFFF" $border onClick={handleGoogleLogin}>
         🌐
       </SocialButton>
     </Wrapper>
