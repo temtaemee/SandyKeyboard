@@ -59,11 +59,9 @@ export default function AdminBoardPage() {
   const [activeTab, setActiveTab] = useState('공지사항');
   const {
     posts: tabPosts,
-    pinnedIds,
     updatePost,
     deletePost,
     createPost,
-    togglePin,
   } = useAdminBoard(activeTab);
 
   const { currentPage, goToPage, reset: resetPage } = usePagination();
@@ -79,6 +77,8 @@ export default function AdminBoardPage() {
     registerModal,
     editingPost,
     formData,
+    removedFileIds,
+    handleRemoveExistingFile,
     openRegisterModal,
     openEditModal,
     closeRegisterModal,
@@ -86,6 +86,7 @@ export default function AdminBoardPage() {
     handleRegisterSubmit,
     detailPost,
     setDetailPost,
+    handleShowDetail,
     deleteTarget,
     setDeleteTarget,
     handleDeleteConfirm,
@@ -96,10 +97,6 @@ export default function AdminBoardPage() {
     deletePost,
     createPost,
   });
-
-  const handlePin = (id) => {
-    togglePin(id);
-  };
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -117,29 +114,8 @@ export default function AdminBoardPage() {
         </PageTitleGroup>
       </PageHeader>
 
-      {/* ── 상단 3열: 통계 카드 2개 + 콘텐츠 신규 등록 ── */}
+      {/* ── 상단: 콘텐츠 신규 등록 ── */}
       <TopSection>
-        {/* 카드 1: 전체 리뷰 수 */}
-        <StatCard>
-          <StatIconWrap $color="#6366f1" $bg="rgba(99,102,241,0.1)">
-            <ReviewIcon />
-          </StatIconWrap>
-          <StatLabel>전체 리뷰 수</StatLabel>
-          <StatValue>1,284</StatValue>
-        </StatCard>
-
-        {/* 카드 2: 이번 달 리뷰 수 */}
-        <StatCard>
-          <StatCardTopRow>
-            <StatIconWrap $color="#f97316" $bg="rgba(249,115,22,0.1)">
-              <CalendarIcon />
-            </StatIconWrap>
-          </StatCardTopRow>
-          <StatLabel>이번 달 리뷰 수</StatLabel>
-          <StatValue>342</StatValue>
-        </StatCard>
-
-        {/* 카드 3: 콘텐츠 신규 등록 */}
         <QuickRegisterCard>
           <QuickRegisterTitle>콘텐츠 신규 등록</QuickRegisterTitle>
           <QuickRegisterGrid>
@@ -221,12 +197,10 @@ export default function AdminBoardPage() {
                 <>
                   <TH $width="160px">작성자</TH>
                   <TH $width="150px">등록일</TH>
-                  <TH $width="80px">상단 고정</TH>
                 </>
               ) : (
                 <>
                   <TH $width="150px">등록일</TH>
-                  <TH $width="80px">상단 고정</TH>
                 </>
               )}
             </TR>
@@ -240,21 +214,24 @@ export default function AdminBoardPage() {
               </TR>
             ) : (
               posts.map((post) => {
-                const pinned = pinnedIds.includes(post.id);
-
                 return (
                   <TR
                     key={post.id}
                     $hoverable
                     $clickable
-                    onClick={() => setDetailPost(post)}
+                    onClick={() => handleShowDetail(post)}
                   >
                     <TD>
                       <TitleCell>
-                        {post.isFixed && <FixedBadge>필독</FixedBadge>}
-                        <TitleText>
+                        <TitleText style={{ textDecoration: post.delYn === 'Y' ? 'line-through' : 'none', color: post.delYn === 'Y' ? '#cbd5e1' : 'inherit' }}>
                           {activeTab === '쿠폰' ? post.couponName : post.title}
                         </TitleText>
+                        {(post.pinYn === 'Y' || post.isFixed) && <FixedBadge>고정</FixedBadge>}
+                        {post.delYn === 'Y' && (
+                          <span style={{ fontSize: '10px', color: '#ef4444', fontWeight: 600, background: '#fee2e2', padding: '1px 6px', borderRadius: '3px', marginLeft: '4px', display: 'inline-block' }}>
+                            삭제됨
+                          </span>
+                        )}
                         {post.hasAttachment && <AttachIcon />}
                       </TitleCell>
                     </TD>
@@ -277,35 +254,21 @@ export default function AdminBoardPage() {
                           <AuthorText>{post.author}</AuthorText>
                         </TD>
                         <TD>
-                          <DateText>{post.date}</DateText>
-                        </TD>
-                        <TD>
-                          <RowActions onClick={(e) => e.stopPropagation()}>
-                            <PinBtn
-                              $pinned={pinned}
-                              onClick={() => handlePin(post.id)}
-                              title={pinned ? '고정 해제' : '고정'}
-                            >
-                              <PinSvg $pinned={pinned} />
-                            </PinBtn>
-                          </RowActions>
+                          <DateText>
+                            {post.createdAt 
+                              ? post.createdAt.split('T')[0] 
+                              : post.date || '—'}
+                          </DateText>
                         </TD>
                       </>
                     ) : (
                       <>
                         <TD>
-                          <DateText>{post.date}</DateText>
-                        </TD>
-                        <TD>
-                          <RowActions onClick={(e) => e.stopPropagation()}>
-                            <PinBtn
-                              $pinned={pinned}
-                              onClick={() => handlePin(post.id)}
-                              title={pinned ? '고정 해제' : '고정'}
-                            >
-                              <PinSvg $pinned={pinned} />
-                            </PinBtn>
-                          </RowActions>
+                          <DateText>
+                            {post.createdAt 
+                              ? post.createdAt.split('T')[0] 
+                              : post.date || '—'}
+                          </DateText>
                         </TD>
                       </>
                     )}
@@ -332,11 +295,10 @@ export default function AdminBoardPage() {
       {detailPost && (
         <ModalOverlay onClick={() => setDetailPost(null)}>
           <ModalContent $width="520px" onClick={(e) => e.stopPropagation()}>
-            {/* $align="flex-start": 제목이 배지+텍스트 두 줄 구조라 상단 정렬 */}
-            <ModalHeader $align="flex-start" $gap="12px">
-              <ModalTitleGroup>
+            <ModalHeader $align="center" $gap="12px">
+              <ModalTitleGroup style={{ flex: 1 }}>
                 <ModalTabBadge>{activeTab}</ModalTabBadge>
-                <ModalTitleRow>
+                <ModalTitleRow style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                   <ModalTitle>
                     {activeTab === '쿠폰'
                       ? detailPost.couponName
@@ -345,9 +307,27 @@ export default function AdminBoardPage() {
                   {activeTab === '쿠폰' && detailPost.couponCode && (
                     <CouponCodeBadge>{detailPost.couponCode}</CouponCodeBadge>
                   )}
+                  {activeTab !== '쿠폰' && (
+                    <StatusChip
+                      $bg={detailPost.delYn === 'Y' ? '#fee2e2' : '#dcfce7'}
+                      $color={detailPost.delYn === 'Y' ? '#dc2626' : '#16a34a'}
+                      style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}
+                    >
+                      {detailPost.delYn === 'Y' ? '삭제됨' : '정상'}
+                    </StatusChip>
+                  )}
                 </ModalTitleRow>
               </ModalTitleGroup>
-              <ModalCloseBtn onClick={() => setDetailPost(null)}>
+
+              {/* 제목 오른쪽에 등록일, 수정일 두 줄로 표기 */}
+              {activeTab !== '쿠폰' && (
+                <DetailHeaderDates>
+                  <DateRow>등록일: {detailPost.createdAt ? new Date(detailPost.createdAt).toLocaleString() : detailPost.date || '—'}</DateRow>
+                  <DateRow>수정일: {detailPost.updatedAt ? new Date(detailPost.updatedAt).toLocaleString() : '—'}</DateRow>
+                </DetailHeaderDates>
+              )}
+
+              <ModalCloseBtn onClick={() => setDetailPost(null)} style={{ alignSelf: 'center' }}>
                 <X size={18} />
               </ModalCloseBtn>
             </ModalHeader>
@@ -382,42 +362,26 @@ export default function AdminBoardPage() {
                 </DetailMetaGrid>
               ) : (
                 <>
-                  <DetailMetaRow>
-                    <DetailMeta>
-                      <DetailMetaLabel>작성자</DetailMetaLabel>
-                      <DetailMetaValue>{detailPost.author}</DetailMetaValue>
-                    </DetailMeta>
-                    <DetailMeta>
-                      <DetailMetaLabel>등록일</DetailMetaLabel>
-                      <DetailMetaValue>{detailPost.date}</DetailMetaValue>
-                    </DetailMeta>
-                    <DetailMeta>
-                      <DetailMetaLabel>조회수</DetailMetaLabel>
-                      <DetailMetaValue>
-                        {detailPost.views?.toLocaleString() ?? 0}
-                      </DetailMetaValue>
-                    </DetailMeta>
-                    <DetailMeta>
-                      <DetailMetaLabel>상태</DetailMetaLabel>
-                      <StatusChip
-                        $bg={STATUS_COLORS[detailPost.status]?.bg ?? '#f1f5f9'}
-                        $color={
-                          STATUS_COLORS[detailPost.status]?.color ?? '#64748b'
-                        }
-                      >
-                        {STATUS_LABEL[detailPost.status] ?? detailPost.status}
-                      </StatusChip>
-                    </DetailMeta>
-                  </DetailMetaRow>
+                  {/* 아래는 다 내용으로 채워짐 */}
+                  <DetailContentArea style={{ paddingTop: '0px' }}>
+                    {detailPost.content || '등록된 내용이 없습니다.'}
+                  </DetailContentArea>
 
-                  <DetailDivider />
-
-                  <DetailContentPlaceholder>
-                    <Eye size={20} color="#cbd5e1" />
-                    <DetailContentNote>
-                      실제 내용은 서버 연동 후 표시됩니다.
-                    </DetailContentNote>
-                  </DetailContentPlaceholder>
+                  {detailPost.files && detailPost.files.length > 0 && (
+                    <DetailFilesArea>
+                      <DetailFilesLabel>첨부파일 ({detailPost.files.length})</DetailFilesLabel>
+                      {detailPost.files.map((file) => (
+                        <DetailFileLink
+                          key={file.id}
+                          href={file.fileUrl || `http://localhost/api/public/files/${file.s3Key}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Paperclip size={12} /> {file.originalFileName}
+                        </DetailFileLink>
+                      ))}
+                    </DetailFilesArea>
+                  )}
                 </>
               )}
             </ModalBody>
@@ -530,6 +494,64 @@ export default function AdminBoardPage() {
                       }
                     />
                   </FieldGroup>
+                  {activeTab === '공지사항' && (
+                    <>
+                      <CheckboxGroup>
+                        <CheckboxInput
+                          type="checkbox"
+                          id="isFixed"
+                          checked={formData.isFixed || false}
+                          onChange={(e) =>
+                            handleFormChange('isFixed', e.target.checked)
+                          }
+                        />
+                        <CheckboxLabel htmlFor="isFixed">이 글을 상단에 고정합니다 (필독)</CheckboxLabel>
+                      </CheckboxGroup>
+                      <FieldGroup>
+                        <FieldLabel>첨부파일</FieldLabel>
+                        {editingPost && editingPost.files && editingPost.files.length > 0 && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '8px', padding: '10px', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                            <p style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '4px' }}>기존 첨부파일 ({editingPost.files.length}개)</p>
+                            {editingPost.files.map((file) => {
+                              const isRemoved = removedFileIds.includes(file.id);
+                              return (
+                                <div key={file.id} style={{ display: 'flex', alignItems: 'center', fontSize: '12px', color: '#334155', justifyContent: 'space-between', width: '100%', minHeight: '22px' }}>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '280px', textDecoration: isRemoved ? 'line-through' : 'none', color: isRemoved ? '#cbd5e1' : '#334155' }}>
+                                    <Paperclip size={11} color={isRemoved ? '#cbd5e1' : '#94a3b8'} /> {file.originalFileName}
+                                  </span>
+                                  {isRemoved ? (
+                                    <span style={{ fontSize: '10px', color: '#ef4444', fontWeight: 600, background: '#fee2e2', padding: '1px 6px', borderRadius: '3px', marginLeft: 'auto' }}>
+                                      삭제 대기
+                                    </span>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveExistingFile(file.id)}
+                                      style={{ fontSize: '10px', color: '#ef4444', background: '#fff5f5', border: '1px solid #fecaca', padding: '2px 8px', borderRadius: '4px', marginLeft: 'auto', cursor: 'pointer', fontWeight: 500 }}
+                                    >
+                                      삭제
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                        <FileInput
+                          type="file"
+                          multiple
+                          onChange={(e) =>
+                            handleFormChange('files', Array.from(e.target.files))
+                          }
+                        />
+                        {editingPost && (
+                          <span style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
+                            * 새 파일을 선택하면 기존 첨부파일에 추가하거나 교체 가능하도록 대기합니다. (백엔드 보강 필요)
+                          </span>
+                        )}
+                      </FieldGroup>
+                    </>
+                  )}
                 </>
               )}
             </ModalBody>
@@ -630,10 +652,10 @@ const PageSub = styled.p`
   color: ${({ theme }) => theme.colors.textMuted};
 `;
 
-/* 상단 3열 */
+/* 상단 영역 */
 const TopSection = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr 1.4fr;
+  grid-template-columns: 1fr;
   gap: 16px;
   align-items: stretch;
 `;
@@ -707,8 +729,8 @@ const QuickRegisterTitle = styled.p`
 `;
 const QuickRegisterGrid = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 16px;
 `;
 const QuickBtn = styled.button`
   width: 100%;
@@ -1051,6 +1073,101 @@ const DetailContentNote = styled.p`
   color: #cbd5e1;
 `;
 
+const DetailContentArea = styled.div`
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  padding: 16px 0;
+`;
+
+const DetailHeaderDates = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: 11px;
+  color: #64748b;
+  white-space: nowrap;
+  margin-right: 8px;
+  align-self: center;
+`;
+
+const DateRow = styled.div`
+  line-height: 1.4;
+`;
+
+const DetailFilesArea = styled.div`
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+`;
+
+const DetailFilesLabel = styled.p`
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+`;
+
+const DetailFileLink = styled.a`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #2563eb;
+  text-decoration: none;
+  &:hover {
+    text-decoration: underline;
+  }
+`;
+
+const CheckboxGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  margin-bottom: 16px;
+`;
+
+const CheckboxInput = styled.input`
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+`;
+
+const CheckboxLabel = styled.label`
+  font-size: 13px;
+  color: #475569;
+  cursor: pointer;
+  user-select: none;
+`;
+
+const FileInput = styled.input`
+  display: block;
+  width: 100%;
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 4px;
+  
+  &::file-selector-button {
+    font-weight: 500;
+    padding: 6px 12px;
+    margin-right: 12px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    cursor: pointer;
+    &:hover {
+      background: #f8fafc;
+    }
+  }
+`;
+
 const ModalFooter = styled.div`
   display: flex;
   justify-content: space-between;
@@ -1071,7 +1188,7 @@ const DeleteBtn = styled.button`
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
   font-family: inherit;
@@ -1086,7 +1203,7 @@ const DeleteBtn = styled.button`
 
 const CancelBtn = styled.button`
   padding: 8px 18px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
   font-family: inherit;
@@ -1104,7 +1221,7 @@ const SubmitBtn = styled.button`
   align-items: center;
   gap: 6px;
   padding: 8px 18px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
   font-family: inherit;
@@ -1156,7 +1273,7 @@ const FieldUnit = styled.span`
 const FieldInput = styled.input`
   padding: 9px 12px;
   border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 13px;
   font-family: inherit;
   color: #0d1c2e;
@@ -1176,7 +1293,7 @@ const FieldInput = styled.input`
 const FieldTextarea = styled.textarea`
   padding: 9px 12px;
   border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 13px;
   font-family: inherit;
   color: #0d1c2e;

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getAdminBoardPost } from '../api/adminBoardApi';
 
 /**
  * AdminBoardPage의 UI 로직(검색, 필터링, 다양한 모달 창 제어, 폼 입력)을 전담하는 커스텀 훅입니다.
@@ -62,6 +63,16 @@ export default function useAdminBoardUI({
     }
   });
 
+  // 상단 고정(pinYn === 'Y' || isFixed) 게시글 최상단 정렬 연산
+  const sortedPosts = [...filteredPosts].sort((a, b) => {
+    if (activeTab === '공지사항') {
+      const aPinned = a.pinYn === 'Y' || a.isFixed ? 1 : 0;
+      const bPinned = b.pinYn === 'Y' || b.isFixed ? 1 : 0;
+      return bPinned - aPinned;
+    }
+    return 0;
+  });
+
   // 검색 및 쿠폰 필터 상태 초기화
   const resetFilters = () => {
     setSearchQuery('');
@@ -72,6 +83,7 @@ export default function useAdminBoardUI({
   const [registerModal, setRegisterModal] = useState(null); // null | tabName string
   const [editingPost, setEditingPost] = useState(null); // 현재 수정 중인 post 객체
   const [formData, setFormData] = useState({}); // 작성 중인 폼 입력 값 객체
+  const [removedFileIds, setRemovedFileIds] = useState([]); // 삭제할 기존 파일 ID 목록
 
   // 등록 모달 열기
   const openRegisterModal = (type) => {
@@ -85,6 +97,7 @@ export default function useAdminBoardUI({
     setDetailPost(null);
     setRegisterModal(activeTab);
     setEditingPost(post);
+    setRemovedFileIds([]); // 삭제 목록 초기화
     if (activeTab === '쿠폰') {
       setFormData({
         name: post.couponName ?? '',
@@ -93,8 +106,17 @@ export default function useAdminBoardUI({
         validDays: post.validDays ?? '',
       });
     } else {
-      setFormData({ title: post.title, content: post.content || '' });
+      setFormData({
+        title: post.title,
+        content: post.content || '',
+        isFixed: post.pinYn === 'Y' || post.isFixed || false,
+      });
     }
+  };
+
+  // 기존 파일 삭제 대기열 추가 핸들러
+  const handleRemoveExistingFile = (fileId) => {
+    setRemovedFileIds((prev) => [...prev, fileId]);
   };
 
   // 등록/수정 모달 닫기
@@ -102,6 +124,7 @@ export default function useAdminBoardUI({
     setRegisterModal(null);
     setEditingPost(null);
     setFormData({});
+    setRemovedFileIds([]);
   };
 
   // 폼 입력 필드 변경 핸들러
@@ -110,10 +133,13 @@ export default function useAdminBoardUI({
   };
 
   // 등록/수정 완료 제출 핸들러
-  const handleRegisterSubmit = () => {
+  const handleRegisterSubmit = async () => {
     if (editingPost) {
+      const postId = editingPost.id;
+      let updatedData = {};
+
       if (activeTab === '쿠폰') {
-        updatePost(editingPost.id, {
+        updatedData = {
           couponName: formData.name || editingPost.couponName,
           discountRate: formData.discountRate
             ? Number(formData.discountRate)
@@ -124,27 +150,92 @@ export default function useAdminBoardUI({
           validDays: formData.validDays
             ? Number(formData.validDays)
             : editingPost.validDays,
-        });
+        };
+      } else if (activeTab === '공지사항') {
+        updatedData = {
+          title: formData.title ?? editingPost.title,
+          content: formData.content ?? editingPost.content,
+          pinYn: formData.isFixed ? 'Y' : 'N',
+          removedFileIds: removedFileIds, // 삭제 대기 중인 기존 첨부파일 ID 배열
+        };
       } else {
-        updatePost(editingPost.id, {
+        updatedData = {
           title: formData.title || editingPost.title,
+        };
+      }
+
+      // 서버 비동기 업데이트 대기
+      await updatePost(postId, updatedData);
+
+      // 수정 폼 모달을 닫음
+      closeRegisterModal();
+
+      // 상세 조회 모달(수정버튼 누르기 전 상태)로 다시 돌아가되, 최신 내용으로 갱신하여 띄움
+      if (activeTab === '공지사항') {
+        try {
+          const resp = await getAdminBoardPost(postId);
+          setDetailPost(resp.data);
+        } catch (err) {
+          console.error('수정 완료 후 공지 상세 재조회 에러:', err);
+          setDetailPost({
+            ...editingPost,
+            ...updatedData,
+          });
+        }
+      } else {
+        setDetailPost({
+          ...editingPost,
+          ...updatedData,
         });
       }
     } else {
       if (activeTab === '쿠폰') {
-        createPost({
+        await createPost({
           couponName: formData.name,
           discountRate: Number(formData.discountRate),
           remainQty: Number(formData.quantity),
           validDays: Number(formData.validDays),
         });
+      } else if (activeTab === '공지사항') {
+        const fd = new FormData();
+        const noticeDto = {
+          memberId: 1, // 필요 시 로그인 한 계정 ID 정보 연계
+          title: formData.title || '',
+          content: formData.content || '',
+          pinYn: formData.isFixed ? 'Y' : 'N',
+        };
+        fd.append(
+          'dto',
+          new Blob([JSON.stringify(noticeDto)], { type: 'application/json' })
+        );
+
+        if (formData.files && formData.files.length > 0) {
+          formData.files.forEach((file) => {
+            fd.append('files', file);
+          });
+        }
+        await createPost(fd);
       }
+      closeRegisterModal();
     }
-    closeRegisterModal();
   };
 
   // ─── 3. 상세보기 모달 상태 ───
   const [detailPost, setDetailPost] = useState(null); // null | post 객체
+
+  const handleShowDetail = async (post) => {
+    if (activeTab === '공지사항') {
+      try {
+        const resp = await getAdminBoardPost(post.id);
+        setDetailPost(resp.data);
+      } catch (err) {
+        console.error('공지 상세 조회 실패:', err);
+        setDetailPost(post);
+      }
+    } else {
+      setDetailPost(post);
+    }
+  };
 
   // ─── 4. 삭제 확인 모달 상태 ───
   const [deleteTarget, setDeleteTarget] = useState(null); // null | post 객체
@@ -163,13 +254,15 @@ export default function useAdminBoardUI({
     setSearchQuery,
     couponFilter,
     setCouponFilter,
-    posts: filteredPosts,
+    posts: sortedPosts,
     resetFilters,
 
     // 2. 신규 등록 및 수정
     registerModal,
     editingPost,
     formData,
+    removedFileIds,
+    handleRemoveExistingFile,
     openRegisterModal,
     openEditModal,
     closeRegisterModal,
@@ -179,6 +272,7 @@ export default function useAdminBoardUI({
     // 3. 상세보기
     detailPost,
     setDetailPost,
+    handleShowDetail,
 
     // 4. 삭제 확인
     deleteTarget,

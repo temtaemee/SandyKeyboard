@@ -1,4 +1,3 @@
-/** 관리자 페이지의 등록 공간(숙소/오피스 등) 목록 조회, 통계 및 삭제 API */
 import api from '../../../app/api/axios';
 
 /** 등록된 공간 목록 조회 - admin 전용 (keyword/area/visibleYn/delYn 필터 지원) */
@@ -18,7 +17,9 @@ export async function getStaysBySpaceId(spaceId) {
 
 /** 공간 노출 여부 변경 - admin 전용 (visibleYn: 'Y' | 'N') */
 export async function changeSpaceVisible(spaceId, visibleYn) {
-  return await api.put(`/admin/space/${spaceId}/visible`, null, { params: { visibleYn } });
+  return await api.put(`/admin/space/${spaceId}/visible`, null, {
+    params: { visibleYn },
+  });
 }
 
 /** 특정 공간 삭제 (soft delete) - admin 전용 */

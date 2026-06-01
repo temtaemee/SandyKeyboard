@@ -13,7 +13,7 @@ export const PAYMENT_STATUS_MAP = {
 export const NOTIF_TYPE_COLOR = { warning: '#ef4444', info: '#3b82f6', success: '#16a34a' };
 
 export const ADMIN_NAV_ITEMS = [
-  { id: 'dashboard', label: '매출', path: '/admin/dashboard', icon: 'chart' },
+  { id: 'dashboard', label: '대시보드', path: '/admin/dashboard', icon: 'chart' },
   {
     id: 'reservations',
     label: '예약/기업 관리',
@@ -28,7 +28,7 @@ export const ADMIN_NAV_ITEMS = [
   },
   { id: 'spaces', label: '숙소 관리', path: '/admin/spaces', icon: 'home' },
   { id: 'board', label: '게시판 관리', path: '/admin/board', icon: 'file' },
-  { id: 'sales', label: '정산', path: '/admin/sales', icon: 'coin' },
+  { id: 'sales', label: '매출/정산 관리', path: '/admin/sales', icon: 'coin' },
 ];
 
 export const STATUS_MAP = {

@@ -2,14 +2,6 @@
 import api from '../../../app/api/axios';
 import { BOARD_POSTS } from '../data/adminBoardData'; // 💡 임시 Mock 데이터 가져오기
 
-/** 게시판 게시글 목록 조회 (타입 및 검색 파라미터 적용) */
-export async function getAdminBoardPosts(type, params = {}) {
-  // 💡 [Mock 처리] 백엔드가 완성될 때까지 403 에러로 인한 세션 튕김을 막기 위해 Mock 데이터를 즉시 반환합니다.
-  return {
-    data: BOARD_POSTS[type] || [],
-  };
-}
-
 /** 게시글 상단 고정 상태 변경 */
 export async function updatePostPinStatus(postId, pinned) {
   return { data: { success: true } };
@@ -17,11 +9,6 @@ export async function updatePostPinStatus(postId, pinned) {
 
 /** 게시글 노출/비노출 여부 변경 */
 export async function updatePostVisibility(postId, visible) {
-  return { data: { success: true } };
-}
-
-/** 게시글 삭제 */
-export async function deleteAdminBoardPost(postId) {
   return { data: { success: true } };
 }
 
@@ -36,8 +23,55 @@ export async function getAdminBoardStats() {
 }
 
 // 공지사항
+// 공지 전체 목록조회 (Admin 전용 - 삭제된 것 포함)
+export async function getAdminBoardPosts(page = 0) {
+  return api.get('/admin/notices', {
+    params: { page },
+  });
+}
+// 공지 상세보기 (Admin 전용 - 삭제된 것 포함)
+export async function getAdminBoardPost(id) {
+  return api.get(`/admin/notices/${id}`);
+}
+// 공지 등록
+export async function createAdminBoardPost(fd) {
+  return api.post('/admin/notices', fd, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+}
+
+// 공지 수정 (백엔드 파일 업로드 반영 전까지 기존의 안전한 PUT API 사용)
+export async function updateAdminBoardPost(id, data) {
+  return api.put(`/admin/notices/${id}`, data);
+}
+// 공지 삭제
+export async function deleteAdminBoardPost(id) {
+  return api.delete(`/admin/notices/${id}`);
+}
 
 // FAQ
+// FAQ 전체 목록조회
+export async function faqList() {
+  return api.get(`/public/faqs`);
+}
+// FAQ 상세보기
+export async function faqDetail(id) {
+  return api.get(`/public/faqs/${id}`);
+}
+// FAQ 등록
+export async function faqCreate(data) {
+  return api.post(`/admin/faqs`, data);
+}
+// FAQ 수정
+export async function faqUpdate(id, data) {
+  return api.put(`/admin/faqs/${id}`, data);
+}
+// FAQ 삭제
+export async function faqDelete(id) {
+  return api.delete(`/admin/faqs/${id}`);
+}
 
 // 리뷰
 
