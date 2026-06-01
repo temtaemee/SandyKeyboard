@@ -25,7 +25,7 @@ function MyPageSidebar({ memberInfo }) {
         <MenuTitle>마이페이지</MenuTitle>
 
         <MenuItem
-          active={location.pathname === '/mypage'}
+          $active={location.pathname === '/mypage'}
           onClick={() => navi('/mypage')}
         >
           <User size={18} />
@@ -33,7 +33,7 @@ function MyPageSidebar({ memberInfo }) {
         </MenuItem>
 
         <MenuItem
-          active={location.pathname === '/mypage/reservation'}
+          $active={location.pathname === '/mypage/reservation'}
           onClick={() => navi('/mypage/reservation')}
         >
           <ClipboardList size={18} />
@@ -41,7 +41,7 @@ function MyPageSidebar({ memberInfo }) {
         </MenuItem>
 
         <MenuItem
-          active={location.pathname.startsWith('/mypage/wishlist')}
+          $active={location.pathname.startsWith('/mypage/wishlist')}
           onClick={() => navi('/mypage/wishlist')}
         >
           <Heart size={18} />
@@ -49,7 +49,7 @@ function MyPageSidebar({ memberInfo }) {
         </MenuItem>
 
         <MenuItem
-          active={location.pathname.startsWith('/mypage/coupon')}
+          $active={location.pathname.startsWith('/mypage/coupon')}
           onClick={() => navi('/mypage/coupon')}
         >
           <CreditCard size={18} />
@@ -57,7 +57,7 @@ function MyPageSidebar({ memberInfo }) {
         </MenuItem>
 
         <MenuItem
-          active={location.pathname.startsWith('/mypage/review')}
+          $active={location.pathname.startsWith('/mypage/review')}
           onClick={() => navi('/mypage/review')}
         >
           <History size={18} />
@@ -65,7 +65,7 @@ function MyPageSidebar({ memberInfo }) {
         </MenuItem>
 
         <MenuItem
-          active={location.pathname.startsWith('/mypage/setting')}
+          $active={location.pathname.startsWith('/mypage/setting')}
           onClick={() => navi('/mypage/setting')}
         >
           <Settings size={18} />
@@ -74,7 +74,7 @@ function MyPageSidebar({ memberInfo }) {
 
         {isSeller ? (
           <MenuItem
-            active={location.pathname.startsWith('/seller')}
+            $active={location.pathname.startsWith('/seller')}
             onClick={() => {
               navi(`/seller`);
             }}
@@ -84,7 +84,7 @@ function MyPageSidebar({ memberInfo }) {
           </MenuItem>
         ) : (
           <MenuItem
-            active={location.pathname.startsWith('/mypage/seller-apply')}
+            $active={location.pathname.startsWith('/mypage/seller-apply')}
             onClick={() => {
               navi(`/mypage/seller-apply`);
             }}
@@ -126,15 +126,15 @@ function MyPageSidebar({ memberInfo }) {
 
 export default MyPageSidebar;
 
+/* ================= styled ================= */
+
 const Sidebar = styled.aside`
   width: 240px;
   min-width: 240px;
   flex-shrink: 0;
-
   background-color: white;
   border-right: 1px solid #edf1f4;
   padding: 40px 24px;
-
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -152,26 +152,25 @@ const MenuTitle = styled.h2`
   margin-bottom: 26px;
 `;
 
+// ⭕ 이 부분의 active 구조를 JSX 스펙($active)과 완전히 동기화했습니다! ✨
 const MenuItem = styled.button`
   width: 100%;
   border: none;
-  background: ${({ active }) => (active ? '#eef5f6' : 'transparent')};
+  /* active ➡️ $active 로 변수명을 맞춰주어야 리액트가 표준속성으로 오인하지 않습니다. */
+  background: ${({ $active }) => ($active ? '#eef5f6' : 'transparent')};
 
   display: flex;
   align-items: center;
   gap: 12px;
-
   height: 48px;
   padding: 0 14px;
   border-radius: 12px;
   margin-bottom: 8px;
-
   cursor: pointer;
   font-size: 14px;
 
-  color: ${({ active }) => (active ? '#3f6971' : '#6b7280')};
-
-  font-weight: ${({ active }) => (active ? '600' : '400')};
+  color: ${({ $active }) => ($active ? '#3f6971' : '#6b7280')};
+  font-weight: ${({ $active }) => ($active ? '600' : '400')};
 
   &:hover {
     background-color: #f3f6f8;

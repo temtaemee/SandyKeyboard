@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { TicketPercent, ChevronRight, Download } from 'lucide-react';
-import { getMemberCouponList } from '../../../admin/api/adminBoardApi';
 import MyPageSidebar from '../components/MyPageSidebar';
 import { useNavigate } from 'react-router-dom';
+import { getMyCouponList } from '../api/mypageApi';
 
 function MyCouponPage() {
   // 1. 상태(State) 관리
@@ -11,13 +11,10 @@ function MyCouponPage() {
   const [loading, setLoading] = useState(true);
   const navi = useNavigate();
 
-  // 현재 로그인된 유저의 username 샘플 (실제 프로젝트의 Auth context나 localStorage 등에서 가져오도록 수정 가능)
-  const currentUsername = 'user01';
-
   // 2. API 데이터 로드
   useEffect(() => {
     // pno=1(첫 페이지), username 전달
-    getMemberCouponList(1, currentUsername)
+    getMyCouponList()
       .then((res) => {
         // Axios 응답 구조(res.data) 혹은 백엔드 반환 형태에 맞게 세팅
         // 만약 통신부에서 이미 .then((res) => res.data) 처리를 했다면 res 자체를 넣으시면 됩니다.
@@ -30,7 +27,7 @@ function MyCouponPage() {
         console.error('쿠폰 목록을 불러오는데 실패했습니다.', err);
         setLoading(false);
       });
-  }, [currentUsername]);
+  }, []);
 
   // 3. 유틸리티 함수: 날짜 포맷팅 (LocalDateTime -> YYYY.MM.DD)
   const formatDate = (isoString) => {
@@ -136,7 +133,7 @@ function MyCouponPage() {
               <HistoryHeader>
                 <SectionTitle>쿠폰 내역 히스토리</SectionTitle>
                 <FilterArea>
-                  <FilterButton active>전체 내역</FilterButton>
+                  <FilterButton $active>전체 내역</FilterButton>
                 </FilterArea>
               </HistoryHeader>
 
@@ -417,8 +414,8 @@ const FilterArea = styled.div`
 
 const FilterButton = styled.button`
   border: none;
-  background-color: ${({ active }) => (active ? '#3f6971' : '#eef2f4')};
-  color: ${({ active }) => (active ? 'white' : '#6b7280')};
+  background-color: ${({ $active }) => ($active ? '#3f6971' : '#eef2f4')};
+  color: ${({ $active }) => ($active ? 'white' : '#6b7280')};
 
   height: 38px;
   padding: 0 16px;
