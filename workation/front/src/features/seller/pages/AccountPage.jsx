@@ -38,7 +38,7 @@ export default function AccountPage() {
   };
 
   useEffect(() => {
-    api.get('/api/auth/me')
+    api.get('/auth/me')
       .then((res) => {
         setMember(res.data);
         setPhone(res.data.phone ?? '');
