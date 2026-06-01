@@ -36,7 +36,7 @@ export default function AdminSidebar() {
   return (
     <Aside>
       {/* 로고 */}
-      <LogoArea>
+      <LogoArea to="/admin/dashboard">
         <LogoIcon>
           <svg width="15" height="10.5" viewBox="0 0 20 11" fill="none">
             <rect width="20" height="3" rx="1.5" fill="white" />
@@ -88,11 +88,12 @@ const Aside = styled.aside`
   z-index: 50;
 `;
 
-const LogoArea = styled.div`
+const LogoArea = styled(NavLink)`
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 0 24px 32px;
+  cursor: pointer;
 `;
 
 const LogoIcon = styled.div`
