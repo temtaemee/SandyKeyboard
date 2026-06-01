@@ -2,10 +2,7 @@ package com.kh.app.member.service;
 
 import com.kh.app.common.dto.PageRespDto;
 import com.kh.app.member.dto.request.*;
-import com.kh.app.member.dto.response.FindUsernameRespDto;
-import com.kh.app.member.dto.response.MemberListRespDto;
-import com.kh.app.member.dto.response.MemberMeRespDto;
-import com.kh.app.member.dto.response.MemberRespDto;
+import com.kh.app.member.dto.response.*;
 import com.kh.app.member.entity.*;
 import com.kh.app.member.repository.BankRepository;
 import com.kh.app.member.repository.MemberRepository;
@@ -353,4 +350,22 @@ public class MemberService {
         // 3. 프로필 저장 완료!
         profileRepository.save(profile);
     }
+
+    public SellerRespDto getSellerInfo(Long memberId) {
+        SellerEntity seller = sellerRepository.findByIdWithMemberAndBank(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 셀러입니다."));
+        return SellerRespDto.from(seller);
+    }
+
+    @Transactional
+    public void updateSellerInfo(Long memberId, SellerUpdateReqDto dto) {
+        SellerEntity seller = sellerRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 셀러입니다."));
+
+        BankEntity bank = bankRepository.findById(dto.getBankId())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 은행입니다."));
+
+        seller.updateSeller(dto, bank);
+    }
+
 }

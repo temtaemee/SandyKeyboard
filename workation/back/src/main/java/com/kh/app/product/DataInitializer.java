@@ -90,11 +90,11 @@ public class DataInitializer implements CommandLineRunner {
         createMember("user02", "user02!", Role.USER, "이유저", "010-3333-4444", "user02@workation.com");
 
         MemberEntity seller01 = createSeller("seller01", "seller01!", "강원 운영자", "010-5555-1001",
-                "seller01@workation.com", banks.get(0), "101-81-10001", "11111111111111", "강원 워케이션");
+                "seller01@workation.com", banks.get(0), "101-81-10001", "11111111111111", "강원 워케이션","(주)강원워케이션네트웍스");
         MemberEntity seller02 = createSeller("seller02", "seller02!", "경기 운영자", "010-5555-1002",
-                "seller02@workation.com", banks.get(1), "101-81-10002", "22222222222222", "경기 스테이랩");
+                "seller02@workation.com", banks.get(1), "101-81-10002", "22222222222222", "경기 스테이랩", "경기스테이랩(주)");
         MemberEntity seller03 = createSeller("seller03", "seller03!", "경남 운영자", "010-5555-1003",
-                "seller03@workation.com", banks.get(2), "101-81-10003", "33333333333333", "경남 오션워크");
+                "seller03@workation.com", banks.get(2), "101-81-10003", "33333333333333", "경남 오션워크","경남오션워크플래닝");
 
         seedGangwon(seller01);
         seedGyeonggi(seller02);
@@ -311,10 +311,16 @@ public class DataInitializer implements CommandLineRunner {
 
     private MemberEntity createSeller(String username, String pw, String name,
                                       String phone, String email, BankEntity bank,
-                                      String bizNo, String account, String accountName) {
+                                      String bizNo, String account, String accountName , String companyName) {
         MemberEntity m = createMember(username, pw, Role.SELLER, name, phone, email);
         sellerRepository.save(SellerEntity.builder()
-                .member(m).bank(bank).businessNo(bizNo).account(account).accountName(accountName).build());
+                .member(m)
+                .bank(bank)
+                .businessNo(bizNo)
+                .account(account)
+                .accountName(accountName)
+                .companyName(companyName)
+                .build());
         return m;
     }
 

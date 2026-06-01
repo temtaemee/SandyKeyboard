@@ -49,12 +49,6 @@ export async function resetPassword(vo) {
 
 
 
-
-
-
-
-
-
 // ===== 관리자 회원 목록 조회 =====
 export async function searchMembers(params) {
     const resp = await api.get(`/admin/member/list`, {
@@ -95,6 +89,15 @@ export async function banMember(memberId) {
 export async function unbanMember(memberId) {
     const resp = await api.patch(`/admin/member/${memberId}/unban`);
     return resp;
+}
+//셀러 본인 정보 불러오기
+export async function getSellerInfo() {
+    const resp = await api.get(`/seller/me`)
+    return resp.data;
+}
+export async function updateSellerInfo(vo) {
+    const resp = await api.put(`/seller/me`)
+    return resp.data;
 }
 
 

@@ -168,6 +168,20 @@ public class MemberApiController {
         return ResponseEntity.ok(responseDto);
     }
 
+    @GetMapping("/seller/me")
+    public ResponseEntity<SellerRespDto> getSellerInfo(@AuthenticationPrincipal(expression = "memberId") Long memberId){
+        return ResponseEntity.ok(memberService.getSellerInfo(memberId));
+    }
+
+    @PutMapping("/seller/me")
+    public ResponseEntity<Void> updateSellerInfo(
+            @AuthenticationPrincipal(expression = "memberId") Long memberId,
+            @RequestBody SellerUpdateReqDto dto
+    ) {
+        memberService.updateSellerInfo(memberId, dto);
+        return ResponseEntity.ok().build();
+    }
+
 
 
 
