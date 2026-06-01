@@ -1,136 +1,103 @@
-// src/features/user/reservation/pages/SpaceDetailPage.jsx
+// src/features/user/destination/pages/SpaceDetailPage.jsx
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import api from '../../../../app/api/axios'; // 공통 axios 인스턴스 사용
+import useDestination from '../hooks/useDestination'; // 💡 훅 임포트
 
 function SpaceDetailPage() {
   const { spaceId } = useParams();
   const navigate = useNavigate();
-  const [space, setSpace] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  // 상단 메인 이미지 슬라이더의 현재 인덱스 상태 값
+  const {
+    currentSpace: space,
+    loading,
+    loadSpaceDetail,
+    resetDetails,
+  } = useDestination(); // 💡 훅 연동
   const [currentImgIdx, setCurrentImgIdx] = useState(0);
 
   const SERVER_HOST = 'http://localhost:80';
 
   useEffect(() => {
-    async function fetchSpaceDetail() {
-      try {
-        const response = await api.get(`/public/space/${spaceId}`);
-        setSpace(response.data);
-      } catch (err) {
-        console.error('공간 상세 조회 오류:', err);
-        alert('존재하지 않거나 비공개된 공간입니다.');
-        navigate('/resv/destination');
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchSpaceDetail();
-  }, [spaceId, navigate]);
+    loadSpaceDetail(spaceId).catch(() => {
+      alert('존재하지 않거나 비공개된 공간입니다.');
+      navigate('/resv/destination');
+    });
+    return () => resetDetails(); // 이탈 시 클린업
+  }, [spaceId]);
 
-  if (loading)
+  if (loading || !space)
     return <LoadingText>공간 정보를 불러오는 중입니다...</LoadingText>;
-  if (!space) return null;
 
-  // URL 주소 정형화 함수
   const getRealImageUrl = (rawPath) => {
     if (!rawPath) return null;
-    if (rawPath.startsWith('http://') || rawPath.startsWith('https://')) {
+    if (rawPath.startsWith('http://') || rawPath.startsWith('https://'))
       return rawPath;
-    }
     return `${SERVER_HOST}${rawPath.startsWith('/') ? '' : '/'}${rawPath}`;
   };
 
-  // 💡 [슬라이더 트랙 무제한 확장 및 백엔드 누락 우회 수집 복구 장치]
   const sliderImages = [];
-
-  // 1순위: thumbnailUrl이 넘어왔다면 선 배치
   if (space.thumbnailUrl) {
     const parsedThumb = getRealImageUrl(space.thumbnailUrl);
     if (parsedThumb) sliderImages.push(parsedThumb);
   }
-
-  // 2순위: pictures 사진첩 명세 가공 누적 push
   if (space.pictures && space.pictures.length > 0) {
     space.pictures.forEach((p) => {
       const parsedUrl = getRealImageUrl(p.filePath);
-      if (parsedUrl && !sliderImages.includes(parsedUrl)) {
+      if (parsedUrl && !sliderImages.includes(parsedUrl))
         sliderImages.push(parsedUrl);
-      }
     });
   }
-
-  // 3순위: 💡 [셀러 데이터 미탑재 긴급 백업] 상단 공간 사진이 전멸해있을 경우,
-  //         하위 숙소(Stays)에 딸려있는 셀러 등록 진짜 방 사진들을 캐러셀 리스트로 강제 견인합산합니다.
   if (space.stays && space.stays.length > 0) {
     space.stays.forEach((st) => {
       if (st.pictures && st.pictures.length > 0) {
         st.pictures.forEach((pic) => {
           const parsedStayUrl = getRealImageUrl(pic.filePath);
-          if (parsedStayUrl && !sliderImages.includes(parsedStayUrl)) {
+          if (parsedStayUrl && !sliderImages.includes(parsedStayUrl))
             sliderImages.push(parsedStayUrl);
-          }
         });
       }
     });
   }
-
-  // 4순위: 최후의 수단 플레이스홀더
   if (sliderImages.length === 0) {
     sliderImages.push(
       'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1200&q=80'
     );
   }
 
-  // 💡 [백엔드 편의시설 누락 우회 기법]
-  // 백엔드가 상세조회 빌더에서 arcades 세팅을 깜빡했더라도, 유저 기획서 기준
-  // 가장 대중적이고 핵심적인 워케이션 인프라 3가지 항목을 디폴트 레이아웃 가드로 지정하여 강제 활성화시킵니다!
-  const safeArcades =
-    space.arcades && space.arcades.length > 0
-      ? space.arcades
-      : [
-          { id: 991, name: '고성능 기가 초고속 WI-FI 네트워크' },
-          { id: 992, name: '인체공학 모니터 및 집중 워크스테이션 데스크' },
-          { id: 993, name: '24시간 무제한 오픈 코워킹 라운지 존' },
-        ];
-
-  // 슬라이더 제어 함수
-  const handlePrevSlide = () => {
-    setCurrentImgIdx((prev) =>
-      prev === 0 ? sliderImages.length - 1 : prev - 1
-    );
-  };
-
-  const handleNextSlide = () => {
-    setCurrentImgIdx((prev) =>
-      prev === sliderImages.length - 1 ? 0 : prev + 1
-    );
-  };
+  const safeArcades = space.arcades || [];
 
   return (
     <Wrapper>
       <Container>
-        {/* 상단 공간 메인 배너 슬라이더 구조 */}
         <MainVisual>
           <img
             src={sliderImages[currentImgIdx]}
             alt={`${space.name} 사진 ${currentImgIdx + 1}`}
           />
           <AreaBadge>{space.area || '경남'}</AreaBadge>
-
           {sliderImages.length > 1 && (
             <>
-              <SlideButton className="prev" onClick={handlePrevSlide}>
+              <SlideButton
+                className="prev"
+                onClick={() =>
+                  setCurrentImgIdx((p) =>
+                    p === 0 ? sliderImages.length - 1 : p - 1
+                  )
+                }
+              >
                 &#10094;
               </SlideButton>
-              <SlideButton className="next" onClick={handleNextSlide}>
+              <SlideButton
+                className="next"
+                onClick={() =>
+                  setCurrentImgIdx((p) =>
+                    p === sliderImages.length - 1 ? 0 : p + 1
+                  )
+                }
+              >
                 &#10095;
               </SlideButton>
-
               <SliderDots>
                 {sliderImages.map((_, idx) => (
                   <Dot
@@ -144,7 +111,6 @@ function SpaceDetailPage() {
           )}
         </MainVisual>
 
-        {/* 공간 상세 명세 */}
         <ContentSection>
           <SpaceName>{space.name}</SpaceName>
           <SpaceSummary>
@@ -152,24 +118,24 @@ function SpaceDetailPage() {
               '바다 가까운 아늑하고 몰입도 높은 프리미엄 업무 환경'}
           </SpaceSummary>
           <Divider />
-
           <DescriptionBlock>
             <SectionTitle>🎯 공간 소개</SectionTitle>
             <DescText>{space.description}</DescText>
           </DescriptionBlock>
 
-          {/* 제공하는 편의 시설 및 인프라 (우회 가드 처리 완료로 이제 무조건 출력됨) */}
-          <ArcadeBlock>
-            <SectionTitle>🛠️ 제공하는 편의 시설 및 인프라</SectionTitle>
-            <ArcadeGrid>
-              {safeArcades.map((arcade, index) => (
-                <ArcadeBadgeCard key={arcade.id || index}>
-                  <ArcadeIcon>💻</ArcadeIcon>
-                  <ArcadeName>{arcade.name}</ArcadeName>
-                </ArcadeBadgeCard>
-              ))}
-            </ArcadeGrid>
-          </ArcadeBlock>
+          {safeArcades.length > 0 && (
+            <ArcadeBlock>
+              <SectionTitle>🛠️ 제공하는 편의 시설 및 인프라</SectionTitle>
+              <ArcadeGrid>
+                {safeArcades.map((arcade, index) => (
+                  <ArcadeBadgeCard key={arcade.id || index}>
+                    <ArcadeIcon>💻</ArcadeIcon>
+                    <ArcadeName>{arcade.name}</ArcadeName>
+                  </ArcadeBadgeCard>
+                ))}
+              </ArcadeGrid>
+            </ArcadeBlock>
+          )}
 
           <SectionTitle>📍 장소 정보</SectionTitle>
           <InfoGrid>
@@ -185,7 +151,6 @@ function SpaceDetailPage() {
           </InfoGrid>
         </ContentSection>
 
-        {/* 하단 연동 숙소 목록 */}
         <StaySection>
           <SectionTitle>🏡 예약 가능한 숙소 선택</SectionTitle>
           {!space.stays || space.stays.length === 0 ? (
@@ -200,7 +165,6 @@ function SpaceDetailPage() {
                 const roomImage =
                   getRealImageUrl(rawStayPath) ||
                   'https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=500&q=80';
-
                 return (
                   <StayCard
                     key={stay.id}

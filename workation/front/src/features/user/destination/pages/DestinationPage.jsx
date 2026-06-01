@@ -1,47 +1,42 @@
-// src/features/user/reservation/pages/DestinationPage.jsx
+// src/features/user/destination/pages/DestinationPage.jsx
 
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { getPublicSpaceList } from '../api/destinationApi';
+import useDestination from '../hooks/useDestination'; // 💡 고도화된 훅 연동
 
-// 지역 필터링 버튼 목록 정의 (백엔드 Area Enum과 대칭)
 const AREA_LIST = [
   { label: '전체', value: '' },
   { label: '서울', value: 'SEOUL' },
   { label: '경기', value: 'GYEONGGI' },
   { label: '강원', value: 'GANGWON' },
-  { label: '부산', value: 'BUSAN' },
+  { label: '경남', value: 'GYEONGNAM' },
+  { label: '경북', value: 'GYEONGBUK' },
+  { label: '충남', value: 'CHUNGNAM' },
+  { label: '충북', value: 'CHUNGBUK' },
+  { label: '전남', value: 'JEONNAM' },
+  { label: '전북', value: 'JEONBUK' },
   { label: '제주', value: 'JEJU' },
 ];
 
 function DestinationPage() {
-  const [spaces, setSpaces] = useState([]); // 공간 리스트 상태
-  const [selectedArea, setSelectedArea] = useState(''); // 선택된 지역
-  const [searchKeyword, setSearchKeyword] = useState(''); // 검색 키워드
+  // 💡 spaces가 혹시라도 undefiend로 깨지는 현상을 완벽하게 막아내는 디폴트 가드 지정
+  const { spaces = [], loadSpaces, loading } = useDestination();
+  const [selectedArea, setSelectedArea] = useState('');
+  const [searchKeyword, setSearchKeyword] = useState('');
 
-  // API 데이터 호출 기능
-  const fetchSpaces = async (keyword, area) => {
-    try {
-      const data = await getPublicSpaceList(keyword, area);
-      setSpaces(data || []);
-    } catch (err) {
-      console.error('공간 목록을 불러오는 중 오류 발생:', err);
-    }
-  };
-
-  // 지역 필터가 바뀔 때마다 백엔드 조회 실시간 트리거
+  // 💡 [수정] 컴포넌트가 처음 마운트되거나 지역 필터가 바뀔 때 무조건 백엔드 조회 실행
   useEffect(() => {
-    fetchSpaces(searchKeyword, selectedArea);
+    loadSpaces(searchKeyword, selectedArea);
   }, [selectedArea]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    fetchSpaces(searchKeyword, selectedArea);
+    loadSpaces(searchKeyword, selectedArea);
   };
 
   return (
     <Wrapper>
-      {/* 1. 상단 타이틀 배너 (피그마 그라디언트 적용) */}
+      {/* 1. 상단 타이틀 배너 */}
       <HeaderBanner>
         <BannerTitle>원하는 워케이션 목적지를 찾아보세요</BannerTitle>
         <BannerDesc>
@@ -81,7 +76,11 @@ function DestinationPage() {
           있습니다.
         </ResultHeader>
 
-        {spaces.length === 0 ? (
+        {loading ? (
+          <LoadingText>
+            📡 최적의 워케이션 인프라를 불러오는 중입니다...
+          </LoadingText>
+        ) : spaces.length === 0 ? (
           <EmptyWrapper>
             <EmptyText>
               🔍 조건에 매칭되는 워케이션 공간이 아직 등록되지 않았습니다.
@@ -89,32 +88,37 @@ function DestinationPage() {
           </EmptyWrapper>
         ) : (
           <GridContainer>
-            {spaces.map((space) => (
-              <SpaceCard
-                key={space.id}
-                onClick={() =>
-                  (window.location.href = `/resv/space/${space.id}`)
-                }
-              >
-                <ThumbnailBox>
-                  {space.thumbnailUrl ? (
-                    <img src={space.thumbnailUrl} alt={space.name} />
-                  ) : (
-                    <NoImageText>No Image Provided</NoImageText>
-                  )}
-                  <AreaBadge>{space.area}</AreaBadge>
-                </ThumbnailBox>
+            {spaces.map((space) => {
+              // 이미지 파일 파싱 호스트 결합
+              const SERVER_HOST = 'http://localhost:80';
+              const finalThumb = space.thumbnailUrl
+                ? space.thumbnailUrl.startsWith('http')
+                  ? space.thumbnailUrl
+                  : `${SERVER_HOST}${space.thumbnailUrl.startsWith('/') ? '' : '/'}${space.thumbnailUrl}`
+                : 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=600&q=80';
 
-                <CardBody>
-                  <SpaceTitle>{space.name}</SpaceTitle>
-                  <SpaceSummary>{space.summary}</SpaceSummary>
-                  <SpaceAddress>{space.address1}</SpaceAddress>
-                  <CardFooter>
-                    <DetailButton>자세히 보기 &rarr;</DetailButton>
-                  </CardFooter>
-                </CardBody>
-              </SpaceCard>
-            ))}
+              return (
+                <SpaceCard
+                  key={space.id}
+                  onClick={() =>
+                    (window.location.href = `/resv/space/${space.id}`)
+                  }
+                >
+                  <ThumbnailBox>
+                    <img src={finalThumb} alt={space.name} />
+                    <AreaBadge>{space.area}</AreaBadge>
+                  </ThumbnailBox>
+                  <CardBody>
+                    <SpaceTitle>{space.name}</SpaceTitle>
+                    <SpaceSummary>{space.summary}</SpaceSummary>
+                    <SpaceAddress>{space.address1}</SpaceAddress>
+                    <CardFooter>
+                      <DetailButton>자세히 보기 &rarr;</DetailButton>
+                    </CardFooter>
+                  </CardBody>
+                </SpaceCard>
+              );
+            })}
           </GridContainer>
         )}
       </MainContentSection>
@@ -124,10 +128,6 @@ function DestinationPage() {
 
 export default DestinationPage;
 
-/* ========================================================================= */
-/* Styled Components 디자인 토큰(theme.js) 밀착 반영 스타일 세트 */
-/* ========================================================================= */
-
 const Wrapper = styled.div`
   width: 100%;
   min-height: 100vh;
@@ -135,7 +135,6 @@ const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
 `;
-
 const HeaderBanner = styled.div`
   width: 100%;
   padding: 60px 24px;
@@ -147,24 +146,20 @@ const HeaderBanner = styled.div`
   text-align: center;
   gap: 8px;
 `;
-
 const BannerTitle = styled.h1`
   font-family: ${({ theme }) => theme.fonts.base};
   font-size: 32px;
   font-weight: 700;
   color: ${({ theme }) => theme.colors.textDark};
-
   @media (max-width: 768px) {
     font-size: 24px;
   }
 `;
-
 const BannerDesc = styled.p`
   font-family: ${({ theme }) => theme.fonts.base};
   font-size: 16px;
   color: ${({ theme }) => theme.colors.textMid};
 `;
-
 const FilterContainer = styled.div`
   max-width: 1200px;
   width: 100%;
@@ -178,30 +173,25 @@ const FilterContainer = styled.div`
   flex-direction: column;
   gap: 20px;
 `;
-
 const SearchForm = styled.form`
   display: flex;
   gap: 12px;
   width: 100%;
 `;
-
 const SearchInput = styled.input`
   flex: 1;
   height: 52px;
   padding: 0 20px;
-  /* 💡 [오타 수정 완료] 잘못 들어가 있던 NavData 코드를 기본 테마 보더 컬러로 안전하게 교정했습니다. */
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: ${({ theme }) => theme.radius.sm};
   font-family: ${({ theme }) => theme.fonts.base};
   font-size: 16px;
   outline: none;
   transition: all 0.2s ease;
-
   &:focus {
     border-color: ${({ theme }) => theme.colors.primary};
   }
 `;
-
 const SearchButton = styled.button`
   padding: 0 32px;
   background: ${({ theme }) => theme.colors.primary};
@@ -211,18 +201,15 @@ const SearchButton = styled.button`
   font-weight: 700;
   border-radius: ${({ theme }) => theme.radius.sm};
   transition: all 0.2s ease;
-
   &:hover {
     background: ${({ theme }) => theme.colors.primaryLight};
   }
 `;
-
 const AreaButtonGroup = styled.div`
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
 `;
-
 const AreaButton = styled.button`
   padding: 10px 24px;
   border-radius: ${({ theme }) => theme.radius.full};
@@ -238,7 +225,6 @@ const AreaButton = styled.button`
     props.active ? props.theme.colors.white : props.theme.colors.textMid};
   box-shadow: ${({ theme }) => theme.shadows.card};
   transition: all 0.2s ease;
-
   &:hover {
     background: ${(props) =>
       props.active
@@ -248,7 +234,6 @@ const AreaButton = styled.button`
       props.active ? props.theme.colors.white : props.theme.colors.textDark};
   }
 `;
-
 const MainContentSection = styled.div`
   max-width: 1200px;
   width: 100%;
@@ -258,24 +243,20 @@ const MainContentSection = styled.div`
   flex-direction: column;
   gap: 20px;
 `;
-
 const ResultHeader = styled.div`
   font-family: ${({ theme }) => theme.fonts.base};
   font-size: 16px;
   font-weight: 600;
   color: ${({ theme }) => theme.colors.textMid};
 `;
-
 const CountText = styled.span`
   color: ${({ theme }) => theme.colors.primary};
   font-weight: 700;
 `;
-
 const GridContainer = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 30px;
-
   @media (max-width: 1024px) {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -283,7 +264,6 @@ const GridContainer = styled.div`
     grid-template-columns: repeat(1, 1fr);
   }
 `;
-
 const SpaceCard = styled.div`
   background: ${({ theme }) => theme.colors.white};
   border: 1px solid ${({ theme }) => theme.colors.border};
@@ -292,27 +272,23 @@ const SpaceCard = styled.div`
   box-shadow: ${({ theme }) => theme.shadows.card};
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-
   &:hover {
     transform: translateY(-6px);
     box-shadow: ${({ theme }) => theme.shadows.cardHover};
     border-color: ${({ theme }) => theme.colors.primaryLight};
   }
 `;
-
 const ThumbnailBox = styled.div`
   width: 100%;
   height: 220px;
   background: ${({ theme }) => theme.colors.borderLight};
   position: relative;
-
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
   }
 `;
-
 const AreaBadge = styled.span`
   position: absolute;
   top: 14px;
@@ -324,7 +300,6 @@ const AreaBadge = styled.span`
   padding: 4px 10px;
   border-radius: ${({ theme }) => theme.radius.full};
 `;
-
 const NoImageText = styled.div`
   width: 100%;
   height: 100%;
@@ -334,23 +309,20 @@ const NoImageText = styled.div`
   color: ${({ theme }) => theme.colors.textLight};
   font-size: 13px;
 `;
-
 const CardBody = styled.div`
   padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 6px;
 `;
-
 const SpaceTitle = styled.h3`
   font-size: 18px;
   font-weight: 700;
-  color: ${({ theme }) => theme.colors.textDark};
+  color: #1e293b;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 `;
-
 const SpaceSummary = styled.p`
   font-size: 14px;
   color: ${({ theme }) => theme.colors.textMid};
@@ -358,12 +330,10 @@ const SpaceSummary = styled.p`
   overflow: hidden;
   text-overflow: ellipsis;
 `;
-
 const SpaceAddress = styled.span`
   font-size: 12px;
   color: ${({ theme }) => theme.colors.textMuted};
 `;
-
 const CardFooter = styled.div`
   margin-top: 10px;
   border-top: 1px solid ${({ theme }) => theme.colors.borderLight};
@@ -371,17 +341,14 @@ const CardFooter = styled.div`
   display: flex;
   justify-content: flex-end;
 `;
-
 const DetailButton = styled.span`
   font-size: 13px;
   font-weight: 700;
   color: ${({ theme }) => theme.colors.primary};
-
   &:hover {
     color: ${({ theme }) => theme.colors.primaryLight};
   }
 `;
-
 const EmptyWrapper = styled.div`
   width: 100%;
   padding: 100px 0;
@@ -389,9 +356,15 @@ const EmptyWrapper = styled.div`
   border-radius: ${({ theme }) => theme.radius.md};
   border: 1px dashed ${({ theme }) => theme.colors.border};
 `;
-
 const EmptyText = styled.p`
   text-align: center;
   font-size: 15px;
   color: ${({ theme }) => theme.colors.textLight};
+`;
+const LoadingText = styled.div`
+  text-align: center;
+  padding: 60px 0;
+  font-size: 16px;
+  color: #64748b;
+  font-weight: 600;
 `;

@@ -5,8 +5,7 @@ import adminReducer from '../../features/admin/store/adminReducer';
 import refundReducer from '../../features/refund/store/refundSlice';
 import spaceReducer from '../../features/seller/store/spaceSlice';
 import stayReducer from '../../features/seller/store/staySlice';
-
-// reducer 객체에 추가:
+import destinationReducer from '../../features/user/destination/store/destinationSlice';
 
 const store = configureStore({
   reducer: {
@@ -16,10 +15,12 @@ const store = configureStore({
     refund: refundReducer,
     space: spaceReducer,
     stay: stayReducer,
+    destination: destinationReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: false,
     }),
 });
+
 export default store;
