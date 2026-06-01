@@ -80,7 +80,7 @@ public class MemberService {
 
         MemberProfileEntity memberProfile = member.getProfile();
 
-        // 1. 프로필이나 회사 정보가 없을 때를 대비해 초기값을 null(또는 빈 문자열 "")로 세팅합니다.
+        // 1. 초기값 세팅 (profileImageUrl도 여기에 null로 초기화합니다)
         String companyName = null;
         String name = null;
         String phone = null;
@@ -88,8 +88,9 @@ public class MemberService {
         String zonecode = null;
         String address = null;
         String addressDetail = null;
+        String profileImageUrl = null; // 🚨 안전하게 격리 완료
 
-        // 2. 핵심 널 방어: memberProfile이 진짜로 존재할 때만 데이터를 쏙쏙 꺼내옵니다! ✨
+        // 2. 핵심 널 방어: 실제 데이터가 존재할 때만 안전하게 추출
         if (memberProfile != null) {
             name = memberProfile.getName();
             phone = memberProfile.getPhone();
@@ -97,17 +98,18 @@ public class MemberService {
             zonecode = memberProfile.getZonecode();
             address = memberProfile.getAddress();
             addressDetail = memberProfile.getAddressDetail();
+            profileImageUrl = memberProfile.getProfileImageUrl(); // 🚨 안전 구역 안에서 주입
 
             if (memberProfile.getCompany() != null) {
                 companyName = memberProfile.getCompany().getCompanyName();
             }
         } else {
-            // 💡 필요하다면 소셜 신규 가입자를 위해 기본 가이드 텍스트를 채워줄 수 있습니다. (선택 사항)
+            // 소셜 신규 가입자를 위한 방어선
             name = "소셜 가입 회원";
-            email = member.getUsername(); // 네이버 로그인 시 저장한 이메일 매핑
+            email = member.getUsername();
         }
 
-        // 3. 기존 빌더 패턴 그대로 변수만 매핑해주면 끝! 코드 구조가 하나도 깨지지 않습니다. 💯
+        // 3. 빌더 패턴에는 널 검증이 완전히 끝난 로컬 변수들만 매핑!
         return MemberMeRespDto.builder()
                 .memberId(member.getId())
                 .joinDate(member.getCreatedAt())
@@ -117,6 +119,7 @@ public class MemberService {
                 .phone(phone)
                 .email(email)
                 .zonecode(zonecode)
+                .profileImageUrl(profileImageUrl) // 🚨 객체가 아닌 검증된 '변수'를 매핑해서 절대 안 터짐
                 .address(address)
                 .addressDetail(addressDetail)
                 .companyName(companyName)

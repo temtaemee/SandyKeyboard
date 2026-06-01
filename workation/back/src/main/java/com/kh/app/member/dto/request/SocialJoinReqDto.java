@@ -26,6 +26,8 @@ public class SocialJoinReqDto {
     private String address;         // 기본 주소
     private String addressDetail;   // 상세 주소
 
+    private String profileImageUrl;
+
     // (선택) 만약 소셜 가입 시 회사 정보도 받아야 한다면 추가
     // private Long companyId;
 }

@@ -96,7 +96,11 @@ function MyPageSidebar({ memberInfo }) {
       </MenuSection>
 
       <BottomMenu>
-        <BottomItem>
+        <BottomItem
+          onClick={() => {
+            navi(`/faq`);
+          }}
+        >
           <Headphones size={16} />
           <span>고객센터</span>
         </BottomItem>

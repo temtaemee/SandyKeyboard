@@ -10,6 +10,7 @@ import {
 import MyPageSidebar from '../components/MyPageSidebar';
 import useMypage from '../hooks/useMypage';
 import { useNavigate } from 'react-router-dom';
+import ProfileAvatar from '../components/ProfileAvatar';
 
 function MyPage() {
   // 리팩토링된 훅에서 dashboardData를 함께 꺼내옵니다. ✨
@@ -47,7 +48,10 @@ function MyPage() {
           <ProfileCard>
             <ProfileLeft>
               <AvatarBox>
-                <LaptopEmoji>💻</LaptopEmoji>
+                <ProfileAvatar
+                  name={memberInfo?.name || ''}
+                  profileImageUrl={memberInfo?.profileImageUrl || null}
+                />
               </AvatarBox>
 
               <ProfileInfo>
@@ -269,15 +273,14 @@ const ProfileLeft = styled.div`
   }
 `;
 
+// 기존 스타일 컴포넌트 정의 구역 확인용
 const AvatarBox = styled.div`
-  width: 110px;
-  height: 110px;
-  border-radius: 28px;
-  background: linear-gradient(135deg, #d9ecef, #eef5f6);
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
+  background: none; /* 👈 기존 회색/하늘색 배경색이 있었다면 제거 */
+  border: none; /* 기존 테두리 제거 */
+  /* 가로세로 크기는 ProfileAvatar 크기와 비슷하게 맞추거나 없애기 */
 `;
 
 const LaptopEmoji = styled.div`

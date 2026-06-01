@@ -21,13 +21,16 @@ function KakaoCallback() {
         .post('/guest/kakao', { code: code, state: null })
         .then((response) => {
           const targetData = response.data ? response.data : response;
-          const { token, isNewUser, email } = targetData;
+          const { token, isNewUser, email, profileImageUrl } = targetData;
 
           if (isNewUser) {
             // 💡 1번 방식 반영: 신규 유저면 추가 가입 양식으로 가되, 발급된 토큰을 주소창에 숨겨서 이동!
             alert(
               '카카오 연동을 위해 추가 회원 정보 입력 페이지로 이동합니다.'
             );
+            const photoParam = profileImageUrl
+              ? `&profileImageUrl=${encodeURIComponent(profileImageUrl)}`
+              : '';
             navigate(`/join?type=social&email=${email}&tempToken=${token}`);
           } else {
             // 기존 연동 유저라면 즉시 로그인 처리 후 홈으로 프리패스

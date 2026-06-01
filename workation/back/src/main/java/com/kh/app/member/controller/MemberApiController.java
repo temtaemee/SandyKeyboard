@@ -156,6 +156,7 @@ public class MemberApiController {
 
     @PostMapping("/guest/social-join")
     public ResponseEntity<String> socialJoin(@RequestBody SocialJoinReqDto dto) {
+        System.out.println("====== [최종가입요청] 프론트가 보낸 DTO 속 사진 주소: " + dto.getProfileImageUrl());
         // 💡 소셜 회원가입 마무리(프로필 생성) 로직 호출
         memberService.createSocialProfile(dto);
         return ResponseEntity.ok("소셜 연동 및 가입 완료!");
