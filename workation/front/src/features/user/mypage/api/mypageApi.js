@@ -6,6 +6,12 @@ export async function getMyInfo() {
     return resp.data;
 }
 
+// MyPage 정보 조회
+export async function getMyPageDashboard() {
+    const resp = await api.get(`/user/mypage`);
+    return resp.data;
+}
+
 // 회원 정보 수정
 export async function editMyInfo(vo) {
     const resp = await api.put('/user/member', vo);

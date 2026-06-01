@@ -9,7 +9,7 @@ import lombok.*;
 @Table(name = "MEMBER_PROFILE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@AllArgsConstructor
 @Builder
 public class MemberProfileEntity {
 
