@@ -372,10 +372,14 @@ function MyReservationDetailPage() {
                 </PaymentDetailBox>
               )}
 
-              <ActionArea>
+              <ActionArea
+                onClick={() => {
+                  navigate(`/resv/refund/apply/${id}`);
+                }}
+              >
                 <SubmitButton>
                   <CheckCircle size={18} />
-                  <span>이용 의사 확정완료</span>
+                  <span>환불 신청</span>
                 </SubmitButton>
               </ActionArea>
             </ReceiptCard>
