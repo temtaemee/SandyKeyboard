@@ -46,8 +46,6 @@ public class TransactionAdminController {
     }
 
 
-
-
     // [판매자 전용] 로그인한 판매자의 정산 완료 내역 리스트 조회
     @GetMapping("/seller/payout/list")
     public ResponseEntity<Page<PayoutListResDto>> getSellerPayouts(
