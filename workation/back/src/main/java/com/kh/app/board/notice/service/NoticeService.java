@@ -34,7 +34,9 @@ public class NoticeService {
     private final MemberRepository memberRepository;
     private final S3Service s3Service;
 
-    // 목록 조회 (페이징: 한 페이지 10개)
+    // ── 일반 사용자용 (delYn = 'N' 조건 있음) ──────────────────
+
+    // 목록 조회
     public Page<NoticeListRespDto> findAll(int page) {
         Pageable pageable = PageRequest.of(page, 10);
         return noticeRepository
@@ -51,6 +53,28 @@ public class NoticeService {
                 noticeFileRepository.findAllByNoticeIdAndDelYn(id, "N");
         return NoticeRespDto.from(notice, files);
     }
+
+    // ── Admin용 (delYn 조건 없이 전체 조회) ──────────────────
+
+    // 목록 조회 (삭제된 것 포함)
+    public Page<NoticeListRespDto> findAllForAdmin(int page) {
+        Pageable pageable = PageRequest.of(page, 10);
+        return noticeRepository
+                .findAllByOrderByCreatedAtDesc(pageable)
+                .map(NoticeListRespDto::from);
+    }
+
+    // 상세 조회 (삭제된 것 포함)
+    public NoticeRespDto findByIdForAdmin(Long id) {
+        NoticeEntity notice = noticeRepository
+                .findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("공지사항을 찾을 수 없습니다."));
+        List<NoticeFileEntity> files =
+                noticeFileRepository.findAllByNoticeIdAndDelYn(id, "N");
+        return NoticeRespDto.from(notice, files);
+    }
+
+    // ── 등록/수정/삭제 ──────────────────────────────────────
 
     // 등록
     @Transactional
@@ -85,7 +109,7 @@ public class NoticeService {
     @Transactional
     public void update(Long id, NoticeUpdateReqDto dto) {
         NoticeEntity notice = noticeRepository
-                .findByIdAndDelYn(id, "N")
+                .findById(id) // admin은 삭제된 것도 수정 가능
                 .orElseThrow(() -> new IllegalArgumentException("공지사항을 찾을 수 없습니다."));
         notice.update(dto.getTitle(), dto.getContent(), dto.getPinYn());
     }
@@ -94,7 +118,7 @@ public class NoticeService {
     @Transactional
     public void delete(Long id) {
         NoticeEntity notice = noticeRepository
-                .findByIdAndDelYn(id, "N")
+                .findById(id) // admin은 삭제된 것도 재삭제 가능
                 .orElseThrow(() -> new IllegalArgumentException("공지사항을 찾을 수 없습니다."));
         notice.delete();
     }

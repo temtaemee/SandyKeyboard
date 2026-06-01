@@ -134,3 +134,11 @@ export const deleteFaq = (id) =>
  */
 export const toggleNoticePin = (id) =>
   api.put(`${ADMIN_NOTICE}/${id}/pin`).then((res) => res.data);
+
+// 공지사항 목록 조회 (admin용 - 삭제된 것 포함)
+export const getNoticeListForAdmin = (page = 0) =>
+  api.get(ADMIN_NOTICE, { params: { page } }).then((res) => res.data);
+
+// 공지사항 상세 조회 (admin용 - 삭제된 것 포함)
+export const getNoticeDetailForAdmin = (id) =>
+  api.get(`${ADMIN_NOTICE}/${id}`).then((res) => res.data);
