@@ -50,6 +50,13 @@ public class ReservationApiController {
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
+    //예약 완료된 날짜 조회
+    @GetMapping("/user/reservation/booked-dates/{stayId}")
+    @Operation(summary = "숙소별 예약 완료된 날짜 조회", description = "달력에 예약 불가 처리(disabled)를 하기 위해 기예약된 날짜 범위를 리턴합니다.")
+    public ResponseEntity<List<Map<String, String>>> getBookedDates(@PathVariable Long stayId) {
+        return ResponseEntity.ok(reservationService.getBookedDates(stayId));
+    }
+
 
 
 

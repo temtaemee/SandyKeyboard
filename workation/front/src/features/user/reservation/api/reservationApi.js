@@ -56,6 +56,13 @@ export async function completeReservation(reservationId) {
   return response.data;
 }
 
+/**
+ * 숙소별 이미 예약 꽉 찬 날짜 범위 리스트 가져오기
+ */
+export async function getBookedDates(stayId) {
+  return await api.get(`/user/reservation/booked-dates/${stayId}`);
+}
+
 // =========================================================================
 // 2. 판매자(Seller) 관련 API
 // =========================================================================
