@@ -3,7 +3,9 @@ package com.kh.app.transaction.sales.controller;
 import com.kh.app.transaction.payout.dto.response.PayoutListResDto;
 import com.kh.app.transaction.payout.service.PayoutService;
 import com.kh.app.transaction.sales.dto.response.DashboardSummaryResDto;
+import com.kh.app.transaction.sales.dto.response.SalesSummaryListResDto;
 import com.kh.app.transaction.sales.dto.response.SalesSummaryResDto;
+import com.kh.app.transaction.sales.entity.SalesEntity;
 import com.kh.app.transaction.sales.service.SalesService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -56,4 +58,35 @@ public class TransactionAdminController {
         Page<PayoutListResDto> result = payoutService.getSellerPayoutList(sellerId, pno);
         return ResponseEntity.ok(result);
     }
+
+
+    /**
+     * 💡 [판매자 전용] 본인이 등록한 장소들의 실시간 매출 요약 통계 조회 (총액, 취소액, 순매출)
+     */
+    @GetMapping("/seller/sales/summary")
+    @Operation(summary = "판매자 실시간 매출 요약 조회", description = "정산 배치 가동 전, 현재까지 결제된 실시간 순매출 현황을 집계합니다.")
+    public ResponseEntity<SalesSummaryResDto> getSellerSalesSummary(
+            @AuthenticationPrincipal(expression = "memberId") Long sellerId
+    ) {
+        return ResponseEntity.ok(salesService.getSellerSalesSummary(sellerId));
+    }
+
+    /**
+     * 💡 [판매자 전용] 본인이 등록한 장소들의 실시간 개별 매출 전표 내역 목록 조회 (페이징)
+     */
+    @GetMapping("/seller/sales/list")
+    @Operation(summary = "판매자 실시간 매출 목록 조회", description = "결제 건별 상세 매출 발생 원장을 페이징 조회합니다.")
+    public ResponseEntity<Page<SalesSummaryListResDto>> getSellerSalesList(
+            @AuthenticationPrincipal(expression = "memberId") Long sellerId,
+            @RequestParam(defaultValue = "0") int pno
+    ) {
+        Page<SalesEntity> salesPage = salesService.getSellerSalesList(sellerId, pno);
+
+        // 💡 [초간결 리팩토링 완료] DTO 내부 정적 팩토리 메서드를 호출하여 한 줄로 매핑합니다.
+        Page<SalesSummaryListResDto> responsePage = salesPage.map(SalesSummaryListResDto::from);
+
+        return ResponseEntity.ok(responsePage);
+    }
+
+
 }

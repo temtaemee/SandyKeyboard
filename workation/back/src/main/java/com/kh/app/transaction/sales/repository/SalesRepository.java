@@ -1,6 +1,8 @@
 package com.kh.app.transaction.sales.repository;
 
 import com.kh.app.transaction.sales.entity.SalesEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -29,6 +31,19 @@ public interface SalesRepository extends JpaRepository<SalesEntity, Long> {
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
     );
+
+    /**
+     * 💡 판매자 고유 ID 기반 실시간 매출 목록 페이징 조회
+     * 정산(Payout)과 상관없이 결제 완료 시점의 매출 전표를 최신순으로 가져옵니다.
+     */
+    @Query("SELECT s FROM SalesEntity s " +
+            "JOIN s.payment p " +
+            "JOIN p.reservation r " +
+            "JOIN r.stay st " +
+            "JOIN st.space sp " +
+            "WHERE sp.seller.id = :sellerId " +
+            "ORDER BY s.id DESC")
+    Page<SalesEntity> findBySellerId(@Param("sellerId") Long sellerId, Pageable pageable);
 
 
 

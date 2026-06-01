@@ -7,6 +7,9 @@ import com.kh.app.transaction.sales.dto.response.SalesSummaryResDto;
 import com.kh.app.transaction.sales.entity.SalesEntity;
 import com.kh.app.transaction.sales.repository.SalesRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -101,6 +104,39 @@ public class SalesService {
         return DashboardSummaryResDto.builder()
                 .thisMonthReservationCount(reservationCount)
                 .thisMonthCancelAmount(totalCancelAmount)
+                .build();
+    }
+
+    /**
+     * 💡 판매자 본인의 실시간 매출 목록 조회 (페이징)
+     */
+    public Page<SalesEntity> getSellerSalesList(Long sellerId, int pno) {
+        PageRequest pageRequest = PageRequest.of(pno, 10);
+        return salesRepository.findBySellerId(sellerId, pageRequest);
+    }
+
+    /**
+     * 💡 판매자 본인의 실시간 매출 요약 통계 정보 조회
+     * (정산 전 단계의 실시간 총 결제액, 취소액, 순매출 합산)
+     */
+    public SalesSummaryResDto getSellerSalesSummary(Long sellerId) {
+        // 전체 조회를 통해 집계 (성능 고도화가 필요할 경우 별도의 빌더 쿼리 작성 가능)
+        Page<SalesEntity> allSales = salesRepository.findBySellerId(sellerId, Pageable.unpaged());
+
+        long totalSales = 0L;
+        long totalCancel = 0L;
+        long totalNetSales = 0L;
+
+        for (SalesEntity sales : allSales.getContent()) {
+            totalSales += sales.getSalesAmount();
+            totalCancel += sales.getCancelAmount();
+            totalNetSales += sales.getNetSalesAmount();
+        }
+
+        return SalesSummaryResDto.builder()
+                .totalSales(totalSales)
+                .totalCancel(totalCancel)
+                .totalNetSales(totalNetSales)
                 .build();
     }
 
