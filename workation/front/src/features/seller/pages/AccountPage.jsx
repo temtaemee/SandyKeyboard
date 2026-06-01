@@ -5,21 +5,6 @@ import api from '../../../app/api/axios';
 
 const ACCENT = '#3ec9a7';
 
-const MOCK_BIZ = {
-  bizNo: '123-45-67890',
-  bizName: '주식회사 워케이션',
-  ceoName: '홍길동',
-  bizType: '숙박업',
-  bizItem: '호텔업',
-  address: '제주특별자치도 제주시 연동 123-4',
-};
-
-const MOCK_BANK = {
-  bank: '국민은행',
-  account: '123-456-789012',
-  holder: '홍길동',
-};
-
 export default function AccountPage() {
   const [member, setMember] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -38,7 +23,7 @@ export default function AccountPage() {
   };
 
   useEffect(() => {
-    api.get('/auth/me')
+    api.get('/seller/me')
       .then((res) => {
         setMember(res.data);
         setPhone(res.data.phone ?? '');
@@ -50,7 +35,7 @@ export default function AccountPage() {
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
-      await api.put('/api/user/member', { phone });
+      await api.put('/user/member', { phone });
       showToast('프로필이 저장되었습니다.');
     } catch (e) {
       showToast(e.response?.data?.message ?? '저장에 실패했습니다.', false);
@@ -67,7 +52,7 @@ export default function AccountPage() {
 
     setPwSaving(true);
     try {
-      await api.patch('/api/user/member', {
+      await api.patch('/user/member', {
         currentPassword: pwForm.current,
         newPassword: pwForm.next,
         newPasswordCheck: pwForm.confirm,
@@ -105,157 +90,134 @@ export default function AccountPage() {
         </TitleGroup>
       </PageHeader>
 
-      <Grid>
-        {/* 기본 정보 */}
-        <SectionCard>
-          <SectionHeader>
-            <SectionIcon $bg="#dbeafe"><User size={16} color="#1d4ed8" /></SectionIcon>
-            <SectionTitle>기본 정보</SectionTitle>
-          </SectionHeader>
-
-          <FieldGroup>
-            <Field>
-              <FieldLabel>이름</FieldLabel>
-              <FieldValue>{member?.name ?? '-'}</FieldValue>
-            </Field>
-            <Field>
-              <FieldLabel>이메일</FieldLabel>
-              <FieldValue>{member?.email ?? '-'}</FieldValue>
-            </Field>
-            <Field>
-              <FieldLabel>연락처</FieldLabel>
-              <FieldInput
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="연락처 입력 (숫자만)"
-              />
-            </Field>
-            <Field>
-              <FieldLabel>권한</FieldLabel>
+      <BigCard>
+        {/* 상단 행: 기본 정보 | 비밀번호 변경 */}
+        <TopRow>
+          <CellBlock>
+            <SectionHeader>
+              <SectionIcon $bg="#dbeafe"><User size={16} color="#1d4ed8" /></SectionIcon>
+              <SectionTitle>기본 정보</SectionTitle>
               <RoleBadge>SELLER</RoleBadge>
-            </Field>
-          </FieldGroup>
+            </SectionHeader>
+            <FieldGroup>
+              <Field>
+                <FieldLabel>이름</FieldLabel>
+                <FieldValue>{member?.name ?? '-'}</FieldValue>
+              </Field>
+              <Field>
+                <FieldLabel>이메일</FieldLabel>
+                <FieldValue>{member?.email ?? '-'}</FieldValue>
+              </Field>
+              <Field>
+                <FieldLabel>연락처</FieldLabel>
+                <FieldInput
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="연락처 입력"
+                />
+              </Field>
+            </FieldGroup>
+            <SaveBtn onClick={handleSaveProfile} disabled={saving}>
+              {saving ? '저장 중...' : '저장'}
+            </SaveBtn>
+          </CellBlock>
 
-          <SaveBtn onClick={handleSaveProfile} disabled={saving}>
-            {saving ? '저장 중...' : '저장'}
-          </SaveBtn>
-        </SectionCard>
+          <ColDivider />
 
-        {/* 사업자 정보 */}
-        <SectionCard>
-          <SectionHeader>
-            <SectionIcon $bg="#dcfce7"><Building2 size={16} color="#15803d" /></SectionIcon>
-            <SectionTitle>사업자 정보</SectionTitle>
-            <ApiTag>API 연동 예정</ApiTag>
-          </SectionHeader>
+          <CellBlock>
+            <SectionHeader>
+              <SectionIcon $bg="#fef3c7"><Lock size={16} color="#d97706" /></SectionIcon>
+              <SectionTitle>비밀번호 변경</SectionTitle>
+            </SectionHeader>
+            <FieldGroup>
+              <Field>
+                <FieldLabel>현재 비밀번호</FieldLabel>
+                <FieldInput
+                  type="password"
+                  value={pwForm.current}
+                  onChange={(e) => setPwForm((p) => ({ ...p, current: e.target.value }))}
+                  placeholder="현재 비밀번호 입력"
+                  $error={!!pwError && !pwForm.current}
+                />
+              </Field>
+              <Field>
+                <FieldLabel>새 비밀번호</FieldLabel>
+                <FieldInput
+                  type="password"
+                  value={pwForm.next}
+                  onChange={(e) => setPwForm((p) => ({ ...p, next: e.target.value }))}
+                  placeholder="8자 이상"
+                />
+              </Field>
+              <Field>
+                <FieldLabel>새 비밀번호 확인</FieldLabel>
+                <FieldInput
+                  type="password"
+                  value={pwForm.confirm}
+                  onChange={(e) => setPwForm((p) => ({ ...p, confirm: e.target.value }))}
+                  placeholder="비밀번호 재입력"
+                  $error={!!pwError && pwForm.next !== pwForm.confirm}
+                />
+              </Field>
+            </FieldGroup>
+            {pwError && (
+              <ErrorMsg>
+                <AlertCircle size={13} />
+                {pwError}
+              </ErrorMsg>
+            )}
+            <SaveBtn
+              onClick={handleChangePw}
+              disabled={pwSaving || !pwForm.current || !pwForm.next || !pwForm.confirm}
+            >
+              {pwSaving ? '변경 중...' : '비밀번호 변경'}
+            </SaveBtn>
+          </CellBlock>
+        </TopRow>
 
-          <FieldGroup>
+        <Divider />
+
+        {/* 하단 행: 사업자 정보 | 정산 계좌 */}
+        <TopRow>
+          <CellBlock>
+            <SectionHeader>
+              <SectionIcon $bg="#dcfce7"><Building2 size={16} color="#15803d" /></SectionIcon>
+              <SectionTitle>사업자 정보</SectionTitle>
+            </SectionHeader>
             <Field>
               <FieldLabel>사업자번호</FieldLabel>
-              <FieldValue $muted>{MOCK_BIZ.bizNo}</FieldValue>
+              <FieldValue $muted>{member?.businessNo ?? '-'}</FieldValue>
             </Field>
-            <Field>
-              <FieldLabel>법인명</FieldLabel>
-              <FieldValue $muted>{MOCK_BIZ.bizName}</FieldValue>
-            </Field>
-            <Field>
-              <FieldLabel>대표자명</FieldLabel>
-              <FieldValue $muted>{MOCK_BIZ.ceoName}</FieldValue>
-            </Field>
-            <Field>
-              <FieldLabel>업태 / 종목</FieldLabel>
-              <FieldValue $muted>{MOCK_BIZ.bizType} / {MOCK_BIZ.bizItem}</FieldValue>
-            </Field>
-            <Field>
-              <FieldLabel>사업장 주소</FieldLabel>
-              <FieldValue $muted>{MOCK_BIZ.address}</FieldValue>
-            </Field>
-          </FieldGroup>
-        </SectionCard>
+          </CellBlock>
 
-        {/* 정산 계좌 */}
-        <SectionCard>
-          <SectionHeader>
-            <SectionIcon $bg="#ffedd5"><CreditCard size={16} color="#c2410c" /></SectionIcon>
-            <SectionTitle>정산 계좌</SectionTitle>
-            <ApiTag>API 연동 예정</ApiTag>
-          </SectionHeader>
+          <ColDivider />
 
-          <FieldGroup>
-            <Field>
-              <FieldLabel>은행</FieldLabel>
-              <FieldValue $muted>{MOCK_BANK.bank}</FieldValue>
-            </Field>
-            <Field>
-              <FieldLabel>계좌번호</FieldLabel>
-              <FieldValue $muted>{MOCK_BANK.account}</FieldValue>
-            </Field>
-            <Field>
-              <FieldLabel>예금주</FieldLabel>
-              <FieldValue $muted>{MOCK_BANK.holder}</FieldValue>
-            </Field>
-          </FieldGroup>
-
-          <InfoNote>
-            <AlertCircle size={13} />
-            계좌 정보 변경은 고객센터(help@workation.kr)를 통해 신청하세요.
-          </InfoNote>
-        </SectionCard>
-
-        {/* 비밀번호 변경 */}
-        <SectionCard>
-          <SectionHeader>
-            <SectionIcon $bg="#fef3c7"><Lock size={16} color="#d97706" /></SectionIcon>
-            <SectionTitle>비밀번호 변경</SectionTitle>
-          </SectionHeader>
-
-          <FieldGroup>
-            <Field>
-              <FieldLabel>현재 비밀번호</FieldLabel>
-              <FieldInput
-                type="password"
-                value={pwForm.current}
-                onChange={(e) => setPwForm((p) => ({ ...p, current: e.target.value }))}
-                placeholder="현재 비밀번호 입력"
-                $error={!!pwError && !pwForm.current}
-              />
-            </Field>
-            <Field>
-              <FieldLabel>새 비밀번호</FieldLabel>
-              <FieldInput
-                type="password"
-                value={pwForm.next}
-                onChange={(e) => setPwForm((p) => ({ ...p, next: e.target.value }))}
-                placeholder="8자 이상"
-              />
-            </Field>
-            <Field>
-              <FieldLabel>새 비밀번호 확인</FieldLabel>
-              <FieldInput
-                type="password"
-                value={pwForm.confirm}
-                onChange={(e) => setPwForm((p) => ({ ...p, confirm: e.target.value }))}
-                placeholder="비밀번호 재입력"
-                $error={!!pwError && pwForm.next !== pwForm.confirm}
-              />
-            </Field>
-          </FieldGroup>
-
-          {pwError && (
-            <ErrorMsg>
+          <CellBlock>
+            <SectionHeader>
+              <SectionIcon $bg="#ffedd5"><CreditCard size={16} color="#c2410c" /></SectionIcon>
+              <SectionTitle>정산 계좌</SectionTitle>
+            </SectionHeader>
+            <FieldGroup>
+              <Field>
+                <FieldLabel>은행</FieldLabel>
+                <FieldValue $muted>{member?.bankName ?? '-'}</FieldValue>
+              </Field>
+              <Field>
+                <FieldLabel>계좌번호</FieldLabel>
+                <FieldValue $muted>{member?.account ?? '-'}</FieldValue>
+              </Field>
+              <Field>
+                <FieldLabel>예금주</FieldLabel>
+                <FieldValue $muted>{member?.accountName ?? '-'}</FieldValue>
+              </Field>
+            </FieldGroup>
+            <InfoNote>
               <AlertCircle size={13} />
-              {pwError}
-            </ErrorMsg>
-          )}
-
-          <SaveBtn
-            onClick={handleChangePw}
-            disabled={pwSaving || !pwForm.current || !pwForm.next || !pwForm.confirm}
-          >
-            {pwSaving ? '변경 중...' : '비밀번호 변경'}
-          </SaveBtn>
-        </SectionCard>
-      </Grid>
+              계좌 정보 변경은 고객센터(help@workation.kr)를 통해 신청하세요.
+            </InfoNote>
+          </CellBlock>
+        </TopRow>
+      </BigCard>
     </Wrap>
   );
 }
@@ -308,22 +270,40 @@ const PageSub = styled.p`
   color: ${({ theme }) => theme.colors.textMuted};
 `;
 
-const Grid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-`;
-
-const SectionCard = styled.div`
+const BigCard = styled.div`
   background: white;
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 12px;
-  padding: 24px;
   box-shadow: ${({ theme }) => theme.shadows.card};
+  display: flex;
+  flex-direction: column;
+`;
+
+const TopRow = styled.div`
+  display: flex;
+  align-items: stretch;
+`;
+
+const CellBlock = styled.div`
+  flex: 1;
+  padding: 28px;
   display: flex;
   flex-direction: column;
   gap: 20px;
 `;
+
+const Divider = styled.hr`
+  margin: 0;
+  border: none;
+  border-top: 1px solid ${({ theme }) => theme.colors.borderLight};
+`;
+
+const ColDivider = styled.div`
+  width: 1px;
+  background: ${({ theme }) => theme.colors.borderLight};
+  flex-shrink: 0;
+`;
+
 
 const SectionHeader = styled.div`
   display: flex;
