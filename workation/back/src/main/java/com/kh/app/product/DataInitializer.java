@@ -330,7 +330,8 @@ public class DataInitializer implements CommandLineRunner {
         return spaceRepository.save(SpaceEntity.builder()
                 .seller(seller).name(name).phone(phone).email(email)
                 .summary(summary).description(desc).address1(addr1).address2(addr2).area(area)
-                .latitude(new BigDecimal(lat)).longitude(new BigDecimal(lng)).visibleYn("Y").build());
+                .latitude(new BigDecimal(lat)).longitude(new BigDecimal(lng))
+                .visibleYn("Y").approvalStatus(com.kh.app.product.space.entity.SpaceApprovalStatus.APPROVED).build());
     }
 
     private StayEntity createStay(SpaceEntity space, String name, String summary, String desc,

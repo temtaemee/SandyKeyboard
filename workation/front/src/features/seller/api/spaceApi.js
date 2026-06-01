@@ -20,6 +20,9 @@ export const spaceApi = {
       timeout: 30000,
     }),
 
+  // 승인 요청 (신규 등록 후 자동 / 반려 후 재요청)
+  requestApproval: (id) => api.post(`/seller/space/${id}/request-approval`),
+
   // 편의시설
   getArcades: () => api.get('/seller/arcade'),
   createArcade: (name) => api.post('/seller/arcade', { name }),

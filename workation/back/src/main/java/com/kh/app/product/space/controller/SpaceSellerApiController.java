@@ -147,6 +147,17 @@ public class SpaceSellerApiController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "승인 요청 (신규/재승인)",
+            description = "공간 등록 후 또는 반려 이후 수정 완료 시 관리자에게 승인을 요청합니다. approvalStatus → PENDING.")
+    @PostMapping("/{id}/request-approval")
+    public ResponseEntity<Void> requestApproval(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        spaceService.requestApproval(id, userDetails.getMemberId());
+        return ResponseEntity.ok().build();
+    }
+
     @Operation(summary = "본인 공간 사진 수정",
             description = "keepPictureIds에 없는 기존 사진 삭제 + 새 사진 추가. files는 newPictures 배열과 인덱스 순서 일치 필수.")
     @PutMapping(value = "/{id}/pictures", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

@@ -92,6 +92,9 @@ public class StayService {
                 .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
 
         verifySpaceOwnership(space, memberId);
+        if (space.getApprovalStatus() != com.kh.app.product.space.entity.SpaceApprovalStatus.APPROVED) {
+            throw new ProductException(ErrorCode.SPACE_NOT_APPROVED);
+        }
         validateCheckInOutTime(dto.getCheckInTime(), dto.getCheckOutTime());
 
         StayEntity stay = stayRepository.save(dto.toEntity(space));

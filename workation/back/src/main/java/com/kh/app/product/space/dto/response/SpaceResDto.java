@@ -1,10 +1,7 @@
 package com.kh.app.product.space.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.kh.app.product.space.entity.Area;
-import com.kh.app.product.space.entity.SpaceEntity;
-import com.kh.app.product.space.entity.SpacePictureCategory;
-import com.kh.app.product.space.entity.SpacePictureEntity;
+import com.kh.app.product.space.entity.*;
 import com.kh.app.product.stay.dto.response.StayResDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -59,6 +56,18 @@ public class SpaceResDto {
 
     @Schema(description = "지역")
     private Area area;
+
+    @Schema(description = "승인 상태 (PENDING/APPROVED/REJECTED)")
+    private SpaceApprovalStatus approvalStatus;
+
+    @Schema(description = "반려 사유 (반려 시에만 존재)")
+    private String rejectionReason;
+
+    @Schema(description = "승인 일시")
+    private java.time.LocalDateTime approvedAt;
+
+    @Schema(description = "관리자 비노출 처리 여부")
+    private Boolean adminHidden;
 
     @Schema(description = "등록일")
     private LocalDateTime createdAt;
@@ -128,6 +137,10 @@ public class SpaceResDto {
                 .visibleYn(entity.getVisibleYn())
                 .delYn(entity.getDelYn())
                 .area(entity.getArea())
+                .approvalStatus(entity.getApprovalStatus())
+                .rejectionReason(entity.getRejectionReason())
+                .approvedAt(entity.getApprovedAt())
+                .adminHidden(entity.getAdminHidden())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .sellerId(entity.getSeller() != null ? entity.getSeller().getId() : null)
@@ -157,6 +170,10 @@ public class SpaceResDto {
                 .visibleYn(entity.getVisibleYn())
                 .delYn(entity.getDelYn())
                 .area(entity.getArea())
+                .approvalStatus(entity.getApprovalStatus())
+                .rejectionReason(entity.getRejectionReason())
+                .approvedAt(entity.getApprovedAt())
+                .adminHidden(entity.getAdminHidden())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .sellerId(entity.getSeller() != null ? entity.getSeller().getId() : null)
@@ -187,6 +204,10 @@ public class SpaceResDto {
                 .visibleYn(entity.getVisibleYn())
                 .delYn(entity.getDelYn())
                 .area(entity.getArea())
+                .approvalStatus(entity.getApprovalStatus())
+                .rejectionReason(entity.getRejectionReason())
+                .approvedAt(entity.getApprovedAt())
+                .adminHidden(entity.getAdminHidden())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .sellerId(entity.getSeller() != null ? entity.getSeller().getId() : null)

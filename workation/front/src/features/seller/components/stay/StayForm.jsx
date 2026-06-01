@@ -255,8 +255,16 @@ export default function StayForm({
               $error={!!errors.spaceId}
             >
               <option value="">공간을 선택하세요</option>
-              {spaces.map((s) => (
+              {spaces.filter(s => s.approvalStatus === 'APPROVED').map((s) => (
                 <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+              {spaces.some(s => s.approvalStatus !== 'APPROVED') && (
+                <option disabled>── 승인 대기/반려된 공간 (등록 불가) ──</option>
+              )}
+              {spaces.filter(s => s.approvalStatus !== 'APPROVED').map((s) => (
+                <option key={s.id} value={s.id} disabled>
+                  {s.name} ({s.approvalStatus === 'PENDING' ? '승인 대기중' : '반려됨'})
+                </option>
               ))}
             </Select>
             {errors.spaceId && <ErrorMsg>{errors.spaceId}</ErrorMsg>}

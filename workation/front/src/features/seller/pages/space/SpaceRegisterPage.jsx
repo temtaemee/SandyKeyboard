@@ -138,6 +138,7 @@ export default function SpaceRegisterPage() {
 
       const res = await spaceApi.create(formData);
       const newId = res.data;
+      await spaceApi.requestApproval(newId).catch(() => {});
       navigate(`/seller/spaces/${newId}`);
     } catch (e) {
       const data = e.response?.data;
