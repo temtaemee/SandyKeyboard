@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { ArrowLeft, Pencil } from 'lucide-react';
+import { ArrowLeft, Pencil, ChevronLeft, ChevronRight, X as XIcon } from 'lucide-react';
 import { stayApi } from '../../api/stayApi';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
@@ -22,6 +22,7 @@ export default function StayDetailPage() {
   const [stay, setStay] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [lightbox, setLightbox] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -153,14 +154,34 @@ export default function StayDetailPage() {
         <DetailCard>
           <SectionTitle>사진</SectionTitle>
           <PictureGrid>
-            {stay.pictures.map((pic) => (
-              <PictureItem key={pic.id}>
-                <PictureImg src={pic.filePath} alt={`사진 ${pic.id}`} />
+            {stay.pictures.map((pic, idx) => (
+              <PictureItem key={pic.id} onClick={() => setLightbox({ pics: stay.pictures, idx })}>
+                <PictureImg src={pic.filePath} alt={`사진 ${idx + 1}`} />
                 {pic.mainYn === 'Y' && <MainTag>대표</MainTag>}
               </PictureItem>
             ))}
           </PictureGrid>
         </DetailCard>
+      )}
+
+      {lightbox && (
+        <LbOverlay onClick={() => setLightbox(null)}>
+          <LbBox onClick={(e) => e.stopPropagation()}>
+            <LbCloseBtn onClick={() => setLightbox(null)}><XIcon size={20} /></LbCloseBtn>
+            <LbImg src={lightbox.pics[lightbox.idx].filePath} alt="" />
+            {lightbox.pics.length > 1 && (
+              <>
+                <LbPrev onClick={() => setLightbox((lb) => ({ ...lb, idx: (lb.idx - 1 + lb.pics.length) % lb.pics.length }))}>
+                  <ChevronLeft size={24} />
+                </LbPrev>
+                <LbNext onClick={() => setLightbox((lb) => ({ ...lb, idx: (lb.idx + 1) % lb.pics.length }))}>
+                  <ChevronRight size={24} />
+                </LbNext>
+                <LbCounter>{lightbox.idx + 1} / {lightbox.pics.length}</LbCounter>
+              </>
+            )}
+          </LbBox>
+        </LbOverlay>
       )}
     </Wrap>
   );
@@ -384,6 +405,9 @@ const PictureItem = styled.div`
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid ${({ theme }) => theme.colors.border};
+  cursor: pointer;
+  &:hover { opacity: 0.85; }
+  transition: opacity 0.15s;
 `;
 
 const PictureImg = styled.img`
@@ -422,4 +446,48 @@ const RetryBtn = styled.button`
   background: white;
   cursor: pointer;
   font-family: inherit;
+`;
+
+const LbOverlay = styled.div`
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.85);
+  display: flex; align-items: center; justify-content: center;
+`;
+const LbBox = styled.div`
+  position: relative;
+  max-width: 90vw; max-height: 90vh;
+  display: flex; align-items: center; justify-content: center;
+`;
+const LbImg = styled.img`
+  max-width: 90vw; max-height: 85vh;
+  object-fit: contain; border-radius: 8px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+`;
+const LbCloseBtn = styled.button`
+  position: absolute; top: -44px; right: 0;
+  width: 36px; height: 36px; border-radius: 50%;
+  background: rgba(255,255,255,0.15); color: white;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  &:hover { background: rgba(255,255,255,0.3); }
+`;
+const LbPrev = styled.button`
+  position: absolute; left: -52px; top: 50%; transform: translateY(-50%);
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(255,255,255,0.15); color: white;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  &:hover { background: rgba(255,255,255,0.3); }
+`;
+const LbNext = styled.button`
+  position: absolute; right: -52px; top: 50%; transform: translateY(-50%);
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(255,255,255,0.15); color: white;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  &:hover { background: rgba(255,255,255,0.3); }
+`;
+const LbCounter = styled.div`
+  position: absolute; bottom: -36px; left: 50%; transform: translateX(-50%);
+  color: rgba(255,255,255,0.7); font-size: 13px; white-space: nowrap;
 `;

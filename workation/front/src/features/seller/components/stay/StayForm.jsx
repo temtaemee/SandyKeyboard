@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import styled from 'styled-components';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, Star, ZoomIn, GripVertical } from 'lucide-react';
 import PriceWeekGrid from './PriceWeekGrid';
 import OptionSelector from './OptionSelector';
 import ExtraPriceForm from './ExtraPriceForm';
@@ -32,12 +32,40 @@ function validate(data) {
   }
   if (!data.checkInTime) errs.checkInTime = '체크인 시간을 입력하세요';
   if (!data.checkOutTime) errs.checkOutTime = '체크아웃 시간을 입력하세요';
+  if (!['Y', 'N'].includes(data.workationYn)) errs.workationYn = '워케이션 여부를 선택하세요';
   const priceKeys = ['monPrice', 'tuePrice', 'wedPrice', 'thuPrice', 'friPrice', 'satPrice', 'sunPrice', 'holidayPrice'];
   priceKeys.forEach((k) => {
     if (data[k] === '' || data[k] == null) {
-      errs[k] = '필수';
+      errs[k] = '단가를 입력하세요';
+    } else if (Number(data[k]) <= 0) {
+      errs[k] = '1원 이상 입력하세요';
     }
   });
+
+  // 특별 단가 검증
+  const extras = data.extraPriceList ?? [];
+  extras.forEach((ep, i) => {
+    if (!ep.startDate && !ep.endDate) return; // 빈 항목 무시
+    if (!ep.startDate) errs[`extra_${i}_date`] = `#${i + 1}: 시작일을 입력하세요`;
+    else if (!ep.endDate) errs[`extra_${i}_date`] = `#${i + 1}: 종료일을 입력하세요`;
+    else if (ep.startDate > ep.endDate) errs[`extra_${i}_date`] = `#${i + 1}: 시작일이 종료일보다 늦습니다`;
+  });
+
+  // 특별 단가 기간 겹침 체크
+  const validExtras = extras
+    .map((ep, i) => ({ ...ep, _i: i }))
+    .filter(ep => ep.startDate && ep.endDate && ep.startDate <= ep.endDate);
+  outer: for (let i = 0; i < validExtras.length; i++) {
+    for (let j = i + 1; j < validExtras.length; j++) {
+      const a = validExtras[i], b = validExtras[j];
+      if (a.startDate <= b.endDate && b.startDate <= a.endDate) {
+        errs[`extra_${a._i}_date`] = `#${a._i + 1} 기간이 #${b._i + 1}과 겹칩니다`;
+        errs[`extra_${b._i}_date`] = `#${b._i + 1} 기간이 #${a._i + 1}과 겹칩니다`;
+        break outer;
+      }
+    }
+  }
+
   return errs;
 }
 
@@ -56,7 +84,42 @@ export default function StayForm({
   loading = false,
   mode = 'create',
 }) {
-  const fileInputRef = useRef(null);
+  const fileInputRef  = useRef(null);
+  const dragIdx       = useRef(null);
+
+  // edit 모드 — 기존 사진 관리
+  const [keptPictures, setKeptPictures] = useState(initialData?.pictures ?? []);
+  const [mainPictureId, setMainPictureId] = useState(
+    initialData?.pictures?.find(p => p.mainYn === 'Y')?.id ?? null
+  );
+  const [dragOver, setDragOver]   = useState(null);
+  const [preview, setPreview]     = useState(null);
+
+  const handleDragStart = (idx) => { dragIdx.current = idx; };
+  const handleDragOver  = (e, idx) => { e.preventDefault(); setDragOver(idx); };
+  const handleDrop      = (idx) => {
+    if (dragIdx.current === null || dragIdx.current === idx) { setDragOver(null); return; }
+    setKeptPictures(prev => {
+      const arr = [...prev];
+      const [removed] = arr.splice(dragIdx.current, 1);
+      arr.splice(idx, 0, removed);
+      return arr;
+    });
+    dragIdx.current = null; setDragOver(null);
+  };
+  const handleDragEnd = () => { dragIdx.current = null; setDragOver(null); };
+
+  const picturesChanged = () => {
+    const origPics = initialData?.pictures ?? [];
+    const origIds  = new Set(origPics.map(p => p.id));
+    const keptIds  = new Set(keptPictures.map(p => p.id));
+    const hasDeleted   = [...origIds].some(id => !keptIds.has(id));
+    const hasNew       = files.length > 0;
+    const origMainId   = origPics.find(p => p.mainYn === 'Y')?.id ?? null;
+    const mainChanged  = mainPictureId !== origMainId;
+    const orderChanged = keptPictures.some((p, i) => origPics.findIndex(o => o.id === p.id) !== i);
+    return hasDeleted || hasNew || mainChanged || orderChanged;
+  };
 
   const [data, setData] = useState({
     spaceId: initialData.spaceId ?? '',
@@ -144,7 +207,16 @@ export default function StayForm({
         })),
     };
 
-    onSubmit(dto, files);
+    let pictureChanges = null;
+    if (mode === 'edit' && picturesChanged()) {
+      pictureChanges = {
+        keepPictureIds: keptPictures.map(p => p.id),
+        mainPictureId:  mainPictureId,
+        newFiles:       files,
+      };
+    }
+
+    onSubmit(dto, files, pictureChanges);
   };
 
   const priceErrors = ['monPrice', 'tuePrice', 'wedPrice', 'thuPrice', 'friPrice', 'satPrice', 'sunPrice', 'holidayPrice'];
@@ -241,6 +313,7 @@ export default function StayForm({
               일반 숙박
             </RadioLabel>
           </RadioGroup>
+          {errors.workationYn && <ErrorMsg>{errors.workationYn}</ErrorMsg>}
         </Field>
       </Section>
 
@@ -334,19 +407,59 @@ export default function StayForm({
 
       {/* Section 6: 사진 */}
       <Section>
-        <SectionTitle>사진 등록 <Optional>(선택)</Optional></SectionTitle>
+        <SectionTitle>사진 {mode === 'edit' ? '관리' : '등록'} <Optional>(선택)</Optional></SectionTitle>
+
+        {/* edit 모드 — 기존 사진 드래그 관리 */}
+        {mode === 'edit' && keptPictures.length > 0 && (
+          <>
+            <PicSubLabel>현재 사진 ({keptPictures.length}장) — 드래그하여 순서 변경</PicSubLabel>
+            <ExistingGrid>
+              {keptPictures.map((pic, idx) => {
+                const isMain = pic.id === mainPictureId;
+                return (
+                  <ExistingItem
+                    key={pic.id}
+                    $main={isMain}
+                    $dragOver={dragOver === idx}
+                    draggable
+                    onDragStart={() => handleDragStart(idx)}
+                    onDragOver={(e) => handleDragOver(e, idx)}
+                    onDrop={() => handleDrop(idx)}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <DragHandle><GripVertical size={11} /><span>{idx + 1}</span></DragHandle>
+                    <ExistingThumbBtn type="button" onClick={() => setPreview({ src: pic.filePath, pic, idx })}>
+                      <ExistingImg src={pic.filePath} alt="" onError={e => { e.target.style.display = 'none'; }} />
+                      <ZoomOverlay><ZoomIn size={13} color="white" /></ZoomOverlay>
+                      {isMain && <MainPinBadge>대표</MainPinBadge>}
+                    </ExistingThumbBtn>
+                    <ExistingMeta>
+                      <StarBtn type="button" $active={isMain}
+                        onClick={() => setMainPictureId(isMain ? null : pic.id)}>
+                        <Star size={12} fill={isMain ? '#f59e0b' : 'none'} />
+                      </StarBtn>
+                      <DelBtn type="button" onClick={() => {
+                        setKeptPictures(prev => prev.filter(p => p.id !== pic.id));
+                        if (mainPictureId === pic.id) setMainPictureId(null);
+                      }}>
+                        <X size={12} />
+                      </DelBtn>
+                    </ExistingMeta>
+                  </ExistingItem>
+                );
+              })}
+            </ExistingGrid>
+          </>
+        )}
+
+        {/* 새 사진 추가 */}
+        <PicSubLabel>{mode === 'edit' ? '새 사진 추가' : '사진 선택'}</PicSubLabel>
         <DropZone onClick={() => fileInputRef.current?.click()}>
           <Upload size={24} color="#94a3b8" />
           <DropText>클릭하여 사진 선택</DropText>
           <DropSub>JPG, PNG, WebP · 여러 장 선택 가능</DropSub>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            style={{ display: 'none' }}
-            onChange={handleFileSelect}
-          />
+          <input ref={fileInputRef} type="file" accept="image/*" multiple
+            style={{ display: 'none' }} onChange={handleFileSelect} />
         </DropZone>
 
         {files.length > 0 && (
@@ -354,7 +467,7 @@ export default function StayForm({
             {files.map((file, idx) => (
               <PreviewItem key={`${file.name}-${idx}`}>
                 <PreviewImg src={URL.createObjectURL(file)} alt={file.name} />
-                {idx === 0 && <MainTag>대표</MainTag>}
+                {idx === 0 && keptPictures.length === 0 && <MainTag>대표</MainTag>}
                 <RemoveBtn type="button" onClick={() => removeFile(idx)}>
                   <X size={11} />
                 </RemoveBtn>
@@ -364,11 +477,58 @@ export default function StayForm({
         )}
       </Section>
 
+      {/* 미리보기 모달 */}
+      {preview && (
+        <PreviewBg onClick={() => setPreview(null)}>
+          <PreviewBox onClick={e => e.stopPropagation()}>
+            <PreviewTopRight>
+              {preview.pic && (
+                <PreviewStarBtn type="button"
+                  $active={preview.pic.id === mainPictureId}
+                  onClick={() => setMainPictureId(p => p === preview.pic.id ? null : preview.pic.id)}>
+                  <Star size={15} fill={preview.pic.id === mainPictureId ? '#f59e0b' : 'none'}
+                    color={preview.pic.id === mainPictureId ? '#f59e0b' : 'white'} />
+                </PreviewStarBtn>
+              )}
+              <PreviewCloseBtn type="button" onClick={() => setPreview(null)}><X size={15} /></PreviewCloseBtn>
+            </PreviewTopRight>
+            <PreviewBigImg src={preview.src} alt="" />
+            {preview.pic && (
+              <PreviewBottom>
+                <PreviewOrderWrap>
+                  <span>{preview.idx + 1} / {keptPictures.length}</span>
+                  <PreviewOrderInput
+                    key={`${preview.pic.id}-${preview.idx}`}
+                    type="number" min={1} max={keptPictures.length}
+                    defaultValue={preview.idx + 1}
+                    onBlur={(e) => {
+                      const val = parseInt(e.target.value);
+                      const toIdx = Math.max(0, Math.min(keptPictures.length - 1, val - 1));
+                      if (toIdx === preview.idx) return;
+                      setKeptPictures(prev => {
+                        const arr = [...prev];
+                        const [r] = arr.splice(preview.idx, 1);
+                        arr.splice(toIdx, 0, r);
+                        return arr;
+                      });
+                      setPreview(prev => ({ ...prev, idx: toIdx }));
+                    }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } }}
+                  />
+                  <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>번으로 이동</span>
+                </PreviewOrderWrap>
+              </PreviewBottom>
+            )}
+          </PreviewBox>
+        </PreviewBg>
+      )}
+
       {/* Section 7: 특별 단가 */}
       <Section>
         <ExtraPriceForm
           extraPriceList={data.extraPriceList}
           onChange={(list) => set('extraPriceList', list)}
+          errors={errors}
         />
       </Section>
 
@@ -630,4 +790,99 @@ const SubmitBtn = styled.button`
   transition: background 0.15s;
   &:hover:not(:disabled) { background: #31b08e; }
   &:disabled { opacity: 0.6; cursor: not-allowed; }
+`;
+
+/* ── 기존 사진 관리 (edit 모드) ── */
+const PicSubLabel = styled.p`
+  font-size: 13px; font-weight: 600; color: ${({ theme }) => theme.colors.adminTextDark};
+`;
+const ExistingGrid = styled.div`
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px;
+`;
+const ExistingItem = styled.div`
+  border: 2px solid ${({ $main, $dragOver }) => $dragOver ? ACCENT : $main ? '#f59e0b' : 'transparent'};
+  border-radius: 8px; overflow: hidden;
+  background: ${({ theme }) => theme.colors.bgSection};
+  opacity: ${({ $dragOver }) => ($dragOver ? 0.7 : 1)};
+  cursor: grab; &:active { cursor: grabbing; }
+`;
+const DragHandle = styled.div`
+  display: flex; align-items: center; justify-content: center; gap: 2px;
+  padding: 3px 0; font-size: 10px; font-weight: 700;
+  color: ${({ theme }) => theme.colors.textMuted};
+  background: ${({ theme }) => theme.colors.bgSection};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
+`;
+const ExistingThumbBtn = styled.button`
+  position: relative; display: block; width: 100%; height: 70px; cursor: pointer;
+  &:hover > div { opacity: 1; }
+`;
+const ExistingImg = styled.img`width: 100%; height: 100%; object-fit: cover; display: block;`;
+const ZoomOverlay = styled.div`
+  position: absolute; inset: 0; background: rgba(0,0,0,0.4);
+  display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.15s;
+`;
+const MainPinBadge = styled.div`
+  position: absolute; top: 3px; left: 3px;
+  background: #f59e0b; color: white; font-size: 9px; font-weight: 700;
+  padding: 1px 4px; border-radius: 3px;
+`;
+const ExistingMeta = styled.div`
+  display: flex; align-items: center; justify-content: flex-end; gap: 2px; padding: 4px 6px;
+`;
+const StarBtn = styled.button`
+  width: 22px; height: 22px; border-radius: 4px; display: flex; align-items: center; justify-content: center;
+  color: ${({ $active }) => ($active ? '#f59e0b' : '#94a3b8')};
+  border: 1px solid ${({ $active }) => ($active ? '#f59e0b' : '#e2e8f0')};
+  cursor: pointer; transition: all 0.15s;
+  &:hover { color: #f59e0b; border-color: #f59e0b; }
+`;
+const DelBtn = styled.button`
+  width: 22px; height: 22px; border-radius: 4px; display: flex; align-items: center; justify-content: center;
+  color: #94a3b8; cursor: pointer; transition: background 0.15s, color 0.15s;
+  &:hover { background: #fee2e2; color: #ef4444; }
+`;
+
+/* ── 미리보기 모달 ── */
+const PreviewBg = styled.div`
+  position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000;
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+`;
+const PreviewBox = styled.div`
+  position: relative; max-width: 88vw; max-height: 90vh;
+  border-radius: 10px; overflow: hidden; display: flex; flex-direction: column;
+`;
+const PreviewBigImg = styled.img`
+  max-width: 88vw; max-height: calc(90vh - 52px); object-fit: contain; display: block; background: #111;
+`;
+const PreviewTopRight = styled.div`
+  position: absolute; top: 10px; right: 10px;
+  display: flex; align-items: center; gap: 6px; z-index: 10;
+`;
+const PreviewStarBtn = styled.button`
+  width: 32px; height: 32px; border-radius: 50%;
+  background: ${({ $active }) => ($active ? 'rgba(245,158,11,0.25)' : 'rgba(0,0,0,0.5)')};
+  border: 1.5px solid ${({ $active }) => ($active ? '#f59e0b' : 'transparent')};
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  &:hover { background: rgba(245,158,11,0.3); border-color: #f59e0b; }
+`;
+const PreviewCloseBtn = styled.button`
+  width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(0,0,0,0.5); color: white;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+`;
+const PreviewBottom = styled.div`
+  background: rgba(0,0,0,0.75);
+  display: flex; align-items: center; justify-content: center; padding: 10px 16px;
+`;
+const PreviewOrderWrap = styled.div`
+  display: flex; align-items: center; gap: 8px;
+  color: rgba(255,255,255,0.7); font-size: 13px;
+`;
+const PreviewOrderInput = styled.input`
+  width: 48px; height: 28px;
+  background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 6px; text-align: center;
+  font-size: 13px; font-weight: 600; color: white; font-family: inherit; outline: none;
+  &:focus { border-color: ${ACCENT}; }
 `;

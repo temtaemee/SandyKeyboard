@@ -37,11 +37,23 @@ export default function StayEditPage() {
     load();
   }, [id]);
 
-  const handleSubmit = async (dto) => {
+  const handleSubmit = async (dto, _files, pictureChanges) => {
     setSubmitting(true);
     setSubmitError(null);
     try {
       await stayApi.update(id, dto);
+
+      if (pictureChanges) {
+        const formData = new FormData();
+        const picDto = {
+          keepPictureIds: pictureChanges.keepPictureIds,
+          mainPictureId:  pictureChanges.mainPictureId ?? null,
+        };
+        formData.append('dto', new Blob([JSON.stringify(picDto)], { type: 'application/json' }));
+        (pictureChanges.newFiles ?? []).forEach(f => formData.append('files', f));
+        await stayApi.updatePictures(id, formData);
+      }
+
       setToast('스테이가 수정되었습니다.');
       setTimeout(() => navigate(`/seller/stays/${id}`), 1000);
     } catch (e) {

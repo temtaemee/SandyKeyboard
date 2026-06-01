@@ -2,6 +2,7 @@ package com.kh.app.product.stay.controller;
 
 import com.kh.app.product.exception.ErrorResponse;
 import com.kh.app.product.stay.dto.request.StayInsertReqDto;
+import com.kh.app.product.stay.dto.request.StayPictureUpdateReqDto;
 import com.kh.app.product.stay.dto.request.StayUpdateReqDto;
 import com.kh.app.product.stay.dto.response.StayResDto;
 import com.kh.app.product.stay.service.StayService;
@@ -125,6 +126,19 @@ public class StaySellerApiController {
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         stayService.changeVisibleYn(id, visibleYn, userDetails.getMemberId());
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "본인 숙소 사진 수정",
+            description = "keepPictureIds 순서 = 새 sortOrder. mainPictureId로 대표 지정. files는 추가 업로드.")
+    @PutMapping(value = "/{id}/pictures", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> updatePictures(
+            @PathVariable Long id,
+            @RequestPart("dto") StayPictureUpdateReqDto dto,
+            @RequestPart(name = "files", required = false) List<MultipartFile> files,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        stayService.updatePictures(id, dto, files, userDetails.getMemberId());
         return ResponseEntity.ok().build();
     }
 

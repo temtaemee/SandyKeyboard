@@ -41,7 +41,7 @@ public class SpaceEntity extends BaseEntity {
     @Column(nullable = false)
     private String address1;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = true, length = 100)
     private String address2;
 
     // 위도: -90.0 ~ 90.0 (정수부 최대 2자리 + 소수점 7자리 = 9자리면 충분하지만 보통 10으로 맞춤)

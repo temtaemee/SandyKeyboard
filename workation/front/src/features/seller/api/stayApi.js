@@ -12,4 +12,9 @@ export const stayApi = {
   remove: (id) => api.delete(`/seller/stay/${id}`),
   toggleVisible: (id, visibleYn) =>
     api.put(`/seller/stay/${id}/visible`, null, { params: { visibleYn } }),
+  updatePictures: (id, formData) =>
+    api.put(`/seller/stay/${id}/pictures`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 30000,
+    }),
 };

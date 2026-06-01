@@ -50,11 +50,10 @@ export default function AccountPage() {
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
-      // API 연동 예정: await api.put('/api/seller/account/profile', { phone });
-      await new Promise((r) => setTimeout(r, 600));
+      await api.put('/api/user/member', { phone });
       showToast('프로필이 저장되었습니다.');
-    } catch {
-      showToast('저장에 실패했습니다.', false);
+    } catch (e) {
+      showToast(e.response?.data?.message ?? '저장에 실패했습니다.', false);
     } finally {
       setSaving(false);
     }
@@ -68,12 +67,15 @@ export default function AccountPage() {
 
     setPwSaving(true);
     try {
-      // API 연동 예정: await api.put('/api/auth/password', { currentPassword: pwForm.current, newPassword: pwForm.next });
-      await new Promise((r) => setTimeout(r, 700));
+      await api.patch('/api/user/member', {
+        currentPassword: pwForm.current,
+        newPassword: pwForm.next,
+        newPasswordCheck: pwForm.confirm,
+      });
       setPwForm({ current: '', next: '', confirm: '' });
       showToast('비밀번호가 변경되었습니다.');
-    } catch {
-      showToast('비밀번호 변경에 실패했습니다.', false);
+    } catch (e) {
+      showToast(e.response?.data?.message ?? '비밀번호 변경에 실패했습니다.', false);
     } finally {
       setPwSaving(false);
     }
@@ -114,7 +116,7 @@ export default function AccountPage() {
           <FieldGroup>
             <Field>
               <FieldLabel>이름</FieldLabel>
-              <FieldValue>{member?.memberName ?? '-'}</FieldValue>
+              <FieldValue>{member?.name ?? '-'}</FieldValue>
             </Field>
             <Field>
               <FieldLabel>이메일</FieldLabel>

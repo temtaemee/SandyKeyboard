@@ -45,6 +45,15 @@ public class ProductExceptionHandler {
                 .body(ErrorResponse.ofMessage("요청 형식이 올바르지 않습니다. 입력값을 확인해주세요."));
     }
 
+    // 비즈니스 로직 검증 실패 (IllegalArgumentException) → 400 + 실제 메시지 반환
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException e) {
+        log.warn("잘못된 요청값: {}", e.getMessage());
+        return ResponseEntity
+                .badRequest()
+                .body(ErrorResponse.ofMessage(e.getMessage()));
+    }
+
     // DB 제약 조건 위반 (중복 키, FK 오류 등)
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException e) {

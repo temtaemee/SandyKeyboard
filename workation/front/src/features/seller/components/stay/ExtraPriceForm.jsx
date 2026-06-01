@@ -22,7 +22,7 @@ const EMPTY_ITEM = () => ({
  * @param {array} extraPriceList
  * @param {function} onChange (extraPriceList) => void
  */
-export default function ExtraPriceForm({ extraPriceList = [], onChange }) {
+export default function ExtraPriceForm({ extraPriceList = [], onChange, errors = {} }) {
   const add = () => {
     onChange([...extraPriceList, EMPTY_ITEM()]);
   };
@@ -68,6 +68,7 @@ export default function ExtraPriceForm({ extraPriceList = [], onChange }) {
               <Input
                 type="date"
                 value={item.startDate ?? ''}
+                $error={!!errors[`extra_${idx}_date`]}
                 onChange={(e) => updateItem(idx, 'startDate', e.target.value)}
               />
             </DateField>
@@ -77,10 +78,14 @@ export default function ExtraPriceForm({ extraPriceList = [], onChange }) {
               <Input
                 type="date"
                 value={item.endDate ?? ''}
+                $error={!!errors[`extra_${idx}_date`]}
                 onChange={(e) => updateItem(idx, 'endDate', e.target.value)}
               />
             </DateField>
           </DateRow>
+          {errors[`extra_${idx}_date`] && (
+            <DateError>{errors[`extra_${idx}_date`]}</DateError>
+          )}
 
           <PriceWeekGrid
             prices={item}
@@ -208,12 +213,18 @@ const Input = styled.input`
   height: 40px;
   padding: 0 12px;
   border-radius: 8px;
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  border: 1px solid ${({ $error, theme }) => ($error ? '#ef4444' : theme.colors.border)};
   font-size: 14px;
   color: ${({ theme }) => theme.colors.adminTextDark};
   background: white;
   font-family: inherit;
   outline: none;
   transition: border-color 0.15s;
-  &:focus { border-color: ${ACCENT}; }
+  &:focus { border-color: ${({ $error }) => ($error ? '#ef4444' : ACCENT)}; }
+`;
+
+const DateError = styled.p`
+  font-size: 12px;
+  color: #ef4444;
+  margin-top: -8px;
 `;

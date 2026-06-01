@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Getter
 @Setter
@@ -52,4 +53,7 @@ public class SpaceUpdateReqDto {
     @Schema(description = "지역", example = "jeju")
     @NotNull
     private Area area;
+
+    @Schema(description = "편의시설 ID 목록 (null이면 변경 없음, 빈 배열이면 전체 삭제)")
+    private List<Long> arcadeIdList;
 }
