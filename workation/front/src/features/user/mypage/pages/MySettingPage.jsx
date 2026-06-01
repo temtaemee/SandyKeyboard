@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import { Bell, ShieldCheck, Globe, UserCog } from 'lucide-react';
+import { ShieldCheck, UserCog } from 'lucide-react';
 import MyPageSidebar from '../components/MyPageSidebar';
 import MemberEditForm from '../components/MemberEditForm';
 import { useState } from 'react';
@@ -9,21 +9,24 @@ import { deleteAccount } from '../api/mypageApi';
 function MySettingPage() {
   const [editMode, setEditMode] = useState(false);
   const [passwordEditMode, setPasswordEditMode] = useState(false);
+
   async function accountDelete() {
     try {
-      const result = confirm('정말 탈퇴하시겠습니까?');
-      if (!result) {
-        return;
-      }
+      const result = confirm(
+        '정말 탈퇴하시겠습니까? 데이터는 복구되지 않습니다.'
+      );
+      if (!result) return;
+
       await deleteAccount();
-      alert('회원탈퇴 성공');
+      alert('회원탈퇴가 성공적으로 처리되었습니다.');
       localStorage.removeItem('accessToken');
       location.href = '/';
     } catch (error) {
       console.error(error);
-      alert('회원탈퇴 실패했습니다.');
+      alert('회원탈퇴 처리 중 오류가 발생했습니다.');
     }
   }
+
   return (
     <Container>
       <MyPageSidebar />
@@ -31,13 +34,14 @@ function MySettingPage() {
       <Main>
         <ContentWrapper>
           <PageTitle>환경 설정</PageTitle>
+          <PageDesc>
+            워케이션 서비스 이용 계정 정보를 관리하고 설정하세요.
+          </PageDesc>
 
-          <PageDesc>워케이션 서비스 이용 환경을 설정하고 관리하세요.</PageDesc>
-
-          {/* 회원 정보 */}
+          {/* 1. 회원 정보 관리 섹션 */}
           <SectionCard>
             <SectionTitle>
-              <UserCog size={22} />
+              <UserCog size={24} />
               회원 정보
             </SectionTitle>
 
@@ -47,9 +51,9 @@ function MySettingPage() {
               <SettingRow>
                 <SettingInfo>
                   <SettingLabel>회원 정보 수정</SettingLabel>
-
                   <SettingDesc>
-                    이름, 연락처, 기업 정보 등을 수정할 수 있습니다.
+                    이름, 연락처, 사내 소속 정보 등을 최신 정보로 변경할 수
+                    있습니다.
                   </SettingDesc>
                 </SettingInfo>
 
@@ -60,104 +64,39 @@ function MySettingPage() {
             )}
           </SectionCard>
 
-          {/* 알림 설정 */}
+          {/* 2. 계정 보안 섹션 (비밀번호 단독 구성) */}
           <SectionCard>
             <SectionTitle>
-              <Bell size={22} />
-              알림 설정
-            </SectionTitle>
-
-            <SettingRow>
-              <SettingInfo>
-                <SettingLabel>푸시 알림</SettingLabel>
-
-                <SettingDesc>
-                  예약 상태 및 주요 안내를 알림으로 받습니다.
-                </SettingDesc>
-              </SettingInfo>
-
-              <Toggle active />
-            </SettingRow>
-
-            <Divider />
-
-            <SettingRow>
-              <SettingInfo>
-                <SettingLabel>이메일 마케팅 수신</SettingLabel>
-
-                <SettingDesc>
-                  신규 워케이션 공간 및 이벤트 소식을 이메일로 받습니다.
-                </SettingDesc>
-              </SettingInfo>
-
-              <Toggle />
-            </SettingRow>
-          </SectionCard>
-
-          {/* 보안 */}
-          <SectionCard>
-            <SectionTitle>
-              <ShieldCheck size={22} />
+              <ShieldCheck size={24} />
               계정 보안
             </SectionTitle>
 
             {passwordEditMode ? (
               <PasswordEditForm setPasswordEditMode={setPasswordEditMode} />
             ) : (
-              <>
-                <SecurityBox>
-                  <SecurityInfo>
-                    <SecurityTitle>비밀번호 변경</SecurityTitle>
+              <SecurityBox>
+                <SecurityInfo>
+                  <SecurityTitle>비밀번호 변경</SecurityTitle>
+                  <SecurityDesc>
+                    안전한 서비스 이용을 위해 정기적으로 비밀번호를 변경해
+                    주세요.
+                  </SecurityDesc>
+                </SecurityInfo>
 
-                    <SecurityDesc>마지막 변경 : 3개월 전</SecurityDesc>
-                  </SecurityInfo>
-
-                  <OutlineButton
-                    onClick={() => {
-                      setPasswordEditMode(true);
-                    }}
-                  >
-                    변경하기
-                  </OutlineButton>
-                </SecurityBox>
-
-                <SecurityBox>
-                  <SecurityInfo>
-                    <SecurityTitle>2단계 인증 설정</SecurityTitle>
-
-                    <SecurityDesc>계정 보안을 더욱 강화합니다.</SecurityDesc>
-                  </SecurityInfo>
-
-                  <PrimaryButton>설정하기</PrimaryButton>
-                </SecurityBox>
-              </>
+                <OutlineButton onClick={() => setPasswordEditMode(true)}>
+                  변경하기
+                </OutlineButton>
+              </SecurityBox>
             )}
           </SectionCard>
 
-          {/* 언어 */}
-          <SectionCard>
-            <SectionTitle>
-              <Globe size={22} />
-              서비스 언어
-            </SectionTitle>
-
-            <SelectLabel>언어 선택</SelectLabel>
-
-            <LanguageSelect>
-              <option>한국어 (Korean)</option>
-              <option>English</option>
-              <option>日本語</option>
-            </LanguageSelect>
-          </SectionCard>
-
-          {/* 탈퇴 */}
+          {/* 3. 위험 구역 (회원 탈퇴 섹션) */}
           <DangerSection>
             <DangerTitle>회원 탈퇴</DangerTitle>
-
             <DangerDesc>
-              탈퇴 시 예약 기록 및 일부 데이터가 삭제될 수 있습니다.
+              탈퇴 시 기존 활성화된 예약 기록 및 보유하신 쿠폰 목록을 포함한
+              모든 계정 데이터가 안전하게 파기되며 복구할 수 없습니다.
             </DangerDesc>
-
             <DangerButton onClick={accountDelete}>회원 탈퇴하기</DangerButton>
           </DangerSection>
         </ContentWrapper>
@@ -176,17 +115,9 @@ const Container = styled.div`
   background-color: #f7f9fb;
 `;
 
-const Section = styled.section`
-  background-color: white;
-  border-radius: 28px;
-  padding: 36px;
-  margin-bottom: 28px;
-`;
-
 const Main = styled.main`
   flex: 1;
   padding: 48px 32px;
-
   display: flex;
   justify-content: center;
 `;
@@ -197,8 +128,9 @@ const ContentWrapper = styled.div`
 `;
 
 const PageTitle = styled.h1`
-  font-size: 42px;
-  color: #374151;
+  font-size: 36px;
+  font-weight: 700;
+  color: #1f2937;
   margin-bottom: 12px;
 `;
 
@@ -211,21 +143,19 @@ const PageDesc = styled.p`
 const SectionCard = styled.section`
   background-color: white;
   border-radius: 24px;
-  padding: 30px;
+  padding: 32px;
   margin-bottom: 26px;
-
   border: 1px solid #edf1f4;
 `;
 
 const SectionTitle = styled.h2`
   display: flex;
   align-items: center;
-  gap: 10px;
-
-  font-size: 24px;
-  color: #374151;
-
-  margin-bottom: 26px;
+  gap: 12px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 28px;
 `;
 
 const SettingRow = styled.div`
@@ -243,7 +173,7 @@ const SettingRow = styled.div`
 const SettingInfo = styled.div``;
 
 const SettingLabel = styled.div`
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 600;
   color: #374151;
   margin-bottom: 8px;
@@ -255,47 +185,10 @@ const SettingDesc = styled.div`
   line-height: 1.6;
 `;
 
-const Divider = styled.div`
-  width: 100%;
-  height: 1px;
-  background-color: #edf1f4;
-  margin: 24px 0;
-`;
-
-const Toggle = styled.div`
-  width: 54px;
-  height: 30px;
-  border-radius: 999px;
-  position: relative;
-  cursor: pointer;
-
-  background-color: ${({ active }) => (active ? '#3f6971' : '#dbe2e8')};
-
-  &::after {
-    content: '';
-
-    width: 22px;
-    height: 22px;
-
-    border-radius: 50%;
-    background-color: white;
-
-    position: absolute;
-    top: 4px;
-
-    left: ${({ active }) => (active ? '28px' : '4px')};
-
-    transition: 0.2s;
-  }
-`;
-
 const SecurityBox = styled.div`
   background-color: #f8fafc;
   border-radius: 18px;
-
-  padding: 22px;
-  margin-bottom: 18px;
-
+  padding: 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -318,88 +211,78 @@ const SecurityTitle = styled.div`
 
 const SecurityDesc = styled.div`
   color: #94a3b8;
-  font-size: 13px;
+  font-size: 14px;
 `;
 
 const PrimaryButton = styled.button`
   border: none;
   background-color: #3f6971;
   color: white;
-
-  height: 42px;
-  padding: 0 22px;
-
+  height: 44px;
+  padding: 0 24px;
   border-radius: 12px;
   cursor: pointer;
-
   font-size: 14px;
   font-weight: 600;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #2d4f55;
+  }
 `;
 
 const OutlineButton = styled.button`
   border: 1px solid #cfd8de;
   background-color: white;
   color: #374151;
-
-  height: 42px;
-  padding: 0 22px;
-
+  height: 44px;
+  padding: 0 24px;
   border-radius: 12px;
   cursor: pointer;
-
   font-size: 14px;
   font-weight: 600;
-`;
+  transition: background-color 0.2s;
 
-const SelectLabel = styled.div`
-  font-size: 14px;
-  color: #94a3b8;
-  margin-bottom: 12px;
-`;
-
-const LanguageSelect = styled.select`
-  width: 100%;
-  height: 52px;
-
-  border: 1px solid #dbe2e8;
-  border-radius: 14px;
-
-  padding: 0 16px;
-  font-size: 15px;
-
-  outline: none;
-  background-color: white;
+  &:hover {
+    background-color: #f8fafc;
+  }
 `;
 
 const DangerSection = styled.div`
-  margin-top: 60px;
-  padding-top: 30px;
-  border-top: 1px solid #e5e7eb;
+  margin-top: 50px;
+  padding: 32px;
+  background-color: #fff5f5;
+  border-radius: 24px;
+  border: 1px solid #fee2e2;
 `;
 
 const DangerTitle = styled.h3`
   color: #dc2626;
-  font-size: 20px;
+  font-size: 18px;
+  font-weight: 700;
   margin-bottom: 10px;
 `;
 
 const DangerDesc = styled.p`
-  color: #9ca3af;
+  color: #7f1d1d;
   font-size: 14px;
+  line-height: 1.6;
   margin-bottom: 20px;
 `;
 
 const DangerButton = styled.button`
   border: none;
-  background-color: #fee2e2;
-  color: #dc2626;
-
+  background-color: #dc2626;
+  color: white;
   height: 44px;
-  padding: 0 20px;
-
+  padding: 0 24px;
   border-radius: 12px;
   cursor: pointer;
-
   font-size: 14px;
   font-weight: 600;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #991b1b;
+  }
 `;

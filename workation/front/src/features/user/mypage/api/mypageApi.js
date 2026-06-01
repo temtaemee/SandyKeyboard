@@ -43,3 +43,11 @@ export async function deleteWishlist(wishlistId) {
     const resp = await api.delete(`/user/wishlist/${wishlistId}`)
     return resp.status;
 }
+
+// 본인 보유 쿠폰 목록 조회 (사용자 전용) ✨
+export async function getMyCouponList(pno = 0) {
+    const resp = await api.get('/user/memberCoupon', {
+        params: { pno }
+    });
+    return resp.data;
+}
