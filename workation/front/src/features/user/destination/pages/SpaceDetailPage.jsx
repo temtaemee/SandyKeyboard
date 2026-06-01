@@ -37,17 +37,23 @@ function SpaceDetailPage() {
   };
 
   const sliderImages = [];
+
+  // 1. 썸네일 추가
   if (space.thumbnailUrl) {
     const parsedThumb = getRealImageUrl(space.thumbnailUrl);
     if (parsedThumb) sliderImages.push(parsedThumb);
   }
-  if (space.pictures && space.pictures.length > 0) {
+
+  // 2. 이제 pictures는 List<PictureInfo> 형태이므로 바로 filePath 접근 가능
+  if (space.pictures && Array.isArray(space.pictures)) {
     space.pictures.forEach((p) => {
       const parsedUrl = getRealImageUrl(p.filePath);
       if (parsedUrl && !sliderImages.includes(parsedUrl))
         sliderImages.push(parsedUrl);
     });
   }
+
+  // 3. 숙소 사진 추가 로직 유지
   if (space.stays && space.stays.length > 0) {
     space.stays.forEach((st) => {
       if (st.pictures && st.pictures.length > 0) {
@@ -75,7 +81,11 @@ function SpaceDetailPage() {
             src={sliderImages[currentImgIdx]}
             alt={`${space.name} 사진 ${currentImgIdx + 1}`}
           />
-          <AreaBadge>{space.area || '경남'}</AreaBadge>
+          <AreaBadge>
+            {typeof space.area === 'object' && space.area !== null
+              ? space.area.name
+              : space.area || '지역 정보 없음'}
+          </AreaBadge>
           {sliderImages.length > 1 && (
             <>
               <SlideButton

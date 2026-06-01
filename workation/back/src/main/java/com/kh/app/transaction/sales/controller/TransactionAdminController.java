@@ -45,6 +45,19 @@ public class TransactionAdminController {
         return ResponseEntity.ok(summary);
     }
 
+    // [어드민 전용] 전체 정산 내역 리스트 조회
+    @GetMapping("/admin/payout/list")
+    @Operation(summary = "관리자 전체 정산 목록 조회", description = "플랫폼의 전체 정산 내역을 페이지 단위로 조회합니다.")
+    public ResponseEntity<Page<PayoutListResDto>> getAdminPayoutList(
+            @RequestParam(defaultValue = "0") int pno
+    ) {
+        // PayoutService에 추가할 메서드 호출
+        Page<PayoutListResDto> result = payoutService.getAllPayoutList(pno);
+        return ResponseEntity.ok(result);
+    }
+
+
+
 
     // [판매자 전용] 로그인한 판매자의 정산 완료 내역 리스트 조회
     @GetMapping("/seller/payout/list")
@@ -85,6 +98,8 @@ public class TransactionAdminController {
 
         return ResponseEntity.ok(responsePage);
     }
+
+
 
 
 }
