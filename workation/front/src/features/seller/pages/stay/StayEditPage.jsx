@@ -48,6 +48,7 @@ export default function StayEditPage() {
         const picDto = {
           keepPictureIds: pictureChanges.keepPictureIds,
           mainPictureId:  pictureChanges.mainPictureId ?? null,
+          newPictures:    pictureChanges.newPictures ?? [],
         };
         formData.append('dto', new Blob([JSON.stringify(picDto)], { type: 'application/json' }));
         (pictureChanges.newFiles ?? []).forEach(f => formData.append('files', f));

@@ -1,5 +1,6 @@
 package com.kh.app.product.space.dto.request;
 
+import com.kh.app.product.space.entity.SpacePictureCategory;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,4 +15,13 @@ public class SpacePictureUpdateReqDto {
     private Long mainPictureId;
     /** 새로 업로드할 사진 메타데이터 (files 파라미터와 인덱스 순서 일치) */
     private List<PictureMetaReqDto> newPictures;
+    /** 기존 사진 카테고리 변경 목록 */
+    private List<CategoryUpdateDto> categoryUpdates;
+
+    @Getter
+    @Setter
+    public static class CategoryUpdateDto {
+        private Long id;
+        private SpacePictureCategory category;
+    }
 }

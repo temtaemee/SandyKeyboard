@@ -1,5 +1,6 @@
 package com.kh.app.product.space.repository;
 
+import com.kh.app.product.space.entity.SpacePictureCategory;
 import com.kh.app.product.space.entity.SpacePictureEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -18,4 +19,8 @@ public interface SpacePictureRepository extends JpaRepository<SpacePictureEntity
     @Modifying
     @Query("UPDATE SpacePictureEntity p SET p.sortOrder = :sortOrder, p.mainYn = :mainYn WHERE p.id = :id")
     void updateOrderAndMain(@Param("id") Long id, @Param("sortOrder") int sortOrder, @Param("mainYn") String mainYn);
+
+    @Modifying
+    @Query("UPDATE SpacePictureEntity p SET p.category = :category WHERE p.id = :id")
+    void updateCategory(@Param("id") Long id, @Param("category") SpacePictureCategory category);
 }

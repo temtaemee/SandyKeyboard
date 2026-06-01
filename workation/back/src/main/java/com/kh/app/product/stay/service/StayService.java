@@ -315,7 +315,28 @@ public class StayService {
         }
 
         if (files != null && !files.isEmpty()) {
-            uploadAndSavePictures(stay, files);
+            List<String> s3Keys = s3PictureUploader.upload(files, "stay");
+            int baseOrder = (keepIds == null || keepIds.isEmpty()) ? 0 : keepIds.size();
+            List<StayPictureEntity> newPics = new ArrayList<>();
+            for (int i = 0; i < files.size(); i++) {
+                MultipartFile file = files.get(i);
+                String s3Key = s3Keys.get(i);
+                String storedName = s3Key.substring(s3Key.lastIndexOf("/") + 1);
+                String mainYn = (dto.getNewPictures() != null && i < dto.getNewPictures().size())
+                        ? dto.getNewPictures().get(i).getMainYn()
+                        : (i == 0 ? "Y" : "N");
+                newPics.add(StayPictureEntity.builder()
+                        .stay(stay)
+                        .filePath(s3Key)
+                        .originName(file.getOriginalFilename())
+                        .storedName(storedName)
+                        .contentType(file.getContentType())
+                        .fileSize(file.getSize())
+                        .mainYn(mainYn)
+                        .sortOrder(baseOrder + i)
+                        .build());
+            }
+            stayPictureRepository.saveAll(newPics);
         }
     }
 

@@ -12,6 +12,12 @@ import EmptyState from '../../components/common/EmptyState';
 const ACCENT = '#3ec9a7';
 const TABS = ['스테이 목록', '리뷰'];
 
+const CATEGORY_LABEL = {
+  EXTERIOR: '외부/전경', ROOM: '객실', BATHROOM: '욕실',
+  FACILITY: '공용시설', AMENITY: '부대시설', DINING: '식음료',
+  OTHERS: '기타', OFFICE: '오피스',
+};
+
 export default function SpaceDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -192,6 +198,9 @@ export default function SpaceDetailPage() {
               >
                 <PhotoImg src={pic.filePath} alt={space.name} />
                 {pic.mainYn === 'Y' && <MainBadge>대표</MainBadge>}
+                {pic.category && (
+                  <CategoryBadge>{CATEGORY_LABEL[pic.category] ?? pic.category}</CategoryBadge>
+                )}
               </PhotoItem>
             ))}
           </PhotoGrid>
@@ -428,6 +437,14 @@ const MainBadge = styled.span`
   background: ${ACCENT}; color: white;
   font-size: 11px; font-weight: 700;
   padding: 2px 7px; border-radius: 4px;
+`;
+
+const CategoryBadge = styled.span`
+  position: absolute; bottom: 6px; left: 6px;
+  background: rgba(0,0,0,0.55); color: white;
+  font-size: 11px; font-weight: 500;
+  padding: 2px 7px; border-radius: 4px;
+  backdrop-filter: blur(2px);
 `;
 
 /* 라이트박스 */

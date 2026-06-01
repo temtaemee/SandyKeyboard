@@ -84,22 +84,28 @@ export default function StayForm({
   loading = false,
   mode = 'create',
 }) {
-  const fileInputRef  = useRef(null);
-  const dragIdx       = useRef(null);
+  const fileInputRef = useRef(null);
+  const dragIdx      = useRef(null);
 
-  // edit 모드 — 기존 사진 관리
-  const [keptPictures, setKeptPictures] = useState(initialData?.pictures ?? []);
-  const [mainPictureId, setMainPictureId] = useState(
-    initialData?.pictures?.find(p => p.mainYn === 'Y')?.id ?? null
+  const MAX_PHOTOS = 50;
+
+  // 통합 사진 state — create: 빈 배열, edit: 기존 사진으로 초기화
+  const [photos, setPhotos] = useState(() =>
+    (initialData?.pictures ?? []).map(p => ({
+      type: 'existing',
+      id: p.id,
+      previewUrl: p.filePath,
+      isMain: p.mainYn === 'Y',
+    }))
   );
-  const [dragOver, setDragOver]   = useState(null);
-  const [preview, setPreview]     = useState(null);
+  const [dragOver, setDragOver] = useState(null);
+  const [preview, setPreview]   = useState(null);
 
   const handleDragStart = (idx) => { dragIdx.current = idx; };
   const handleDragOver  = (e, idx) => { e.preventDefault(); setDragOver(idx); };
   const handleDrop      = (idx) => {
     if (dragIdx.current === null || dragIdx.current === idx) { setDragOver(null); return; }
-    setKeptPictures(prev => {
+    setPhotos(prev => {
       const arr = [...prev];
       const [removed] = arr.splice(dragIdx.current, 1);
       arr.splice(idx, 0, removed);
@@ -109,16 +115,33 @@ export default function StayForm({
   };
   const handleDragEnd = () => { dragIdx.current = null; setDragOver(null); };
 
+  const handleAddPhotos = (fileList) => {
+    const remaining = MAX_PHOTOS - photos.length;
+    if (remaining <= 0) { alert('사진은 최대 50장까지 등록할 수 있습니다.'); return; }
+    const toAdd = Array.from(fileList).slice(0, remaining);
+    if (fileList.length > remaining) alert(`최대 ${MAX_PHOTOS}장까지 등록할 수 있습니다. ${remaining}장만 추가되었습니다.`);
+    setPhotos(prev => [...prev, ...toAdd.map(file => ({
+      type: 'new',
+      tempId: `new-${Date.now()}-${Math.random()}`,
+      file,
+      previewUrl: URL.createObjectURL(file),
+      isMain: false,
+    }))]);
+  };
+
   const picturesChanged = () => {
     const origPics = initialData?.pictures ?? [];
-    const origIds  = new Set(origPics.map(p => p.id));
-    const keptIds  = new Set(keptPictures.map(p => p.id));
-    const hasDeleted   = [...origIds].some(id => !keptIds.has(id));
-    const hasNew       = files.length > 0;
-    const origMainId   = origPics.find(p => p.mainYn === 'Y')?.id ?? null;
-    const mainChanged  = mainPictureId !== origMainId;
-    const orderChanged = keptPictures.some((p, i) => origPics.findIndex(o => o.id === p.id) !== i);
-    return hasDeleted || hasNew || mainChanged || orderChanged;
+    const origMainId = origPics.find(p => p.mainYn === 'Y')?.id ?? null;
+    const existingPhotos = photos.filter(p => p.type === 'existing');
+    const newPhotos = photos.filter(p => p.type === 'new');
+    const mainPhoto = photos.find(p => p.isMain);
+    const currentMainId = mainPhoto?.type === 'existing' ? mainPhoto.id : null;
+    return (
+      origPics.some(p => !existingPhotos.find(ep => ep.id === p.id)) ||
+      newPhotos.length > 0 ||
+      currentMainId !== origMainId || (!!mainPhoto && mainPhoto.type === 'new') ||
+      existingPhotos.some((p, idx) => origPics.findIndex(op => op.id === p.id) !== idx)
+    );
   };
 
   const [data, setData] = useState({
@@ -142,23 +165,11 @@ export default function StayForm({
     optionList: initialData.options ?? initialData.optionList ?? [],
     extraPriceList: initialData.extraPriceList ?? [],
   });
-  const [files, setFiles] = useState([]);
   const [errors, setErrors] = useState({});
 
   const set = (field, value) => {
     setData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
-  };
-
-  const handleFileSelect = (e) => {
-    const selected = Array.from(e.target.files ?? []);
-    if (!selected.length) return;
-    setFiles((prev) => [...prev, ...selected]);
-    e.target.value = '';
-  };
-
-  const removeFile = (idx) => {
-    setFiles((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const handleSubmit = (e) => {
@@ -207,16 +218,23 @@ export default function StayForm({
         })),
     };
 
+    const existingPhotos = photos.filter(p => p.type === 'existing');
+    const newPhotos = photos.filter(p => p.type === 'new');
+    const mainPhoto = photos.find(p => p.isMain);
+
     let pictureChanges = null;
     if (mode === 'edit' && picturesChanged()) {
       pictureChanges = {
-        keepPictureIds: keptPictures.map(p => p.id),
-        mainPictureId:  mainPictureId,
-        newFiles:       files,
+        keepPictureIds: existingPhotos.map(p => p.id),
+        mainPictureId: mainPhoto?.type === 'existing' ? mainPhoto.id : null,
+        newPictures: newPhotos.map(p => ({ mainYn: p.isMain ? 'Y' : 'N' })),
+        newFiles: newPhotos.map(p => p.file),
       };
     }
 
-    onSubmit(dto, files, pictureChanges);
+    // create 모드: 모든 사진이 new
+    const allNewFiles = mode === 'create' ? newPhotos.map(p => p.file) : [];
+    onSubmit(dto, allNewFiles, pictureChanges);
   };
 
   const priceErrors = ['monPrice', 'tuePrice', 'wedPrice', 'thuPrice', 'friPrice', 'satPrice', 'sunPrice', 'holidayPrice'];
@@ -409,17 +427,17 @@ export default function StayForm({
       <Section>
         <SectionTitle>사진 {mode === 'edit' ? '관리' : '등록'} <Optional>(선택)</Optional></SectionTitle>
 
-        {/* edit 모드 — 기존 사진 드래그 관리 */}
-        {mode === 'edit' && keptPictures.length > 0 && (
+        {/* 통합 사진 리스트 */}
+        {photos.length > 0 && (
           <>
-            <PicSubLabel>현재 사진 ({keptPictures.length}장) — 드래그하여 순서 변경</PicSubLabel>
+            <PicSubLabel>사진 ({photos.length}장 / 최대 {MAX_PHOTOS}장) — 드래그하여 순서 변경</PicSubLabel>
             <ExistingGrid>
-              {keptPictures.map((pic, idx) => {
-                const isMain = pic.id === mainPictureId;
+              {photos.map((photo, idx) => {
+                const key = photo.type === 'existing' ? photo.id : photo.tempId;
                 return (
                   <ExistingItem
-                    key={pic.id}
-                    $main={isMain}
+                    key={key}
+                    $main={photo.isMain}
                     $dragOver={dragOver === idx}
                     draggable
                     onDragStart={() => handleDragStart(idx)}
@@ -428,20 +446,18 @@ export default function StayForm({
                     onDragEnd={handleDragEnd}
                   >
                     <DragHandle><GripVertical size={11} /><span>{idx + 1}</span></DragHandle>
-                    <ExistingThumbBtn type="button" onClick={() => setPreview({ src: pic.filePath, pic, idx })}>
-                      <ExistingImg src={pic.filePath} alt="" onError={e => { e.target.style.display = 'none'; }} />
+                    <ExistingThumbBtn type="button" onClick={() => setPreview({ src: photo.previewUrl, idx })}>
+                      <ExistingImg src={photo.previewUrl} alt="" onError={e => { e.target.style.display = 'none'; }} />
                       <ZoomOverlay><ZoomIn size={13} color="white" /></ZoomOverlay>
-                      {isMain && <MainPinBadge>대표</MainPinBadge>}
+                      {photo.isMain && <MainPinBadge>대표</MainPinBadge>}
+                      {photo.type === 'new' && <NewPinBadge>NEW</NewPinBadge>}
                     </ExistingThumbBtn>
                     <ExistingMeta>
-                      <StarBtn type="button" $active={isMain}
-                        onClick={() => setMainPictureId(isMain ? null : pic.id)}>
-                        <Star size={12} fill={isMain ? '#f59e0b' : 'none'} />
+                      <StarBtn type="button" $active={photo.isMain}
+                        onClick={() => setPhotos(prev => prev.map((p, i) => ({ ...p, isMain: i === idx ? !photo.isMain : false })))}>
+                        <Star size={12} fill={photo.isMain ? '#f59e0b' : 'none'} />
                       </StarBtn>
-                      <DelBtn type="button" onClick={() => {
-                        setKeptPictures(prev => prev.filter(p => p.id !== pic.id));
-                        if (mainPictureId === pic.id) setMainPictureId(null);
-                      }}>
+                      <DelBtn type="button" onClick={() => setPhotos(prev => prev.filter((_, i) => i !== idx))}>
                         <X size={12} />
                       </DelBtn>
                     </ExistingMeta>
@@ -452,28 +468,17 @@ export default function StayForm({
           </>
         )}
 
-        {/* 새 사진 추가 */}
-        <PicSubLabel>{mode === 'edit' ? '새 사진 추가' : '사진 선택'}</PicSubLabel>
-        <DropZone onClick={() => fileInputRef.current?.click()}>
-          <Upload size={24} color="#94a3b8" />
-          <DropText>클릭하여 사진 선택</DropText>
-          <DropSub>JPG, PNG, WebP · 여러 장 선택 가능</DropSub>
-          <input ref={fileInputRef} type="file" accept="image/*" multiple
-            style={{ display: 'none' }} onChange={handleFileSelect} />
-        </DropZone>
-
-        {files.length > 0 && (
-          <PreviewGrid>
-            {files.map((file, idx) => (
-              <PreviewItem key={`${file.name}-${idx}`}>
-                <PreviewImg src={URL.createObjectURL(file)} alt={file.name} />
-                {idx === 0 && keptPictures.length === 0 && <MainTag>대표</MainTag>}
-                <RemoveBtn type="button" onClick={() => removeFile(idx)}>
-                  <X size={11} />
-                </RemoveBtn>
-              </PreviewItem>
-            ))}
-          </PreviewGrid>
+        {/* 사진 추가 드롭존 */}
+        {photos.length < MAX_PHOTOS && (
+          <DropZone onClick={() => fileInputRef.current?.click()}>
+            <Upload size={24} color="#94a3b8" />
+            <DropText>클릭하여 사진 선택</DropText>
+            <DropSub>JPG, PNG, WebP · 여러 장 선택 가능</DropSub>
+            <input ref={fileInputRef} type="file" accept="image/*" multiple
+              style={{ display: 'none' }}
+              onChange={e => { if (e.target.files?.length) handleAddPhotos(e.target.files); e.target.value = ''; }}
+            />
+          </DropZone>
         )}
       </Section>
 
@@ -482,43 +487,40 @@ export default function StayForm({
         <PreviewBg onClick={() => setPreview(null)}>
           <PreviewBox onClick={e => e.stopPropagation()}>
             <PreviewTopRight>
-              {preview.pic && (
-                <PreviewStarBtn type="button"
-                  $active={preview.pic.id === mainPictureId}
-                  onClick={() => setMainPictureId(p => p === preview.pic.id ? null : preview.pic.id)}>
-                  <Star size={15} fill={preview.pic.id === mainPictureId ? '#f59e0b' : 'none'}
-                    color={preview.pic.id === mainPictureId ? '#f59e0b' : 'white'} />
-                </PreviewStarBtn>
-              )}
+              <PreviewStarBtn type="button"
+                $active={photos[preview.idx]?.isMain}
+                onClick={() => setPhotos(prev => prev.map((p, i) => ({ ...p, isMain: i === preview.idx ? !p.isMain : false })))}>
+                <Star size={15}
+                  fill={photos[preview.idx]?.isMain ? '#f59e0b' : 'none'}
+                  color={photos[preview.idx]?.isMain ? '#f59e0b' : 'white'} />
+              </PreviewStarBtn>
               <PreviewCloseBtn type="button" onClick={() => setPreview(null)}><X size={15} /></PreviewCloseBtn>
             </PreviewTopRight>
             <PreviewBigImg src={preview.src} alt="" />
-            {preview.pic && (
-              <PreviewBottom>
-                <PreviewOrderWrap>
-                  <span>{preview.idx + 1} / {keptPictures.length}</span>
-                  <PreviewOrderInput
-                    key={`${preview.pic.id}-${preview.idx}`}
-                    type="number" min={1} max={keptPictures.length}
-                    defaultValue={preview.idx + 1}
-                    onBlur={(e) => {
-                      const val = parseInt(e.target.value);
-                      const toIdx = Math.max(0, Math.min(keptPictures.length - 1, val - 1));
-                      if (toIdx === preview.idx) return;
-                      setKeptPictures(prev => {
-                        const arr = [...prev];
-                        const [r] = arr.splice(preview.idx, 1);
-                        arr.splice(toIdx, 0, r);
-                        return arr;
-                      });
-                      setPreview(prev => ({ ...prev, idx: toIdx }));
-                    }}
-                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } }}
-                  />
-                  <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>번으로 이동</span>
-                </PreviewOrderWrap>
-              </PreviewBottom>
-            )}
+            <PreviewBottom>
+              <PreviewOrderWrap>
+                <span>{preview.idx + 1} / {photos.length}</span>
+                <PreviewOrderInput
+                  key={`preview-${preview.idx}`}
+                  type="number" min={1} max={photos.length}
+                  defaultValue={preview.idx + 1}
+                  onBlur={(e) => {
+                    const val = parseInt(e.target.value);
+                    const toIdx = Math.max(0, Math.min(photos.length - 1, val - 1));
+                    if (toIdx === preview.idx) return;
+                    setPhotos(prev => {
+                      const arr = [...prev];
+                      const [r] = arr.splice(preview.idx, 1);
+                      arr.splice(toIdx, 0, r);
+                      return arr;
+                    });
+                    setPreview(prev => ({ ...prev, idx: toIdx }));
+                  }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } }}
+                />
+                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>번으로 이동</span>
+              </PreviewOrderWrap>
+            </PreviewBottom>
           </PreviewBox>
         </PreviewBg>
       )}
@@ -721,54 +723,6 @@ const DropSub = styled.p`
   color: ${({ theme }) => theme.colors.textMuted};
 `;
 
-const PreviewGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: 10px;
-`;
-
-const PreviewItem = styled.div`
-  position: relative;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid ${({ theme }) => theme.colors.border};
-`;
-
-const PreviewImg = styled.img`
-  width: 100%;
-  height: 80px;
-  object-fit: cover;
-  display: block;
-`;
-
-const MainTag = styled.div`
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  background: ${ACCENT};
-  color: white;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 5px;
-  border-radius: 4px;
-`;
-
-const RemoveBtn = styled.button`
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.55);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background 0.15s;
-  &:hover { background: #ef4444; }
-`;
 
 const SubmitRow = styled.div`
   display: flex;
@@ -822,6 +776,13 @@ const ZoomOverlay = styled.div`
   position: absolute; inset: 0; background: rgba(0,0,0,0.4);
   display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.15s;
 `;
+const NewPinBadge = styled.div`
+  position: absolute; bottom: 4px; right: 4px;
+  background: #6366f1; color: white;
+  font-size: 9px; font-weight: 700;
+  padding: 1px 4px; border-radius: 3px;
+`;
+
 const MainPinBadge = styled.div`
   position: absolute; top: 3px; left: 3px;
   background: #f59e0b; color: white; font-size: 9px; font-weight: 700;

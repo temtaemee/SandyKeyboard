@@ -43,6 +43,7 @@ export default function SpaceEditPage() {
           keepPictureIds: pictureChanges.keepPictureIds,
           mainPictureId: pictureChanges.mainPictureId ?? null,
           newPictures: pictureChanges.newPictures,
+          categoryUpdates: pictureChanges.categoryUpdates ?? [],
         };
         formData.append('dto', new Blob([JSON.stringify(picDto)], { type: 'application/json' }));
         pictureChanges.files.forEach(file => formData.append('files', file));

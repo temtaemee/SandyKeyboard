@@ -109,7 +109,34 @@ public class SpaceService {
                 })
                 .toList();
 
-        return SpaceResDto.from(space, stays);
+        List<SpaceResDto.PictureInfo> pictures = spacePictureRepository.findBySpaceIdOrderBySortOrder(id)
+                .stream()
+                .map(p -> SpaceResDto.PictureInfo.builder()
+                        .id(p.getId())
+                        .filePath(resolveImageUrl(p.getFilePath()))
+                        .mainYn(p.getMainYn())
+                        .sortOrder(p.getSortOrder())
+                        .category(p.getCategory())
+                        .build())
+                .toList();
+
+        String thumbnailUrl = pictures.stream()
+                .filter(p -> "Y".equals(p.getMainYn()))
+                .findFirst()
+                .map(SpaceResDto.PictureInfo::getFilePath)
+                .orElse(pictures.isEmpty() ? null : pictures.get(0).getFilePath());
+
+        List<Long> arcadeIdList = spaceArcadeRepository.findBySpaceId(id).stream()
+                .map(sa -> sa.getArcade().getId())
+                .toList();
+
+        List<java.util.Map<String, Object>> arcades = spaceArcadeRepository.findBySpaceId(id).stream()
+                .map(sa -> java.util.Map.<String, Object>of(
+                        "id", sa.getArcade().getId(),
+                        "name", sa.getArcade().getName()))
+                .toList();
+
+        return SpaceResDto.from(space, stays, thumbnailUrl, pictures, arcadeIdList, arcades);
     }
 
     // ========== Seller 전용 메서드 ==========
@@ -213,6 +240,12 @@ public class SpaceService {
             for (int i = 0; i < keepIds.size(); i++) {
                 String mainYn = keepIds.get(i).equals(mainId) ? "Y" : "N";
                 spacePictureRepository.updateOrderAndMain(keepIds.get(i), i, mainYn);
+            }
+        }
+
+        if (dto.getCategoryUpdates() != null) {
+            for (SpacePictureUpdateReqDto.CategoryUpdateDto cu : dto.getCategoryUpdates()) {
+                spacePictureRepository.updateCategory(cu.getId(), cu.getCategory());
             }
         }
 
