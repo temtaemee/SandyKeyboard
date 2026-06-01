@@ -7,9 +7,13 @@ const adminReservationSlice = createSlice({
     reservations: [],
     reservationsTotalPage: 1,
     reservationsTotalCount: 0,
-    allReservations: [],   // 통계/환불 모달용 전체 데이터
+    allReservations: [], // 통계/환불 모달용 전체 데이터
     loading: false,
     error: null,
+    dashboardSummary: {
+      thisMonthReservationCount: 0,
+      thisMonthCancelAmount: 0,
+    },
   },
   reducers: {
     setReservations(state, action) {
@@ -26,26 +30,14 @@ const adminReservationSlice = createSlice({
     setPartners(state, action) {
       state.partners = action.payload;
     },
-    addPartner(state, action) {
-      state.partners.unshift(action.payload);
-    },
-    updatePartner(state, action) {
-      const { id, changes } = action.payload;
-      const partner = state.partners.find((p) => p.id === id);
-      if (partner) Object.assign(partner, changes);
-    },
-    togglePartnerStatus(state, action) {
-      const id = action.payload;
-      const partner = state.partners.find((p) => p.id === id);
-      if (partner) {
-        partner.status = partner.status === 'active' ? 'inactive' : 'active';
-      }
-    },
     setLoading(state, action) {
       state.loading = action.payload;
     },
     setError(state, action) {
       state.error = action.payload;
+    },
+    setDashboardSummary(state, action) {
+      state.dashboardSummary = action.payload;
     },
   },
 });
@@ -55,11 +47,9 @@ export const {
   setReservationsMetadata,
   setAllReservations,
   setPartners,
-  addPartner,
-  updatePartner,
-  togglePartnerStatus,
   setLoading,
   setError,
+  setDashboardSummary,
 } = adminReservationSlice.actions;
 
 export default adminReservationSlice.reducer;

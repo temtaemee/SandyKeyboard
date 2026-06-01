@@ -33,8 +33,12 @@ const STATUS_FILTER_TABS = [
 ];
 
 // USER_CANCELLED, SELLER_CANCELLED, REFUND_COMPLETED 를 '취소' 탭으로 묶음
-// USER_CANCELLED, SELLER_CANCELLED 만 '취소' 탭으로 묶음 (REFUND_COMPLETED는 환불 모달에서 별도 표시)
-const CANCELLED_STATUSES = ['USER_CANCELLED', 'SELLER_CANCELLED'];
+// USER_CANCELLED, SELLER_CANCELLED, REFUND_COMPLETED 를 '취소' 탭으로 묶음
+const CANCELLED_STATUSES = [
+  'USER_CANCELLED',
+  'SELLER_CANCELLED',
+  'REFUND_COMPLETED',
+];
 
 export default function AdminReservationPage() {
   const {
@@ -42,17 +46,16 @@ export default function AdminReservationPage() {
     reservations,
     reservationsTotalPage,
     reservationsTotalCount,
-    thisMonthCount,
     refundedList,
+    dashboardSummary,
     fetchPartners,
     fetchReservations,
     fetchAllReservations,
+    fetchDashboardSummary,
     addPartner,
     updatePartner,
     togglePartnerStatus,
   } = useAdminReservation();
-
-  const [refundModalOpen, setRefundModalOpen] = useState(false);
 
   const { currentPage, goToPage, goToPrev, goToNext } = usePagination();
 
@@ -87,7 +90,8 @@ export default function AdminReservationPage() {
   useEffect(() => {
     fetchPartners();
     fetchAllReservations(); // 통계/환불 모달용 전체 데이터 1회 로드
-  }, [fetchPartners, fetchAllReservations]);
+    fetchDashboardSummary(); // 대시보드 통계 정보 로드
+  }, [fetchPartners, fetchAllReservations, fetchDashboardSummary]);
 
   // 검색어 / 페이지 변경 시 예약 목록 조회 (status 필터는 프론트에서 처리)
   useEffect(() => {
@@ -123,24 +127,27 @@ export default function AdminReservationPage() {
           </StatCardTop>
           <StatLabel>이번 달 예약</StatLabel>
           <StatValueRow>
-            <StatValue>{thisMonthCount.toLocaleString()}건</StatValue>
+            <StatValue>
+              {(
+                dashboardSummary?.thisMonthReservationCount ?? 0
+              ).toLocaleString()}
+              건
+            </StatValue>
           </StatValueRow>
         </StatCard>
 
-        <StatCard
-          style={{ cursor: 'pointer' }}
-          onClick={() => setRefundModalOpen(true)}
-        >
+        <StatCard>
           <StatCardTop>
             <StatIconWrap $bg="rgba(239,68,68,0.1)" $color="#dc2626">
               <BanIcon />
             </StatIconWrap>
           </StatCardTop>
-          <StatLabel>결제 취소 (환불)</StatLabel>
+          <StatLabel>이번 달 결제 취소 금액 (환불)</StatLabel>
           <StatValueRow>
-            <StatValue>{refundedList.length.toLocaleString()}건</StatValue>
+            <StatValue>
+              ₩{(dashboardSummary?.thisMonthCancelAmount ?? 0).toLocaleString()}
+            </StatValue>
           </StatValueRow>
-          <StatHint>클릭하여 환불 목록 확인</StatHint>
         </StatCard>
 
         {/* 활성 파트너사 카드 */}
@@ -417,57 +424,6 @@ export default function AdminReservationPage() {
           </ModalContent>
         </ModalOverlay>
       )}
-
-      {/* ── 환불 완료 목록 모달 ── */}
-      {refundModalOpen && (
-        <ModalOverlay onClick={() => setRefundModalOpen(false)}>
-          <ModalContent $width="640px" onClick={(e) => e.stopPropagation()}>
-            <ModalHeader>
-              <ModalTitle>환불 완료 내역</ModalTitle>
-              <ModalCloseBtn onClick={() => setRefundModalOpen(false)}>
-                <X size={20} />
-              </ModalCloseBtn>
-            </ModalHeader>
-            <ModalBody style={{ padding: '0 24px 24px 24px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
-                {refundedList.length === 0 ? (
-                  <EmptyState>환불 완료된 예약 내역이 없습니다.</EmptyState>
-                ) : (
-                  refundedList.map((row) => (
-                    <div
-                      key={row.id}
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '8px',
-                        padding: '16px',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '8px',
-                        background: '#f8fafc',
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
-                          ID: {row.id}
-                        </span>
-                        <StatusBadge $bg="#fce7f3" $color="#db2777">
-                          {row.statusLabel || '환불 완료'}
-                        </StatusBadge>
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px', color: '#475569' }}>
-                        <div><strong>예약자:</strong> {row.customerName} ({row.customerEmail})</div>
-                        <div><strong>숙소:</strong> {row.spaceName}</div>
-                        <div><strong>이용일자:</strong> {row.date}</div>
-                        <div><strong>결제금액:</strong> {row.amount}</div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </ModalBody>
-          </ModalContent>
-        </ModalOverlay>
-      )}
     </PageWrapper>
   );
 }
@@ -572,12 +528,6 @@ const StatValue = styled.p`
   color: ${({ theme }) => theme.colors.adminTextDark};
   font-family: ${({ theme }) => theme.fonts.number};
   letter-spacing: -0.5px;
-`;
-
-const StatHint = styled.p`
-  font-size: 11px;
-  color: ${({ theme }) => theme.colors.textLight};
-  margin-top: 4px;
 `;
 
 /* 예약 테이블 */
