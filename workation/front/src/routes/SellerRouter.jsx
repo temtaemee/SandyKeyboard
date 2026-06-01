@@ -13,7 +13,6 @@ import SalesPage from '../features/seller/pages/SalesPage';
 import ReservationPage from '../features/seller/pages/ReservationPage';
 import SettlementPage from '../features/seller/pages/SettlementPage';
 import ReviewPage from '../features/seller/pages/ReviewPage';
-import CouponPage from '../features/seller/pages/CouponPage';
 import AccountPage from '../features/seller/pages/AccountPage';
 
 export default function SellerRouter() {
@@ -33,7 +32,6 @@ export default function SellerRouter() {
         <Route path="reservations" element={<ReservationPage />} />
         <Route path="settlements" element={<SettlementPage />} />
         <Route path="reviews" element={<ReviewPage />} />
-        <Route path="coupons" element={<CouponPage />} />
         <Route path="account" element={<AccountPage />} />
       </Route>
     </Routes>

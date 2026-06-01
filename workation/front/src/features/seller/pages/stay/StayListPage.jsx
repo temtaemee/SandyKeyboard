@@ -25,14 +25,15 @@ export default function StayListPage() {
 
   useEffect(() => {
     fetchMySpaces();
+    fetchStayList({});
   }, []); // eslint-disable-line
 
-  useEffect(() => {
-    const params = {};
-    if (filters.spaceId) params.spaceId = filters.spaceId;
-    if (filters.workationYn) params.workationYn = filters.workationYn;
-    fetchStayList(params);
-  }, [filters]); // eslint-disable-line
+  // 백엔드가 spaceId 파라미터를 무시하므로 프론트에서 필터링
+  const filteredStays = stays.filter((s) => {
+    if (filters.spaceId && String(s.spaceId) !== String(filters.spaceId)) return false;
+    if (filters.workationYn && s.workationYn !== filters.workationYn) return false;
+    return true;
+  });
 
   const showToast = (msg) => {
     setToast(msg);
@@ -84,7 +85,7 @@ export default function StayListPage() {
         <HeaderActions>
           <RefreshBtn
             type="button"
-            onClick={() => fetchStayList(Object.fromEntries(Object.entries(filters).filter(([, v]) => v)))}
+            onClick={() => fetchStayList({})}
             disabled={loading}
           >
             <RefreshCw size={15} />
@@ -127,17 +128,17 @@ export default function StayListPage() {
             <ErrorMsg>{error}</ErrorMsg>
             <RetryBtn type="button" onClick={() => fetchStayList({})}>다시 시도</RetryBtn>
           </ErrorState>
-        ) : stays.length === 0 ? (
+        ) : filteredStays.length === 0 ? (
           <EmptyState
             icon={<BedDouble size={40} />}
-            title="등록된 스테이가 없습니다"
+            title={filters.spaceId || filters.workationYn ? '해당 조건의 스테이가 없습니다' : '등록된 스테이가 없습니다'}
             description="공간에 스테이(객실)를 등록해보세요."
             actionLabel="스테이 등록하기"
             onAction={() => navigate('/seller/stays/register')}
           />
         ) : (
           <StayTable
-            stays={stays}
+            stays={filteredStays}
             spacesMap={spacesMap}
             onToggleVisible={handleToggleVisible}
             onDetail={(id) => navigate(`/seller/stays/${id}`)}
