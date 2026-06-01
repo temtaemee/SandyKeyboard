@@ -38,6 +38,38 @@ public class S3PictureUploader {
         return s3Service.getFileUrl(s3Key);
     }
 
+    /**
+     * InputStream을 읽어 S3에 업로드하고 전체 URL을 반환한다.
+     * 업로드 실패 시 null 반환.
+     */
+    public String uploadFromStream(java.io.InputStream inputStream, String filename, String dirPrefix) {
+        try {
+            byte[] content = inputStream.readAllBytes();
+            String ct = filename.toLowerCase().endsWith(".jpg") || filename.toLowerCase().endsWith(".jpeg")
+                    ? "image/jpeg" : "image/png";
+            final String contentType = ct;
+            final String fn = filename;
+
+            org.springframework.web.multipart.MultipartFile mf = new org.springframework.web.multipart.MultipartFile() {
+                @Override public String getName() { return fn; }
+                @Override public String getOriginalFilename() { return fn; }
+                @Override public String getContentType() { return contentType; }
+                @Override public boolean isEmpty() { return content.length == 0; }
+                @Override public long getSize() { return content.length; }
+                @Override public byte[] getBytes() { return content; }
+                @Override public java.io.InputStream getInputStream() { return new java.io.ByteArrayInputStream(content); }
+                @Override public void transferTo(java.io.File dest) throws java.io.IOException { java.nio.file.Files.write(dest.toPath(), content); }
+            };
+
+            List<String> keys = upload(List.of(mf), dirPrefix);
+            return keys.isEmpty() ? null : s3Service.getFileUrl(keys.get(0));
+        } catch (Exception e) {
+            log.error("[S3PictureUploader] InputStream 업로드 실패: {}", filename, e);
+            return null;
+        }
+    }
+
+
     public List<String> upload(List<MultipartFile> files, String dirPrefix) {
         if (files == null || files.isEmpty()) {
             return List.of();
