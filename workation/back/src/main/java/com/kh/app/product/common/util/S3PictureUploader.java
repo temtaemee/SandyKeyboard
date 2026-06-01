@@ -33,6 +33,11 @@ public class S3PictureUploader {
      * @return 업로드된 S3 key 목록 (파일 순서 유지)
      * @throws ProductException FILE_UPLOAD_FAILED — S3 업로드 실패 시
      */
+    public String getFileUrl(String s3Key) {
+        if (s3Key == null) return null;
+        return s3Service.getFileUrl(s3Key);
+    }
+
     public List<String> upload(List<MultipartFile> files, String dirPrefix) {
         if (files == null || files.isEmpty()) {
             return List.of();

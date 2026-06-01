@@ -58,7 +58,7 @@ public class SpaceService {
                 .map(space -> {
                     String thumbnailUrl = spacePictureRepository
                             .findBySpaceIdAndMainYn(space.getId(), "Y")
-                            .map(SpacePictureEntity::getFilePath)
+                            .map(p -> resolveImageUrl(p.getFilePath()))
                             .orElse(null);
                     return SpaceResDto.from(space, null, thumbnailUrl);
                 })
@@ -89,7 +89,7 @@ public class SpaceService {
                 .map(space -> {
                     String thumbnailUrl = spacePictureRepository
                             .findBySpaceIdAndMainYn(space.getId(), "Y")
-                            .map(SpacePictureEntity::getFilePath)
+                            .map(p -> resolveImageUrl(p.getFilePath()))
                             .orElse(null);
                     return SpaceResDto.from(space, null, thumbnailUrl);
                 })
@@ -145,7 +145,7 @@ public class SpaceService {
                 .map(space -> {
                     String thumbnailUrl = spacePictureRepository
                             .findBySpaceIdAndMainYn(space.getId(), "Y")
-                            .map(SpacePictureEntity::getFilePath)
+                            .map(p -> resolveImageUrl(p.getFilePath()))
                             .orElse(null);
                     return SpaceResDto.from(space, null, thumbnailUrl);
                 })
@@ -166,8 +166,34 @@ public class SpaceService {
                 })
                 .toList();
 
-        List<SpacePictureEntity> pictures = spacePictureRepository.findBySpaceIdOrderBySortOrder(id);
-        return SpaceResDto.from(space, stays, null, pictures);
+        List<SpaceResDto.PictureInfo> pictures = spacePictureRepository.findBySpaceIdOrderBySortOrder(id)
+                .stream()
+                .map(p -> SpaceResDto.PictureInfo.builder()
+                        .id(p.getId())
+                        .filePath(resolveImageUrl(p.getFilePath()))
+                        .mainYn(p.getMainYn())
+                        .sortOrder(p.getSortOrder())
+                        .category(p.getCategory())
+                        .build())
+                .toList();
+
+        String thumbnailUrl = pictures.stream()
+                .filter(p -> "Y".equals(p.getMainYn()))
+                .findFirst()
+                .map(SpaceResDto.PictureInfo::getFilePath)
+                .orElse(pictures.isEmpty() ? null : pictures.get(0).getFilePath());
+
+        List<Long> arcadeIdList = spaceArcadeRepository.findBySpaceId(id).stream()
+                .map(sa -> sa.getArcade().getId())
+                .toList();
+
+        List<java.util.Map<String, Object>> arcades = spaceArcadeRepository.findBySpaceId(id).stream()
+                .map(sa -> java.util.Map.<String, Object>of(
+                        "id", sa.getArcade().getId(),
+                        "name", sa.getArcade().getName()))
+                .toList();
+
+        return SpaceResDto.from(space, stays, thumbnailUrl, pictures, arcadeIdList, arcades);
     }
 
     @Transactional
@@ -182,6 +208,12 @@ public class SpaceService {
             spacePictureRepository.deleteBySpaceId(spaceId);
         } else {
             spacePictureRepository.deleteBySpaceIdAndIdNotIn(spaceId, keepIds);
+            // keepPictureIds 순서 = 새 sortOrder, mainPictureId = 대표
+            Long mainId = dto.getMainPictureId();
+            for (int i = 0; i < keepIds.size(); i++) {
+                String mainYn = keepIds.get(i).equals(mainId) ? "Y" : "N";
+                spacePictureRepository.updateOrderAndMain(keepIds.get(i), i, mainYn);
+            }
         }
 
         uploadAndSavePictures(space, files, dto.getNewPictures());
@@ -198,6 +230,10 @@ public class SpaceService {
                 dto.getAddress1(), dto.getAddress2(),
                 dto.getLatitude(), dto.getLongitude(), dto.getArea()
         );
+        if (dto.getArcadeIdList() != null) {
+            spaceArcadeRepository.deleteBySpaceId(id);
+            insertArcades(space, dto.getArcadeIdList());
+        }
     }
 
     @Transactional
@@ -224,7 +260,7 @@ public class SpaceService {
                 .map(space -> {
                     String thumbnailUrl = spacePictureRepository
                             .findBySpaceIdAndMainYn(space.getId(), "Y")
-                            .map(SpacePictureEntity::getFilePath)
+                            .map(p -> resolveImageUrl(p.getFilePath()))
                             .orElse(null);
                     return SpaceResDto.from(space, null, thumbnailUrl);
                 })
@@ -312,6 +348,13 @@ public class SpaceService {
     }
 
     // ========== Private 헬퍼 ==========
+
+    private String resolveImageUrl(String filePath) {
+        if (filePath == null) return null;
+        if (filePath.startsWith("http")) return filePath;
+        if (filePath.startsWith("/")) return "http://localhost" + filePath;
+        return s3PictureUploader.getFileUrl(filePath);
+    }
 
     private void verifySpaceOwnership(SpaceEntity space, Long memberId) {
         if (space.getSeller() == null || !Objects.equals(space.getSeller().getId(), memberId)) {

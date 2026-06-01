@@ -13,6 +13,7 @@ import lombok.Getter;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Getter
 @Builder
@@ -83,6 +84,12 @@ public class SpaceResDto {
     @Schema(description = "사진 목록 (상세 조회 시에만 포함)")
     private List<PictureInfo> pictures;
 
+    @Schema(description = "편의시설 ID 목록 (상세 조회 시에만 포함)")
+    private List<Long> arcadeIdList;
+
+    @Schema(description = "편의시설 목록 {id, name} (상세 조회 시에만 포함)")
+    private List<Map<String, Object>> arcades;
+
     @Getter
     @Builder
     public static class PictureInfo {
@@ -103,6 +110,65 @@ public class SpaceResDto {
 
     public static SpaceResDto from(SpaceEntity entity, List<StayResDto> stays, String thumbnailUrl) {
         return from(entity, stays, thumbnailUrl, null);
+    }
+
+    public static SpaceResDto from(SpaceEntity entity, List<StayResDto> stays, String thumbnailUrl,
+                                    List<PictureInfo> prebuiltPictures, boolean dummy) {
+        return SpaceResDto.builder()
+                .id(entity.getId())
+                .name(entity.getName())
+                .phone(entity.getPhone())
+                .email(entity.getEmail())
+                .summary(entity.getSummary())
+                .description(entity.getDescription())
+                .address1(entity.getAddress1())
+                .address2(entity.getAddress2())
+                .latitude(entity.getLatitude())
+                .longitude(entity.getLongitude())
+                .visibleYn(entity.getVisibleYn())
+                .delYn(entity.getDelYn())
+                .area(entity.getArea())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .sellerId(entity.getSeller() != null ? entity.getSeller().getId() : null)
+                .sellerUsername(entity.getSeller() != null ? entity.getSeller().getUsername() : null)
+                .sellerName(entity.getSeller() != null && entity.getSeller().getSeller() != null
+                        ? entity.getSeller().getSeller().getAccountName() : null)
+                .thumbnailUrl(thumbnailUrl)
+                .stays(stays)
+                .pictures(prebuiltPictures)
+                .build();
+    }
+
+    public static SpaceResDto from(SpaceEntity entity, List<StayResDto> stays, String thumbnailUrl,
+                                    List<PictureInfo> prebuiltPictures, List<Long> arcadeIdList,
+                                    List<Map<String, Object>> arcades) {
+        return SpaceResDto.builder()
+                .id(entity.getId())
+                .name(entity.getName())
+                .phone(entity.getPhone())
+                .email(entity.getEmail())
+                .summary(entity.getSummary())
+                .description(entity.getDescription())
+                .address1(entity.getAddress1())
+                .address2(entity.getAddress2())
+                .latitude(entity.getLatitude())
+                .longitude(entity.getLongitude())
+                .visibleYn(entity.getVisibleYn())
+                .delYn(entity.getDelYn())
+                .area(entity.getArea())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .sellerId(entity.getSeller() != null ? entity.getSeller().getId() : null)
+                .sellerUsername(entity.getSeller() != null ? entity.getSeller().getUsername() : null)
+                .sellerName(entity.getSeller() != null && entity.getSeller().getSeller() != null
+                        ? entity.getSeller().getSeller().getAccountName() : null)
+                .thumbnailUrl(thumbnailUrl)
+                .stays(stays)
+                .pictures(prebuiltPictures)
+                .arcadeIdList(arcadeIdList)
+                .arcades(arcades)
+                .build();
     }
 
     public static SpaceResDto from(SpaceEntity entity, List<StayResDto> stays, String thumbnailUrl,

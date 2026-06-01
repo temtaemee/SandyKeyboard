@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { ArrowLeft } from 'lucide-react';
@@ -22,7 +22,6 @@ function validateStep1(data) {
 
   if (!data.name?.trim()) errs.name = '공간명을 입력하세요';
 
-  // 전화번호: 숫자+하이픈, 9~12자리 (02-123-4567 ~ 010-1234-5678)
   if (!data.phone?.trim()) {
     errs.phone = '전화번호를 입력하세요';
   } else {
@@ -34,7 +33,6 @@ function validateStep1(data) {
     }
   }
 
-  // 이메일
   if (!data.email?.trim()) {
     errs.email = '이메일을 입력하세요';
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
@@ -44,11 +42,11 @@ function validateStep1(data) {
   if (!data.summary?.trim()) errs.summary = '한줄 소개를 입력하세요';
   if (!data.description?.trim()) errs.description = '상세 설명을 입력하세요';
 
-  // 주소: 최소 5자 이상 의미 있는 주소
+  // 주소: 검색 버튼으로 주소를 선택해야 좌표가 세팅됨
   if (!data.address1?.trim()) {
-    errs.address1 = '기본 주소를 입력하세요';
-  } else if (data.address1.trim().length < 5) {
-    errs.address1 = '주소를 더 자세히 입력하세요 (최소 5자)';
+    errs.address1 = '주소 검색 버튼으로 주소를 검색해주세요';
+  } else if (!data.latitude || !data.longitude) {
+    errs.address1 = '주소 검색 버튼으로 주소를 다시 검색해주세요 (좌표 미확인)';
   }
 
   if (!data.area) errs.area = '지역을 선택하세요';
@@ -64,8 +62,10 @@ export default function SpaceRegisterPage() {
   const [step2MainPhoto, setStep2MainPhoto] = useState(null); // { categoryKey, fileIdx }
   const [step3Arcades, setStep3Arcades] = useState([]);
   const [step1Errors, setStep1Errors] = useState({});
+  const [step2Error, setStep2Error] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+  const submitErrorRef = useRef(null);
 
   const handleStep1Change = (field, value) => {
     setStep1Data((prev) => ({ ...prev, [field]: value }));
@@ -84,6 +84,12 @@ export default function SpaceRegisterPage() {
   };
 
   const goToStep3 = () => {
+    const totalFiles = step2Categories.reduce((sum, cat) => sum + cat.files.length, 0);
+    if (totalFiles === 0) {
+      setStep2Error('사진을 1장 이상 등록해주세요');
+      return;
+    }
+    setStep2Error(null);
     setStep(3);
   };
 
@@ -143,7 +149,9 @@ export default function SpaceRegisterPage() {
         setStep(1);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
-        setSubmitError(data?.message ?? '공간 등록에 실패했습니다. 다시 시도해 주세요.');
+        const msg = data?.message ?? '공간 등록에 실패했습니다. 다시 시도해 주세요.';
+        setSubmitError(msg);
+        setTimeout(() => submitErrorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
       }
     } finally {
       setSubmitting(false);
@@ -194,9 +202,10 @@ export default function SpaceRegisterPage() {
             <SpaceFormStep2
               categories={step2Categories}
               mainPhoto={step2MainPhoto}
-              onCategoriesChange={setStep2Categories}
+              onCategoriesChange={(cats) => { setStep2Categories(cats); setStep2Error(null); }}
               onMainPhotoChange={setStep2MainPhoto}
             />
+            {step2Error && <StepError>{step2Error}</StepError>}
             <BtnRow>
               <PrevBtn type="button" onClick={() => setStep(1)}>
                 &larr; 이전
@@ -213,7 +222,7 @@ export default function SpaceRegisterPage() {
             <StepHeading>편의시설 선택</StepHeading>
             <SpaceFormStep3 arcadeIdList={step3Arcades} onChange={setStep3Arcades} />
 
-            {submitError && <SubmitError>{submitError}</SubmitError>}
+            {submitError && <SubmitError ref={submitErrorRef}>⚠ {submitError}</SubmitError>}
 
             <BtnRow>
               <PrevBtn type="button" onClick={() => setStep(2)} disabled={submitting}>
@@ -346,10 +355,23 @@ const SubmitBtn = styled.button`
   &:disabled { opacity: 0.6; cursor: not-allowed; }
 `;
 
-const SubmitError = styled.p`
+const StepError = styled.p`
   font-size: 13px;
+  font-weight: 500;
   color: #b91c1c;
   background: #fee2e2;
-  padding: 10px 16px;
+  border: 1px solid #fecaca;
+  padding: 12px 16px;
   border-radius: 8px;
+`;
+
+const SubmitError = styled.div`
+  font-size: 14px;
+  font-weight: 600;
+  color: #b91c1c;
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  padding: 14px 18px;
+  border-radius: 8px;
+  line-height: 1.5;
 `;

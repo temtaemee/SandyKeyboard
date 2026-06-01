@@ -41,6 +41,7 @@ export default function SpaceEditPage() {
         const formData = new FormData();
         const picDto = {
           keepPictureIds: pictureChanges.keepPictureIds,
+          mainPictureId: pictureChanges.mainPictureId ?? null,
           newPictures: pictureChanges.newPictures,
         };
         formData.append('dto', new Blob([JSON.stringify(picDto)], { type: 'application/json' }));

@@ -7,6 +7,7 @@ import com.kh.app.product.space.entity.SpaceEntity;
 import com.kh.app.product.space.repository.SpaceRepository;
 import com.kh.app.product.stay.dto.request.StayExtraPriceReqDto;
 import com.kh.app.product.stay.dto.request.StayInsertReqDto;
+import com.kh.app.product.stay.dto.request.StayPictureUpdateReqDto;
 import com.kh.app.product.stay.dto.request.StaySearchReqDto;
 import com.kh.app.product.stay.dto.request.StayUpdateReqDto;
 import com.kh.app.product.stay.dto.response.StayResDto;
@@ -104,10 +105,21 @@ public class StayService {
     public List<StayResDto> searchMyStays(Long memberId) {
         return stayRepository.searchMyStays(memberId).stream()
                 .map(stay -> {
-                    List<StayPictureEntity> pictures = stayPictureRepository.findByStayOrderBySortOrder(stay);
+                    List<StayResDto.PictureInfo> pictures = stayPictureRepository.findByStayOrderBySortOrder(stay)
+                            .stream()
+                            .map(p -> StayResDto.PictureInfo.builder()
+                                    .id(p.getId())
+                                    .filePath(resolveImageUrl(p.getFilePath()))
+                                    .originName(p.getOriginName())
+                                    .mainYn(p.getMainYn())
+                                    .sortOrder(p.getSortOrder())
+                                    .contentType(p.getContentType())
+                                    .fileSize(p.getFileSize())
+                                    .build())
+                            .toList();
                     List<StayOption> options = stayOptionRepository.findByStay(stay).stream()
                             .map(StayOptionEntity::getStayOption).toList();
-                    return StayResDto.from(stay, options, pictures);
+                    return StayResDto.from(stay, options, pictures, true);
                 })
                 .toList();
     }
@@ -117,10 +129,21 @@ public class StayService {
                 .orElseThrow(() -> new ProductException(ErrorCode.STAY_NOT_FOUND));
         verifyStayOwnership(stay, memberId);
 
-        List<StayPictureEntity> pictures = stayPictureRepository.findByStayOrderBySortOrder(stay);
+        List<StayResDto.PictureInfo> pictures = stayPictureRepository.findByStayOrderBySortOrder(stay)
+                .stream()
+                .map(p -> StayResDto.PictureInfo.builder()
+                        .id(p.getId())
+                        .filePath(resolveImageUrl(p.getFilePath()))
+                        .originName(p.getOriginName())
+                        .mainYn(p.getMainYn())
+                        .sortOrder(p.getSortOrder())
+                        .contentType(p.getContentType())
+                        .fileSize(p.getFileSize())
+                        .build())
+                .toList();
         List<StayOption> options = stayOptionRepository.findByStay(stay).stream()
                 .map(StayOptionEntity::getStayOption).toList();
-        return StayResDto.from(stay, options, pictures);
+        return StayResDto.from(stay, options, pictures, true);
     }
 
     @Transactional
@@ -273,6 +296,36 @@ public class StayService {
 
     // ========== Private 헬퍼 ==========
 
+    @Transactional
+    public void updatePictures(Long stayId, StayPictureUpdateReqDto dto,
+                               List<MultipartFile> files, Long memberId) {
+        StayEntity stay = findStay(stayId);
+        verifyStayOwnership(stay, memberId);
+
+        List<Long> keepIds = dto.getKeepPictureIds();
+        if (keepIds == null || keepIds.isEmpty()) {
+            stayPictureRepository.deleteByStayId(stayId);
+        } else {
+            stayPictureRepository.deleteByStayIdAndIdNotIn(stayId, keepIds);
+            Long mainId = dto.getMainPictureId();
+            for (int i = 0; i < keepIds.size(); i++) {
+                String mainYn = keepIds.get(i).equals(mainId) ? "Y" : "N";
+                stayPictureRepository.updateOrderAndMain(keepIds.get(i), i, mainYn);
+            }
+        }
+
+        if (files != null && !files.isEmpty()) {
+            uploadAndSavePictures(stay, files);
+        }
+    }
+
+    private String resolveImageUrl(String filePath) {
+        if (filePath == null) return null;
+        if (filePath.startsWith("http")) return filePath;
+        if (filePath.startsWith("/")) return "http://localhost" + filePath;
+        return s3PictureUploader.getFileUrl(filePath);
+    }
+
     private StayEntity findStay(Long id) {
         return stayRepository.findByIdAndDelYn(id, "N")
                 .orElseThrow(() -> new ProductException(ErrorCode.STAY_NOT_FOUND));
@@ -343,12 +396,9 @@ public class StayService {
                 && !startA.isAfter(endB) && !endA.isBefore(startB);
     }
 
-    /** 체크인 시간이 체크아웃 시간보다 빠른지 검사한다. */
+    /** checkIn/checkOut은 LocalTime만 저장 — 익일 퇴실이 일반적이므로 시간 순서 검증 없음 */
     private void validateCheckInOutTime(java.time.LocalTime checkInTime, java.time.LocalTime checkOutTime) {
-        if (checkInTime != null && checkOutTime != null
-                && !checkInTime.isBefore(checkOutTime)) {
-            throw new IllegalArgumentException("체크인 시간은 체크아웃 시간보다 빨라야 합니다.");
-        }
+        // 시간만으로 순서를 판단하면 안 됨 (예: 입실 15:00, 퇴실 익일 11:00)
     }
 
     private void uploadAndSavePictures(StayEntity stay, List<MultipartFile> files) {

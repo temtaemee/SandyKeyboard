@@ -52,6 +52,36 @@ public class StayResDto {
         private Long fileSize;
     }
 
+    public static StayResDto from(StayEntity entity, List<StayOption> options, List<PictureInfo> prebuiltPictures, boolean dummy) {
+        return StayResDto.builder()
+                .id(entity.getId())
+                .spaceId(entity.getSpace().getId())
+                .spaceName(entity.getSpace().getName())
+                .spaceVisibleYn(entity.getSpace().getVisibleYn())
+                .name(entity.getName())
+                .summary(entity.getSummary())
+                .description(entity.getDescription())
+                .capacity(entity.getCapacity())
+                .maxCapa(entity.getMaxCapa())
+                .visibleYn(entity.getVisibleYn())
+                .workationYn(entity.getWorkationYn())
+                .checkInTime(entity.getCheckInTime())
+                .checkOutTime(entity.getCheckOutTime())
+                .monPrice(entity.getMonPrice())
+                .tuePrice(entity.getTuePrice())
+                .wedPrice(entity.getWedPrice())
+                .thuPrice(entity.getThuPrice())
+                .friPrice(entity.getFriPrice())
+                .satPrice(entity.getSatPrice())
+                .sunPrice(entity.getSunPrice())
+                .holidayPrice(entity.getHolidayPrice())
+                .options(options)
+                .pictures(prebuiltPictures)
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .build();
+    }
+
     public static StayResDto from(StayEntity entity, List<StayOption> options, List<StayPictureEntity> pictures) {
         return StayResDto.builder()
                 .id(entity.getId())
