@@ -72,7 +72,7 @@ public class ReservationService {
 
 
     /**
-     * 💡 [수정] 숙소 및 쿠폰 연동 완료된 예약 생성 로직
+     * 숙소예약 생성 로직
      */
     @Transactional
     public Map<String, Object> create(
@@ -81,6 +81,13 @@ public class ReservationService {
             ReservationCreateReqDto dto,
             List<MultipartFile> fileList
     ) throws IOException {
+
+        // [추가] 중복 예약 방지 최종 검증 차단막
+        long duplicateCount = reservationRepository.countDuplicateReservations(stayId, dto.getCheckinDate(), dto.getCheckoutDate());
+        if (duplicateCount > 0) {
+            throw new IllegalStateException("선택하신 기간은 이미 다른 회원의 예약이 완료된 일정입니다. 다른 날짜를 선택해 주세요.");
+        }
+
 
         // 1~4. 회원, 날짜, 숙소, 인원 검증 로직 (기존과 완벽히 동일)
         MemberEntity memberEntity = memberRepository.findByUsername(username)
@@ -159,6 +166,21 @@ public class ReservationService {
 
         return resultMap;
     }
+    /**
+     * 💡 [추가] 특정 숙소의 이미 예약 완료된 날짜 범위 목록 조회
+     */
+    @Transactional(readOnly = true)
+    public List<Map<String, String>> getBookedDates(Long stayId) {
+        List<ReservationEntity> bookedReservations = reservationRepository.findFullyBookedDates(stayId);
+
+        return bookedReservations.stream().map(res -> {
+            Map<String, String> range = new java.util.HashMap<>();
+            range.put("checkin", res.getCheckinDate().toString());
+            range.put("checkout", res.getCheckoutDate().toString());
+            return range;
+        }).collect(java.util.stream.Collectors.toList());
+    }
+
 
     /**
      * 💡 내 예약 목록 조회 (결제 완료 이후 건만 노출)

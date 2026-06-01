@@ -37,6 +37,28 @@ public interface ReservationRepository extends JpaRepository<ReservationEntity, 
             @Param("end") LocalDate end
     );
 
+    // 💡 1. 예약 저장 시 겹치는 예약이 있는지 확인하는 방어 쿼리
+    @Query("SELECT COUNT(r) FROM ReservationEntity r " +
+            "WHERE r.stay.id = :stayId " +
+            "AND r.checkinDate < :checkoutDate " +
+            "AND r.checkoutDate > :checkinDate " +
+            "AND r.status IN (com.kh.app.transaction.reservation.entity.ReservationStatus.PAYMENT_COMPLETED, " +
+            "                 com.kh.app.transaction.reservation.entity.ReservationStatus.RESERVED, " +
+            "                 com.kh.app.transaction.reservation.entity.ReservationStatus.COMPLETED)")
+    long countDuplicateReservations(
+            @Param("stayId") Long stayId,
+            @Param("checkinDate") LocalDate checkinDate,
+            @Param("checkoutDate") LocalDate checkoutDate
+    );
+
+    // 💡 2. 프론트엔드 달력에 '이미 예약된 날짜 목록'을 전달하기 위한 조회 쿼리
+    @Query("SELECT r FROM ReservationEntity r " +
+            "WHERE r.stay.id = :stayId " +
+            "AND r.status IN (com.kh.app.transaction.reservation.entity.ReservationStatus.PAYMENT_COMPLETED, " +
+            "                 com.kh.app.transaction.reservation.entity.ReservationStatus.RESERVED, " +
+            "                 com.kh.app.transaction.reservation.entity.ReservationStatus.COMPLETED)")
+    List<ReservationEntity> findFullyBookedDates(@Param("stayId") Long stayId);
+
 
 
 }
