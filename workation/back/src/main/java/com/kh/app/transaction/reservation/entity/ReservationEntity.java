@@ -199,10 +199,15 @@ public class ReservationEntity {
     }
 
     private void validateEditable() {
-        if (this.status == ReservationStatus.PENDING) {
-            throw new IllegalStateException("결제 완료 이후에만 예약 정보를 수정할 수 있습니다.");
-        }
-        if (this.status != ReservationStatus.PAYMENT_COMPLETED) {
+        // 💡 결제 완료(PAYMENT_COMPLETED)와 예약 확정(RESERVED)이 모두 아닐 때만 예외 발생
+        if (this.status != ReservationStatus.PAYMENT_COMPLETED && this.status != ReservationStatus.RESERVED) {
+
+            // 1. 만약 예약 대기(PENDING) 상태라면 더 구체적인 안내 메시지 투척
+            if (this.status == ReservationStatus.PENDING) {
+                throw new IllegalStateException("결제 완료 이후에만 예약 정보를 수정할 수 있습니다.");
+            }
+
+            // 2. 그 외 취소나 이용 완료 등 수정이 완전히 불가능한 상태 처리
             throw new IllegalStateException("현재 상태에서는 예약 정보를 수정할 수 없습니다. (현재 상태: " + this.status.getLabel() + ")");
         }
     }

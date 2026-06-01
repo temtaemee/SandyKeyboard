@@ -1,11 +1,10 @@
-// src/features/user/reservation/pages/StayDetailPage.jsx
+// src/features/user/destination/pages/StayDetailPage.jsx
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import api from '../../../../app/api/axios'; // 공통 axios 인스턴스 사용
+import useDestination from '../hooks/useDestination'; // 💡 훅 임포트
 
-// 💡 백엔드 StayOption Enum에 대칭되는 한국어 친화적 라벨 맵
 const OPTION_LABELS = {
   DESK: '💻 집중 워크 데스크',
   PRIVATE_BATHROOM: '🚿 개인 욕실',
@@ -30,8 +29,7 @@ const OPTION_LABELS = {
 function StayDetailPage() {
   const { stayId } = useParams();
   const navigate = useNavigate();
-  const [stay, setStay] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { currentStay: stay, loading, loadStayDetail } = useDestination(); // 💡 훅 연동
   const [activeImgIdx, setActiveImgIdx] = useState(0);
 
   const SERVER_HOST = 'http://localhost:80';
@@ -39,20 +37,11 @@ function StayDetailPage() {
     'https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=800&q=80';
 
   useEffect(() => {
-    async function fetchStayDetail() {
-      try {
-        const response = await api.get(`/public/stay/${stayId}`);
-        setStay(response.data);
-      } catch (err) {
-        console.error('숙소 상세 조회 오류:', err);
-        alert('숙소 정보를 가져오지 못했습니다.');
-        navigate(-1);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchStayDetail();
-  }, [stayId, navigate]);
+    loadStayDetail(stayId).catch(() => {
+      alert('숙소 정보를 가져오지 못했습니다.');
+      navigate(-1);
+    });
+  }, [stayId]);
 
   const handleBookClick = () => {
     const token = localStorage.getItem('accessToken');
@@ -67,9 +56,8 @@ function StayDetailPage() {
     navigate(`/resv/insert/${stay.id}`);
   };
 
-  if (loading)
+  if (loading || !stay)
     return <LoadingText>숙소 정보를 불러오는 중입니다...</LoadingText>;
-  if (!stay) return null;
 
   const getRealImageUrl = (rawPath, fallback) => {
     if (!rawPath) return fallback;
@@ -83,20 +71,13 @@ function StayDetailPage() {
       ? stay.pictures.map((p) => getRealImageUrl(p.filePath, FALLBACK_STAY))
       : [FALLBACK_STAY];
 
-  const formatTime = (timeStr) => {
-    if (!timeStr) return '-';
-    return timeStr.slice(0, 5); // "15:00:00" -> "15:00" 가공
-  };
-
   return (
     <Wrapper>
       <Container>
-        {/* 1. 상단 갤러리 영역 */}
         <MainImageArea>
           <img src={imageList[activeImgIdx]} alt={stay.name} />
         </MainImageArea>
 
-        {/* 하단 미니 썸네일 리스트 */}
         {imageList.length > 1 && (
           <GalleryThumbnails>
             {imageList.map((imgUrl, index) => (
@@ -112,7 +93,6 @@ function StayDetailPage() {
         )}
 
         <InfoSection>
-          {/* 2. 타이틀 & 소속 공간 정보 */}
           <MetaHeader>
             <SpaceNameTag>🏡 {stay.spaceName || '연동 공간'}</SpaceNameTag>
             <HeaderRow>
@@ -123,10 +103,8 @@ function StayDetailPage() {
             </HeaderRow>
             {stay.summary && <StaySummary>✨ {stay.summary}</StaySummary>}
           </MetaHeader>
-
           <Divider />
 
-          {/* 3. 기본 인원 및 이용 시간 상세 명세 카드 */}
           <SectionTitle>📋 기본 이용 안내</SectionTitle>
           <InfoCardGrid>
             <CardItem>
@@ -137,25 +115,24 @@ function StayDetailPage() {
             </CardItem>
             <CardItem>
               <CardLabel>체크인 시간</CardLabel>
-              <CardValue>{formatTime(stay.checkInTime)} 이후</CardValue>
+              <CardValue>{stay.checkInTime?.slice(0, 5)} 이후</CardValue>
             </CardItem>
             <CardItem>
               <CardLabel>체크아웃 시간</CardLabel>
-              <CardValue>{formatTime(stay.checkOutTime)} 이전</CardValue>
+              <CardValue>{stay.checkOutTime?.slice(0, 5)} 이전</CardValue>
             </CardItem>
           </InfoCardGrid>
 
-          {/* 4. 요일별 전체 금액 투명 명세표 */}
           <SectionTitle>💰 요일별 정가 운용 안내</SectionTitle>
           <PriceTable>
             <PriceRow>
-              <PriceTh>월요일</PriceTh>
-              <PriceTh>화요일</PriceTh>
-              <PriceTh>수요일</PriceTh>
-              <PriceTh>목요일</PriceTh>
-              <PriceTh className="fri">금요일</PriceTh>
-              <PriceTh className="sat">토요일</PriceTh>
-              <PriceTh className="sun">일요일</PriceTh>
+              <PriceTh>월</PriceTh>
+              <PriceTh>화</PriceTh>
+              <PriceTh>수</PriceTh>
+              <PriceTh>목</PriceTh>
+              <PriceTh className="fri">금</PriceTh>
+              <PriceTh className="sat">토</PriceTh>
+              <PriceTh className="sun">일</PriceTh>
             </PriceRow>
             <PriceRow>
               <PriceTd>₩{stay.monPrice?.toLocaleString()}</PriceTd>
@@ -172,15 +149,8 @@ function StayDetailPage() {
                 ₩{stay.sunPrice?.toLocaleString()}
               </PriceTd>
             </PriceRow>
-            {stay.holidayPrice > 0 && (
-              <HolidayRow>
-                <span>🚨 공휴일/연휴 특별 지정 단가 :</span>
-                <strong>₩{stay.holidayPrice?.toLocaleString()} / 1박</strong>
-              </HolidayRow>
-            )}
           </PriceTable>
 
-          {/* 5. 셀러 지정 편의 인프라 옵션 뱃지 리스트 */}
           {stay.options && stay.options.length > 0 && (
             <>
               <SectionTitle>🛠️ 객실 내 포함 인프라 및 가구 옵션</SectionTitle>
@@ -194,7 +164,6 @@ function StayDetailPage() {
             </>
           )}
 
-          {/* 6. 상세 설명 블록 */}
           {stay.description && (
             <>
               <SectionTitle>📝 객실 상세 소개</SectionTitle>
@@ -202,7 +171,6 @@ function StayDetailPage() {
             </>
           )}
 
-          {/* 하단 제어 액션 단 */}
           <ButtonRow>
             <BackButton onClick={() => navigate(-1)}>
               &larr; 이전 공간으로
@@ -218,6 +186,7 @@ function StayDetailPage() {
 }
 
 export default StayDetailPage;
+// (하단 Styled Components 정의부는 기존과 동일함)
 
 /* ========================================================================= */
 /* Styled Components 디자인 시스템 레이아웃 정의 */
