@@ -19,7 +19,6 @@ export async function createReservation(stayId, formData) {
 
 /**
  * 유저 - 본인 보유 쿠폰 조회 (팀원 API 연동)
- * 💡 [복구 완료] 이 부분이 누락되어 있어 ReservationInsertPage에서 에러가 터졌습니다!
  */
 export async function getAvailableCoupons() {
   return await api.get('/user/memberCoupon?pno=0');
@@ -44,6 +43,17 @@ export async function getReservationOne(id) {
  */
 export async function updateReservation(id, updateData) {
   return await api.put(`/user/reservation/${id}`, updateData);
+}
+
+/**
+ *  유저 - 이용 완료 수동 확정 (COMPLETED 상태 변경)
+ * 마이페이지 등에서 이용완료(체크아웃 확정) 버튼을 누를 때 사용합니다.
+ */
+export async function completeReservation(reservationId) {
+  const response = await api.patch(
+    `/transaction/status/user/complete/${reservationId}`
+  );
+  return response.data;
 }
 
 // =========================================================================
@@ -74,6 +84,28 @@ export async function getSellerReservationOne(id) {
   return await api.get(`/seller/reservation/detail/${id}`);
 }
 
+/**
+ * 💡 [추가] 판매자 - 예약 수락/승인 처리 (RESERVED 상태 변경)
+ * 판매자 대시보드에서 들어온 예약 요청을 최종 승인할 때 사용합니다.
+ */
+export async function approveReservationBySeller(reservationId) {
+  const response = await api.patch(
+    `/transaction/status/seller/approve/${reservationId}`
+  );
+  return response.data;
+}
+
+/**
+ * 💡 [추가] 판매자 - 예약 거절/취소 처리 (SELLER_CANCELLED 상태 변경)
+ * 판매자 사정이나 예약 불가 사유로 예약을 거부할 때 사용합니다.
+ */
+export async function cancelReservationBySeller(reservationId) {
+  const response = await api.patch(
+    `/transaction/status/seller/cancel/${reservationId}`
+  );
+  return response.data;
+}
+
 // =========================================================================
 // 3. 관리자(Admin) 관련 API
 // =========================================================================
@@ -102,4 +134,12 @@ export async function getAdminReservationList({
  */
 export async function getAdminReservationOne(id) {
   return await api.get(`/admin/reservation/${id}`);
+}
+
+/**
+ * 관리자 - 대시보드 상단 당월 요약 통계 조회 (이번달 예약수, 이번달 취소금액)
+ */
+export async function getAdminDashboardSummary() {
+  const response = await api.get('/admin/dashboard/summary');
+  return response.data; // { thisMonthReservationCount: 142, thisMonthCancelAmount: 2850000 }
 }

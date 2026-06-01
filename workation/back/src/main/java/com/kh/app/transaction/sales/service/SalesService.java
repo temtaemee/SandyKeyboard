@@ -1,6 +1,8 @@
 package com.kh.app.transaction.sales.service;
 
 import com.kh.app.transaction.payment.entity.PaymentEntity;
+import com.kh.app.transaction.reservation.repository.ReservationRepository;
+import com.kh.app.transaction.sales.dto.response.DashboardSummaryResDto;
 import com.kh.app.transaction.sales.dto.response.SalesSummaryResDto;
 import com.kh.app.transaction.sales.entity.SalesEntity;
 import com.kh.app.transaction.sales.repository.SalesRepository;
@@ -8,7 +10,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.YearMonth;
 import java.util.List;
 
 @Service
@@ -17,6 +22,7 @@ import java.util.List;
 public class SalesService {
 
     private final SalesRepository salesRepository;
+    private final ReservationRepository reservationRepository;
 
     /**
      * 💡 결제 완료 시 호출되어 매출 원장을 기록하는 로직 (PaymentService 등에서 호출)
@@ -73,4 +79,31 @@ public class SalesService {
 
         salesRepository.save(sales);
     }
+
+    /**
+     * 관리자 대시보드용 이번 달 통계 데이터 조회 (예약 수 + 취소 금액)
+     */
+    public DashboardSummaryResDto getThisMonthDashboardSummary() {
+        // 1. 이번 달의 시작일과 종료일 계산
+        YearMonth currentMonth = YearMonth.now();
+        LocalDate startLocalDate = currentMonth.atDay(1);
+        LocalDate endLocalDate = currentMonth.atEndOfMonth();
+
+        // 2. 예약 수 산출용 파라미터 (LocalDate)
+        long reservationCount = reservationRepository.countValidReservationsByCheckinDate(startLocalDate, endLocalDate);
+
+        // 3. 매출 취소 금액 산출용 파라미터 (LocalDateTime 범위 변환)
+        LocalDateTime startDateTime = startLocalDate.atStartOfDay();
+        LocalDateTime endDateTime = endLocalDate.atTime(LocalTime.MAX);
+        long totalCancelAmount = salesRepository.sumCancelAmountByMonth(startDateTime, endDateTime);
+
+        // 4. 결합하여 결과 DTO 반환
+        return DashboardSummaryResDto.builder()
+                .thisMonthReservationCount(reservationCount)
+                .thisMonthCancelAmount(totalCancelAmount)
+                .build();
+    }
+
+
+
 }

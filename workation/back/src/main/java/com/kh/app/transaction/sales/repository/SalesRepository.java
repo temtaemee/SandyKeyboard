@@ -21,4 +21,15 @@ public interface SalesRepository extends JpaRepository<SalesEntity, Long> {
             "WHERE s.salesDate >= :start AND s.salesDate <= :end " +
             "AND s.id NOT IN (SELECT p.sales.id FROM PayoutEntity p)")
     List<SalesEntity> findUnprocessedSales(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    // 💡 조건: 이번 달 매출 전표 데이터 중 누적된 총 취소 금액(cancelAmount)의 합산 구하기
+    @Query("SELECT COALESCE(SUM(s.cancelAmount), 0) FROM SalesEntity s " +
+            "WHERE s.salesDate >= :start AND s.salesDate <= :end")
+    long sumCancelAmountByMonth(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
+
+
+
 }
