@@ -1,14 +1,12 @@
 // src/features/seller/layouts/SellerDefaltLayout.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { Bell, X } from 'lucide-react';
 
 import useAuth from '../../member/hooks/useAuth';
-import {
-  SELLER_NOTIFICATIONS,
-  SELLER_NOTIF_TYPE_COLOR,
-} from '../data/sellerConstants';
+import { SELLER_NOTIF_TYPE_COLOR } from '../data/sellerConstants';
+import { notificationApi } from '../api/notificationApi';
 import SellerSidebar from '../components/SellerSidebar';
 import SellerHeader from '../components/SellerHeader';
 
@@ -16,8 +14,9 @@ export default function SellerDefaltLayout() {
   const navigate = useNavigate();
   const { isLoggedIn, isSeller, loading: authLoading } = useAuth();
 
-  const [notifOpen, setNotifOpen] = useState(false);
-  const [notifs, setNotifs] = useState(SELLER_NOTIFICATIONS);
+  const [notifOpen, setNotifOpen]     = useState(false);
+  const [notifs, setNotifs]           = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     if (authLoading) return;
@@ -26,13 +25,44 @@ export default function SellerDefaltLayout() {
     }
   }, [authLoading, isLoggedIn, isSeller, navigate]);
 
+  const fetchNotifs = useCallback(async () => {
+    try {
+      const [listRes, countRes] = await Promise.all([
+        notificationApi.getList(),
+        notificationApi.getUnreadCount(),
+      ]);
+      setNotifs(listRes.data ?? []);
+      setUnreadCount(countRes.data ?? 0);
+    } catch {
+      // 알림 로드 실패는 조용히 처리
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isLoggedIn || !isSeller || authLoading) return;
+    fetchNotifs();
+    const timer = setInterval(fetchNotifs, 30000); // 30초마다 폴링
+    return () => clearInterval(timer);
+  }, [isLoggedIn, isSeller, authLoading, fetchNotifs]);
+
   if (authLoading) return <AuthScreen>로딩 중...</AuthScreen>;
   if (!isLoggedIn || !isSeller) return null;
 
-  const unreadCount = notifs.filter((n) => n.unread).length;
+  const handleMarkAllRead = async () => {
+    try {
+      await notificationApi.markAllRead();
+      setNotifs((prev) => prev.map((n) => ({ ...n, read: true })));
+      setUnreadCount(0);
+    } catch { /* ignore */ }
+  };
 
-  const handleMarkAllRead = () => {
-    setNotifs((prev) => prev.map((n) => ({ ...n, unread: false })));
+  const handleMarkRead = async (notif) => {
+    if (notif.read) return;
+    try {
+      await notificationApi.markRead(notif.id);
+      setNotifs((prev) => prev.map((n) => n.id === notif.id ? { ...n, read: true } : n));
+      setUnreadCount((c) => Math.max(0, c - 1));
+    } catch { /* ignore */ }
   };
 
   return (
@@ -71,23 +101,19 @@ export default function SellerDefaltLayout() {
             </NotifModalHeader>
 
             <NotifList>
-              {notifs.map((n) => (
+              {notifs.length === 0 ? (
+                <EmptyNotif>새 알림이 없습니다</EmptyNotif>
+              ) : notifs.map((n) => (
                 <NotifItem
                   key={n.id}
-                  $unread={n.unread}
-                  onClick={() =>
-                    setNotifs((prev) =>
-                      prev.map((item) =>
-                        item.id === n.id ? { ...item, unread: false } : item
-                      )
-                    )
-                  }
+                  $unread={!n.read}
+                  onClick={() => handleMarkRead(n)}
                 >
-                  <NotifDot $type={n.type} $show={n.unread} />
+                  <NotifDot $type={n.type} $show={!n.read} />
                   <NotifContent>
-                    <NotifTitle $unread={n.unread}>{n.title}</NotifTitle>
-                    <NotifDesc>{n.desc}</NotifDesc>
-                    <NotifTime>{n.time}</NotifTime>
+                    <NotifTitle $unread={!n.read}>{n.typeDescription}</NotifTitle>
+                    <NotifDesc>{n.content}</NotifDesc>
+                    <NotifTime>{formatTime(n.createdAt)}</NotifTime>
                   </NotifContent>
                 </NotifItem>
               ))}
@@ -103,6 +129,15 @@ export default function SellerDefaltLayout() {
       )}
     </Wrapper>
   );
+}
+
+function formatTime(dateStr) {
+  if (!dateStr) return '';
+  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  if (diff < 60)  return '방금 전';
+  if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
+  return `${Math.floor(diff / 86400)}일 전`;
 }
 
 /* ── Styled Components ── */
@@ -274,6 +309,13 @@ const CloseBtn = styled.button`
 const NotifList = styled.div`
   overflow-y: auto;
   flex: 1;
+`;
+
+const EmptyNotif = styled.p`
+  padding: 40px 20px;
+  text-align: center;
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.textMuted};
 `;
 
 const NotifItem = styled.div`
