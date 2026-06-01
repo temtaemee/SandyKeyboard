@@ -17,7 +17,8 @@ public class NoticeRespDto {
     private String content;
     private String writer;
     private LocalDateTime createdAt;
-    private String pinYn; // 공지 고정 여부
+    private String pinYn;
+    private String delYn; // admin용 삭제 여부
     private List<NoticeFileRespDto> files;
 
     public static NoticeRespDto from(NoticeEntity entity, List<NoticeFileEntity> files) {
@@ -28,6 +29,7 @@ public class NoticeRespDto {
                 .writer(entity.getMember().getUsername())
                 .createdAt(entity.getCreatedAt())
                 .pinYn(entity.getPinYn())
+                .delYn(entity.getDelYn())
                 .files(files.stream().map(NoticeFileRespDto::from).toList())
                 .build();
     }

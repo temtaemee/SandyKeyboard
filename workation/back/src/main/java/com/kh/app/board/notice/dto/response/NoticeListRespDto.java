@@ -14,7 +14,8 @@ public class NoticeListRespDto {
     private String title;
     private String writer;
     private LocalDateTime createdAt;
-    private String pinYn; // 공지 고정 여부
+    private String pinYn;
+    private String delYn; // admin용 삭제 여부
 
     public static NoticeListRespDto from(NoticeEntity entity) {
         return NoticeListRespDto.builder()
@@ -23,6 +24,7 @@ public class NoticeListRespDto {
                 .writer(entity.getMember().getUsername())
                 .createdAt(entity.getCreatedAt())
                 .pinYn(entity.getPinYn())
+                .delYn(entity.getDelYn())
                 .build();
     }
 }
