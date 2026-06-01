@@ -11,7 +11,23 @@ export const SELLER_NAV_ITEMS = [
 
 
 export const SELLER_NOTIF_TYPE_COLOR = {
-  reservation: '#3ec9a7',
-  review:      '#f59e0b',
-  cancel:      '#ef4444',
+  // 예약
+  RESERVATION_COMPLETE: '#3ec9a7',
+  RESERVATION_CANCEL:   '#ef4444',
+  RESERVATION_REMINDER: '#6366f1',
+  // 결제/환불
+  PAYMENT_SUCCESS:      '#10b981',
+  PAYMENT_FAIL:         '#ef4444',
+  REFUND_COMPLETE:      '#f59e0b',
+  // 쿠폰
+  COUPON_ISSUED:        '#8b5cf6',
+  COUPON_EXPIRED:       '#94a3b8',
+  // 리뷰
+  REVIEW_REQUEST:       '#f59e0b',
+  // 공간 심사
+  SPACE_PENDING:        '#f59e0b',
+  SPACE_APPROVED:       '#10b981',
+  SPACE_REJECTED:       '#ef4444',
+  SPACE_HIDDEN_BY_ADMIN: '#f97316',
+  SPACE_VISIBLE_BY_ADMIN: '#3ec9a7',
 };

@@ -54,11 +54,26 @@ public class SpaceEntity extends BaseEntity {
 
     @Column(nullable = false, length = 1)
     @Builder.Default
-    private String visibleYn = "N"; //기본 visible = n -> 상품 심사 통과시 Y로 수정해서 해당 space에 대한 권한을 열어줌
+    private String visibleYn = "N";
 
     @Enumerated(EnumType.STRING)
     @Column(name = "area", nullable = false)
     private Area area;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    @Builder.Default
+    private SpaceApprovalStatus approvalStatus = SpaceApprovalStatus.PENDING;
+
+    @Column(columnDefinition = "TEXT")
+    private String rejectionReason;
+
+    @Column
+    private java.time.LocalDateTime approvedAt;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean adminHidden = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "MEMBER_ID")
@@ -66,6 +81,35 @@ public class SpaceEntity extends BaseEntity {
 
     public void changeVisibleYn(String visibleYn) {
         this.visibleYn = visibleYn;
+    }
+
+    public void requestApproval() {
+        this.approvalStatus = SpaceApprovalStatus.PENDING;
+        this.rejectionReason = null;
+    }
+
+    public void approve() {
+        this.approvalStatus = SpaceApprovalStatus.APPROVED;
+        this.visibleYn = "Y";
+        this.rejectionReason = null;
+        this.approvedAt = java.time.LocalDateTime.now();
+        this.adminHidden = false;
+    }
+
+    public void reject(String reason) {
+        this.approvalStatus = SpaceApprovalStatus.REJECTED;
+        this.visibleYn = "N";
+        this.rejectionReason = reason;
+    }
+
+    public void hideByAdmin() {
+        this.visibleYn = "N";
+        this.adminHidden = true;
+    }
+
+    public void showByAdmin() {
+        this.visibleYn = "Y";
+        this.adminHidden = false;
     }
 
     public void update(String name, String phone, String email, String summary, String description,

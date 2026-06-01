@@ -12,6 +12,19 @@ const AREA_LABEL = {
   GYEONGBOOK: '경북', JEONNAM: '전남', JEONBUK: '전북', JEJU: '제주',
 };
 
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+function getSpaceStatusBadge(space) {
+  if (space.adminHidden)                         return { label: '비노출 처리', color: '#f97316' };
+  if (space.approvalStatus === 'PENDING')         return { label: '승인 대기중', color: '#f59e0b' };
+  if (space.approvalStatus === 'REJECTED')        return { label: '반려됨',     color: '#ef4444' };
+  if (space.approvalStatus === 'APPROVED' && space.approvedAt) {
+    const elapsed = Date.now() - new Date(space.approvedAt).getTime();
+    if (elapsed < SEVEN_DAYS_MS)                 return { label: '승인 완료',   color: '#10b981' };
+  }
+  return null;
+}
+
 const formatLocation = (area, address1) => {
   const label = AREA_LABEL[area] ?? area;
   if (!address1) return label;
@@ -136,6 +149,9 @@ export default function SellerDashboardPage() {
           name: s.name,
           location: formatLocation(s.area, s.address1),
           visible: s.visibleYn === 'Y',
+          approvalStatus: s.approvalStatus,
+          approvedAt: s.approvedAt,
+          adminHidden: s.adminHidden,
         }));
         setSpaces(mySpaces);
       } catch (e) {
@@ -152,6 +168,8 @@ export default function SellerDashboardPage() {
     if (togglingIds.has(id)) return;
     const target = spaces.find((s) => s.id === id);
     if (!target) return;
+    if (target.adminHidden) { showToast('관리자가 비노출 처리한 공간입니다. 관리자에게 문의하세요.'); return; }
+    if (!target.visible && target.approvalStatus !== 'APPROVED') { showToast('승인 완료 후 노출할 수 있습니다.'); return; }
     const nextYn = target.visible ? 'N' : 'Y';
 
     setTogglingIds((prev) => new Set(prev).add(id));
@@ -254,23 +272,31 @@ export default function SellerDashboardPage() {
             ) : spaces.length === 0 ? (
               <SpaceEmptyMsg>등록된 공간이 없습니다</SpaceEmptyMsg>
             ) : (
-              spaces.map((space) => (
-                <SpaceItem key={space.id}>
-                  <SpaceIcon>{space.name[0]}</SpaceIcon>
-                  <SpaceInfo onClick={() => navigate(`/seller/spaces/${space.id}`)}>
-                    <SpaceName>{space.name}</SpaceName>
-                    <SpaceLoc>{space.location}</SpaceLoc>
-                  </SpaceInfo>
-                  <Toggle
-                    $on={space.visible}
-                    $loading={togglingIds.has(space.id)}
-                    onClick={() => toggleVisible(space.id)}
-                    disabled={togglingIds.has(space.id)}
-                  >
-                    <ToggleThumb $on={space.visible} />
-                  </Toggle>
-                </SpaceItem>
-              ))
+              spaces.map((space) => {
+                const statusBadge = getSpaceStatusBadge(space);
+                const toggleBlocked = space.adminHidden || space.approvalStatus !== 'APPROVED';
+                return (
+                  <SpaceItem key={space.id}>
+                    <SpaceIcon>{space.name[0]}</SpaceIcon>
+                    <SpaceInfo onClick={() => navigate(`/seller/spaces/${space.id}`)}>
+                      <SpaceName>{space.name}</SpaceName>
+                      <SpaceLoc>{space.location}</SpaceLoc>
+                      {statusBadge && (
+                        <SpaceStatusBadge $color={statusBadge.color}>{statusBadge.label}</SpaceStatusBadge>
+                      )}
+                    </SpaceInfo>
+                    <Toggle
+                      $on={space.visible}
+                      $loading={togglingIds.has(space.id)}
+                      $blocked={toggleBlocked}
+                      onClick={() => toggleVisible(space.id)}
+                      disabled={togglingIds.has(space.id)}
+                    >
+                      <ToggleThumb $on={space.visible} />
+                    </Toggle>
+                  </SpaceItem>
+                );
+              })
             )}
           </SpaceList>
 
@@ -602,6 +628,17 @@ const SpaceLoc = styled.p`
   margin-top: 2px;
 `;
 
+const SpaceStatusBadge = styled.span`
+  display: inline-block;
+  margin-top: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: ${({ $color }) => $color}20;
+  color: ${({ $color }) => $color};
+`;
+
 const Toggle = styled.button`
   width: 40px;
   height: 22px;
@@ -611,7 +648,8 @@ const Toggle = styled.button`
   flex-shrink: 0;
   transition: background 0.2s;
   opacity: ${({ $loading }) => ($loading ? 0.5 : 1)};
-  cursor: ${({ $loading }) => ($loading ? 'not-allowed' : 'pointer')};
+  cursor: ${({ $loading, $blocked }) => ($loading || $blocked ? 'not-allowed' : 'pointer')};
+  opacity: ${({ $blocked }) => ($blocked ? 0.5 : 1)};
 `;
 
 const ToggleThumb = styled.div`

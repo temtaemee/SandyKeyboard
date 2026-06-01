@@ -12,6 +12,12 @@ import EmptyState from '../../components/common/EmptyState';
 const ACCENT = '#3ec9a7';
 const TABS = ['스테이 목록', '리뷰'];
 
+const CATEGORY_LABEL = {
+  EXTERIOR: '외부/전경', ROOM: '객실', BATHROOM: '욕실',
+  FACILITY: '공용시설', AMENITY: '부대시설', DINING: '식음료',
+  OTHERS: '기타', OFFICE: '오피스',
+};
+
 export default function SpaceDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -98,8 +104,30 @@ export default function SpaceDetailPage() {
   const fullAddress = [space.address1, space.address2].filter(Boolean).join(' ');
   const hasCoord = space.latitude != null && space.longitude != null;
 
+  const isApproved = space.approvalStatus === 'APPROVED';
+
   return (
     <Wrap>
+      {/* 승인 상태 배너 */}
+      {space.approvalStatus === 'PENDING' && (
+        <StatusBanner $type="pending">
+          <span>⏳</span>
+          <div>
+            <BannerTitle>승인 요청을 보냈습니다 — 관리자 검토 대기 중</BannerTitle>
+            <BannerSub>승인 완료 전까지 공간은 외부에 노출되지 않으며, 스테이 등록도 제한됩니다.</BannerSub>
+          </div>
+        </StatusBanner>
+      )}
+      {space.approvalStatus === 'REJECTED' && (
+        <StatusBanner $type="rejected">
+          <span>❌</span>
+          <div>
+            <BannerTitle>공간이 반려되었습니다</BannerTitle>
+            <BannerSub>내용을 수정한 후 공간 수정 페이지에서 재승인을 요청하세요.</BannerSub>
+          </div>
+        </StatusBanner>
+      )}
+
       {/* 페이지 헤더 */}
       <TopBar>
         <BackBtn type="button" onClick={() => navigate('/seller/spaces')}>
@@ -109,7 +137,12 @@ export default function SpaceDetailPage() {
           <EditBtn type="button" onClick={() => navigate(`/seller/spaces/${id}/edit`)}>
             <Pencil size={15} />공간 수정
           </EditBtn>
-          <AddStayBtn type="button" onClick={() => navigate('/seller/stays/register')}>
+          <AddStayBtn
+            type="button"
+            onClick={() => isApproved && navigate('/seller/stays/register')}
+            disabled={!isApproved}
+            title={!isApproved ? '승인 후 스테이를 등록할 수 있습니다' : ''}
+          >
             <Plus size={15} />스테이 등록
           </AddStayBtn>
         </ActionBtns>
@@ -129,7 +162,15 @@ export default function SpaceDetailPage() {
             <NameRow>
               <SpaceName>{space.name}</SpaceName>
               <Badge visibleYn={space.visibleYn} />
+              {space.approvalStatus && (
+                <ApprovalBadge $status={space.approvalStatus}>
+                  {{ PENDING: '승인 대기중', APPROVED: '승인됨', REJECTED: '반려됨' }[space.approvalStatus]}
+                </ApprovalBadge>
+              )}
             </NameRow>
+            {space.approvalStatus === 'REJECTED' && space.rejectionReason && (
+              <RejectionNote>반려 사유: {space.rejectionReason}</RejectionNote>
+            )}
             <AreaTag>
               <MapPin size={13} />
               {space.area ?? '-'}
@@ -192,6 +233,9 @@ export default function SpaceDetailPage() {
               >
                 <PhotoImg src={pic.filePath} alt={space.name} />
                 {pic.mainYn === 'Y' && <MainBadge>대표</MainBadge>}
+                {pic.category && (
+                  <CategoryBadge>{CATEGORY_LABEL[pic.category] ?? pic.category}</CategoryBadge>
+                )}
               </PhotoItem>
             ))}
           </PhotoGrid>
@@ -294,9 +338,35 @@ const EditBtn = styled.button`
 const AddStayBtn = styled.button`
   display: flex; align-items: center; gap: 6px;
   padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600;
-  color: white; background: ${ACCENT}; font-family: inherit; cursor: pointer;
+  color: white;
+  background: ${({ disabled }) => (disabled ? '#94a3b8' : ACCENT)};
+  font-family: inherit;
+  cursor: ${({ disabled }) => (disabled ? 'not-allowed' : 'pointer')};
   transition: background 0.15s;
-  &:hover { background: #31b08e; }
+  &:hover:not(:disabled) { background: #31b08e; }
+`;
+
+const StatusBanner = styled.div`
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 20px;
+  border-radius: 10px;
+  background: ${({ $type }) => $type === 'pending' ? '#fef9ec' : '#fff1f1'};
+  border: 1px solid ${({ $type }) => $type === 'pending' ? '#fcd34d' : '#fca5a5'};
+  font-size: 20px;
+`;
+
+const BannerTitle = styled.p`
+  font-size: 14px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.adminTextDark};
+  margin-bottom: 2px;
+`;
+
+const BannerSub = styled.p`
+  font-size: 12px;
+  color: ${({ theme }) => theme.colors.textMuted};
 `;
 
 const InfoCard = styled.div`
@@ -423,11 +493,44 @@ const PhotoImg = styled.img`
   width: 100%; height: 100%; object-fit: cover;
 `;
 
+const STATUS_COLOR = {
+  PENDING:  { bg: '#fef3c7', color: '#92400e' },
+  APPROVED: { bg: '#d1fae5', color: '#065f46' },
+  REJECTED: { bg: '#fee2e2', color: '#991b1b' },
+};
+
+const ApprovalBadge = styled.span`
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: ${({ $status }) => STATUS_COLOR[$status]?.bg ?? '#f1f5f9'};
+  color: ${({ $status }) => STATUS_COLOR[$status]?.color ?? '#475569'};
+`;
+
+const RejectionNote = styled.p`
+  font-size: 12px;
+  color: #991b1b;
+  background: #fee2e2;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #fca5a5;
+  margin-top: 4px;
+`;
+
 const MainBadge = styled.span`
   position: absolute; top: 6px; left: 6px;
   background: ${ACCENT}; color: white;
   font-size: 11px; font-weight: 700;
   padding: 2px 7px; border-radius: 4px;
+`;
+
+const CategoryBadge = styled.span`
+  position: absolute; bottom: 6px; left: 6px;
+  background: rgba(0,0,0,0.55); color: white;
+  font-size: 11px; font-weight: 500;
+  padding: 2px 7px; border-radius: 4px;
+  backdrop-filter: blur(2px);
 `;
 
 /* 라이트박스 */

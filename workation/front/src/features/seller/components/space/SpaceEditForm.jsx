@@ -7,9 +7,9 @@ import SpaceFormStep3 from './SpaceFormStep3';
 
 const EDIT_ACCENT = '#3ec9a7';
 
-const CATEGORY_LABEL = Object.fromEntries(
-  INIT_CATEGORIES.map(c => [c.key, c.label])
-);
+const CATEGORY_LABEL   = Object.fromEntries(INIT_CATEGORIES.map(c => [c.key, c.label]));
+const CATEGORY_OPTIONS = INIT_CATEGORIES.map(c => ({ value: c.key, label: c.label }));
+const MAX_PHOTOS = 50;
 
 const AREA_OPTIONS = [
   { value: 'SEOUL',    label: '서울' },
@@ -76,24 +76,25 @@ export default function SpaceEditForm({ space, onSubmit, loading }) {
   });
   const [errors, setErrors] = useState({});
 
-  // 사진 편집 상태
-  const [keptPictures, setKeptPictures] = useState(space?.pictures ?? []);
-  const [mainPictureId, setMainPictureId] = useState(
-    space?.pictures?.find(p => p.mainYn === 'Y')?.id ?? null
+  // 사진 편집 상태 — 기존+신규 통합 관리
+  const [photos, setPhotos] = useState(() =>
+    (space?.pictures ?? []).map(p => ({
+      type: 'existing',
+      id: p.id,
+      previewUrl: p.filePath,
+      category: p.category ?? 'OTHERS',
+      isMain: p.mainYn === 'Y',
+    }))
   );
-  const [newCategories, setNewCategories] = useState(
-    INIT_CATEGORIES.map(c => ({ ...c, files: [] }))
-  );
-  const [newMainPhoto, setNewMainPhoto] = useState(null);
   const [arcadeIdList, setArcadeIdList] = useState(space?.arcadeIdList ?? []);
 
   const dragIdx = useRef(null);
   const [dragOver, setDragOver] = useState(null);
 
   const moveToPosition = (fromIdx, toPos) => {
-    const toIdx = Math.max(0, Math.min(keptPictures.length - 1, toPos - 1));
+    const toIdx = Math.max(0, Math.min(photos.length - 1, toPos - 1));
     if (fromIdx === toIdx) return;
-    setKeptPictures(prev => {
+    setPhotos(prev => {
       const arr = [...prev];
       const [removed] = arr.splice(fromIdx, 1);
       arr.splice(toIdx, 0, removed);
@@ -105,7 +106,7 @@ export default function SpaceEditForm({ space, onSubmit, loading }) {
   const handleDragOver  = (e, idx) => { e.preventDefault(); setDragOver(idx); };
   const handleDrop      = (idx) => {
     if (dragIdx.current === null || dragIdx.current === idx) { setDragOver(null); return; }
-    setKeptPictures(prev => {
+    setPhotos(prev => {
       const arr = [...prev];
       const [removed] = arr.splice(dragIdx.current, 1);
       arr.splice(idx, 0, removed);
@@ -115,6 +116,21 @@ export default function SpaceEditForm({ space, onSubmit, loading }) {
     setDragOver(null);
   };
   const handleDragEnd   = () => { dragIdx.current = null; setDragOver(null); };
+
+  const handleAddPhotos = (files, categoryKey) => {
+    const remaining = MAX_PHOTOS - photos.length;
+    if (remaining <= 0) { alert('사진은 최대 50장까지 등록할 수 있습니다.'); return; }
+    const toAdd = Array.from(files).slice(0, remaining);
+    if (files.length > remaining) alert(`최대 ${MAX_PHOTOS}장까지 등록할 수 있습니다. ${remaining}장만 추가되었습니다.`);
+    setPhotos(prev => [...prev, ...toAdd.map(file => ({
+      type: 'new',
+      tempId: `new-${Date.now()}-${Math.random()}`,
+      file,
+      previewUrl: URL.createObjectURL(file),
+      category: categoryKey,
+      isMain: false,
+    }))]);
+  };
 
   // 지도 초기화 — 좌표가 있을 때
   useEffect(() => {
@@ -162,18 +178,19 @@ export default function SpaceEditForm({ space, onSubmit, loading }) {
 
   const picturesChanged = () => {
     const origPics = space?.pictures ?? [];
-    const origIds = new Set(origPics.map(p => p.id));
-    const keptIds = new Set(keptPictures.map(p => p.id));
-    const hasDeleted = [...origIds].some(id => !keptIds.has(id));
-    const hasNew = newCategories.some(c => c.files.length > 0);
+    const origCatMap = Object.fromEntries(origPics.map(p => [p.id, p.category]));
     const origMainId = origPics.find(p => p.mainYn === 'Y')?.id ?? null;
-    const mainChanged = mainPictureId !== origMainId;
-    // 순서 변경 감지
-    const orderChanged = keptPictures.some((p, idx) => {
-      const origIdx = origPics.findIndex(op => op.id === p.id);
-      return origIdx !== idx;
-    });
-    return hasDeleted || hasNew || mainChanged || orderChanged;
+    const existingPhotos = photos.filter(p => p.type === 'existing');
+    const newPhotos = photos.filter(p => p.type === 'new');
+    const mainPhoto = photos.find(p => p.isMain);
+    const currentMainId = mainPhoto?.type === 'existing' ? mainPhoto.id : null;
+    return (
+      origPics.some(p => !existingPhotos.find(ep => ep.id === p.id)) ||
+      newPhotos.length > 0 ||
+      currentMainId !== origMainId || (!!mainPhoto && mainPhoto.type === 'new') ||
+      existingPhotos.some((p, idx) => origPics.findIndex(op => op.id === p.id) !== idx) ||
+      existingPhotos.some(p => p.category !== origCatMap[p.id])
+    );
   };
 
   const set = (field, value) => {
@@ -204,32 +221,27 @@ export default function SpaceEditForm({ space, onSubmit, loading }) {
 
     let pictureChanges = null;
     if (picturesChanged()) {
-      const allNewFiles = [];
-      const newPictures = [];
-      newCategories.forEach(cat => {
-        cat.files.forEach((file, idx) => {
-          const isMain = newMainPhoto?.categoryKey === cat.key && newMainPhoto?.fileIdx === idx;
-          allNewFiles.push(file);
-          newPictures.push({ mainYn: isMain ? 'Y' : 'N', sortOrder: allNewFiles.length - 1, category: cat.key });
-        });
-      });
+      const origPics = space?.pictures ?? [];
+      const origCatMap = Object.fromEntries(origPics.map(p => [p.id, p.category]));
+      const existingPhotos = photos.filter(p => p.type === 'existing');
+      const newPhotos = photos.filter(p => p.type === 'new');
+      const mainPhoto = photos.find(p => p.isMain);
+      const mainPictureId = mainPhoto?.type === 'existing' ? mainPhoto.id : null;
 
-      // 기존 사진 중 mainYn 업데이트 반영
-      const keptWithMain = keptPictures.map(p => ({
-        ...p,
-        mainYn: p.id === mainPictureId ? 'Y' : 'N',
-      }));
-
-      // 새 사진에도 main 없고 기존도 없으면 첫 kept를 main으로
-      if (!keptWithMain.some(p => p.mainYn === 'Y') && !newPictures.some(p => p.mainYn === 'Y') && keptWithMain.length > 0) {
-        keptWithMain[0].mainYn = 'Y';
-      }
+      const categoryUpdates = existingPhotos
+        .filter(p => p.category !== origCatMap[p.id])
+        .map(p => ({ id: p.id, category: p.category }));
 
       pictureChanges = {
-        keepPictureIds: keptWithMain.map(p => p.id),
-        mainPictureId: mainPictureId,
-        newPictures,
-        files: allNewFiles,
+        keepPictureIds: existingPhotos.map(p => p.id),
+        mainPictureId,
+        categoryUpdates,
+        newPictures: newPhotos.map(p => ({
+          mainYn: p.isMain ? 'Y' : 'N',
+          sortOrder: 0,
+          category: p.category,
+        })),
+        files: newPhotos.map(p => p.file),
       };
     }
 
@@ -329,17 +341,19 @@ export default function SpaceEditForm({ space, onSubmit, loading }) {
         <SectionSub>기존 사진을 삭제하거나 새 사진을 추가할 수 있습니다</SectionSub>
       </SectionDivider>
 
-      {/* 기존 사진 목록 */}
-      {keptPictures.length > 0 ? (
-        <div>
-          <PicSubLabel>현재 사진 ({keptPictures.length}장)</PicSubLabel>
+      {/* 통합 사진 목록 */}
+      <div>
+        <PicSubLabel>
+          사진 ({photos.length}장 / 최대 {MAX_PHOTOS}장)
+        </PicSubLabel>
+        {photos.length > 0 ? (
           <ExistingGrid>
-            {keptPictures.map((pic, idx) => {
-              const isMain = pic.id === mainPictureId;
+            {photos.map((photo, idx) => {
+              const key = photo.type === 'existing' ? photo.id : photo.tempId;
               return (
                 <ExistingItem
-                  key={pic.id}
-                  $main={isMain}
+                  key={key}
+                  $main={photo.isMain}
                   $dragOver={dragOver === idx}
                   draggable
                   onDragStart={() => handleDragStart(idx)}
@@ -347,39 +361,45 @@ export default function SpaceEditForm({ space, onSubmit, loading }) {
                   onDrop={() => handleDrop(idx)}
                   onDragEnd={handleDragEnd}
                 >
-                  {/* 드래그 핸들 + 순서 */}
                   <DragHandle title="드래그하여 순서 변경">
                     <GripVertical size={12} />
                     <span>{idx + 1}</span>
                   </DragHandle>
 
-                  {/* 썸네일 클릭 → 미리보기 */}
                   <ExistingThumbBtn
                     type="button"
-                    onClick={() => setPreview({ src: pic.filePath, pic, idx })}
+                    onClick={() => setPreview({ src: photo.previewUrl, idx })}
                   >
-                    <ExistingImg src={pic.filePath} alt="" onError={e => { e.target.style.display='none'; }} />
+                    <ExistingImg src={photo.previewUrl} alt="" onError={e => { e.target.style.display='none'; }} />
                     <ZoomOverlay><ZoomIn size={14} color="white" /></ZoomOverlay>
-                    {isMain && <MainPinBadge>대표</MainPinBadge>}
+                    {photo.isMain && <MainPinBadge>대표</MainPinBadge>}
+                    {photo.type === 'new' && <NewPinBadge>NEW</NewPinBadge>}
                   </ExistingThumbBtn>
 
                   <ExistingMeta>
-                    <CategoryTag>{CATEGORY_LABEL[pic.category] ?? pic.category}</CategoryTag>
+                    <CategorySelect
+                      value={photo.category}
+                      onChange={e => setPhotos(prev => prev.map((p, i) =>
+                        i === idx ? { ...p, category: e.target.value } : p
+                      ))}
+                      onClick={e => e.stopPropagation()}
+                    >
+                      {CATEGORY_OPTIONS.map(o => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </CategorySelect>
                     <ExistingActions>
                       <StarBtn
                         type="button"
-                        $active={isMain}
-                        onClick={() => setMainPictureId(isMain ? null : pic.id)}
-                        title={isMain ? '대표 해제' : '대표로 설정'}
+                        $active={photo.isMain}
+                        onClick={() => setPhotos(prev => prev.map((p, i) => ({ ...p, isMain: i === idx ? !photo.isMain : false })))}
+                        title={photo.isMain ? '대표 해제' : '대표로 설정'}
                       >
-                        <Star size={13} fill={isMain ? '#f59e0b' : 'none'} />
+                        <Star size={13} fill={photo.isMain ? '#f59e0b' : 'none'} />
                       </StarBtn>
                       <DeletePicBtn
                         type="button"
-                        onClick={() => {
-                          setKeptPictures(prev => prev.filter(p => p.id !== pic.id));
-                          if (mainPictureId === pic.id) setMainPictureId(null);
-                        }}
+                        onClick={() => setPhotos(prev => prev.filter((_, i) => i !== idx))}
                         title="삭제"
                       >
                         <X size={13} />
@@ -390,77 +410,39 @@ export default function SpaceEditForm({ space, onSubmit, loading }) {
               );
             })}
           </ExistingGrid>
-        </div>
-      ) : (
-        <NoPicMsg>등록된 사진이 없습니다.</NoPicMsg>
-      )}
-
-      {/* 새 사진 추가 */}
-      <div>
-        <PicSubLabel>새 사진 추가 (카테고리별)</PicSubLabel>
-        <NewPicGrid>
-          {newCategories.map((cat, catIdx) => (
-            <NewCatZone key={cat.key}>
-              <NewCatHeader>
-                <NewCatLabel>{cat.label}</NewCatLabel>
-                {cat.files.length > 0 && <CountBadge>{cat.files.length}장</CountBadge>}
-              </NewCatHeader>
-              <NewDropZone onClick={() => inputRefs.current[cat.key]?.click()}>
-                <Upload size={14} color="#94a3b8" />
-                <span>추가</span>
-                <input
-                  ref={el => (inputRefs.current[cat.key] = el)}
-                  type="file" accept="image/*" multiple style={{ display: 'none' }}
-                  onChange={e => {
-                    const files = Array.from(e.target.files ?? []);
-                    if (!files.length) return;
-                    setNewCategories(prev => prev.map((c, i) =>
-                      i === catIdx ? { ...c, files: [...c.files, ...files] } : c
-                    ));
-                    e.target.value = '';
-                  }}
-                />
-              </NewDropZone>
-              {cat.files.length > 0 && (
-                <NewThumbRow>
-                  {cat.files.map((file, fileIdx) => {
-                    const src = URL.createObjectURL(file);
-                    const isMain = newMainPhoto?.categoryKey === cat.key && newMainPhoto?.fileIdx === fileIdx;
-                    return (
-                      <NewThumbWrap key={`${file.name}-${fileIdx}`} $main={isMain}>
-                        <NewThumb
-                          type="button"
-                          onClick={() => setPreview({ src, name: file.name })}
-                        >
-                          <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        </NewThumb>
-                        <NewThumbActions>
-                          <MiniStarBtn
-                            type="button"
-                            $active={isMain}
-                            onClick={() => setNewMainPhoto(isMain ? null : { categoryKey: cat.key, fileIdx })}
-                          ><Star size={10} fill={isMain ? '#f59e0b' : 'none'} /></MiniStarBtn>
-                          <MiniDelBtn
-                            type="button"
-                            onClick={() => {
-                              setNewCategories(prev => prev.map((c, i) =>
-                                i === catIdx ? { ...c, files: c.files.filter((_, fi) => fi !== fileIdx) } : c
-                              ));
-                              if (newMainPhoto?.categoryKey === cat.key && newMainPhoto?.fileIdx === fileIdx) {
-                                setNewMainPhoto(null);
-                              }
-                            }}
-                          ><X size={10} /></MiniDelBtn>
-                        </NewThumbActions>
-                      </NewThumbWrap>
-                    );
-                  })}
-                </NewThumbRow>
-              )}
-            </NewCatZone>
-          ))}
-        </NewPicGrid>
+        ) : (
+          <NoPicMsg>등록된 사진이 없습니다.</NoPicMsg>
+        )}
       </div>
+
+      {/* 새 사진 추가 — 카테고리별 업로드 */}
+      {photos.length < MAX_PHOTOS && (
+        <div>
+          <PicSubLabel>새 사진 추가 (카테고리별)</PicSubLabel>
+          <NewPicGrid>
+            {CATEGORY_OPTIONS.map(cat => (
+              <NewCatZone key={cat.value}>
+                <NewCatHeader>
+                  <NewCatLabel>{cat.label}</NewCatLabel>
+                  {(() => { const c = photos.filter(p => p.type === 'new' && p.category === cat.value).length; return c > 0 ? <CountBadge>{c}장</CountBadge> : null; })()}
+                </NewCatHeader>
+                <NewDropZone onClick={() => inputRefs.current[cat.value]?.click()}>
+                  <Upload size={14} color="#94a3b8" />
+                  <span>추가</span>
+                  <input
+                    ref={el => (inputRefs.current[cat.value] = el)}
+                    type="file" accept="image/*" multiple style={{ display: 'none' }}
+                    onChange={e => {
+                      if (e.target.files?.length) handleAddPhotos(e.target.files, cat.value);
+                      e.target.value = '';
+                    }}
+                  />
+                </NewDropZone>
+              </NewCatZone>
+            ))}
+          </NewPicGrid>
+        </div>
+      )}
 
       <SubmitBtn type="submit" disabled={loading}>
         {loading ? <LoadingSpinner size="sm" /> : '수정 완료'}
@@ -470,50 +452,45 @@ export default function SpaceEditForm({ space, onSubmit, loading }) {
       {preview && (
         <PreviewBg onClick={() => setPreview(null)}>
           <PreviewBox onClick={e => e.stopPropagation()}>
-            {/* 상단 우측: 대표 + 닫기 */}
             <PreviewTopRight>
-              {preview.pic && (
-                <PreviewStarBtn
-                  type="button"
-                  $active={preview.pic.id === mainPictureId}
-                  onClick={() => setMainPictureId(prev => prev === preview.pic.id ? null : preview.pic.id)}
-                  title={preview.pic.id === mainPictureId ? '대표 해제' : '대표로 설정'}
-                >
-                  <Star size={16} fill={preview.pic.id === mainPictureId ? '#f59e0b' : 'none'} color={preview.pic.id === mainPictureId ? '#f59e0b' : 'white'} />
-                </PreviewStarBtn>
-              )}
+              <PreviewStarBtn
+                type="button"
+                $active={photos[preview.idx]?.isMain}
+                onClick={() => setPhotos(prev => prev.map((p, i) => ({ ...p, isMain: i === preview.idx ? !p.isMain : false })))}
+                title={photos[preview.idx]?.isMain ? '대표 해제' : '대표로 설정'}
+              >
+                <Star size={16}
+                  fill={photos[preview.idx]?.isMain ? '#f59e0b' : 'none'}
+                  color={photos[preview.idx]?.isMain ? '#f59e0b' : 'white'}
+                />
+              </PreviewStarBtn>
               <PreviewClose type="button" onClick={() => setPreview(null)}><X size={16} /></PreviewClose>
             </PreviewTopRight>
 
             <PreviewImg src={preview.src} alt="" />
 
-            {/* 하단 중앙: 순서 */}
-            {preview.pic && (
-              <PreviewBottom>
-                <PreviewOrderWrap>
-                  <span>{preview.idx + 1}</span>
-                  <PreviewOrderSep>/</PreviewOrderSep>
-                  <span>{keptPictures.length}</span>
-                  <PreviewOrderInput
-                    key={`prev-${preview.pic.id}-${preview.idx}`}
-                    type="number"
-                    min={1}
-                    max={keptPictures.length}
-                    defaultValue={preview.idx + 1}
-                    onBlur={(e) => {
-                      const val = parseInt(e.target.value);
-                      moveToPosition(preview.idx, val);
-                      const newIdx = Math.max(0, Math.min(keptPictures.length - 1, val - 1));
-                      setPreview(prev => ({ ...prev, idx: newIdx }));
-                    }}
-                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } }}
-                    title="순서 변경 후 Enter"
-                    placeholder="순서"
-                  />
-                  <PreviewOrderLabel>번으로 이동</PreviewOrderLabel>
-                </PreviewOrderWrap>
-              </PreviewBottom>
-            )}
+            <PreviewBottom>
+              <PreviewOrderWrap>
+                <span>{preview.idx + 1}</span>
+                <PreviewOrderSep>/</PreviewOrderSep>
+                <span>{photos.length}</span>
+                <PreviewOrderInput
+                  key={`prev-${preview.idx}`}
+                  type="number"
+                  min={1}
+                  max={photos.length}
+                  defaultValue={preview.idx + 1}
+                  onBlur={(e) => {
+                    const val = parseInt(e.target.value);
+                    moveToPosition(preview.idx, val);
+                    setPreview(prev => ({ ...prev, idx: Math.max(0, Math.min(photos.length - 1, val - 1)) }));
+                  }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } }}
+                  placeholder="순서"
+                />
+                <PreviewOrderLabel>번으로 이동</PreviewOrderLabel>
+              </PreviewOrderWrap>
+            </PreviewBottom>
           </PreviewBox>
         </PreviewBg>
       )}
@@ -719,13 +696,19 @@ const ExistingMeta = styled.div`
   justify-content: space-between;
   gap: 4px;
 `;
-const CategoryTag = styled.span`
+const CategorySelect = styled.select`
   font-size: 10px;
   font-weight: 500;
   color: ${({ theme }) => theme.colors.textMuted};
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 4px;
+  background: white;
+  padding: 1px 2px;
+  cursor: pointer;
+  max-width: 68px;
+  font-family: inherit;
+  outline: none;
+  &:focus { border-color: ${EDIT_ACCENT}; }
 `;
 const ExistingActions = styled.div`
   display: flex;
@@ -795,6 +778,13 @@ const CountBadge = styled.span`
   background: ${EDIT_ACCENT};
   color: white;
 `;
+
+const NewPinBadge = styled.div`
+  position: absolute; bottom: 4px; right: 4px;
+  background: #6366f1; color: white;
+  font-size: 9px; font-weight: 700;
+  padding: 1px 4px; border-radius: 3px;
+`;
 const NewDropZone = styled.div`
   display: flex;
   align-items: center;
@@ -808,51 +798,6 @@ const NewDropZone = styled.div`
   background: white;
   transition: border-color 0.15s;
   &:hover { border-color: ${EDIT_ACCENT}; }
-`;
-const NewThumbRow = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-`;
-const NewThumbWrap = styled.div`
-  position: relative;
-  width: 40px;
-  height: 40px;
-  border-radius: 4px;
-  overflow: hidden;
-  border: 1.5px solid ${({ $main }) => ($main ? '#f59e0b' : 'transparent')};
-`;
-const NewThumb = styled.button`
-  width: 100%;
-  height: 100%;
-  cursor: pointer;
-`;
-const NewThumbActions = styled.div`
-  position: absolute;
-  top: 1px;
-  right: 1px;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-`;
-const MiniStarBtn = styled.button`
-  width: 14px;
-  height: 14px;
-  border-radius: 2px;
-  background: rgba(0,0,0,0.5);
-  color: ${({ $active }) => ($active ? '#f59e0b' : 'white')};
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-`;
-const MiniDelBtn = styled.button`
-  width: 14px;
-  height: 14px;
-  border-radius: 2px;
-  background: rgba(0,0,0,0.5);
-  color: white;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  &:hover { background: #ef4444; }
 `;
 /* ── 미리보기 ── */
 const PreviewBg = styled.div`

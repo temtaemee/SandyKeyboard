@@ -16,6 +16,7 @@ export default function SpaceEditPage() {
   const [error, setError] = useState(null);
   const [submitError, setSubmitError] = useState(null);
   const [toast, setToast] = useState(null);
+  const [requesting, setRequesting] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -43,6 +44,7 @@ export default function SpaceEditPage() {
           keepPictureIds: pictureChanges.keepPictureIds,
           mainPictureId: pictureChanges.mainPictureId ?? null,
           newPictures: pictureChanges.newPictures,
+          categoryUpdates: pictureChanges.categoryUpdates ?? [],
         };
         formData.append('dto', new Blob([JSON.stringify(picDto)], { type: 'application/json' }));
         pictureChanges.files.forEach(file => formData.append('files', file));
@@ -50,11 +52,25 @@ export default function SpaceEditPage() {
       }
 
       setToast('수정이 완료되었습니다.');
+      setSpace(prev => prev ? { ...prev, approvalStatus: prev.approvalStatus } : prev);
       setTimeout(() => navigate(`/seller/spaces/${id}`), 1000);
     } catch (e) {
       setSubmitError(e.response?.data?.message ?? '수정에 실패했습니다. 다시 시도해 주세요.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleRequestApproval = async () => {
+    setRequesting(true);
+    try {
+      await spaceApi.requestApproval(id);
+      setSpace(prev => prev ? { ...prev, approvalStatus: 'PENDING' } : prev);
+      setToast('승인 요청을 보냈습니다.');
+    } catch {
+      setToast('요청에 실패했습니다. 다시 시도해 주세요.');
+    } finally {
+      setRequesting(false);
     }
   };
 
@@ -82,6 +98,25 @@ export default function SpaceEditPage() {
           <PageTitle>공간 수정</PageTitle>
           <PageSub>{space?.name}</PageSub>
         </TitleGroup>
+        <TopBarRight>
+          {space?.approvalStatus && (
+            <ApprovalBadge $status={space.approvalStatus}>
+              {{ PENDING: '승인 대기중', APPROVED: '승인됨', REJECTED: '반려됨' }[space.approvalStatus]}
+            </ApprovalBadge>
+          )}
+          {(space?.approvalStatus === 'REJECTED' || space?.approvalStatus === 'APPROVED') && (
+            <ReApproveBtn
+              type="button"
+              onClick={handleRequestApproval}
+              disabled={requesting}
+            >
+              {requesting ? '요청 중...' : '재승인 요청'}
+            </ReApproveBtn>
+          )}
+          {space?.approvalStatus === 'REJECTED' && space?.rejectionReason && (
+            <RejectionNote>반려 사유: {space.rejectionReason}</RejectionNote>
+          )}
+        </TopBarRight>
       </TopBar>
 
       <FormCard>
@@ -122,6 +157,55 @@ const TitleGroup = styled.div`
   display: flex;
   flex-direction: column;
   gap: 2px;
+  flex: 1;
+`;
+
+const TopBarRight = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+`;
+
+const STATUS_COLOR = {
+  PENDING:  { bg: '#fef3c7', color: '#92400e' },
+  APPROVED: { bg: '#d1fae5', color: '#065f46' },
+  REJECTED: { bg: '#fee2e2', color: '#991b1b' },
+};
+
+const ApprovalBadge = styled.span`
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: ${({ $status }) => STATUS_COLOR[$status]?.bg ?? '#f1f5f9'};
+  color: ${({ $status }) => STATUS_COLOR[$status]?.color ?? '#475569'};
+`;
+
+const ReApproveBtn = styled.button`
+  height: 34px;
+  padding: 0 16px;
+  border-radius: 8px;
+  background: #3ec9a7;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+  &:hover:not(:disabled) { background: #31b08e; }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+`;
+
+const RejectionNote = styled.p`
+  font-size: 12px;
+  color: #991b1b;
+  background: #fee2e2;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #fca5a5;
+  max-width: 300px;
 `;
 
 const PageTitle = styled.h1`

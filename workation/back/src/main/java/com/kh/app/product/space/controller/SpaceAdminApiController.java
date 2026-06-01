@@ -13,9 +13,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import com.kh.app.security.user.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -106,9 +108,10 @@ public class SpaceAdminApiController {
     @PutMapping("/{id}/visible")
     public ResponseEntity<Void> changeVisibleYn(
             @PathVariable Long id,
-            @RequestParam String visibleYn
+            @RequestParam String visibleYn,
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        spaceService.changeVisibleYnByAdmin(id, visibleYn);
+        spaceService.changeVisibleYnByAdmin(id, visibleYn, userDetails.getMemberId());
         return ResponseEntity.ok().build();
     }
 }

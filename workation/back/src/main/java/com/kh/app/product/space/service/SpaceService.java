@@ -2,6 +2,9 @@ package com.kh.app.product.space.service;
 
 import com.kh.app.member.entity.MemberEntity;
 import com.kh.app.member.repository.MemberRepository;
+import com.kh.app.notification.dto.request.NotificationCreateReqDto;
+import com.kh.app.notification.entity.NotificationType;
+import com.kh.app.notification.service.NotificationService;
 import com.kh.app.product.common.util.S3PictureUploader;
 import com.kh.app.product.exception.ErrorCode;
 import com.kh.app.product.exception.ProductException;
@@ -49,6 +52,7 @@ public class SpaceService {
     private final StayRepository stayRepository;
     private final StayOptionRepository stayOptionRepository;
     private final StayPictureRepository stayPictureRepository;
+    private final NotificationService notificationService;
 
     // ========== 기존 메서드 (하위 호환) ==========
 
@@ -109,7 +113,34 @@ public class SpaceService {
                 })
                 .toList();
 
-        return SpaceResDto.from(space, stays);
+        List<SpaceResDto.PictureInfo> pictures = spacePictureRepository.findBySpaceIdOrderBySortOrder(id)
+                .stream()
+                .map(p -> SpaceResDto.PictureInfo.builder()
+                        .id(p.getId())
+                        .filePath(resolveImageUrl(p.getFilePath()))
+                        .mainYn(p.getMainYn())
+                        .sortOrder(p.getSortOrder())
+                        .category(p.getCategory())
+                        .build())
+                .toList();
+
+        String thumbnailUrl = pictures.stream()
+                .filter(p -> "Y".equals(p.getMainYn()))
+                .findFirst()
+                .map(SpaceResDto.PictureInfo::getFilePath)
+                .orElse(pictures.isEmpty() ? null : pictures.get(0).getFilePath());
+
+        List<Long> arcadeIdList = spaceArcadeRepository.findBySpaceId(id).stream()
+                .map(sa -> sa.getArcade().getId())
+                .toList();
+
+        List<java.util.Map<String, Object>> arcades = spaceArcadeRepository.findBySpaceId(id).stream()
+                .map(sa -> java.util.Map.<String, Object>of(
+                        "id", sa.getArcade().getId(),
+                        "name", sa.getArcade().getName()))
+                .toList();
+
+        return SpaceResDto.from(space, stays, thumbnailUrl, pictures, arcadeIdList, arcades);
     }
 
     // ========== Seller 전용 메서드 ==========
@@ -216,6 +247,12 @@ public class SpaceService {
             }
         }
 
+        if (dto.getCategoryUpdates() != null) {
+            for (SpacePictureUpdateReqDto.CategoryUpdateDto cu : dto.getCategoryUpdates()) {
+                spacePictureRepository.updateCategory(cu.getId(), cu.getCategory());
+            }
+        }
+
         uploadAndSavePictures(space, files, dto.getNewPictures());
     }
 
@@ -237,6 +274,25 @@ public class SpaceService {
     }
 
     @Transactional
+    public void requestApproval(Long id, Long memberId) {
+        SpaceEntity space = spaceRepository.findByIdAndDelYn(id, "N")
+                .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
+        verifySpaceOwnership(space, memberId);
+        space.requestApproval();
+
+        // 슈퍼 관리자에게 알림
+        memberRepository.findByUsername("admin").ifPresent(admin ->
+            notificationService.createNotification(NotificationCreateReqDto.builder()
+                .memberId(admin.getId())
+                .type(NotificationType.SPACE_PENDING)
+                .content("새 공간 승인 요청: " + space.getName())
+                .redirectUrl("/admin/spaces/" + id)
+                .referenceId(id)
+                .build())
+        );
+    }
+
+    @Transactional
     public void delete(Long id, Long memberId) {
         SpaceEntity space = spaceRepository.findByIdAndDelYn(id, "N")
                 .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
@@ -249,10 +305,50 @@ public class SpaceService {
         SpaceEntity space = spaceRepository.findByIdAndDelYn(id, "N")
                 .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
         verifySpaceOwnership(space, memberId);
+        if ("Y".equals(visibleYn)) {
+            if (space.getApprovalStatus() != com.kh.app.product.space.entity.SpaceApprovalStatus.APPROVED) {
+                throw new ProductException(ErrorCode.SPACE_NOT_APPROVED);
+            }
+            if (Boolean.TRUE.equals(space.getAdminHidden())) {
+                throw new ProductException(ErrorCode.SPACE_ACCESS_DENIED);
+            }
+        }
         space.changeVisibleYn(visibleYn);
     }
 
     // ========== Admin 전용 메서드 ==========
+
+    @Transactional
+    public void approveByAdmin(Long id) {
+        SpaceEntity space = spaceRepository.findByIdAndDelYn(id, "N")
+                .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
+        space.approve();
+
+        Long sellerMemberId = space.getSeller().getId();
+        notificationService.createNotification(NotificationCreateReqDto.builder()
+                .memberId(sellerMemberId)
+                .type(NotificationType.SPACE_APPROVED)
+                .content("공간이 승인되었습니다: " + space.getName())
+                .redirectUrl("/seller/spaces/" + id)
+                .referenceId(id)
+                .build());
+    }
+
+    @Transactional
+    public void rejectByAdmin(Long id, String reason) {
+        SpaceEntity space = spaceRepository.findByIdAndDelYn(id, "N")
+                .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
+        space.reject(reason);
+
+        Long sellerMemberId = space.getSeller().getId();
+        notificationService.createNotification(NotificationCreateReqDto.builder()
+                .memberId(sellerMemberId)
+                .type(NotificationType.SPACE_REJECTED)
+                .content("공간이 반려되었습니다: " + space.getName())
+                .redirectUrl("/seller/spaces/" + id + "/edit")
+                .referenceId(id)
+                .build());
+    }
 
     public List<SpaceResDto> searchListForAdmin(SpaceSearchReqDto dto) {
         return spaceRepository.searchListForAdmin(dto)
@@ -303,10 +399,55 @@ public class SpaceService {
     }
 
     @Transactional
-    public void changeVisibleYnByAdmin(Long id, String visibleYn) {
+    public void changeVisibleYnByAdmin(Long id, String visibleYn, Long adminMemberId) {
         SpaceEntity space = spaceRepository.findById(id)
                 .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
-        space.changeVisibleYn(visibleYn);
+
+        boolean hiding = "N".equals(visibleYn);
+        if (hiding) space.hideByAdmin(); else space.showByAdmin();
+
+        Long sellerId = space.getSeller() != null ? space.getSeller().getId() : null;
+        String spaceName = space.getName();
+
+        if (hiding) {
+            // 셀러 알림
+            if (sellerId != null) {
+                notificationService.createNotification(NotificationCreateReqDto.builder()
+                        .memberId(sellerId)
+                        .type(NotificationType.SPACE_HIDDEN_BY_ADMIN)
+                        .content("관리자가 공간을 비노출 처리했습니다: " + spaceName)
+                        .redirectUrl("/seller/spaces/" + id)
+                        .referenceId(id)
+                        .build());
+            }
+            // 관리자 확인 알림
+            notificationService.createNotification(NotificationCreateReqDto.builder()
+                    .memberId(adminMemberId)
+                    .type(NotificationType.SPACE_HIDDEN_BY_ADMIN)
+                    .content("[처리 완료] 비노출 처리: " + spaceName)
+                    .redirectUrl("/admin/spaces/" + id)
+                    .referenceId(id)
+                    .build());
+        } else {
+            // 셀러 알림
+            if (sellerId != null) {
+                notificationService.createNotification(NotificationCreateReqDto.builder()
+                        .memberId(sellerId)
+                        .type(NotificationType.SPACE_VISIBLE_BY_ADMIN)
+                        .content("관리자가 공간을 다시 노출 처리했습니다: " + spaceName)
+                        .redirectUrl("/seller/spaces/" + id)
+                        .referenceId(id)
+                        .build());
+            }
+            // 관리자 확인 알림
+            notificationService.createNotification(NotificationCreateReqDto.builder()
+                    .memberId(adminMemberId)
+                    .type(NotificationType.SPACE_VISIBLE_BY_ADMIN)
+                    .content("[처리 완료] 노출 복구: " + spaceName)
+                    .redirectUrl("/admin/spaces/" + id)
+                    .referenceId(id)
+                    .build());
+        }
     }
 
     // ========== 기존 호환 메서드 (sellerId DTO 기반 — 내부 사용 가능성 유지) ==========

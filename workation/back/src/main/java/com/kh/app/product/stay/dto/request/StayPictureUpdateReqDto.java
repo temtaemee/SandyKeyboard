@@ -12,4 +12,12 @@ public class StayPictureUpdateReqDto {
     private List<Long> keepPictureIds;
     /** 대표 사진으로 지정할 기존 사진 ID */
     private Long mainPictureId;
+    /** 새로 업로드할 사진 메타데이터 (files 파라미터와 인덱스 순서 일치) */
+    private List<NewPictureMeta> newPictures;
+
+    @Getter
+    @Setter
+    public static class NewPictureMeta {
+        private String mainYn;
+    }
 }
