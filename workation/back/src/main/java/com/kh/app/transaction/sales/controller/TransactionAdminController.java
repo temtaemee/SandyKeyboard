@@ -2,8 +2,10 @@ package com.kh.app.transaction.sales.controller;
 
 import com.kh.app.transaction.payout.dto.response.PayoutListResDto;
 import com.kh.app.transaction.payout.service.PayoutService;
+import com.kh.app.transaction.sales.dto.response.DashboardSummaryResDto;
 import com.kh.app.transaction.sales.dto.response.SalesSummaryResDto;
 import com.kh.app.transaction.sales.service.SalesService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -32,6 +34,17 @@ public class TransactionAdminController {
         payoutService.completePayout(payoutId);
         return ResponseEntity.ok().build();
     }
+
+    //[어드민 전용]
+    @GetMapping("/admin/dashboard/summary")
+    @Operation(summary = "관리자 대시보드 통계 조회", description = "이번 달 유효 예약 수 및 당월 누적 결제 취소 금액을 실시간 조회합니다.")
+    public ResponseEntity<DashboardSummaryResDto> getDashboardSummary() {
+        DashboardSummaryResDto summary = salesService.getThisMonthDashboardSummary();
+        return ResponseEntity.ok(summary);
+    }
+
+
+
 
     // [판매자 전용] 로그인한 판매자의 정산 완료 내역 리스트 조회
     @GetMapping("/seller/payout/list")
