@@ -12,6 +12,8 @@ import RefundRequestPage from '../features/refund/pages/RefundRequestPage';
 import RefundDetailPage from '../features/refund/pages/RefundDetailPage';
 import RefundListPage from '../features/refund/pages/RefundListPage';
 import DestinationPage from './../features/user/destination/pages/DestinationPage';
+import StayDetailPage from '../features/user/destination/pages/StayDetailPage';
+import SpaceDetailPage from '../features/user/destination/pages/SpaceDetailPage';
 
 function ResvRouter() {
   return (
@@ -38,6 +40,12 @@ function ResvRouter() {
 
       {/* 유저 전용 환불 단건 상세 영수증 보기 */}
       <Route path="refund/detail/:id" element={<RefundDetailPage />} />
+
+      {/* 💡 [추가] 공간 상세 페이지 경로 설정 */}
+      <Route path="space/:spaceId" element={<SpaceDetailPage />} />
+
+      {/* 💡 [추가] 숙소 상세 페이지 경로 설정 */}
+      <Route path="stay/:stayId" element={<StayDetailPage />} />
     </Routes>
   );
 }

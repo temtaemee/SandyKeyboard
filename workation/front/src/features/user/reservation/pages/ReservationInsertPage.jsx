@@ -248,7 +248,6 @@ function ReservationInsertPage() {
                 placeholder="은행명 입력"
                 value={vo.refundBankName}
                 onChange={handleChange}
-                required
               />
             </InputGroup>
             <InputGroup>
@@ -259,7 +258,6 @@ function ReservationInsertPage() {
                 placeholder="계좌번호 입력"
                 value={vo.refundAccountNumber}
                 onChange={handleChange}
-                required
               />
             </InputGroup>
             <InputGroup>
@@ -270,7 +268,6 @@ function ReservationInsertPage() {
                 placeholder="예금주명 입력"
                 value={vo.refundAccountHolder}
                 onChange={handleChange}
-                required
               />
             </InputGroup>
           </Section>
