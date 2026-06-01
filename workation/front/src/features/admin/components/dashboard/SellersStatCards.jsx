@@ -29,7 +29,7 @@ export default function SellersStatCards({ view, filter, onFilterChange, stats =
     { filterKey: '전체',   label: '전체 고객', value: total.toLocaleString(),   icon: 'sellers', iconBg: 'rgba(59,130,246,0.1)'  },
     { filterKey: '활동 중', label: '활성 고객', value: active.toLocaleString(),   icon: 'active',  iconBg: 'rgba(16,185,129,0.1)' },
     { filterKey: '정지됨', label: '활동정지',  value: stopped.toLocaleString(),  icon: 'stopped', iconBg: 'rgba(239,68,68,0.08)'  },
-    { filterKey: '신규',   label: '신규 고객', value: newCount.toLocaleString(), icon: 'new',     iconBg: 'rgba(245,158,11,0.1)'  },
+    { filterKey: '신규',   label: '신규 고객', value: newCount.toLocaleString(), icon: 'new',     iconBg: 'rgba(245,158,11,0.1)', sub: '최근 3개월 기준' },
   ];
 
   const cards = view === 'seller' ? sellerCards : customerCards;
@@ -49,6 +49,7 @@ export default function SellersStatCards({ view, filter, onFilterChange, stats =
             </StatCardTop>
             <StatLabel $active={isActive}>{card.label}</StatLabel>
             <StatValue $active={isActive}>{card.value}</StatValue>
+            {card.sub && <StatSub $active={isActive}>{card.sub}</StatSub>}
           </StatCard>
         );
       })}
@@ -110,4 +111,10 @@ const StatValue = styled.p`
   font-family: 'Plus Jakarta Sans', sans-serif;
   letter-spacing: -0.5px;
   line-height: 1.2;
+`;
+
+const StatSub = styled.p`
+  font-size: 11px;
+  color: ${({ $active }) => ($active ? 'rgba(255,255,255,0.6)' : '#94a3b8')};
+  margin-top: 2px;
 `;

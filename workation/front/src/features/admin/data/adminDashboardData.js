@@ -68,6 +68,7 @@ export const REGIONAL_SALES_DATA = [
   { rank: 2, region: '제주', amount: '₩42,800,000' },
   { rank: 3, region: '부산', amount: '₩31,200,000' },
   { rank: 4, region: '경기', amount: '₩28,500,000' },
+  { rank: 5, region: '강원', amount: '₩19,100,000' },
 ];
 
 export const RECENT_PAYMENTS = [

@@ -1,22 +1,38 @@
 // src/features/admin/components/dashboard/AdminChartPanel.jsx
 import { useState } from 'react';
 import styled from 'styled-components';
-import { ADMIN_CHART_DATA, ADMIN_CHART_DATA_12M, REGIONAL_SALES_DATA } from '../../data/adminDashboardData';
+import { DollarSign } from 'lucide-react';
+import {
+  ADMIN_CHART_DATA,
+  ADMIN_CHART_DATA_12M,
+  REGIONAL_SALES_DATA,
+} from '../../data/adminDashboardData';
+import { ADMIN_STAT_CARDS } from '../../data/adminDashboardData';
 
 const PERIOD_OPTIONS = [
   { value: '6m', label: '최근 6개월', sub: '지난 6개월간의 결제 데이터 추이', data: ADMIN_CHART_DATA },
-  { value: '1y', label: '최근 1년', sub: '지난 1년간의 결제 데이터 추이', data: ADMIN_CHART_DATA_12M },
+  { value: '1y', label: '최근 1년',   sub: '지난 1년간의 결제 데이터 추이',  data: ADMIN_CHART_DATA_12M },
 ];
 
 export default function AdminChartPanel() {
   const [period, setPeriod] = useState('6m');
-
   const selected = PERIOD_OPTIONS.find((o) => o.value === period);
   const chartData = selected.data;
 
   return (
     <Grid>
-      {/* ── 왼쪽: 월간 매출 트렌드 차트 ── */}
+      {/* ── 왼쪽 상단: 총 매출액 카드 ── */}
+      <RevenueCard>
+        <RevenueIconWrap>
+          <DollarSign size={20} color="#0d9488" strokeWidth={1.8} />
+        </RevenueIconWrap>
+        <RevenueTexts>
+          <RevenueLabel>{ADMIN_STAT_CARDS[0].label}</RevenueLabel>
+          <RevenueValue>{ADMIN_STAT_CARDS[0].value}</RevenueValue>
+        </RevenueTexts>
+      </RevenueCard>
+
+      {/* ── 왼쪽 하단: 월간 매출 트렌드 차트 ── */}
       <ChartCard>
         <ChartHeader>
           <ChartTitleGroup>
@@ -51,7 +67,7 @@ export default function AdminChartPanel() {
         </BarChart>
       </ChartCard>
 
-      {/* ── 오른쪽: 지역별 매출 순위 ── */}
+      {/* ── 오른쪽: 지역별 매출 순위 (양쪽 행 모두 차지) ── */}
       <RegionCard>
         <RegionCardHeader>
           <RegionTitle>지역별 매출 순위</RegionTitle>
@@ -81,10 +97,61 @@ export default function AdminChartPanel() {
 const Grid = styled.div`
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: 32px;
+  grid-template-rows: auto 1fr;
+  gap: 16px;
 `;
 
+/* 왼쪽 상단 — 총 매출액 */
+const RevenueCard = styled.div`
+  grid-column: 1;
+  grid-row: 1;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 20px 24px;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+`;
+
+const RevenueIconWrap = styled.div`
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: rgba(204, 251, 241, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+`;
+
+const RevenueTexts = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+`;
+
+const RevenueLabel = styled.p`
+  font-size: 12px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+`;
+
+const RevenueValue = styled.p`
+  font-size: 26px;
+  font-weight: 700;
+  color: #0d1c2e;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+`;
+
+/* 왼쪽 하단 — 차트 */
 const ChartCard = styled.div`
+  grid-column: 1;
+  grid-row: 2;
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
@@ -197,7 +264,10 @@ const BarLabel = styled.span`
   letter-spacing: 0.6px;
 `;
 
+/* 오른쪽 — 지역별 매출 순위 (row 1~2 모두 차지) */
 const RegionCard = styled.div`
+  grid-column: 2;
+  grid-row: 1 / 3;
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
@@ -236,7 +306,7 @@ const RegionItem = styled.div`
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 18px 24px;
+  padding: 20px 24px;
   border-bottom: 1px solid #f8fafc;
   &:last-child { border-bottom: none; }
 `;

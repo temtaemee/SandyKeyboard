@@ -1104,7 +1104,7 @@ const DetailFilesArea = styled.div`
   gap: 8px;
   padding: 12px;
   background: #f8fafc;
-  border-radius: 6px;
+  border-radius: 8px;
   border: 1px solid #e2e8f0;
 `;
 
@@ -1158,7 +1158,7 @@ const FileInput = styled.input`
     font-weight: 500;
     padding: 6px 12px;
     margin-right: 12px;
-    border-radius: 6px;
+    border-radius: 8px;
     border: 1px solid #cbd5e1;
     background: #fff;
     cursor: pointer;
@@ -1188,7 +1188,7 @@ const DeleteBtn = styled.button`
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
   font-family: inherit;
@@ -1203,7 +1203,7 @@ const DeleteBtn = styled.button`
 
 const CancelBtn = styled.button`
   padding: 8px 18px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
   font-family: inherit;
@@ -1221,7 +1221,7 @@ const SubmitBtn = styled.button`
   align-items: center;
   gap: 6px;
   padding: 8px 18px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
   font-family: inherit;
@@ -1273,7 +1273,7 @@ const FieldUnit = styled.span`
 const FieldInput = styled.input`
   padding: 9px 12px;
   border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 13px;
   font-family: inherit;
   color: #0d1c2e;
@@ -1293,7 +1293,7 @@ const FieldInput = styled.input`
 const FieldTextarea = styled.textarea`
   padding: 9px 12px;
   border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 13px;
   font-family: inherit;
   color: #0d1c2e;
