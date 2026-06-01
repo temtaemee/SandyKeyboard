@@ -12,16 +12,16 @@ const CATEGORY_LABEL = Object.fromEntries(
 );
 
 const AREA_OPTIONS = [
-  { value: '서울', label: '서울' },
-  { value: '경기', label: '경기' },
-  { value: '강원', label: '강원' },
-  { value: '충남', label: '충남' },
-  { value: '충북', label: '충북' },
-  { value: '경남', label: '경남' },
-  { value: '경북', label: '경북' },
-  { value: '전남', label: '전남' },
-  { value: '전북', label: '전북' },
-  { value: '제주', label: '제주' },
+  { value: 'SEOUL',    label: '서울' },
+  { value: 'GYEONGGI', label: '경기' },
+  { value: 'GANGWON',  label: '강원' },
+  { value: 'CHUNGNAM', label: '충남' },
+  { value: 'CHUNGBUK', label: '충북' },
+  { value: 'GYEONGNAM', label: '경남' },
+  { value: 'GYEONGBUK', label: '경북' },
+  { value: 'JEONNAM',  label: '전남' },
+  { value: 'JEONBUK',  label: '전북' },
+  { value: 'JEJU',     label: '제주' },
 ];
 
 function validate(data) {
