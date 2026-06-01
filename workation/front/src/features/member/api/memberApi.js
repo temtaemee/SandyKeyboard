@@ -95,6 +95,10 @@ export async function getSellerInfo() {
     const resp = await api.get(`/seller/me`)
     return resp.data;
 }
+export async function updateSellerInfo(vo) {
+    const resp = await api.put(`/seller/me`)
+    return resp.data;
+}
 
 
 
