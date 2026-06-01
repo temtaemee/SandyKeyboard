@@ -1,6 +1,7 @@
 package com.kh.app.transaction.payout.service;
 
 import com.kh.app.member.entity.MemberEntity;
+import com.kh.app.transaction.payment.enums.PayoutStatus;
 import com.kh.app.transaction.payout.dto.response.PayoutListResDto;
 import com.kh.app.transaction.payout.entity.PayoutEntity;
 import com.kh.app.transaction.payout.repository.PayoutRepository;
@@ -62,4 +63,15 @@ public class PayoutService {
                 .orElseThrow(() -> new EntityNotFoundException("정산 대상을 찾을 수 없습니다."));
         payout.completePayout();
     }
+
+    /**
+     * 💡 관리자가 전체 정산 내역을 확인하는 기능
+     */
+    public Page<PayoutListResDto> getAllPayoutList(int pno) {
+        PageRequest pageRequest = PageRequest.of(pno, 10);
+        return payoutRepository.findAllByOrderByIdDesc(pageRequest)
+                .map(PayoutListResDto::from);
+    }
+
+
 }

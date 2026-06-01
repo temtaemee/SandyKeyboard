@@ -19,6 +19,7 @@ export async function getPublicSpaceList(keyword, area) {
  */
 export async function getPublicSpaceDetail(spaceId) {
   const response = await api.get(`/public/space/${spaceId}`);
+
   return response.data; // SpaceResDto 반환
 }
 
