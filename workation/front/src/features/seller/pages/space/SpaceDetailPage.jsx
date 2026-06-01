@@ -10,7 +10,7 @@ import StayCard from '../../components/stay/StayCard';
 import EmptyState from '../../components/common/EmptyState';
 
 const ACCENT = '#3ec9a7';
-const TABS = ['스테이 목록', '리뷰', 'QnA'];
+const TABS = ['스테이 목록', '리뷰'];
 
 export default function SpaceDetailPage() {
   const { id } = useParams();
@@ -234,9 +234,6 @@ export default function SpaceDetailPage() {
           )}
           {activeTab === 1 && (
             <EmptyState title="리뷰 서비스 준비 중입니다" description="현재 리뷰 API가 구현 중입니다." />
-          )}
-          {activeTab === 2 && (
-            <EmptyState title="QnA 서비스 준비 중입니다" description="현재 QnA API가 구현 중입니다." />
           )}
         </TabContent>
       </TabCard>
