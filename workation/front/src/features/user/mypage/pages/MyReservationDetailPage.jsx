@@ -14,6 +14,7 @@ import {
 import MyPageSidebar from '../components/MyPageSidebar';
 // 팀원 API 모듈 임포트
 import {
+  completeReservation,
   getReservationOne,
   updateReservation,
 } from '../../reservation/api/reservationApi';
@@ -26,7 +27,23 @@ function MyReservationDetailPage() {
   const [loading, setLoading] = useState(true);
   const [isEdit, setIsEdit] = useState(false); // 수정 모드 토글 플래그
   const [reservation, setReservation] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
+  const handleComplete = async () => {
+    if (isLoading) return; // 이미 요청 중이면 중복 클릭 방지 (디바운싱)
+
+    setIsLoading(true); // 로딩 시작
+    try {
+      await completeReservation(id);
+      alert('이용 완료 처리가 되었습니다!');
+      // TODO: 목록을 새로고침하거나 상태를 '이용완료'로 변경하는 로직 추가
+    } catch (error) {
+      console.error(error);
+      alert('처리에 실패했습니다. 다시 시도해 주세요.');
+    } finally {
+      setIsLoading(false); // 성공하든 실패하든 로딩 해제
+    }
+  };
   // 수정 폼 입력값 상태
   const [formData, setFormData] = useState({
     primaryGuestName: '',
@@ -372,16 +389,26 @@ function MyReservationDetailPage() {
                 </PaymentDetailBox>
               )}
 
-              <ActionArea
-                onClick={() => {
-                  navigate(`/resv/refund/apply/${id}`);
-                }}
-              >
-                <SubmitButton>
-                  <CheckCircle size={18} />
-                  <span>환불 신청</span>
-                </SubmitButton>
-              </ActionArea>
+              <ButtonGroup>
+                {/* 1. 이용 완료 버튼: 상태가 'RESERVED'(예약 확정)일 때만 화면에 노출 🚀 */}
+                {reservation.status === 'RESERVED' && (
+                  <SubmitButton onClick={handleComplete} disabled={isLoading}>
+                    <CheckCircle size={18} />
+                    <span>{isLoading ? '처리 중...' : '이용 완료'}</span>
+                  </SubmitButton>
+                )}
+
+                {/* 2. 환불 신청 버튼: 결제 완료(PAYMENT_COMPLETED) 또는 예약 확정(RESERVED) 상태일 때만 노출 🛡️ */}
+                {(reservation.status === 'PAYMENT_COMPLETED' ||
+                  reservation.status === 'RESERVED') && (
+                  <RefundButton
+                    onClick={() => navigate(`/resv/refund/apply/${id}`)}
+                  >
+                    <ShieldAlert size={18} />
+                    <span>환불 신청하기</span>
+                  </RefundButton>
+                )}
+              </ButtonGroup>
             </ReceiptCard>
           </RightColumn>
         </ContentGrid>
@@ -396,6 +423,64 @@ export default MyReservationDetailPage;
 // 🟩 STYLED COMPONENTS (스타일 구조 정의)
 // =========================================================================
 
+/* ─── 기존 SubmitButton 아래에 이 스타일들을 추가/보완 하세요 ─── */
+
+// 두 버튼 사이의 간격을 리드미컬하게 벌려주는 가이드 박스
+const ButtonGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+`;
+
+// 1. 이용 완료 버튼 (기존 SubmitButton 스타일 보완)
+const SubmitButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  background: #3f6971;
+  color: #ffffff;
+  border: none;
+  padding: 14px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: ${(props) => (props.disabled ? 'not-allowed' : 'pointer')};
+  opacity: ${(props) => (props.disabled ? 0.6 : 1)};
+  pointer-events: ${(props) => (props.disabled ? 'none' : 'auto')};
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #2c4a50;
+  }
+`;
+
+// 2. 환불 신청 버튼 (✨ 완전히 새로 추가되는 뼈대 스타일)
+const RefundButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  background: transparent; /* 배경을 투명하게 해서 이용완료 버튼을 강조 */
+  color: #94a3b8; /* 기본 평상시 색상은 차분한 회색조 */
+  border: 1px solid #e2e8f0;
+  padding: 12px; /* 메인 버튼보다 살짝 슬림하게 잡아서 시각적 균형 최적화 */
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  /* 마우스를 올렸을 때만 파괴적인 액션(환불)임을 은은하게 인지시키는 핑크/레드 스킨 무드 */
+  &:hover {
+    color: #e11d48;
+    background-color: #fff1f2;
+    border-color: #fecdd3;
+  }
+`;
 const LayoutContainer = styled.div`
   display: flex;
   min-height: 100vh;
@@ -775,31 +860,5 @@ const PaymentDetailBox = styled.div`
   .order-id {
     font-family: monospace;
     color: #94a3b8;
-  }
-`;
-
-const ActionArea = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-`;
-
-const SubmitButton = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  background: #3f6971;
-  color: #ffffff;
-  border: none;
-  padding: 14px;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-  &:hover {
-    background: #2c4a50;
   }
 `;

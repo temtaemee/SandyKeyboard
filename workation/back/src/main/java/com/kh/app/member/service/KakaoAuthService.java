@@ -42,14 +42,21 @@ public class KakaoAuthService {
         // 1. 카카오로부터 access_token 발급받기
         String kakaoAccessToken = getKakaoAccessToken(dto);
 
-        // 2. access_token으로 카카오 유저 정보(이메일, 고유 ID) 파싱
+        // 2. access_token으로 카카오 유저 정보 파싱
         JsonNode userInfo = getKakaoUserInfo(kakaoAccessToken);
-        String socialId = userInfo.get("id").asText(); // 카카오의 고유 유저 Long ID값 (텍스트 변환)
-
-        // 카카오 JSON 구조는 kakao_account 내부에 이메일이 숨어있습니다. 🚨 중요
+        String socialId = userInfo.get("id").asText();
         String email = userInfo.get("kakao_account").get("email").asText();
 
-        // 3. DB 회원 검증 및 신규 유저 판단 플래그 세팅 (대통합 아키텍처 적용)
+        // 🚨 [수정 포인트 1] 카카오 JSON에서 프로필 이미지 URL 안전하게 파싱하기
+        String profileImageUrl = null;
+        if (userInfo.has("kakao_account") && userInfo.get("kakao_account").has("profile")) {
+            JsonNode profileNode = userInfo.get("kakao_account").get("profile");
+            if (profileNode.has("profile_image_url")) {
+                profileImageUrl = profileNode.get("profile_image_url").asText();
+            }
+        }
+
+        // 3. DB 회원 검증 및 신규 유저 판단 플래그 세팅
         Optional<MemberEntity> memberOpt = memberRepository.findByUsername(email);
         MemberEntity memberEntity;
         boolean isNewUser = false;
@@ -64,7 +71,7 @@ public class KakaoAuthService {
             SocialAccountEntity newSocialEntity = new SocialAccountEntity();
             newSocialEntity.setSocialId(socialId);
             newSocialEntity.setMember(memberEntity);
-            newSocialEntity.setProvider("KAKAO"); // 🟨 프로바이더 카카오 지정
+            newSocialEntity.setProvider("KAKAO");
             socialAccountRepository.save(newSocialEntity);
 
             isNewUser = true;
@@ -81,10 +88,14 @@ public class KakaoAuthService {
                 socialAccountRepository.save(newSocialEntity);
             }
 
-            // ✨ 영속성 프록시 1:1 탐색 버그 완벽 방어 코드 적용
+            // 🚨 [수정 포인트 2] 기존 로그인 유저일 경우: 매번 로그인할 때마다 카카오 프로필 사진 최신화하기 🚀
             Optional<MemberProfileEntity> profileOpt = memberProfileRepository.findById(memberEntity.getId());
             if (profileOpt.isEmpty()) {
                 isNewUser = true;
+            } else {
+                // 이미 가입된 회원은 프로필 엔티티에 카카오 사진을 실시간으로 동기화해 줍니다! (더티 체킹)
+                MemberProfileEntity memberProfile = profileOpt.get();
+                memberProfile.updateProfileImageUrl(profileImageUrl);
             }
         }
 
@@ -95,11 +106,12 @@ public class KakaoAuthService {
                 List.of("USER")
         );
 
-        // 5. 공용 DTO 규격으로 리턴 (롬복 대소문자 패치 완료 버전)
+        // 5. 공용 DTO 규격으로 리턴
         return SocialLoginRespDto.builder()
                 .token(appAccessToken)
                 .isNewUser(isNewUser)
                 .email(email)
+                .profileImageUrl(profileImageUrl) // 🚨 [수정 포인트 3] 신규 유저를 위해 리액트 가입 폼으로 사진을 토스! ✨
                 .build();
     }
 

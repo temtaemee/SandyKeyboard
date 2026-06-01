@@ -49,6 +49,9 @@ public class MemberProfileEntity {
     @Column(name = "ADDRESS_DETAIL", length = 500)
     private String addressDetail;
 
+    @Column(name = "PROFILE_IMAGE_URL", length = 500)
+    private String profileImageUrl;
+
     public void updateProfile(
             String name,
             String phone,
@@ -67,4 +70,7 @@ public class MemberProfileEntity {
         this.addressDetail = addressDetail;
     }
 
+    public void updateProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+    }
 }

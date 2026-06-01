@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'; // 💡 useEffect 추가
-import { useSearchParams } from 'react-router-dom'; // 💡 쿼리 스트링 파싱용 추가
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom'; // 🚀 useLocation은 불필요하므로 제거하고 하나로 통일
 import styled from 'styled-components';
 import useJoin from '../../hooks/useJoin';
 import AddressSearchModal from '../../../../home/components/AddressSearchModal';
@@ -7,38 +7,45 @@ import api from '../../../../app/api/axios';
 
 function SignupForm() {
   const { fetchJoin, navi } = useJoin();
-  // 💡 주소창의 ?type=social&email=xxx 값을 읽어오기 위한 훅
+
+  // 🚀 모든 쿼리 스트링 파싱을 하나로 통일
   const [searchParams] = useSearchParams();
   const isSocial = searchParams.get('type') === 'social';
   const socialEmail = searchParams.get('email') || '';
+  const socialProfileImageUrl = searchParams.get('profileImageUrl') || ''; // 카카오가 던져준 사진 주소
 
+  // 🎯 핀포인트 교정: useState 최초 생성 시점에 소셜 데이터를 미리 꽂아둡니다!
   const [vo, setVo] = useState({
     name: '',
-    username: '',
-    password: '',
+    username: isSocial ? socialEmail : '',
+    password: isSocial ? 'SOCIAL_AUTHENTICATED_BY_KAKAO' : '',
     phone: '',
-    email: '',
+    email: isSocial ? socialEmail : '',
     preferredArea: '',
     zonecode: '',
+    profileImageUrl: isSocial ? socialProfileImageUrl : '', // 🚀 초기값에 다이렉트 주입하여 빈칸 전송 버그 해결!
     address: '',
     addressDetail: '',
   });
 
-  const [passwordCheck, setPasswordCheck] = useState('');
+  const [passwordCheck, setPasswordCheck] = useState(
+    isSocial ? 'SOCIAL_AUTHENTICATED_BY_KAKAO' : ''
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // 💡 소셜 로그인으로 강제 이동해온 경우, 이메일과 유저네임을 미리 주입해줍니다.
+  // 🚀 초기값에서 데이터를 선제 가드했기 때문에, 이 useEffect는 초기 마운트 시 패스워드 정합성 유지만 가볍게 처리합니다.
   useEffect(() => {
     if (isSocial && socialEmail) {
       setVo((prev) => ({
         ...prev,
-        username: socialEmail, // 백엔드 username 컬럼에 이메일 저장 규격 매칭
+        username: socialEmail,
         email: socialEmail,
-        password: 'SOCIAL_AUTHENTICATED_BY_NAVER', // 백엔드 필수 제약 조건 통과용 더미 값
+        password: 'SOCIAL_AUTHENTICATED_BY_KAKAO',
+        profileImageUrl: socialProfileImageUrl,
       }));
-      setPasswordCheck('SOCIAL_AUTHENTICATED_BY_NAVER');
+      setPasswordCheck('SOCIAL_AUTHENTICATED_BY_KAKAO');
     }
-  }, [isSocial, socialEmail]);
+  }, [isSocial, socialEmail, socialProfileImageUrl]);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -56,8 +63,8 @@ function SignupForm() {
   async function handleSubmit(e) {
     e.preventDefault();
     if (isSocial) {
-      // 🟩 소셜 유저라면 비밀번호 검증을 패스하고 전용 API로 발송!
       try {
+        // 🚀 이제 vo.profileImageUrl에 값이 확실하게 보장된 채 전송됩니다.
         await api.post('/guest/social-join', vo);
         const tempToken = searchParams.get('tempToken');
         if (tempToken) {
@@ -70,7 +77,6 @@ function SignupForm() {
         alert('소셜 회원정보 저장 중 오류가 발생했습니다.');
       }
     } else {
-      // ⬜️ 일반 유저 가입 로직 기존 유지
       if (vo.password !== passwordCheck) {
         alert('비밀번호가 일치하지 않습니다.');
         return;
@@ -84,11 +90,19 @@ function SignupForm() {
       <Title>{isSocial ? '프로필 완성하기' : '계정 만들기'}</Title>
       <SubTitle>
         {isSocial
-          ? '안전한 거래를 위해 추가 정보를 입력해주세요!'
+          ? '안전한 이용을 위해 추가 정보를 입력해주세요!'
           : '모래묻은 키보드에 오신 것을 환영합니다!'}
       </SubTitle>
 
       <Form onSubmit={handleSubmit}>
+        {/* 🚀 소셜 가입자 전용: 카카오톡 프로필 사진 연동 완료 시각적 프리뷰 컴포넌트 탑재 */}
+        {isSocial && vo.profileImageUrl && (
+          <PreviewAvatarZone>
+            <img src={vo.profileImageUrl} alt="카카오 프로필 미리보기" />
+            <span className="preview-label">카카오 프로필 사진 연동 완료</span>
+          </PreviewAvatarZone>
+        )}
+
         <InputWrapper>
           <Label>이름</Label>
           <Input
@@ -101,7 +115,6 @@ function SignupForm() {
           />
         </InputWrapper>
 
-        {/* 🚨 소셜 가입 모드가 아닐 때만 아이디/비밀번호 칸을 보여줍니다! */}
         {!isSocial && (
           <>
             <InputWrapper>
@@ -160,7 +173,7 @@ function SignupForm() {
             value={vo.email}
             placeholder="example@naver.com"
             onChange={handleChange}
-            disabled={isSocial} // 소셜 계정은 이메일 수정 불가 처리
+            disabled={isSocial}
             required
           />
         </InputWrapper>
@@ -240,7 +253,6 @@ function SignupForm() {
         </SignupButton>
       </Form>
 
-      {/* 소셜 가입자에게 하단 간편로그인 유도는 불필요하므로 숨김 */}
       {!isSocial && (
         <>
           <LoginText>
@@ -262,37 +274,53 @@ function SignupForm() {
 
 export default SignupForm;
 
-// 이하 스타일 코드는 기존과 완벽히 동일하므로 생략합니다.
+/* ================= styled (새로운 프리뷰 컴포넌트 포함 전체 보존) ================= */
 
 const Card = styled.section`
   width: 100%;
   max-width: 460px;
-
   background-color: white;
-
   border-radius: 28px;
-
   padding: 48px 42px;
-
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
 `;
+
+const PreviewAvatarZone = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 28px;
+  padding: 18px;
+  background-color: #f8fafc;
+  border-radius: 16px;
+
+  img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  }
+
+  .preview-label {
+    font-size: 12px;
+    color: #94a3b8;
+    font-weight: 500;
+  }
+`;
+
 const Select = styled.select`
   width: 100%;
   height: 54px;
-
   border: 1px solid #d6dde2;
   border-radius: 12px;
-
   padding: 0 16px;
-
   font-size: 14px;
-
   outline: none;
-
   background-color: white;
-
   transition: 0.2s;
-
   &:focus {
     border-color: #4d6c75;
   }
@@ -301,53 +329,39 @@ const Select = styled.select`
 const Title = styled.h2`
   font-size: 42px;
   font-weight: 700;
-
   color: #3d4d54;
-
   margin-bottom: 10px;
 `;
 
 const SubTitle = styled.p`
   font-size: 15px;
   color: #7b8794;
-
   margin-bottom: 38px;
 `;
 
 const Form = styled.form``;
-
 const InputWrapper = styled.div`
   margin-bottom: 22px;
 `;
-
 const Label = styled.label`
   display: block;
-
   font-size: 14px;
   color: #6b7280;
-
   margin-bottom: 10px;
 `;
 
 const Input = styled.input`
   width: 100%;
   height: 54px;
-
   border: 1px solid #d6dde2;
   border-radius: 12px;
-
   padding: 0 16px;
-
   font-size: 14px;
-
   outline: none;
-
   transition: 0.2s;
-
   &:focus {
     border-color: #4d6c75;
   }
-
   &::placeholder {
     color: #adb5bd;
   }
@@ -357,32 +371,23 @@ const AgreeArea = styled.label`
   display: flex;
   align-items: center;
   gap: 8px;
-
   font-size: 13px;
   color: #6b7280;
-
   margin-bottom: 24px;
-
   cursor: pointer;
 `;
 
 const SignupButton = styled.button`
   width: 100%;
   height: 54px;
-
   border: none;
   border-radius: 12px;
-
   background-color: #4d6c75;
   color: white;
-
   font-size: 15px;
   font-weight: 600;
-
   cursor: pointer;
-
   transition: 0.2s;
-
   &:hover {
     opacity: 0.9;
   }
@@ -390,51 +395,36 @@ const SignupButton = styled.button`
 
 const LoginText = styled.div`
   margin-top: 28px;
-
   text-align: center;
-
   font-size: 14px;
   color: #6b7280;
 `;
-
 const LoginLink = styled.span`
   margin-left: 6px;
-
   color: #4d6c75;
   font-weight: 600;
-
   cursor: pointer;
 `;
 
 const Divider = styled.div`
   position: relative;
-
   text-align: center;
-
   margin: 36px 0 26px;
-
   span {
     position: relative;
     z-index: 2;
-
     background-color: white;
-
     padding: 0 14px;
-
     font-size: 13px;
     color: #9ca3af;
   }
-
   &::before {
     content: '';
-
     position: absolute;
     top: 50%;
     left: 0;
-
     width: 100%;
     height: 1px;
-
     background-color: #e5e7eb;
   }
 `;
@@ -461,7 +451,6 @@ const AddressButton = styled.button`
   cursor: pointer;
   white-space: nowrap;
   transition: 0.2s;
-
   &:hover {
     background-color: #f4f7f8;
   }
@@ -470,19 +459,12 @@ const AddressButton = styled.button`
 const SocialButton = styled.button`
   width: 52px;
   height: 52px;
-
   border-radius: 50%;
-
   border: 1px solid #d1d5db;
-
   background-color: white;
-
   font-size: 18px;
-
   cursor: pointer;
-
   transition: 0.2s;
-
   &:hover {
     transform: translateY(-2px);
   }
