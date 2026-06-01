@@ -1,5 +1,6 @@
 package com.kh.app.member.entity;
 
+import com.kh.app.member.dto.request.SellerUpdateReqDto;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -21,11 +22,15 @@ public class SellerEntity {
     @MapsId
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "MEMBER_ID")
-    private MemberEntity member; // 명명 규칙에 따라 MemberEntity로 참조
+    private MemberEntity member;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "BANK_ID", nullable = false)
-    private BankEntity bank; // 방금 만드신 BankEntity를 참조
+    private BankEntity bank;
+
+    // ✨ 업체명 컬럼 추가 (크기는 상호명이 길어질 수 있으므로 100 정도로 넉넉하게 잡았습니다)
+    @Column(name = "COMPANY_NAME", nullable = false, length = 100)
+    private String companyName;
 
     @Column(name = "BUSINESS_NO", nullable = false, length = 13)
     private String businessNo;
@@ -40,10 +45,20 @@ public class SellerEntity {
     @Column(name = "CREATED_AT", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    public void updateSellerInfo(String companyName,BankEntity bank, String businessNo, String account, String accountName) {
+    // ✨ 수정 메서드 내부에서 companyName을 실제로 세팅하도록 보완!
+    // SellerEntity.java 내부 수정
+
+    public void updateSeller(SellerUpdateReqDto dto, BankEntity bank) {
+        // 1. 방어 코드 (필요시 값 검증 로직을 엔티티 내부에 응집 가능)
+        if (dto.getAccount() != null && dto.getAccount().contains("-")) {
+            // 예시: 계좌번호 하이픈 제거 같은 도메인 특화 로직 처리 가능
+        }
+
+        // 2. 데이터 상태 변경
+        this.companyName = dto.getCompanyName();
         this.bank = bank;
-        this.businessNo = businessNo;
-        this.account = account;
-        this.accountName = accountName;
+        this.businessNo = dto.getBusinessNo();
+        this.account = dto.getAccount();
+        this.accountName = dto.getAccountName();
     }
 }

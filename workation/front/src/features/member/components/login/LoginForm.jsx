@@ -3,10 +3,9 @@ import styled from 'styled-components';
 import SocialLoginButtons from './SocialLoginButtons';
 import useLogin from '../../hooks/useLogin';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 function LoginForm() {
-  const { fetchLogin, navi } = useLogin();
+  const { fetchLogin, navi, error } = useLogin();
   const [vo, setVo] = useState({
     username: '',
     password: '',
@@ -110,7 +109,8 @@ function LoginForm() {
             </FindLink>
           </FindArea>
         </OptionArea>
-
+        {/* 2. 에러가 존재할 때 로그인 버튼 바로 위에 컴포넌트 노출 ✨ */}
+        {error && <ErrorMessage>{error}</ErrorMessage>}
         <LoginButton type="submit">로그인 →</LoginButton>
       </Form>
 
@@ -135,6 +135,30 @@ function LoginForm() {
 }
 
 export default LoginForm;
+
+const ErrorMessage = styled.div`
+  color: #dc2626; /* 선명한 빨간색 */
+  background-color: #fef2f2; /* 부드러운 분홍빛 패널 배경 */
+  border: 1px solid #fee2e2;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  text-align: left;
+  animation: fadeIn 0.2s ease-in-out;
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-5px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+`;
 
 const Card = styled.section`
   width: 100%;
