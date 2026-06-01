@@ -7,7 +7,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/transaction/status")
+@RequestMapping("/api")
 @RequiredArgsConstructor
 public class ReservationStatusController {
 

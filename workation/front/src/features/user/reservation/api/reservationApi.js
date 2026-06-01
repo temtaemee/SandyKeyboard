@@ -50,9 +50,7 @@ export async function updateReservation(id, updateData) {
  * 마이페이지 등에서 이용완료(체크아웃 확정) 버튼을 누를 때 사용합니다.
  */
 export async function completeReservation(reservationId) {
-  const response = await api.patch(
-    `/transaction/status/user/complete/${reservationId}`
-  );
+  const response = await api.patch(`/user/complete/${reservationId}`);
   return response.data;
 }
 
@@ -96,9 +94,7 @@ export async function getSellerReservationOne(id) {
  * 판매자 대시보드에서 들어온 예약 요청을 최종 승인할 때 사용합니다.
  */
 export async function approveReservationBySeller(reservationId) {
-  const response = await api.patch(
-    `/transaction/status/seller/approve/${reservationId}`
-  );
+  const response = await api.patch(`/seller/approve/${reservationId}`);
   return response.data;
 }
 
@@ -107,9 +103,7 @@ export async function approveReservationBySeller(reservationId) {
  * 판매자 사정이나 예약 불가 사유로 예약을 거부할 때 사용합니다.
  */
 export async function cancelReservationBySeller(reservationId) {
-  const response = await api.patch(
-    `/transaction/status/seller/cancel/${reservationId}`
-  );
+  const response = await api.patch(`/seller/cancel/${reservationId}`);
   return response.data;
 }
 
