@@ -347,7 +347,11 @@ public class ReservationService {
         StayResDto stayResDto = StayResDto.from(stayEntity, options, pictures);
 
         // 3. Space 정보 및 섬네일 바인딩
-        String spaceThumbnail = (pictures != null && !pictures.isEmpty()) ? pictures.get(0).getFilePath() : null;
+        String spaceThumbnail = null;
+        if (pictures != null && !pictures.isEmpty()) {
+            // 첫 번째 사진의 s3Key를 이용해 전체 URL 생성
+            spaceThumbnail = s3Service.getFileUrl(pictures.get(0).getFilePath());
+        }
         SpaceResDto spaceResDto = SpaceResDto.from(spaceEntity, List.of(stayResDto), spaceThumbnail);
 
         // 4. 결제 원장 조회
