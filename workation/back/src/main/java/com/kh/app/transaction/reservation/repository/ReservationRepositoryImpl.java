@@ -139,7 +139,8 @@ public class ReservationRepositoryImpl implements ReservationRepositoryCustom {
             String sellerUsername,
             Long reservationId,
             String guestName,
-            java.time.LocalDate checkinDate
+            java.time.LocalDate checkinDate,
+            ReservationStatus status // 💡 파라미터 추가
     ) {
 
         // 1. 동적 필터가 적용된 컨텐츠 조회
@@ -150,11 +151,12 @@ public class ReservationRepositoryImpl implements ReservationRepositoryCustom {
                 .join(qStay.space, qSpace)
                 .join(qSpace.seller, qSeller)
                 .where(
-                        qSeller.username.eq(sellerUsername), // 💡 본인 매장 예약 고정 필수
-                        qReservation.status.ne(ReservationStatus.PENDING), // 결제 완료된 건 위주
-                        reservationIdEq(reservationId),       // 💡 동적 조건: 예약 번호
-                        guestNameContains(guestName),         // 💡 동적 조건: 대표 예약자명 (Like)
-                        checkinDateEq(checkinDate)            // 💡 동적 조건: 체크인 날짜 일치
+                        qSeller.username.eq(sellerUsername),
+                        qReservation.status.ne(ReservationStatus.PENDING),
+                        reservationIdEq(reservationId),
+                        guestNameContains(guestName),
+                        checkinDateEq(checkinDate),
+                        statusEq(status) // 💡 이제 에러가 사라집니다
                 )
                 .orderBy(qReservation.id.desc())
                 .offset(pageable.getOffset())
@@ -173,7 +175,8 @@ public class ReservationRepositoryImpl implements ReservationRepositoryCustom {
                         qReservation.status.ne(ReservationStatus.PENDING),
                         reservationIdEq(reservationId),
                         guestNameContains(guestName),
-                        checkinDateEq(checkinDate)
+                        checkinDateEq(checkinDate),
+                        statusEq(status) // 💡 카운트 쿼리에도 추가
                 )
                 .fetchOne();
 
@@ -205,5 +208,9 @@ public class ReservationRepositoryImpl implements ReservationRepositoryCustom {
                 .fetchOne();
 
         return Optional.ofNullable(result);
+    }
+
+    private BooleanExpression statusEq(ReservationStatus status) {
+        return status != null ? qReservation.status.eq(status) : null;
     }
 }
