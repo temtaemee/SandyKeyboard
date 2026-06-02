@@ -1,6 +1,8 @@
 package com.kh.app.transaction.reservation.repository;
 
+import com.kh.app.member.entity.MemberProfileEntity;
 import com.kh.app.member.entity.QMemberEntity;
+import com.kh.app.member.repository.ProfileRepository;
 import com.kh.app.product.space.entity.QSpaceEntity; // 💡 추가
 import com.kh.app.product.stay.entity.QStayEntity;   // 💡 추가
 import com.kh.app.transaction.reservation.dto.response.ReservationAdminListResDto;
@@ -16,15 +18,18 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 public class ReservationRepositoryImpl implements ReservationRepositoryCustom {
 
     private final JPAQueryFactory qf;
+    private final ProfileRepository profileRepository;
 
     private final QReservationEntity qReservation = QReservationEntity.reservationEntity;
-    private final QMemberEntity qMember = QMemberEntity.memberEntity; // 예약한 일반 유저
+    private final QMemberEntity qMember = QMemberEntity.memberEntity;
 
     // 💡 상품 판매자 조인 추적을 위한 Q도메인 선언
     private final QStayEntity qStay = QStayEntity.stayEntity;
@@ -182,8 +187,23 @@ public class ReservationRepositoryImpl implements ReservationRepositoryCustom {
 
         long totalCount = (total != null) ? total : 0L;
 
+        // 예약자 프로필 배치 조회 (쿼리 1번)
+        List<Long> memberIds = targetList.stream()
+                .filter(r -> r.getMember() != null)
+                .map(r -> r.getMember().getId())
+                .collect(Collectors.toList());
+
+        Map<Long, MemberProfileEntity> profileMap = profileRepository.findByMemberIdIn(memberIds)
+                .stream()
+                .collect(Collectors.toMap(p -> p.getMember().getId(), p -> p));
+
         List<ReservationAdminListResDto> dtoList = targetList.stream()
-                .map(ReservationAdminListResDto::from)
+                .map(r -> {
+                    MemberProfileEntity profile = r.getMember() != null
+                            ? profileMap.get(r.getMember().getId())
+                            : null;
+                    return ReservationAdminListResDto.from(r, profile);
+                })
                 .toList();
 
         return new PageImpl<>(dtoList, pageable, totalCount);

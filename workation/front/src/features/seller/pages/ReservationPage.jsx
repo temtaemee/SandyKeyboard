@@ -255,7 +255,7 @@ export default function ReservationPage() {
               </colgroup>
               <thead>
                 <tr>
-                  {['예약번호', '숙소', '예약자', '체크인', '체크아웃', '인원', '결제금액', '상태', '액션'].map((h) => (
+                  {['예약번호', '숙소', '대표 투숙자', '체크인', '체크아웃', '인원', '결제금액', '상태', '액션'].map((h) => (
                     <Th key={h}>{h}</Th>
                   ))}
                 </tr>
@@ -274,9 +274,9 @@ export default function ReservationPage() {
                   list
                   .filter((r) => !filterStatus || r.status === filterStatus)
                   .map((r) => (
-                    <tr key={r.id}>
+                    <ClickRow key={r.id} onClick={() => setDetailOpen(r)}>
                       <Td>
-                        <IdBtn onClick={() => setDetailOpen(r)}>#{r.id}</IdBtn>
+                        <IdText>#{r.id}</IdText>
                       </Td>
                       <Td>
                         <StayCell>
@@ -286,8 +286,8 @@ export default function ReservationPage() {
                       </Td>
                       <Td>
                         <GuestCell>
-                          <GuestName>{r.primaryGuestName}</GuestName>
-                          <GuestId>{r.username}</GuestId>
+                          <GuestName>{r.memberName ?? r.username}</GuestName>
+                          {r.memberName && <GuestId>{r.username}</GuestId>}
                         </GuestCell>
                       </Td>
                       <Td>{r.checkinDate}</Td>
@@ -303,7 +303,7 @@ export default function ReservationPage() {
                         {r.status === 'PAYMENT_COMPLETED' ? (
                           <ActionRow>
                             <ApproveBtn
-                              onClick={() => handleApprove(r.id)}
+                              onClick={(e) => { e.stopPropagation(); handleApprove(r.id); }}
                               disabled={actionLoading === r.id + '_approve'}
                               title="예약 승인"
                             >
@@ -311,7 +311,7 @@ export default function ReservationPage() {
                               {actionLoading === r.id + '_approve' ? '...' : '승인'}
                             </ApproveBtn>
                             <RejectBtn
-                              onClick={() => handleCancel(r.id)}
+                              onClick={(e) => { e.stopPropagation(); handleCancel(r.id); }}
                               disabled={actionLoading === r.id + '_cancel'}
                               title="예약 거절"
                             >
@@ -323,7 +323,7 @@ export default function ReservationPage() {
                           <NoAction>-</NoAction>
                         )}
                       </Td>
-                    </tr>
+                    </ClickRow>
                   ))
                 )}
               </tbody>
@@ -374,9 +374,18 @@ export default function ReservationPage() {
               <DetailGrid>
                 <DetailRow><DLabel>숙소</DLabel><DValue>{detailOpen.stayName ?? `#${detailOpen.stayId}`}</DValue></DetailRow>
                 {detailOpen.spaceName && <DetailRow><DLabel>공간</DLabel><DValue>{detailOpen.spaceName}</DValue></DetailRow>}
-                <DetailRow><DLabel>예약자</DLabel><DValue>{detailOpen.primaryGuestName} ({detailOpen.username})</DValue></DetailRow>
-                <DetailRow><DLabel>연락처</DLabel><DValue>{detailOpen.primaryGuestPhone}</DValue></DetailRow>
-                <DetailRow><DLabel>이메일</DLabel><DValue>{detailOpen.primaryGuestEmail}</DValue></DetailRow>
+                <DetailRow>
+                  <DLabel>예약자</DLabel>
+                  <DValue>
+                    {detailOpen.memberName
+                      ? `${detailOpen.memberName} (${detailOpen.username})`
+                      : detailOpen.username}
+                  </DValue>
+                </DetailRow>
+                <DetailRow><DLabel>예약자 연락처</DLabel><DValue>{detailOpen.memberPhone ?? '-'}</DValue></DetailRow>
+                <DetailRow><DLabel>대표 투숙자</DLabel><DValue>{detailOpen.primaryGuestName}</DValue></DetailRow>
+                <DetailRow><DLabel>투숙자 연락처</DLabel><DValue>{detailOpen.primaryGuestPhone}</DValue></DetailRow>
+                <DetailRow><DLabel>투숙자 이메일</DLabel><DValue>{detailOpen.primaryGuestEmail}</DValue></DetailRow>
                 <DetailRow><DLabel>체크인</DLabel><DValue>{detailOpen.checkinDate}</DValue></DetailRow>
                 <DetailRow><DLabel>체크아웃</DLabel><DValue>{detailOpen.checkoutDate}</DValue></DetailRow>
                 <DetailRow><DLabel>인원</DLabel><DValue>{detailOpen.guestCount}명</DValue></DetailRow>
@@ -628,13 +637,16 @@ const Td = styled.td`
   vertical-align: middle;
 `;
 
-const IdBtn = styled.button`
+const ClickRow = styled.tr`
+  cursor: pointer;
+  &:hover td { background: ${({ theme }) => theme.colors.bgSection}; }
+`;
+
+const IdText = styled.span`
   font-size: 12px;
   font-weight: 600;
   font-family: 'Plus Jakarta Sans', monospace;
   color: ${ACCENT};
-  cursor: pointer;
-  &:hover { text-decoration: underline; }
 `;
 
 const StayCell = styled.div`display: flex; flex-direction: column; gap: 2px;`;

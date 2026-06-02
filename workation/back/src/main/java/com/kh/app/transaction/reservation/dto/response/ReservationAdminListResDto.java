@@ -1,5 +1,6 @@
 package com.kh.app.transaction.reservation.dto.response;
 
+import com.kh.app.member.entity.MemberProfileEntity;
 import com.kh.app.transaction.reservation.entity.ReservationEntity;
 import lombok.Builder;
 import lombok.Getter;
@@ -14,7 +15,9 @@ public class ReservationAdminListResDto {
     private Long id;                  // 예약 번호 (PK)
     private String orderId;           // 토스페이먼츠 주문 번호
     private Long memberId;            // 회원 고유 번호
-    private String username;          // 예약자 계정 아이디 (memberEntity.username)
+    private String username;          // 예약자 계정 아이디
+    private String memberName;        // 예약자 실명
+    private String memberPhone;       // 예약자 연락처
     private Long stayId;              // 숙소 고유 번호
 
     private Integer guestCount;       // 인원수
@@ -41,6 +44,10 @@ public class ReservationAdminListResDto {
      * 엔티티 데이터를 DTO로 안전하게 변환하는 매핑 메서드
      */
     public static ReservationAdminListResDto from(ReservationEntity entity) {
+        return from(entity, null);
+    }
+
+    public static ReservationAdminListResDto from(ReservationEntity entity, MemberProfileEntity profile) {
 
         // 💡 널 포인터 예외(NPE)를 방지하면서 안전하게 상위 객체의 이름 추출
         String extractedStayName = null;
@@ -60,6 +67,8 @@ public class ReservationAdminListResDto {
                 .orderId(entity.getOrderId())
                 .memberId(entity.getMember() != null ? entity.getMember().getId() : null)
                 .username(entity.getMember() != null ? entity.getMember().getUsername() : null)
+                .memberName(profile != null ? profile.getName() : null)
+                .memberPhone(profile != null ? profile.getPhone() : null)
                 .stayId(entity.getStay() != null ? entity.getStay().getId() : null)
                 .guestCount(entity.getGuestCount())
                 .primaryGuestName(entity.getPrimaryGuestName())
