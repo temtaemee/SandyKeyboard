@@ -5,6 +5,8 @@ import com.kh.app.member.entity.MemberEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -19,4 +21,18 @@ public interface ReviewRepository extends JpaRepository<ReviewEntity, Long> {
     Page<ReviewEntity> findAllByMemberAndDelYnOrderByCreatedAtDesc(MemberEntity member, String delYn, Pageable pageable);
 
     Optional<ReviewEntity> findByIdAndDelYn(Long id, String delYn);
+
+
+
+    // seller의 숙소에 달린 리뷰 조회
+    @Query("SELECT r FROM ReviewEntity r " +
+            "WHERE r.reservation.stay.space.seller.id = :memberId " +
+            "AND r.delYn = 'N' " +
+            "ORDER BY r.createdAt DESC")
+    Page<ReviewEntity> findAllBySeller(@Param("memberId") Long memberId, Pageable pageable);
+
+    // 해당 예약으로 작성된 리뷰가 이미 있는지 확인
+    boolean existsByReservationId(Long reservationId);
+
+
 }
