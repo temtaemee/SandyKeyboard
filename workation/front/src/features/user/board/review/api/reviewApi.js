@@ -22,12 +22,8 @@ const USER_BASE = '/user/reviews';
  */
 export const getImageUrl = (s3Key) => {
   if (!s3Key) return '';
-
-  // 이미 전체 URL이면 그대로 사용
   if (s3Key.startsWith('http')) return s3Key;
-
-  // S3 경로 생성
-  return `https://temp0514-651592874046-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/${s3Key}`;
+  return `https://finalproject-s3-bucket-243050855199-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/${s3Key}`;
 };
 
 // ================================
@@ -189,7 +185,9 @@ export const toggleReviewLike = (reviewId, liked) => {
   if (liked) {
     return api.delete(`${USER_BASE}/${reviewId}/like`).then((res) => res.data);
   } else {
-    return api.post(`${USER_BASE}/${reviewId}/like`, {}).then((res) => res.data);
+    return api
+      .post(`${USER_BASE}/${reviewId}/like`, {})
+      .then((res) => res.data);
   }
 };
 
@@ -224,10 +222,14 @@ export const toggleCommentLike = (reviewId, commentId) =>
 // ================================
 
 export const addReviewRating = (reviewId, rating) =>
-  api.post(`${USER_BASE}/${reviewId}/rating`, { rating }).then((res) => res.data);
+  api
+    .post(`${USER_BASE}/${reviewId}/rating`, { rating })
+    .then((res) => res.data);
 
 export const updateReviewRating = (reviewId, rating) =>
-  api.put(`${USER_BASE}/${reviewId}/rating`, { rating }).then((res) => res.data);
+  api
+    .put(`${USER_BASE}/${reviewId}/rating`, { rating })
+    .then((res) => res.data);
 
 // ================================
 // 리뷰 관리자 API (기능명세서 추가)
@@ -235,4 +237,3 @@ export const updateReviewRating = (reviewId, rating) =>
 
 export const hideReview = (reviewId) =>
   api.put(`/admin/reviews/${reviewId}/hide`, {}).then((res) => res.data);
-
