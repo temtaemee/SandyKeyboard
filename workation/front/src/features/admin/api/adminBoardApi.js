@@ -42,9 +42,41 @@ export async function createAdminBoardPost(fd) {
   });
 }
 
-// 공지 수정 (백엔드 파일 업로드 반영 전까지 기존의 안전한 PUT API 사용)
+// 공지 수정 (multipart/form-data 지원으로 변경)
 export async function updateAdminBoardPost(id, data) {
-  return api.put(`/admin/notices/${id}`, data);
+  const formData = new FormData();
+
+  const dto = {
+    title: data.title,
+    content: data.content,
+    pinYn: data.pinYn,
+  };
+
+  formData.append(
+    'dto',
+    new Blob([JSON.stringify(dto)], { type: 'application/json' })
+  );
+
+  // 새로 업로드할 파일들 추가
+  if (data.files && data.files.length > 0) {
+    data.files.forEach((file) => formData.append('files', file));
+  }
+
+  // 삭제할 파일 ID 리스트를 쿼리 파라미터로 붙임
+  let url = `/admin/notices/${id}`;
+  if (data.removedFileIds && data.removedFileIds.length > 0) {
+    const params = new URLSearchParams();
+    data.removedFileIds.forEach((fileId) =>
+      params.append('deletedFileIds', fileId)
+    );
+    url += `?${params.toString()}`;
+  }
+
+  return api.put(url, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
 }
 // 공지 삭제
 export async function deleteAdminBoardPost(id) {

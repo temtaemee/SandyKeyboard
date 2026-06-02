@@ -1,35 +1,135 @@
 // src/features/admin/pages/AdminSalesPage.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import {
-  Wallet,
-  Receipt,
-  Percent,
-  TrendingUp,
-  ClipboardList,
-} from 'lucide-react';
+import { Wallet, Percent, TrendingUp, ClipboardList } from 'lucide-react';
 import AdminSearchInput from '../components/common/AdminSearchInput';
 import AdminChartPanel from '../components/dashboard/AdminChartPanel';
+import YearMonthPicker from '../components/common/YearMonthPicker';
 import {
-  SALES_STAT_CARDS,
-  TOP5_SETTLEMENTS,
-  PENDING_LIST,
-} from '../data/adminSalesData';
-import {
-  SETTLEMENT_STATUS_MAP,
-  APPROVAL_STATUS_MAP,
-} from '../data/adminSalesConstants';
+  getAdminSalesSummary,
+  getAdminPayoutList,
+  getPayoutSummary,
+} from '../api/adminSalesApi'; // 💡 백엔드 API 연동
+import { SETTLEMENT_STATUS_MAP } from '../data/adminSalesConstants';
 import StatusBadge from '../components/common/StatusBadge';
+
+const NOW = new Date();
 
 export default function AdminSalesPage() {
   const [pendingSearch, setPendingSearch] = useState('');
+  const [completedDate, setCompletedDate] = useState({
+    year: NOW.getFullYear(),
+    month: NOW.getMonth() + 1,
+  });
+  const [feeDate, setFeeDate] = useState({
+    year: NOW.getFullYear(),
+    month: NOW.getMonth() + 1,
+  });
 
-  const filteredPending = PENDING_LIST.filter(
-    (row) =>
-      !pendingSearch ||
-      row.seller.toLowerCase().includes(pendingSearch.toLowerCase()) ||
-      row.id.toLowerCase().includes(pendingSearch.toLowerCase())
-  );
+  // 💡 백엔드 정산 연동용 State (가짜 데이터 원복 적용)
+  const [rawPayouts, setRawPayouts] = useState([]);
+  const [completedAmount, setCompletedAmount] = useState(0);
+  const [feeAmount, setFeeAmount] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  // 1. 전체 정산 목록 조회
+  useEffect(() => {
+    async function fetchPayouts() {
+      try {
+        setLoading(true);
+        const resp = await getAdminPayoutList();
+        const list = Array.isArray(resp.data) ? resp.data : (resp.data.content || []);
+        setRawPayouts(list);
+      } catch (err) {
+        console.error("정산 목록 조회 실패:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchPayouts();
+  }, []);
+
+  // 2. 선택된 연월별 정산 완료 총액 조회
+  useEffect(() => {
+    async function fetchCompletedSummary() {
+      try {
+        const resp = await getPayoutSummary(completedDate.year, completedDate.month);
+        setCompletedAmount(resp.data?.totalPayoutAmount ?? 0);
+      } catch (err) {
+        console.error("정산 완료 요약 조회 실패:", err);
+        setCompletedAmount(0);
+      }
+    }
+    fetchCompletedSummary();
+  }, [completedDate]);
+
+  // 3. 선택된 연월별 수수료 총액 조회
+  useEffect(() => {
+    async function fetchFeeSummary() {
+      try {
+        const resp = await getPayoutSummary(feeDate.year, feeDate.month);
+        setFeeAmount(resp.data?.totalFeeAmount ?? 0);
+      } catch (err) {
+        console.error("수수료 요약 조회 실패:", err);
+        setFeeAmount(0);
+      }
+    }
+    fetchFeeSummary();
+  }, [feeDate]);
+
+  // 4. 정산 대기 목록 가공 및 필터링 (READY 상태)
+  const getFilteredPending = () => {
+    return rawPayouts.filter((row) => {
+      const isPending = row.statusLabel !== 'COMPLETED';
+      const matchSearch =
+        !pendingSearch ||
+        row.sellerUsername.toLowerCase().includes(pendingSearch.toLowerCase()) ||
+        String(row.payoutId).toLowerCase().includes(pendingSearch.toLowerCase());
+      return isPending && matchSearch;
+    });
+  };
+
+  const filteredPending = getFilteredPending();
+
+  // 5. 💡 [요구사항] 스케줄러 매달 10일 기준 Top 5 데이터 동적 연산 (실제 DB 데이터만 활용)
+  const getTop5Settlements = () => {
+    const today = new Date();
+    const currentDate = today.getDate(); // 1 ~ 31
+    let targetYear = today.getFullYear();
+    let targetMonth = today.getMonth() + 1; // 1 ~ 12
+
+    // 10일 기준 분기 처리 (10일 이하면 현재달 -2, 이후면 -1달)
+    if (currentDate <= 10) {
+      targetMonth -= 2;
+    } else {
+      targetMonth -= 1;
+    }
+
+    if (targetMonth <= 0) {
+      targetYear -= 1;
+      targetMonth += 12;
+    }
+
+    const labelText = `${targetYear}.${String(targetMonth).padStart(2, '0')} 정산`;
+
+    // 해당 타겟 월 데이터만 필터링
+    const targetMonthPayouts = rawPayouts.filter((item) => {
+      if (!item.payoutDate) return false;
+      const pDate = new Date(item.payoutDate);
+      return pDate.getFullYear() === targetYear && (pDate.getMonth() + 1) === targetMonth;
+    });
+
+    // 내림차순 정렬 후 상위 5개 추출
+    const sorted = [...targetMonthPayouts].sort((a, b) => b.payoutAmount - a.payoutAmount);
+    return sorted.slice(0, 5).map((item, idx) => ({
+      rank: idx + 1,
+      name: item.sellerUsername,
+      date: labelText,
+      amount: `₩${item.payoutAmount.toLocaleString()}`,
+    }));
+  };
+
+  const top5Settlements = getTop5Settlements();
 
   return (
     <PageWrapper>
@@ -49,8 +149,6 @@ export default function AdminSalesPage() {
           <TrendingUp size={15} />
           매출 현황
         </SectionLabel>
-
-        {/* 총 매출액 카드 + 월간 트렌드 + 지역별 순위 */}
         <AdminChartPanel />
       </SectionBlock>
 
@@ -63,47 +161,141 @@ export default function AdminSalesPage() {
           정산 현황
         </SectionLabel>
 
-        {/* 정산 요약 카드 3개 */}
-        <SettlementCards>
-          <StatCard>
-            <StatCardTop>
-              <StatIconWrap $bg="rgba(34,197,94,0.1)" $color="#16a34a">
-                <WalletIcon />
-              </StatIconWrap>
-            </StatCardTop>
-            <StatLabel>{SALES_STAT_CARDS[0].label}</StatLabel>
-            <StatValue>{SALES_STAT_CARDS[0].value}</StatValue>
-          </StatCard>
-
-          <StatCard>
-            <StatCardTop>
-              <StatIconWrap $bg="rgba(59,130,246,0.1)" $color="#2563eb">
-                <ReceiptIcon />
-              </StatIconWrap>
-            </StatCardTop>
-            <StatLabel>{SALES_STAT_CARDS[1].label}</StatLabel>
-            <StatValue>{SALES_STAT_CARDS[1].value}</StatValue>
-          </StatCard>
-
-          <StatCard>
-            <StatCardTop>
-              <StatIconWrap $bg="rgba(249,115,22,0.1)" $color="#ea580c">
-                <PercentIcon />
-              </StatIconWrap>
-            </StatCardTop>
-            <StatLabel>{SALES_STAT_CARDS[2].label}</StatLabel>
-            <StatValue>{SALES_STAT_CARDS[2].value}</StatValue>
-            <StatSubText>{SALES_STAT_CARDS[2].sub}</StatSubText>
-          </StatCard>
-        </SettlementCards>
-
-        {/* Top5 + 정산 대기 목록 나란히 */}
+        {/* 정산 대기 목록 + Top5 나란히 */}
         <SettlementBottom>
-          {/* Top5 거래처 */}
+          {/* 왼쪽: 카드 2개 + 대기 목록 */}
+          <LeftColumn>
+            <SettlementCards>
+              <StatCard>
+                <StatCardTop>
+                  <StatIconWrap $bg="rgba(34,197,94,0.1)" $color="#16a34a">
+                    <Wallet size={20} />
+                  </StatIconWrap>
+                  <YearMonthPicker
+                    year={completedDate.year}
+                    month={completedDate.month}
+                    onChange={(y, m) => setCompletedDate({ year: y, month: m })}
+                  />
+                </StatCardTop>
+                <StatLabel>정산 완료 금액</StatLabel>
+                <StatValue>
+                  {completedAmount !== null 
+                    ? `₩${completedAmount.toLocaleString()}` 
+                    : '₩0'}
+                </StatValue>
+              </StatCard>
+
+              <StatCard>
+                <StatCardTop>
+                  <StatIconWrap $bg="rgba(249,115,22,0.1)" $color="#ea580c">
+                    <Percent size={20} />
+                  </StatIconWrap>
+                  <YearMonthPicker
+                    year={feeDate.year}
+                    month={feeDate.month}
+                    onChange={(y, m) => setFeeDate({ year: y, month: m })}
+                  />
+                </StatCardTop>
+                <StatLabel>수수료 총액</StatLabel>
+                <StatValue>
+                  {feeAmount !== null 
+                    ? `₩${feeAmount.toLocaleString()}` 
+                    : '₩0'}
+                </StatValue>
+                <StatSubText>평균 수수료율 10.0% 적용</StatSubText>
+              </StatCard>
+            </SettlementCards>
+
+            {/* 정산 대기 목록 */}
+            <PendingSection>
+              <PendingHeader>
+                <PendingTitle>정산 대기 목록</PendingTitle>
+                <AdminSearchInput
+                  value={pendingSearch}
+                  onChange={setPendingSearch}
+                  placeholder="거래처명 / ID 검색..."
+                  width="200px"
+                />
+              </PendingHeader>
+
+              <PendingTable>
+                <PTHead>
+                  <PTR>
+                    <PTH>ID</PTH>
+                    <PTH>거래처명</PTH>
+                    <PTH>정산 요청일</PTH>
+                    <PTH>정산 대상액</PTH>
+                    <PTH>상태</PTH>
+                  </PTR>
+                </PTHead>
+                <PTBody>
+                  {filteredPending.length === 0 ? (
+                    <PTR>
+                      <PTD colSpan={5}>
+                        <EmptyPending>검색 결과가 없습니다.</EmptyPending>
+                      </PTD>
+                    </PTR>
+                  ) : (
+                    filteredPending.map((row) => {
+                      const statusInfo = SETTLEMENT_STATUS_MAP[row.statusLabel] || { 
+                        label: row.statusLabel, 
+                        bg: '#f1f5f9', 
+                        color: '#475569' 
+                      };
+                      return (
+                        <PTR key={row.payoutId} $hoverable>
+                          <PTD>
+                            <PendingId>{row.payoutId}</PendingId>
+                          </PTD>
+                          <PTD>
+                            <SellerName>{row.sellerUsername}</SellerName>
+                          </PTD>
+                          <PTD>
+                            <DateCell>
+                              {row.payoutDate ? row.payoutDate.split('T')[0] : '—'}
+                            </DateCell>
+                          </PTD>
+                          <PTD>
+                            <AmountCell>
+                              {row.payoutAmount ? `₩${row.payoutAmount.toLocaleString()}` : '—'}
+                            </AmountCell>
+                          </PTD>
+                          <PTD>
+                            <StatusBadge $bg={statusInfo.bg} $color={statusInfo.color}>
+                              {statusInfo.label}
+                            </StatusBadge>
+                          </PTD>
+                        </PTR>
+                      );
+                    })
+                  )}
+                </PTBody>
+              </PendingTable>
+
+              <ViewAllRow>
+                <ViewAllBtn>전체 목록 보기</ViewAllBtn>
+              </ViewAllRow>
+            </PendingSection>
+          </LeftColumn>
+
+          {/* 정산 금액 Top5 */}
           <Top5Card>
-            <Top5Title>정산 금액 Top 5 거래처</Top5Title>
+            <Top5Title>
+              {(() => {
+                const today = new Date();
+                const currentDate = today.getDate();
+                let m = today.getMonth() + 1;
+                if (currentDate <= 10) {
+                  m -= 2;
+                } else {
+                  m -= 1;
+                }
+                if (m <= 0) m += 12;
+                return `${m}월`;
+              })()} 정산 금액 Top 5 거래처
+            </Top5Title>
             <Top5List>
-              {TOP5_SETTLEMENTS.map((item) => (
+              {top5Settlements.map((item) => (
                 <Top5Item key={item.rank}>
                   <Top5Rank $rank={item.rank}>{item.rank}</Top5Rank>
                   <Top5Info>
@@ -118,97 +310,23 @@ export default function AdminSalesPage() {
               ))}
             </Top5List>
           </Top5Card>
-
-          {/* 정산 대기 목록 */}
-          <PendingSection>
-            <PendingHeader>
-              <PendingTitle>정산 대기 목록</PendingTitle>
-              <AdminSearchInput
-                value={pendingSearch}
-                onChange={setPendingSearch}
-                placeholder="거래처명 / ID 검색..."
-                width="200px"
-              />
-            </PendingHeader>
-
-            <PendingTable>
-              <PTHead>
-                <PTR>
-                  <PTH>ID</PTH>
-                  <PTH>거래처명</PTH>
-                  <PTH>정산 요청일</PTH>
-                  <PTH>정산 대상액</PTH>
-                  <PTH>상태</PTH>
-                  <PTH></PTH>
-                </PTR>
-              </PTHead>
-              <PTBody>
-                {filteredPending.length === 0 ? (
-                  <PTR>
-                    <PTD colSpan={6}>
-                      <EmptyPending>검색 결과가 없습니다.</EmptyPending>
-                    </PTD>
-                  </PTR>
-                ) : (
-                  filteredPending.map((row) => (
-                    <PTR key={row.id} $hoverable>
-                      <PTD>
-                        <PendingId>{row.id}</PendingId>
-                      </PTD>
-                      <PTD>
-                        <SellerName>{row.seller}</SellerName>
-                      </PTD>
-                      <PTD>
-                        <DateCell>{row.dueDate}</DateCell>
-                      </PTD>
-                      <PTD>
-                        <AmountCell>{row.amount}</AmountCell>
-                      </PTD>
-                      <PTD>
-                        <StatusBadge
-                          $bg={SETTLEMENT_STATUS_MAP[row.settlementStatus].bg}
-                          $color={
-                            SETTLEMENT_STATUS_MAP[row.settlementStatus].color
-                          }
-                        >
-                          {SETTLEMENT_STATUS_MAP[row.settlementStatus].label}
-                        </StatusBadge>
-                      </PTD>
-                      <PTD>
-                        <ApprovalBtn
-                          $bg={APPROVAL_STATUS_MAP[row.approvalStatus].bg}
-                          $color={APPROVAL_STATUS_MAP[row.approvalStatus].color}
-                        >
-                          {APPROVAL_STATUS_MAP[row.approvalStatus].label}
-                        </ApprovalBtn>
-                      </PTD>
-                    </PTR>
-                  ))
-                )}
-              </PTBody>
-            </PendingTable>
-
-            <ViewAllRow>
-              <ViewAllBtn>전체 목록 보기</ViewAllBtn>
-            </ViewAllRow>
-          </PendingSection>
         </SettlementBottom>
       </SectionBlock>
     </PageWrapper>
   );
 }
 
-/* ── Icon helpers ── */
-function WalletIcon() { return <Wallet size={20} />; }
-function ReceiptIcon() { return <Receipt size={20} />; }
-function PercentIcon() { return <Percent size={20} />; }
 function DateDot() {
   return (
     <span
       style={{
-        width: 5, height: 5, borderRadius: '50%',
-        background: '#94a3b8', display: 'inline-block',
-        marginRight: 5, verticalAlign: 'middle',
+        width: 5,
+        height: 5,
+        borderRadius: '50%',
+        background: '#94a3b8',
+        display: 'inline-block',
+        marginRight: 5,
+        verticalAlign: 'middle',
       }}
     />
   );
@@ -242,7 +360,6 @@ const PageSub = styled.p`
   color: ${({ theme }) => theme.colors.textMuted};
 `;
 
-/* ── 섹션 블록 ── */
 const SectionBlock = styled.div`
   display: flex;
   flex-direction: column;
@@ -265,8 +382,9 @@ const SectionLabel = styled.div`
 /* ── 정산 현황 ── */
 const SettlementCards = styled.div`
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
+  flex-shrink: 0;
 `;
 
 const StatCard = styled.div`
@@ -318,91 +436,18 @@ const StatSubText = styled.p`
   margin-top: 4px;
 `;
 
-/* ── 정산 하단 2열 ── */
+/* ── 정산 하단 2열: [카드+대기목록] | Top5 ── */
 const SettlementBottom = styled.div`
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: 1fr 280px;
   gap: 16px;
-  align-items: start;
+  align-items: stretch;
 `;
 
-/* Top5 */
-const Top5Card = styled.div`
-  background: ${({ theme }) => theme.colors.white};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 8px;
-  padding: 22px 20px;
-  box-shadow: ${({ theme }) => theme.shadows.card};
-`;
-
-const Top5Title = styled.p`
-  font-size: 13px;
-  font-weight: 600;
-  color: ${({ theme }) => theme.colors.adminTextDark};
-  margin-bottom: 16px;
-`;
-
-const Top5List = styled.div`
+const LeftColumn = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0;
-`;
-
-const Top5Item = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 11px 0;
-  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
-  &:last-child { border-bottom: none; }
-`;
-
-const Top5Rank = styled.span`
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 700;
-  flex-shrink: 0;
-  background: ${({ $rank }) =>
-    $rank === 1 ? '#fef9c3' : $rank === 2 ? '#f1f5f9' : $rank === 3 ? '#fff7ed' : '#f8fafc'};
-  color: ${({ $rank }) =>
-    $rank === 1 ? '#a16207' : $rank === 2 ? '#475569' : $rank === 3 ? '#c2410c' : '#94a3b8'};
-`;
-
-const Top5Info = styled.div`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-`;
-
-const Top5Name = styled.span`
-  font-size: 12px;
-  font-weight: 500;
-  color: ${({ theme }) => theme.colors.adminTextDark};
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-`;
-
-const Top5Date = styled.span`
-  font-size: 11px;
-  color: ${({ theme }) => theme.colors.textLight};
-  display: flex;
-  align-items: center;
-`;
-
-const Top5Amount = styled.span`
-  font-size: 12px;
-  font-weight: 600;
-  color: ${({ theme }) => theme.colors.adminTextDark};
-  font-family: ${({ theme }) => theme.fonts.number};
-  white-space: nowrap;
+  gap: 16px;
 `;
 
 /* 정산 대기 목록 */
@@ -412,6 +457,9 @@ const PendingSection = styled.div`
   border-radius: 8px;
   overflow: hidden;
   box-shadow: ${({ theme }) => theme.shadows.card};
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 `;
 
 const PendingHeader = styled.div`
@@ -431,6 +479,7 @@ const PendingTitle = styled.h2`
 const PendingTable = styled.table`
   width: 100%;
   border-collapse: collapse;
+  flex: 1;
 `;
 
 const PTHead = styled.thead`
@@ -490,18 +539,6 @@ const AmountCell = styled.span`
   font-family: ${({ theme }) => theme.fonts.number};
 `;
 
-const ApprovalBtn = styled.button`
-  padding: 4px 12px;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 600;
-  background: ${({ $bg }) => $bg};
-  color: ${({ $color }) => $color};
-  font-family: inherit;
-  transition: opacity 0.15s;
-  &:hover { opacity: 0.8; }
-`;
-
 const EmptyPending = styled.div`
   padding: 40px 0;
   text-align: center;
@@ -514,6 +551,7 @@ const ViewAllRow = styled.div`
   justify-content: center;
   padding: 14px;
   border-top: 1px solid ${({ theme }) => theme.colors.borderLight};
+  margin-top: auto;
 `;
 
 const ViewAllBtn = styled.button`
@@ -526,5 +564,105 @@ const ViewAllBtn = styled.button`
   background: ${({ theme }) => theme.colors.white};
   font-family: inherit;
   transition: background 0.15s;
-  &:hover { background: ${({ theme }) => theme.colors.bgSection}; }
+  &:hover {
+    background: ${({ theme }) => theme.colors.bgSection};
+  }
+`;
+
+/* Top5 */
+const Top5Card = styled.div`
+  background: ${({ theme }) => theme.colors.white};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 8px;
+  padding: 22px 20px;
+  box-shadow: ${({ theme }) => theme.shadows.card};
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+`;
+
+const Top5Title = styled.p`
+  font-size: 13px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.adminTextDark};
+  margin-bottom: 16px;
+`;
+
+const Top5List = styled.div`
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  justify-content: space-between;
+`;
+
+const Top5Item = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+  flex: 1;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+const Top5Rank = styled.span`
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  background: ${({ $rank }) =>
+    $rank === 1
+      ? '#fef9c3'
+      : $rank === 2
+        ? '#f1f5f9'
+        : $rank === 3
+          ? '#fff7ed'
+          : '#f8fafc'};
+  color: ${({ $rank }) =>
+    $rank === 1
+      ? '#a16207'
+      : $rank === 2
+        ? '#475569'
+        : $rank === 3
+          ? '#c2410c'
+          : '#94a3b8'};
+`;
+
+const Top5Info = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+`;
+
+const Top5Name = styled.span`
+  font-size: 12px;
+  font-weight: 500;
+  color: ${({ theme }) => theme.colors.adminTextDark};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const Top5Date = styled.span`
+  font-size: 11px;
+  color: ${({ theme }) => theme.colors.textLight};
+  display: flex;
+  align-items: center;
+`;
+
+const Top5Amount = styled.span`
+  font-size: 12px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.adminTextDark};
+  font-family: ${({ theme }) => theme.fonts.number};
+  white-space: nowrap;
 `;

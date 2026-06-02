@@ -118,16 +118,15 @@ public class ReviewApiController {
     // SELLER 전용
     // ─────────────────────────────────────────
 
-    // 본인 숙소 리뷰 목록 조회 (공간별 필터 추가)
-    // GET /api/seller/reviews?page=0&spaceId=1
+    // 본인 숙소 리뷰 목록 조회
+// GET /api/seller/reviews?page=0
     @GetMapping("/api/seller/reviews")
     public ResponseEntity<Page<ReviewListRespDto>> findReviewsBySeller(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(required = false) Long spaceId,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         Long memberId = userDetails.getUserVo().getId();
-        return ResponseEntity.ok(reviewService.findReviewsBySeller(memberId, page, spaceId));
+        return ResponseEntity.ok(reviewService.findReviewsBySeller(memberId, page));
     }
 
     // 본인 숙소 리뷰 수정

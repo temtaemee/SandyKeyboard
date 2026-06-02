@@ -6,8 +6,6 @@ import com.kh.app.transaction.reservation.entity.ReservationEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
-
 @Entity
 @Table(name = "REVIEW")
 @Builder
@@ -40,12 +38,6 @@ public class ReviewEntity extends BaseEntity {
 
     @Column(nullable = false)
     private Integer rating;
-
-    @Column(columnDefinition = "TEXT")
-    private String sellerReply;
-
-    @Column
-    private LocalDateTime sellerRepliedAt;
 
     public void update(String title, String content, String tag, Integer rating) {
         this.title   = title;

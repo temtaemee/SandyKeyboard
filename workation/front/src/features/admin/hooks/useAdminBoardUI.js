@@ -157,6 +157,7 @@ export default function useAdminBoardUI({
           content: formData.content ?? editingPost.content,
           pinYn: formData.isFixed ? 'Y' : 'N',
           removedFileIds: removedFileIds, // 삭제 대기 중인 기존 첨부파일 ID 배열
+          files: formData.files || [], // 새로 업로드할 파일들 추가
         };
       } else {
         updatedData = {
@@ -243,6 +244,14 @@ export default function useAdminBoardUI({
   // 삭제 확인 완료 제출 핸들러 (실제 서버 DELETE API 호출)
   const handleDeleteConfirm = () => {
     if (!deleteTarget) return;
+
+    // 💡 이미 삭제된 상태('Y')인 경우 얼럿 표시 후 중단
+    if (deleteTarget.delYn === 'Y') {
+      alert('이미 삭제된 게시글입니다.');
+      setDeleteTarget(null);
+      return;
+    }
+
     deletePost(deleteTarget.id);
     setDeleteTarget(null);
     setDetailPost(null);
