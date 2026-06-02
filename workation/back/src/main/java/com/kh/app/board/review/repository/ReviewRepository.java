@@ -24,12 +24,13 @@ public interface ReviewRepository extends JpaRepository<ReviewEntity, Long> {
 
 
 
-    // seller의 숙소에 달린 리뷰 조회
+    // seller의 숙소에 달린 리뷰 조회 (공간별 필터 추가)
     @Query("SELECT r FROM ReviewEntity r " +
             "WHERE r.reservation.stay.space.seller.id = :memberId " +
+            "AND (:spaceId IS NULL OR r.reservation.stay.space.id = :spaceId) " +
             "AND r.delYn = 'N' " +
             "ORDER BY r.createdAt DESC")
-    Page<ReviewEntity> findAllBySeller(@Param("memberId") Long memberId, Pageable pageable);
+    Page<ReviewEntity> findAllBySeller(@Param("memberId") Long memberId, @Param("spaceId") Long spaceId, Pageable pageable);
 
     // 해당 예약으로 작성된 리뷰가 이미 있는지 확인
     boolean existsByReservationId(Long reservationId);
