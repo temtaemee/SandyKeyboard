@@ -3,8 +3,10 @@ package com.kh.app.transaction.payout.service;
 import com.kh.app.member.entity.MemberEntity;
 import com.kh.app.transaction.payment.enums.PayoutStatus;
 import com.kh.app.transaction.payout.dto.response.PayoutListResDto;
+import com.kh.app.transaction.payout.dto.response.PayoutSummaryResDto;
 import com.kh.app.transaction.payout.entity.PayoutEntity;
 import com.kh.app.transaction.payout.repository.PayoutRepository;
+import com.kh.app.transaction.sales.controller.TransactionAdminController;
 import com.kh.app.transaction.sales.entity.SalesEntity;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +14,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -73,5 +78,26 @@ public class PayoutService {
                 .map(PayoutListResDto::from);
     }
 
+    public PayoutSummaryResDto getPayoutStatistics(Integer year, Integer month) {
+        int targetYear;
+        int targetMonth;
+
+        if (year == null || month == null) {
+            LocalDate now = LocalDate.now();
+            LocalDate targetDate = (now.getDayOfMonth() <= 10) ? now.minusMonths(2) : now.minusMonths(1);
+            targetYear = targetDate.getYear();
+            targetMonth = targetDate.getMonthValue();
+        } else {
+            targetYear = year;
+            targetMonth = month;
+        }
+
+        List<Object[]> results = payoutRepository.sumAmountByYearMonth(targetYear, targetMonth);
+
+        // 💡 결과가 없으면 빈 행(0, 0)을, 있으면 첫 번째 행을 사용하여 DTO 생성
+        Object[] row = (results != null && !results.isEmpty()) ? results.get(0) : new Object[]{0L, 0L};
+
+        return PayoutSummaryResDto.from(targetYear, targetMonth, row);
+    }
 
 }
