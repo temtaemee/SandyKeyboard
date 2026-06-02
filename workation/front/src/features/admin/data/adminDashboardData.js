@@ -7,7 +7,7 @@
 export const ADMIN_STAT_CARDS = [
   {
     id: 1,
-    label: '총 매출액',
+    label: '매출액',
     value: '₩142,500,000',
     sub: '',
     badge: { text: '+12.5%', color: 'green' },
@@ -69,6 +69,26 @@ export const REGIONAL_SALES_DATA = [
   { rank: 3, region: '부산', amount: '₩31,200,000' },
   { rank: 4, region: '경기', amount: '₩28,500,000' },
   { rank: 5, region: '강원', amount: '₩19,100,000' },
+];
+
+export const REGIONAL_SALES_ALL = [
+  { rank: 1, region: '서울', amount: '₩64,400,000' },
+  { rank: 2, region: '제주', amount: '₩42,800,000' },
+  { rank: 3, region: '부산', amount: '₩31,200,000' },
+  { rank: 4, region: '경기', amount: '₩28,500,000' },
+  { rank: 5, region: '강원', amount: '₩19,100,000' },
+  { rank: 6, region: '대구', amount: '₩15,700,000' },
+  { rank: 7, region: '인천', amount: '₩13,200,000' },
+  { rank: 8, region: '전남', amount: '₩10,900,000' },
+  { rank: 9, region: '충남', amount: '₩8,400,000' },
+  { rank: 10, region: '경북', amount: '₩7,100,000' },
+  { rank: 11, region: '광주', amount: '₩6,500,000' },
+  { rank: 12, region: '울산', amount: '₩5,200,000' },
+  { rank: 13, region: '전북', amount: '₩4,800,000' },
+  { rank: 14, region: '충북', amount: '₩3,900,000' },
+  { rank: 15, region: '경남', amount: '₩3,100,000' },
+  { rank: 16, region: '세종', amount: '₩2,700,000' },
+  { rank: 17, region: '대전', amount: '₩2,300,000' },
 ];
 
 export const RECENT_PAYMENTS = [
@@ -172,9 +192,44 @@ export const ADMIN_ACTIVITY_LOGS = [
 
 /* ── 알림 목데이터 ── */
 export const NOTIFICATIONS = [
-  { id: 1, type: 'warning', title: '긴급 정산 지연 건 발생', desc: 'ST-20231115 해변의 정원 — 3일 이상 지연 중', time: '방금 전', unread: true },
-  { id: 2, type: 'info', title: '신규 판매자 가입 승인 요청', desc: '포레스트 캠핑 외 2건 승인 대기 중입니다.', time: '12분 전', unread: true },
-  { id: 3, type: 'info', title: '이달 신규 고객 급증 알림', desc: '이번 달 신규 가입자가 342명으로 전달 대비 12% 증가했습니다.', time: '1시간 전', unread: true },
-  { id: 4, type: 'success', title: '숙소 승인 처리 완료', desc: '오션 브리즈 리조트 신규 등록이 승인되었습니다.', time: '3시간 전', unread: false },
-  { id: 5, type: 'info', title: '시스템 점검 예정 안내', desc: '2024.06.01 02:00 ~ 04:00 정기 점검이 예정되어 있습니다.', time: '어제', unread: false },
+  {
+    id: 1,
+    type: 'warning',
+    title: '긴급 정산 지연 건 발생',
+    desc: 'ST-20231115 해변의 정원 — 3일 이상 지연 중',
+    time: '방금 전',
+    unread: true,
+  },
+  {
+    id: 2,
+    type: 'info',
+    title: '신규 판매자 가입 승인 요청',
+    desc: '포레스트 캠핑 외 2건 승인 대기 중입니다.',
+    time: '12분 전',
+    unread: true,
+  },
+  {
+    id: 3,
+    type: 'info',
+    title: '이달 신규 고객 급증 알림',
+    desc: '이번 달 신규 가입자가 342명으로 전달 대비 12% 증가했습니다.',
+    time: '1시간 전',
+    unread: true,
+  },
+  {
+    id: 4,
+    type: 'success',
+    title: '숙소 승인 처리 완료',
+    desc: '오션 브리즈 리조트 신규 등록이 승인되었습니다.',
+    time: '3시간 전',
+    unread: false,
+  },
+  {
+    id: 5,
+    type: 'info',
+    title: '시스템 점검 예정 안내',
+    desc: '2024.06.01 02:00 ~ 04:00 정기 점검이 예정되어 있습니다.',
+    time: '어제',
+    unread: false,
+  },
 ];

@@ -46,6 +46,7 @@ export default function AdminReservationPage() {
     reservations,
     reservationsTotalPage,
     reservationsTotalCount,
+    allReservations,
     refundedList,
     dashboardSummary,
     fetchPartners,
@@ -93,18 +94,90 @@ export default function AdminReservationPage() {
     fetchDashboardSummary(); // 대시보드 통계 정보 로드
   }, [fetchPartners, fetchAllReservations, fetchDashboardSummary]);
 
-  // 검색어 / 페이지 변경 시 예약 목록 조회 (status 필터는 프론트에서 처리)
+  // 필터나 검색어가 변경되면 페이지를 1페이지로 리셋
   useEffect(() => {
-    fetchReservations({
-      pno: currentPage - 1,
-      guestName: search || null,
-    });
-  }, [currentPage, search, fetchReservations]);
+    goToPage(1);
+  }, [statusFilter, search, goToPage]);
+
+  // 검색어 변경 시 백엔드 전체 목록도 함께 로드하여 최신 상태 유지
+  useEffect(() => {
+    fetchAllReservations();
+  }, [search, fetchAllReservations]);
 
   const totalPartners = partners.length;
   const activePartners = partners.filter((p) => p.status === 'active').length;
   const activePercent =
     totalPartners > 0 ? Math.round((activePartners / totalPartners) * 100) : 0;
+
+  // ─── [실시간 통계] 이번 달 예약 및 결제 취소(환불) 금액 로컬 실시간 계산 ───
+  const getThisMonthCancelAmount = () => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+
+    return allReservations
+      .filter((row) => {
+        const isCancelled = CANCELLED_STATUSES.includes(row.status);
+        if (!isCancelled) return false;
+
+        if (!row.createdAt) return false;
+        const createDate = new Date(row.createdAt);
+        return (
+          createDate.getFullYear() === currentYear &&
+          createDate.getMonth() === currentMonth
+        );
+      })
+      .reduce((sum, row) => sum + (row.rawTotalPrice ?? 0), 0);
+  };
+
+  const getThisMonthReservationCount = () => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+
+    return allReservations.filter((row) => {
+      if (!row.createdAt) return false;
+      const createDate = new Date(row.createdAt);
+      return (
+        createDate.getFullYear() === currentYear &&
+        createDate.getMonth() === currentMonth
+      );
+    }).length;
+  };
+
+  const thisMonthCancelAmount = getThisMonthCancelAmount();
+  const thisMonthReservationCount = getThisMonthReservationCount();
+
+  // ─── [버그 해결] 카테고리 탭 클릭 시 전체 데이터(allReservations) 기준 필터링 및 로컬 페이징 처리 ───
+  const getFilteredAllReservations = () => {
+    return allReservations.filter((row) => {
+      const matchSearch =
+        !search ||
+        row.customerName.toLowerCase().includes(search.toLowerCase()) ||
+        row.id.toLowerCase().includes(search.toLowerCase()) ||
+        row.spaceName.toLowerCase().includes(search.toLowerCase()) ||
+        row.stayName.toLowerCase().includes(search.toLowerCase());
+      
+      const matchStatus =
+        statusFilter === 'all' ||
+        (statusFilter === 'cancelled'
+          ? CANCELLED_STATUSES.includes(row.status)
+          : row.status === statusFilter);
+
+      return matchSearch && matchStatus;
+    });
+  };
+
+  const filteredAll = getFilteredAllReservations();
+  const PAGE_SIZE = 10;
+  const totalCount = filteredAll.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+
+  // 현재 페이지에 해당하는 예약 리스트 슬라이스
+  const displayedReservations = filteredAll.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
 
   return (
     <PageWrapper>
@@ -129,7 +202,7 @@ export default function AdminReservationPage() {
           <StatValueRow>
             <StatValue>
               {(
-                dashboardSummary?.thisMonthReservationCount ?? 0
+                thisMonthReservationCount ?? 0
               ).toLocaleString()}
               건
             </StatValue>
@@ -145,7 +218,7 @@ export default function AdminReservationPage() {
           <StatLabel>이번 달 결제 취소 금액 (환불)</StatLabel>
           <StatValueRow>
             <StatValue>
-              ₩{(dashboardSummary?.thisMonthCancelAmount ?? 0).toLocaleString()}
+              ₩{(thisMonthCancelAmount ?? 0).toLocaleString()}
             </StatValue>
           </StatValueRow>
         </StatCard>
@@ -219,83 +292,69 @@ export default function AdminReservationPage() {
             </TR>
           </THead>
           <TBody>
-            {reservations.filter(
-              (row) =>
-                statusFilter === 'all' ||
-                (statusFilter === 'cancelled'
-                  ? CANCELLED_STATUSES.includes(row.status)
-                  : row.status === statusFilter)
-            ).length === 0 ? (
+            {displayedReservations.length === 0 ? (
               <TR>
                 <TD colSpan={7}>
                   <EmptyState>예약 내역이 없습니다.</EmptyState>
                 </TD>
               </TR>
             ) : (
-              reservations
-                .filter(
-                  (row) =>
-                    statusFilter === 'all' ||
-                    (statusFilter === 'cancelled'
-                      ? CANCELLED_STATUSES.includes(row.status)
-                      : row.status === statusFilter)
-                )
-                .map((row) => (
-                  <TR key={row.id} $hoverable>
-                    <TD>
-                      <ResvId>{row.id}</ResvId>
-                    </TD>
-                    <TD>
-                      <CustomerCell>
-                        <CustomerAvatar $bg={row.avatarColor}>
-                          {row.customerInitial}
-                        </CustomerAvatar>
-                        <CustomerInfo>
-                          <CustomerName>{row.customerName}</CustomerName>
-                          <CustomerEmail>{row.customerEmail}</CustomerEmail>
-                        </CustomerInfo>
-                      </CustomerCell>
-                    </TD>
-                    <TD>
-                      <SpaceName>{row.spaceName}</SpaceName>
-                    </TD>
-                    <TD>
-                      <StayNameText>{row.stayName}</StayNameText>
-                    </TD>
-                    <TD>
-                      <DateText>{row.date}</DateText>
-                    </TD>
-                    <TD>
-                      <AmountText>{row.amount}</AmountText>
-                    </TD>
-                    <TD>
-                      <StatusBadge
-                        $bg={
-                          RESERVATION_STATUS_MAP[row.status]?.bg ?? '#f1f5f9'
-                        }
-                        $color={
-                          RESERVATION_STATUS_MAP[row.status]?.color ?? '#64748b'
-                        }
-                      >
-                        {/* statusLabel은 서버에서 한글로 제공 */}
-                        {row.statusLabel ||
-                          RESERVATION_STATUS_MAP[row.status]?.label ||
-                          row.status}
-                      </StatusBadge>
-                    </TD>
-                  </TR>
-                ))
+              displayedReservations.map((row) => (
+                <TR key={row.id} $hoverable>
+                  <TD>
+                    <ResvId>{row.id}</ResvId>
+                  </TD>
+                  <TD>
+                    <CustomerCell>
+                      <CustomerAvatar $bg={row.avatarColor}>
+                        {row.customerInitial}
+                      </CustomerAvatar>
+                      <CustomerInfo>
+                        <CustomerName>{row.customerName}</CustomerName>
+                        <CustomerEmail>{row.customerEmail}</CustomerEmail>
+                      </CustomerInfo>
+                    </CustomerCell>
+                  </TD>
+                  <TD>
+                    <SpaceName>{row.spaceName}</SpaceName>
+                  </TD>
+                  <TD>
+                    <StayNameText>{row.stayName}</StayNameText>
+                  </TD>
+                  <TD>
+                    <DateText>{row.date}</DateText>
+                  </TD>
+                  <TD>
+                    <AmountText>{row.amount}</AmountText>
+                  </TD>
+                  <TD>
+                    <StatusBadge
+                      $bg={
+                        RESERVATION_STATUS_MAP[row.status]?.bg ?? '#f1f5f9'
+                      }
+                      $color={
+                        RESERVATION_STATUS_MAP[row.status]?.color ?? '#64748b'
+                      }
+                    >
+                      {/* statusLabel은 서버에서 한글로 제공 */}
+                      {row.statusLabel ||
+                        RESERVATION_STATUS_MAP[row.status]?.label ||
+                        row.status}
+                    </StatusBadge>
+                  </TD>
+                </TR>
+              ))
             )}
           </TBody>
         </Table>
 
         <TableFooter>
           <FooterInfo>
-            총 {reservationsTotalCount.toLocaleString()}건
+            총 {totalCount.toLocaleString()}건
           </FooterInfo>
           <AdminPagination
             currentPage={currentPage}
-            totalPages={reservationsTotalPage}
+            totalPages={totalPages}
             onPageChange={goToPage}
           />
           <div style={{ width: '120px' }} />

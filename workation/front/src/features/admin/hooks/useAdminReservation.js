@@ -47,6 +47,7 @@ const mapBackendReservationToFrontend = (item, index) => ({
     item.totalPrice != null
       ? `₩${Number(item.totalPrice).toLocaleString()}`
       : '—',
+  rawTotalPrice: item.totalPrice ?? 0,
   // status는 Enum name (RESERVATION_STATUS_MAP 키와 일치)
   status: item.status ?? 'PAYMENT_COMPLETED',
   // statusLabel은 서버에서 한글로 내려오므로 직접 사용 가능
@@ -139,16 +140,37 @@ export default function useAdminReservation() {
     [dispatch]
   );
 
-  // ─── 전체 예약 조회 (통계/환불 모달용, size=1000) ───
+  // ─── 전체 예약 조회 (모든 페이지를 순차적으로 로드) ───
   const fetchAllReservations = useCallback(async () => {
     try {
-      const resp = await getAdminReservations({ pno: 0, size: 1000 });
-      const data = resp.data;
-      const content = Array.isArray(data) ? data : (data.content ?? []);
-      const mapped = content
-        .map(mapBackendReservationToFrontend)
-        .filter((r) => r.status !== 'PENDING');
-      dispatch(setAllReservations(mapped));
+      let allList = [];
+      let page = 0;
+      let hasNext = true;
+
+      while (hasNext && page < 20) { // 최대 20페이지(200개) 안전 제한
+        const resp = await getAdminReservations({ pno: page });
+        const data = resp.data;
+        const content = Array.isArray(data) ? data : (data.content ?? []);
+        console.log(`[useAdminReservation] page=${page} fetched ${content.length} raw items`);
+        if (content.length === 0) {
+          hasNext = false;
+        } else {
+          const mapped = content
+            .map(mapBackendReservationToFrontend)
+            .filter((r) => r.status !== 'PENDING');
+          allList = [...allList, ...mapped];
+
+          const totalPages = data.totalPages ?? data.totalPage ?? 1;
+          console.log(`[useAdminReservation] page=${page} content mapped. totalPages=${totalPages}`);
+          if (page >= totalPages - 1) {
+            hasNext = false;
+          } else {
+            page++;
+          }
+        }
+      }
+      console.log(`[useAdminReservation] Final allReservations loaded count: ${allList.length}`);
+      dispatch(setAllReservations(allList));
     } catch (err) {
       console.error('전체 예약 fetch 에러:', err);
     }

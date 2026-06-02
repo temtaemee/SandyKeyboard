@@ -10,7 +10,6 @@ import com.kh.app.product.stay.dto.request.StayInsertReqDto;
 import com.kh.app.product.stay.dto.request.StayPictureUpdateReqDto;
 import com.kh.app.product.stay.dto.request.StaySearchReqDto;
 import com.kh.app.product.stay.dto.request.StayUpdateReqDto;
-import com.kh.app.product.stay.dto.response.BookedPeriodResDto;
 import com.kh.app.product.stay.dto.response.StayResDto;
 import com.kh.app.product.stay.entity.*;
 import com.kh.app.product.stay.repository.*;
@@ -23,7 +22,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 @Service
 @Transactional(readOnly = true)
@@ -62,35 +60,17 @@ public class StayService {
     // ========== Public 전용 메서드 ==========
 
     public List<StayResDto> searchListForPublic(StaySearchReqDto dto) {
-        List<StayEntity> stays = stayRepository.searchListForPublic(dto);
-
-        // 날짜가 제공된 경우 예약된 stayId Set을 한 번에 조회하여 availableYn 세팅
-        Set<Long> bookedIds = null;
-        if (dto.getStartDate() != null && dto.getEndDate() != null) {
-            bookedIds = stayRepository.findBookedStayIds(dto.getStartDate(), dto.getEndDate());
-        }
-        final Set<Long> finalBookedIds = bookedIds;
-
-        return stays.stream()
+        return stayRepository.searchListForPublic(dto).stream()
                 .map(stay -> {
                     List<StayPictureEntity> pictures = stayPictureRepository.findByStayOrderBySortOrder(stay);
                     List<StayOption> options = stayOptionRepository.findByStay(stay).stream()
                             .map(StayOptionEntity::getStayOption).toList();
-                    StayResDto dto2 = StayResDto.from(stay, options, pictures);
-                    if (finalBookedIds != null) {
-                        String availableYn = finalBookedIds.contains(stay.getId()) ? "N" : "Y";
-                        dto2 = dto2.toBuilder().availableYn(availableYn).build();
-                    }
-                    return dto2;
+                    return StayResDto.from(stay, options, pictures);
                 })
                 .toList();
     }
 
     public StayResDto selectOneForPublic(Long id) {
-        return selectOneForPublic(id, null, null);
-    }
-
-    public StayResDto selectOneForPublic(Long id, java.time.LocalDate startDate, java.time.LocalDate endDate) {
         StayEntity stay = stayRepository.findByIdAndDelYnAndVisibleYn(id, "N", "Y")
                 .orElseThrow(() -> new ProductException(ErrorCode.STAY_NOT_FOUND));
         if (stay.getSpace() == null
@@ -101,20 +81,7 @@ public class StayService {
         List<StayPictureEntity> pictures = stayPictureRepository.findByStayOrderBySortOrder(stay);
         List<StayOption> options = stayOptionRepository.findByStay(stay).stream()
                 .map(StayOptionEntity::getStayOption).toList();
-        StayResDto resDto = StayResDto.from(stay, options, pictures);
-        if (startDate != null && endDate != null) {
-            Set<Long> booked = stayRepository.findBookedStayIds(startDate, endDate);
-            String availableYn = booked.contains(stay.getId()) ? "N" : "Y";
-            resDto = resDto.toBuilder().availableYn(availableYn).build();
-        }
-        return resDto;
-    }
-
-    // 달력 블록 표시용 — 특정 stay의 예약 구간 전체 반환
-    public List<BookedPeriodResDto> getBookedPeriods(Long stayId) {
-        stayRepository.findByIdAndDelYn(stayId, "N")
-                .orElseThrow(() -> new ProductException(ErrorCode.STAY_NOT_FOUND));
-        return stayRepository.findBookedPeriods(stayId);
+        return StayResDto.from(stay, options, pictures);
     }
 
     // ========== Seller 전용 메서드 ==========

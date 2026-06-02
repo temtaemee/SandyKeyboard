@@ -11,7 +11,7 @@ import java.time.LocalTime;
 import java.util.List;
 
 @Getter
-@Builder(toBuilder = true)
+@Builder
 public class StayResDto {
 
     private Long id;
@@ -39,8 +39,6 @@ public class StayResDto {
     private List<PictureInfo> pictures;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    // null: 날짜 미지정, "Y": 예약 가능, "N": 해당 기간 예약 불가
-    private String availableYn;
 
     @Getter
     @Builder
