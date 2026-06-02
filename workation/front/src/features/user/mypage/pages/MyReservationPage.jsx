@@ -126,68 +126,76 @@ function MyReservationPage() {
           {filteredReservations.length === 0 ? (
             <EmptyBox>해당하는 예약 내역이 존재하지 않습니다.</EmptyBox>
           ) : (
-            filteredReservations.map((item) => (
-              <ReservationCard key={item.id}>
-                {/* 💡 숙소 썸네일 이미지는 일단 Unsplash 플레이스홀더를 유지하거나, 백엔드 확장 시 item.stayImage 등으로 갈아끼우시면 됩니다! */}
-                <Thumbnail
-                  src="https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1200"
-                  alt=""
-                />
+            // 💡 여기 화살표 뒤를 ( 에서 { 로 변경했습니다!
+            filteredReservations.map((item) => {
+              // S3 주소 결합 로직 (필요에 맞게 수정)
+              const thumbnailUrl = item.stayImageUrl
+                ? item.stayImageUrl
+                : 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1200';
 
-                <Content>
-                  <TopRow>
-                    <div>
-                      {/* 백엔드 DTO: stayName 매핑 */}
-                      <Title>{item.stayName || '등록되지 않은 숙소'}</Title>
+              // 💡 연산이 끝났으니 진짜 JSX를 return 해줍니다.
+              return (
+                <ReservationCard key={item.id}>
+                  <Thumbnail
+                    src={thumbnailUrl}
+                    alt={item.stayName || '숙소 이미지'}
+                  />
 
-                      {/* 💡 DTO에 location이나 address가 당장 없으니, 예약자 이름이나 기본 텍스트로 보완 또는 주소 필드 추가 요청 */}
-                      <Location>
-                        <MapPin size={14} />
-                        워케이션 파트너 스페이스
-                      </Location>
-                    </div>
+                  <Content>
+                    <TopRow>
+                      <div>
+                        {/* 백엔드 DTO: stayName 매핑 */}
+                        <Title>{item.stayName || '등록되지 않은 숙소'}</Title>
 
-                    <PriceArea>
-                      <PriceLabel>결제 금액</PriceLabel>
-                      {/* 백엔드 DTO: totalPrice 포맷팅 매핑 */}
-                      <Price>{formatPrice(item.totalPrice)}</Price>
-                    </PriceArea>
-                  </TopRow>
+                        <Location>
+                          <MapPin size={14} />
+                          워케이션 파트너 스페이스
+                        </Location>
+                      </div>
 
-                  <InfoRow>
-                    <InfoItem>
-                      <CalendarDays size={14} />
-                      {/* 백엔드 DTO: checkinDate, checkoutDate 포맷팅 매핑 */}
-                      {formatDateRange(item.checkinDate, item.checkoutDate)}
-                    </InfoItem>
+                      <PriceArea>
+                        <PriceLabel>결제 금액</PriceLabel>
+                        {/* 백엔드 DTO: totalPrice 포맷팅 매핑 */}
+                        <Price>{formatPrice(item.totalPrice)}</Price>
+                      </PriceArea>
+                    </TopRow>
 
-                    <Divider />
+                    <InfoRow>
+                      <InfoItem>
+                        <CalendarDays size={14} />
+                        {/* 백엔드 DTO: checkinDate, checkoutDate 포맷팅 매핑 */}
+                        {formatDateRange(item.checkinDate, item.checkoutDate)}
+                      </InfoItem>
 
-                    <InfoItem>
-                      <Users size={14} />
-                      {/* 백엔드 DTO: guestCount 매핑 */}
-                      성인 {item.guestCount || 1}명
-                    </InfoItem>
+                      <Divider />
 
-                    <Divider />
+                      <InfoItem>
+                        <Users size={14} />
+                        {/* 백엔드 DTO: guestCount 매핑 */}
+                        성인 {item.guestCount || 1}명
+                      </InfoItem>
 
-                    {/* 💡 룸 명칭은 현재 DTO에 없으므로 예약 대표자명(primaryGuestName)을 보여주거나 텍스트로 대체 */}
-                    <RoomText>예약자: {item.primaryGuestName}</RoomText>
-                  </InfoRow>
+                      <Divider />
 
-                  <BottomRow>
-                    {/* 백엔드 DTO: statusLabel(한글 라벨명) 바인딩 */}
-                    <StatusBadge>{item.statusLabel || '상태 없음'}</StatusBadge>
+                      <RoomText>예약자: {item.primaryGuestName}</RoomText>
+                    </InfoRow>
 
-                    <DetailButton
-                      onClick={() => navi(`/mypage/reservation/${item.id}`)}
-                    >
-                      상세
-                    </DetailButton>
-                  </BottomRow>
-                </Content>
-              </ReservationCard>
-            ))
+                    <BottomRow>
+                      {/* 백엔드 DTO: statusLabel(한글 라벨명) 바인딩 */}
+                      <StatusBadge>
+                        {item.statusLabel || '상태 없음'}
+                      </StatusBadge>
+
+                      <DetailButton
+                        onClick={() => navi(`/mypage/reservation/${item.id}`)}
+                      >
+                        상태 상세
+                      </DetailButton>
+                    </BottomRow>
+                  </Content>
+                </ReservationCard>
+              ); // 💡 return 괄호 닫기
+            }) // 💡 map 중괄호 닫기
           )}
         </CardList>
 
