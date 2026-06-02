@@ -90,8 +90,8 @@ public class MyPageService {
                 StayResDto stayInfo = stayService.selectOne(currentValidRes.getStayId());
                 SpaceResDto spaceInfo = spaceService.selectOne(stayInfo.getSpaceId());
 
-                String mainImageUrl = (stayInfo.getPictures() != null && !stayInfo.getPictures().isEmpty())
-                        ? stayInfo.getPictures().get(0).getFilePath()
+                String mainImageUrl = (spaceInfo.getPictures() != null && !spaceInfo.getPictures().isEmpty())
+                        ? spaceInfo.getPictures().get(0).getFilePath()
                         : "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1200";
 
                 currentResDto = MyPageDashboardRespDto.CurrentReservationDto.builder()
@@ -120,8 +120,10 @@ public class MyPageService {
                     String pastImageUrl = "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=400";
                     try {
                         StayResDto stayInfo = stayService.selectOne(res.getStayId());
-                        if (stayInfo.getPictures() != null && !stayInfo.getPictures().isEmpty()) {
-                            pastImageUrl = stayInfo.getPictures().get(0).getFilePath();
+                        // 💡 [변경] 지난 워케이션도 SpaceService를 연동해 공간의 사진을 가져옵니다.
+                        SpaceResDto spaceInfo = spaceService.selectOne(stayInfo.getSpaceId());
+                        if (spaceInfo.getPictures() != null && !spaceInfo.getPictures().isEmpty()) {
+                            pastImageUrl = spaceInfo.getPictures().get(0).getFilePath();
                         }
                     } catch (Exception ignored) {}
 
