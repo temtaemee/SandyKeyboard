@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import {
   CalendarDays, Search, ChevronLeft, ChevronRight,
-  CheckCircle, XCircle, RefreshCw, X
+  CheckCircle, XCircle, RefreshCw, X, List, Calendar
 } from 'lucide-react';
 import { reservationApi } from '../api/reservationApi';
+import SellerCalendar from '../components/common/SellerCalendar';
 
 const ACCENT = '#3ec9a7';
 
@@ -41,6 +42,7 @@ export default function ReservationPage() {
   const [filterResvId, setFilterResvId] = useState('');
   const [filterGuest, setFilterGuest] = useState('');
   const [filterDate, setFilterDate] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
 
   // 액션
   const [actionLoading, setActionLoading] = useState(null);
@@ -48,6 +50,10 @@ export default function ReservationPage() {
 
   // 상세 모달
   const [detailOpen, setDetailOpen] = useState(null);
+
+  // 뷰 모드
+  const [viewMode, setViewMode] = useState('table'); // 'table' | 'calendar'
+  const [calDayDetail, setCalDayDetail] = useState(null); // { date, events }
 
   const showToast = (msg, ok = true) => {
     setToast({ msg, ok });
@@ -62,6 +68,7 @@ export default function ReservationPage() {
       if (filterResvId) params.reservationId = Number(filterResvId);
       if (filterGuest.trim()) params.guestName = filterGuest.trim();
       if (filterDate) params.checkinDate = filterDate;
+      // status는 백엔드 미지원 → client-side 처리
 
       const res = await reservationApi.getList(params);
       const data = res.data;
@@ -87,6 +94,7 @@ export default function ReservationPage() {
     setFilterResvId('');
     setFilterGuest('');
     setFilterDate('');
+    setFilterStatus('');
     setTimeout(() => fetchList(0), 0);
   };
 
@@ -131,9 +139,19 @@ export default function ReservationPage() {
           <PageTitle>예약 관리</PageTitle>
           <PageSub>공간 및 스테이 예약 내역을 관리합니다 — 총 {totalElements}건</PageSub>
         </TitleGroup>
-        <RefreshBtn onClick={() => fetchList(pno)} title="새로고침">
-          <RefreshCw size={15} />
-        </RefreshBtn>
+        <HeaderRight>
+          <ViewToggle>
+            <ViewBtn $active={viewMode === 'table'} onClick={() => setViewMode('table')}>
+              <List size={14} />목록
+            </ViewBtn>
+            <ViewBtn $active={viewMode === 'calendar'} onClick={() => setViewMode('calendar')}>
+              <Calendar size={14} />달력
+            </ViewBtn>
+          </ViewToggle>
+          <RefreshBtn onClick={() => fetchList(pno)} title="새로고침">
+            <RefreshCw size={15} />
+          </RefreshBtn>
+        </HeaderRight>
       </PageHeader>
 
       {/* 검색 필터 */}
@@ -144,26 +162,79 @@ export default function ReservationPage() {
           onChange={(e) => setFilterResvId(e.target.value)}
           placeholder="예약번호"
           min="1"
+          style={{ width: 110 }}
         />
         <FilterInput
           type="text"
           value={filterGuest}
           onChange={(e) => setFilterGuest(e.target.value)}
           placeholder="예약자명"
+          style={{ width: 120 }}
         />
         <FilterInput
           type="date"
           value={filterDate}
           onChange={(e) => setFilterDate(e.target.value)}
+          style={{ width: 140 }}
         />
+        <StatusSelect
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+        >
+          <option value="">전체 상태</option>
+          <option value="PENDING">예약 대기</option>
+          <option value="PAYMENT_COMPLETED">결제 완료</option>
+          <option value="RESERVED">예약 확정</option>
+          <option value="COMPLETED">이용 완료</option>
+          <option value="USER_CANCELLED">사용자 취소</option>
+          <option value="SELLER_CANCELLED">판매자 취소</option>
+          <option value="REFUND_COMPLETED">환불 완료</option>
+        </StatusSelect>
         <SearchBtn type="submit">
           <Search size={14} />검색
         </SearchBtn>
         <ResetBtn type="button" onClick={handleReset}>초기화</ResetBtn>
       </FilterForm>
 
+      {/* 캘린더 뷰 */}
+      {viewMode === 'calendar' && (
+        <CalendarWrap $hasPanel={!!calDayDetail}>
+          <SellerCalendar
+            events={list.map((r) => ({
+              date: r.checkinDate,
+              label: `${r.primaryGuestName} · ${r.stayName ?? '숙소'}`,
+              color: STATUS_COLOR[r.status],
+              bg: STATUS_BG[r.status],
+              cancelled: ['USER_CANCELLED', 'SELLER_CANCELLED', 'REFUND_COMPLETED'].includes(r.status),
+              tooltip: {
+                id: r.id,
+                name: r.primaryGuestName,
+                space: r.spaceName,
+                stay: r.stayName,
+                checkin: r.checkinDate,
+                checkout: r.checkoutDate,
+                amount: r.totalPrice,
+                status: r.statusLabel ?? r.status,
+              },
+            }))}
+            onDayClick={(dateStr, evs) => setCalDayDetail(evs.length > 0 ? { date: dateStr, events: evs } : null)}
+          />
+          {calDayDetail && (
+            <CalDayPanel>
+              <CalDayTitle>{calDayDetail.date} 예약 {calDayDetail.events.length}건</CalDayTitle>
+              {calDayDetail.events.map((ev, i) => (
+                <CalDayItem key={i}>
+                  <EventDot style={{ background: ev.color }} />
+                  {ev.label}
+                </CalDayItem>
+              ))}
+            </CalDayPanel>
+          )}
+        </CalendarWrap>
+      )}
+
       {/* 테이블 */}
-      <Card>
+      {viewMode === 'table' && <Card>
         {loading ? (
           <LoadArea>불러오는 중...</LoadArea>
         ) : error ? (
@@ -200,7 +271,9 @@ export default function ReservationPage() {
                     </Td>
                   </tr>
                 ) : (
-                  list.map((r) => (
+                  list
+                  .filter((r) => !filterStatus || r.status === filterStatus)
+                  .map((r) => (
                     <tr key={r.id}>
                       <Td>
                         <IdBtn onClick={() => setDetailOpen(r)}>#{r.id}</IdBtn>
@@ -256,25 +329,38 @@ export default function ReservationPage() {
               </tbody>
             </Table>
 
-            {/* 페이지네이션 */}
-            {totalPages > 1 && (
-              <Pagination>
-                <PageBtn onClick={() => fetchList(pno - 1)} disabled={pno === 0}>
-                  <ChevronLeft size={14} />
-                </PageBtn>
-                {Array.from({ length: totalPages }, (_, i) => (
-                  <PageBtn key={i} $active={i === pno} onClick={() => fetchList(i)}>
-                    {i + 1}
+            {/* 페이지네이션 — 최대 10개씩 */}
+            {totalPages > 1 && (() => {
+              const groupStart = Math.floor(pno / 10) * 10;
+              const groupEnd   = Math.min(groupStart + 10, totalPages);
+              return (
+                <Pagination>
+                  <PageBtn onClick={() => fetchList(pno - 1)} disabled={pno === 0}>
+                    <ChevronLeft size={14} />
                   </PageBtn>
-                ))}
-                <PageBtn onClick={() => fetchList(pno + 1)} disabled={pno >= totalPages - 1}>
-                  <ChevronRight size={14} />
-                </PageBtn>
-              </Pagination>
-            )}
+                  {groupStart > 0 && (
+                    <PageBtn onClick={() => fetchList(groupStart - 1)}>···</PageBtn>
+                  )}
+                  {Array.from({ length: groupEnd - groupStart }, (_, i) => {
+                    const idx = groupStart + i;
+                    return (
+                      <PageBtn key={idx} $active={idx === pno} onClick={() => fetchList(idx)}>
+                        {idx + 1}
+                      </PageBtn>
+                    );
+                  })}
+                  {groupEnd < totalPages && (
+                    <PageBtn onClick={() => fetchList(groupEnd)}>···</PageBtn>
+                  )}
+                  <PageBtn onClick={() => fetchList(pno + 1)} disabled={pno >= totalPages - 1}>
+                    <ChevronRight size={14} />
+                  </PageBtn>
+                </Pagination>
+              );
+            })()}
           </>
         )}
-      </Card>
+      </Card>}
 
       {/* 상세 모달 */}
       {detailOpen && (
@@ -373,6 +459,61 @@ const PageSub = styled.p`
   color: ${({ theme }) => theme.colors.textMuted};
 `;
 
+const HeaderRight = styled.div`display: flex; align-items: center; gap: 10px;`;
+
+const ViewToggle = styled.div`
+  display: flex;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 8px;
+  overflow: hidden;
+`;
+
+const ViewBtn = styled.button`
+  display: flex; align-items: center; gap: 5px;
+  padding: 0 14px; height: 34px;
+  font-size: 13px; font-weight: 500; font-family: inherit;
+  cursor: pointer;
+  background: ${({ $active }) => $active ? ACCENT : 'white'};
+  color: ${({ $active }) => $active ? 'white' : '#64748b'};
+  border: none;
+  transition: all 0.15s;
+  &:hover { background: ${({ $active }) => $active ? ACCENT : '#f1f5f9'}; }
+`;
+
+const CalendarWrap = styled.div`
+  display: grid;
+  grid-template-columns: ${({ $hasPanel }) => $hasPanel ? '1fr 280px' : '1fr'};
+  gap: 0;
+  align-items: start;
+  background: white;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 12px;
+  box-shadow: ${({ theme }) => theme.shadows.card};
+`;
+
+const CalDayPanel = styled.div`
+  padding: 20px;
+  border-left: 1px solid ${({ theme }) => theme.colors.borderLight};
+  min-height: 200px;
+`;
+
+const CalDayTitle = styled.p`
+  font-size: 13px; font-weight: 700;
+  color: ${({ theme }) => theme.colors.adminTextDark};
+  margin-bottom: 12px;
+`;
+
+const CalDayItem = styled.div`
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: ${({ theme }) => theme.colors.textMid};
+  padding: 5px 0;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
+`;
+
+const EventDot = styled.div`
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+`;
+
 const RefreshBtn = styled.button`
   width: 34px;
   height: 34px;
@@ -403,6 +544,19 @@ const FilterInput = styled.input`
   color: ${({ theme }) => theme.colors.adminTextDark};
   font-family: inherit;
   background: white;
+  &:focus { outline: none; border-color: ${ACCENT}; }
+`;
+
+const StatusSelect = styled.select`
+  height: 38px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.adminTextDark};
+  font-family: inherit;
+  background: white;
+  cursor: pointer;
   &:focus { outline: none; border-color: ${ACCENT}; }
 `;
 

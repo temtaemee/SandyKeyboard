@@ -14,6 +14,7 @@ import ReservationPage from '../features/seller/pages/ReservationPage';
 import SettlementPage from '../features/seller/pages/SettlementPage';
 import ReviewPage from '../features/seller/pages/ReviewPage';
 import AccountPage from '../features/seller/pages/AccountPage';
+import RefundPage from '../features/seller/pages/RefundPage';
 
 export default function SellerRouter() {
   return (
@@ -32,6 +33,7 @@ export default function SellerRouter() {
         <Route path="reservations" element={<ReservationPage />} />
         <Route path="settlements" element={<SettlementPage />} />
         <Route path="reviews" element={<ReviewPage />} />
+        <Route path="refunds" element={<RefundPage />} />
         <Route path="account" element={<AccountPage />} />
       </Route>
     </Routes>

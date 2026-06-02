@@ -1,16 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import {
-  CreditCard, FileText, Send, Download, CheckCircle, Clock,
-  X, Building2, AlertCircle, ChevronLeft, ChevronRight,
+  CreditCard, FileText, Download, Clock,
+  X, ChevronLeft, ChevronRight, List, Calendar,
 } from 'lucide-react';
 import { settlementApi } from '../api/settlementApi';
+import SellerCalendar from '../components/common/SellerCalendar';
+import SellerPagination from '../components/common/SellerPagination';
 
 const ACCENT = '#3ec9a7';
 
 const TABS = [
   { key: 'history', label: '정산 내역' },
-  { key: 'request', label: '정산 요청' },
   { key: 'invoice', label: '세금계산서' },
 ];
 
@@ -27,6 +28,7 @@ const INV_LABEL = { ISSUED: '발행완료', PENDING: '발행대기', CANCELLED: 
 
 export default function SettlementPage() {
   const [tab, setTab] = useState('history');
+  const [viewMode, setViewMode] = useState('table');
 
   // ── 정산 내역 상태 ──
   const [payouts, setPayouts]         = useState([]);
@@ -42,11 +44,6 @@ export default function SettlementPage() {
   const [detailInvoice, setDetailInvoice] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  // ── 정산 요청 상태 ──
-  const [reqFrom, setReqFrom]   = useState('');
-  const [reqTo, setReqTo]       = useState('');
-  const [requesting, setRequesting] = useState(false);
-  const [reqDone, setReqDone]   = useState(false);
 
   const fetchPayouts = useCallback(async (pno = 0) => {
     setPayoutLoading(true);
@@ -94,14 +91,6 @@ export default function SettlementPage() {
     }
   };
 
-  const handleRequest = async () => {
-    if (!reqFrom || !reqTo) return;
-    setRequesting(true);
-    await new Promise((r) => setTimeout(r, 800));
-    setRequesting(false);
-    setReqDone(true);
-    setTimeout(() => setReqDone(false), 3000);
-  };
 
   const settledTotal  = payouts.filter((p) => p.statusLabel !== 'PENDING').reduce((s, p) => s + (p.payoutAmount ?? 0), 0);
   const pendingTotal  = payouts.filter((p) => p.statusLabel === 'PENDING').reduce((s, p) => s + (p.payoutAmount ?? 0), 0);
@@ -113,7 +102,30 @@ export default function SettlementPage() {
           <PageTitle>정산 관리</PageTitle>
           <PageSub>매출 정산 신청 및 세금계산서를 관리합니다</PageSub>
         </TitleGroup>
+        <ViewToggle>
+          <ViewBtn $active={viewMode === 'table'} onClick={() => setViewMode('table')}><List size={13} />목록</ViewBtn>
+          <ViewBtn $active={viewMode === 'calendar'} onClick={() => setViewMode('calendar')}><Calendar size={13} />달력</ViewBtn>
+        </ViewToggle>
       </PageHeader>
+
+      {viewMode === 'calendar' && (
+        <CalCard>
+          <SellerCalendar
+            events={payouts.map((p) => ({
+              date: (p.payoutDate ?? p.createdAt ?? '').slice(0, 10),
+              label: `${fmt(p.payoutAmount)}`,
+              color: p.statusLabel === 'PENDING' ? '#c2410c' : '#15803d',
+              bg:    p.statusLabel === 'PENDING' ? '#ffedd5' : '#dcfce7',
+              cancelled: false,
+              tooltip: {
+                id: p.payoutId,
+                amount: p.payoutAmount,
+                status: PAYOUT_LABEL[p.statusLabel] ?? p.statusLabel,
+              },
+            })).filter((e) => e.date)}
+          />
+        </CalCard>
+      )}
 
       {/* 요약 카드 */}
       <SummaryGrid>
@@ -188,59 +200,9 @@ export default function SettlementPage() {
                     ))}
                   </tbody>
                 </Table>
-                <Pagination pno={payoutPno} total={payoutPages} onPage={fetchPayouts} />
+                <SellerPagination pno={payoutPno} total={payoutPages} onPage={fetchPayouts} />
               </>
             )}
-          </TabContent>
-        )}
-
-        {/* ─── 정산 요청 ─── */}
-        {tab === 'request' && (
-          <TabContent>
-            <RequestGrid>
-              <AmountCard>
-                <AmountLabel>현재 미정산 금액</AmountLabel>
-                <AmountValue>{fmt(pendingTotal)}</AmountValue>
-                <AmountNote>
-                  정산 대기 {payouts.filter((p) => p.statusLabel === 'PENDING').length}건
-                </AmountNote>
-              </AmountCard>
-
-              <RequestForm>
-                <FormTitle>정산 신청</FormTitle>
-
-                <FormSection>
-                  <FormLabel>정산 기간 선택</FormLabel>
-                  <DateRow>
-                    <DateInput type="date" value={reqFrom} onChange={(e) => setReqFrom(e.target.value)} />
-                    <DateSep>~</DateSep>
-                    <DateInput type="date" value={reqTo} onChange={(e) => setReqTo(e.target.value)} />
-                  </DateRow>
-                </FormSection>
-
-                <FormSection>
-                  <FormLabel>정산 계좌 정보</FormLabel>
-                  <BankCard>
-                    <Building2 size={16} color="#475569" />
-                    <BankNote>정산 요청 API 구현 후 등록 계좌가 표시됩니다</BankNote>
-                  </BankCard>
-                </FormSection>
-
-                {reqDone && (
-                  <SuccessMsg>
-                    <CheckCircle size={15} />
-                    정산 신청이 완료되었습니다. 영업일 기준 3~5일 내 입금됩니다.
-                  </SuccessMsg>
-                )}
-
-                <RequestBtn
-                  onClick={handleRequest}
-                  disabled={requesting || !reqFrom || !reqTo}
-                >
-                  {requesting ? '신청 중...' : <><Send size={15} />정산 신청하기</>}
-                </RequestBtn>
-              </RequestForm>
-            </RequestGrid>
           </TabContent>
         )}
 
@@ -291,7 +253,7 @@ export default function SettlementPage() {
                     ))}
                   </tbody>
                 </Table>
-                <Pagination pno={invoicePno} total={invoicePages} onPage={fetchInvoices} />
+                <SellerPagination pno={invoicePno} total={invoicePages} onPage={fetchInvoices} />
               </>
             )}
           </TabContent>
@@ -335,24 +297,36 @@ export default function SettlementPage() {
   );
 }
 
-function Pagination({ pno, total, onPage }) {
-  if (total <= 1) return null;
-  return (
-    <PaginationWrap>
-      <PageBtn onClick={() => onPage(pno - 1)} disabled={pno === 0}><ChevronLeft size={14} /></PageBtn>
-      {Array.from({ length: total }, (_, i) => (
-        <PageBtn key={i} $active={i === pno} onClick={() => onPage(i)}>{i + 1}</PageBtn>
-      ))}
-      <PageBtn onClick={() => onPage(pno + 1)} disabled={pno >= total - 1}><ChevronRight size={14} /></PageBtn>
-    </PaginationWrap>
-  );
-}
-
 /* ── Styled ── */
 
 const Wrap = styled.div`display: flex; flex-direction: column; gap: 24px;`;
 
 const PageHeader = styled.div`display: flex; align-items: flex-start; justify-content: space-between;`;
+
+const ViewToggle = styled.div`
+  display: flex;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+`;
+
+const ViewBtn = styled.button`
+  display: flex; align-items: center; gap: 5px;
+  padding: 0 14px; height: 34px;
+  font-size: 13px; font-weight: 500; font-family: inherit; cursor: pointer;
+  background: ${({ $active }) => $active ? ACCENT : 'white'};
+  color: ${({ $active }) => $active ? 'white' : '#64748b'};
+  border: none; transition: all 0.15s;
+  &:hover { background: ${({ $active }) => $active ? ACCENT : '#f1f5f9'}; }
+`;
+
+const CalCard = styled.div`
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  overflow: hidden;
+`;
 const TitleGroup = styled.div`display: flex; flex-direction: column; gap: 4px;`;
 
 const PageTitle = styled.h1`
@@ -427,22 +401,6 @@ const ActionBtn = styled.button`
   &:hover { background: #f8fafc; }
 `;
 
-const PaginationWrap = styled.div`
-  display: flex; align-items: center; justify-content: center; gap: 4px;
-  padding: 14px; border-top: 1px solid ${({ theme }) => theme.colors.borderLight};
-`;
-const PageBtn = styled.button`
-  min-width: 32px; height: 32px; padding: 0 6px; border-radius: 6px; font-size: 13px;
-  font-weight: ${({ $active }) => ($active ? '700' : '400')};
-  background: ${({ $active }) => ($active ? ACCENT : 'white')};
-  color: ${({ $active, theme }) => ($active ? 'white' : theme.colors.textMid)};
-  border: 1px solid ${({ $active }) => ($active ? ACCENT : '#e2e8f0')};
-  cursor: ${({ disabled }) => (disabled ? 'not-allowed' : 'pointer')};
-  opacity: ${({ disabled }) => (disabled ? 0.4 : 1)};
-  display: flex; align-items: center; justify-content: center; font-family: inherit;
-  transition: all 0.15s;
-  &:hover:not(:disabled) { border-color: ${ACCENT}; color: ${ACCENT}; }
-`;
 
 /* 정산 요청 */
 const RequestGrid = styled.div`display: grid; grid-template-columns: 1fr 1fr; gap: 24px;`;

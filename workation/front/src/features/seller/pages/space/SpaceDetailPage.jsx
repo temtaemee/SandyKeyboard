@@ -55,29 +55,26 @@ export default function SpaceDetailPage() {
     load();
   }, [id]);
 
-  // 지도 렌더링 — space 로드 후 브라우저 페인트 완료 뒤 초기화
+  // 지도 렌더링 — kakao.maps.load() 콜백으로 SDK 준비 보장
   useEffect(() => {
-    if (!space?.latitude || !space?.longitude) return;
+    if (!space?.latitude || !space?.longitude || !mapRef.current) return;
+    if (!window.kakao) return;
 
-    const raf = requestAnimationFrame(() => {
-      if (!window.kakao?.maps || !mapRef.current) return;
-
+    const initMap = () => {
+      if (!mapRef.current) return;
       const lat = Number(space.latitude);
       const lng = Number(space.longitude);
       const pos = new window.kakao.maps.LatLng(lat, lng);
-
       const map = new window.kakao.maps.Map(mapRef.current, { center: pos, level: 4 });
       const marker = new window.kakao.maps.Marker({ map, position: pos });
-
       const info = new window.kakao.maps.InfoWindow({
         content: `<div style="padding:6px 10px;font-size:12px;font-weight:600;white-space:nowrap;">${space.name}</div>`,
       });
       info.open(map, marker);
-
       map.relayout();
-    });
+    };
 
-    return () => cancelAnimationFrame(raf);
+    window.kakao.maps.load(initMap);
   }, [space]);
 
   const handleCopy = () => {

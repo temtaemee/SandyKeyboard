@@ -6,6 +6,7 @@ export const SELLER_NAV_ITEMS = [
   { id: 'sales',       label: '매출 관리',  path: '/seller/sales',        icon: 'trending' },
   { id: 'settlement',  label: '정산 관리',  path: '/seller/settlements',  icon: 'credit' },
   { id: 'review',      label: '리뷰 관리',  path: '/seller/reviews',      icon: 'star' },
+  { id: 'refund',      label: '환불 관리',  path: '/seller/refunds',      icon: 'refund' },
   { id: 'account',     label: '계정 관리',  path: '/seller/account',      icon: 'user' },
 ];
 

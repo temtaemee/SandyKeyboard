@@ -18,9 +18,27 @@ import com.kh.app.product.space.entity.*;
 import com.kh.app.product.space.repository.*;
 import com.kh.app.product.stay.entity.*;
 import com.kh.app.product.stay.repository.*;
+import com.kh.app.transaction.payment.entity.PaymentEntity;
+import com.kh.app.transaction.payment.enums.PaymentMethod;
+import com.kh.app.transaction.payment.enums.PaymentStatus;
+import com.kh.app.transaction.payment.repository.PaymentRepository;
+import com.kh.app.transaction.refund.entity.RefundEntity;
+import com.kh.app.transaction.refund.enums.RefundReason;
+import com.kh.app.transaction.refund.repository.RefundRepository;
 import com.kh.app.transaction.reservation.entity.ReservationEntity;
 import com.kh.app.transaction.reservation.entity.ReservationStatus;
 import com.kh.app.transaction.reservation.repository.ReservationRepository;
+import com.kh.app.transaction.sales.entity.SalesEntity;
+import com.kh.app.transaction.sales.repository.SalesRepository;
+import com.kh.app.transaction.payout.entity.PayoutEntity;
+import com.kh.app.transaction.payout.repository.PayoutRepository;
+import com.kh.app.transaction.payment.enums.PayoutStatus;
+import com.kh.app.transaction.invoice.entity.TaxInvoiceEntity;
+import com.kh.app.transaction.invoice.repository.TaxInvoiceRepository;
+import com.kh.app.middle.coupon.entity.MemberCouponEntity;
+import com.kh.app.middle.coupon.repository.MemberCouponRepository;
+import com.kh.app.mypage.wishlist.entity.WishlistEntity;
+import com.kh.app.mypage.wishlist.repository.WishlistRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -32,6 +50,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
 
@@ -56,7 +75,14 @@ public class DataInitializer implements CommandLineRunner {
     private final StayPictureRepository stayPictureRepository;
     private final StayOptionRepository stayOptionRepository;
     private final ReservationRepository reservationRepository;
+    private final PaymentRepository paymentRepository;
+    private final SalesRepository salesRepository;
+    private final RefundRepository refundRepository;
+    private final PayoutRepository payoutRepository;
+    private final TaxInvoiceRepository taxInvoiceRepository;
     private final CouponRepository couponRepository;
+    private final MemberCouponRepository memberCouponRepository;
+    private final WishlistRepository wishlistRepository;
     private final FaqRepository faqRepository;
     private final NoticeRepository noticeRepository;
     private final ReviewRepository reviewRepository;
@@ -64,6 +90,7 @@ public class DataInitializer implements CommandLineRunner {
     private final BCryptPasswordEncoder passwordEncoder;
 
     private int orderCounter = 0;
+    private int paymentCounter = 0;
 
     @Override
     @Transactional
@@ -90,7 +117,15 @@ public class DataInitializer implements CommandLineRunner {
         seedGyeongnam(sellers.get(2), arcades, allStays);
 
         List<ReservationEntity> reservations = seedReservations(users, allStays);
+
+        List<SpaceEntity> allSpaces = allStays.stream()
+                .map(StayEntity::getSpace).distinct().toList();
+
+        seedPaymentsAndSales(reservations);
+        seedPayoutsAndInvoices();
         seedReviews(reservations);
+        seedMemberCoupons(users);
+        seedWishlists(users, allSpaces);
         seedFaqs(admin);
         seedNotices(admin);
 
@@ -605,21 +640,29 @@ public class DataInitializer implements CommandLineRunner {
 
         for (StayEntity stay : stays) {
             long base = stay.getMonPrice();
+            // 전체 날짜 ±20일 이내, 최소 2박
             List<Cfg> cfgs = List.of(
-                    new Cfg(ReservationStatus.COMPLETED,         today.minusMonths(5).withDayOfMonth(10), 2),
-                    new Cfg(ReservationStatus.COMPLETED,         today.minusMonths(3).withDayOfMonth(15), 3),
-                    new Cfg(ReservationStatus.RESERVED,          today.plusMonths(1).withDayOfMonth(20),  2),
-                    new Cfg(ReservationStatus.RESERVED,          today.plusMonths(2).withDayOfMonth(5),   3),
-                    new Cfg(ReservationStatus.PAYMENT_COMPLETED, today.plusMonths(2).withDayOfMonth(15),  2),
-                    new Cfg(ReservationStatus.PAYMENT_COMPLETED, today.plusMonths(3).withDayOfMonth(8),   2),
-                    new Cfg(ReservationStatus.PENDING,           today.plusDays(10),                      1),
-                    new Cfg(ReservationStatus.PENDING,           today.plusDays(20),                      2),
-                    new Cfg(ReservationStatus.USER_CANCELLED,    today.minusMonths(2).withDayOfMonth(12), 2),
-                    new Cfg(ReservationStatus.USER_CANCELLED,    today.minusMonths(1).withDayOfMonth(18), 2),
-                    new Cfg(ReservationStatus.SELLER_CANCELLED,  today.minusMonths(3).withDayOfMonth(9),  2),
-                    new Cfg(ReservationStatus.SELLER_CANCELLED,  today.minusMonths(2).withDayOfMonth(25), 2),
-                    new Cfg(ReservationStatus.REFUND_COMPLETED,  today.minusMonths(4).withDayOfMonth(7),  2),
-                    new Cfg(ReservationStatus.REFUND_COMPLETED,  today.minusMonths(6).withDayOfMonth(20), 3)
+                    new Cfg(ReservationStatus.COMPLETED,         today.minusDays(18), 2),
+                    new Cfg(ReservationStatus.COMPLETED,         today.minusDays(13), 3),
+                    new Cfg(ReservationStatus.COMPLETED,         today.minusDays(8),  2),
+                    new Cfg(ReservationStatus.RESERVED,          today.plusDays(3),   2),
+                    new Cfg(ReservationStatus.RESERVED,          today.plusDays(9),   3),
+                    new Cfg(ReservationStatus.RESERVED,          today.plusDays(15),  2),
+                    new Cfg(ReservationStatus.PAYMENT_COMPLETED, today.plusDays(5),   2),
+                    new Cfg(ReservationStatus.PAYMENT_COMPLETED, today.plusDays(11),  3),
+                    new Cfg(ReservationStatus.PAYMENT_COMPLETED, today.plusDays(17),  2),
+                    new Cfg(ReservationStatus.PENDING,           today.plusDays(2),   2),
+                    new Cfg(ReservationStatus.PENDING,           today.plusDays(7),   2),
+                    new Cfg(ReservationStatus.PENDING,           today.plusDays(13),  3),
+                    new Cfg(ReservationStatus.USER_CANCELLED,    today.minusDays(17), 2),
+                    new Cfg(ReservationStatus.USER_CANCELLED,    today.minusDays(11), 2),
+                    new Cfg(ReservationStatus.USER_CANCELLED,    today.minusDays(6),  2),
+                    new Cfg(ReservationStatus.SELLER_CANCELLED,  today.minusDays(19), 2),
+                    new Cfg(ReservationStatus.SELLER_CANCELLED,  today.minusDays(14), 3),
+                    new Cfg(ReservationStatus.SELLER_CANCELLED,  today.minusDays(7),  2),
+                    new Cfg(ReservationStatus.REFUND_COMPLETED,  today.minusDays(16), 2),
+                    new Cfg(ReservationStatus.REFUND_COMPLETED,  today.minusDays(10), 2),
+                    new Cfg(ReservationStatus.REFUND_COMPLETED,  today.minusDays(5),  3)
             );
             for (Cfg cfg : cfgs) {
                 long price = base * cfg.nights();
@@ -816,7 +859,8 @@ public class DataInitializer implements CommandLineRunner {
     private MemberEntity createMember(String username, String pw, Role role,
                                        String name, String phone, String email) {
         MemberEntity m = memberRepository.save(MemberEntity.builder()
-                .username(username).password(passwordEncoder.encode(pw)).roleSet(Set.of(role)).build());
+                .username(username).password(passwordEncoder.encode(pw))
+                .roleSet(new HashSet<>(Collections.singleton(role))).build());
         profileRepository.save(MemberProfileEntity.builder()
                 .member(m).name(name).phone(phone).email(email).build());
         return m;
@@ -825,7 +869,12 @@ public class DataInitializer implements CommandLineRunner {
     private MemberEntity createSeller(String username, String pw, String name,
                                        String phone, String email, BankEntity bank,
                                        String bizNo, String account, String accountName, String companyName) {
-        MemberEntity m = createMember(username, pw, Role.SELLER, name, phone, email);
+        // 1단계: USER로 가입 (MemberProfileEntity 포함)
+        MemberEntity m = createMember(username, pw, Role.USER, name, phone, email);
+        // 2단계: SELLER로 승격 — roleSet 교체 후 저장
+        m.getRoleSet().clear();
+        m.getRoleSet().add(Role.SELLER);
+        memberRepository.save(m);
         sellerRepository.save(SellerEntity.builder()
                 .member(m).bank(bank).businessNo(bizNo)
                 .account(account).accountName(accountName).companyName(companyName).build());
@@ -894,6 +943,158 @@ public class DataInitializer implements CommandLineRunner {
         for (int i : indices) {
             spaceArcadeRepository.save(
                     SpaceArcadeEntity.builder().space(space).arcade(arcades.get(i)).build());
+        }
+    }
+
+    // ───────────────────────────────────────────────
+    // 결제 + 매출 + 환불
+    // ───────────────────────────────────────────────
+    private void seedPaymentsAndSales(List<ReservationEntity> reservations) {
+        Set<ReservationStatus> paidStatuses = Set.of(
+                ReservationStatus.COMPLETED,
+                ReservationStatus.RESERVED,
+                ReservationStatus.PAYMENT_COMPLETED,
+                ReservationStatus.REFUND_COMPLETED
+        );
+        String[] cardCompanies = {"신한카드", "국민카드", "현대카드", "삼성카드", "롯데카드"};
+
+        int pc = 0;
+        for (ReservationEntity resv : reservations) {
+            if (!paidStatuses.contains(resv.getStatus())) continue;
+
+            boolean isRefunded = resv.getStatus() == ReservationStatus.REFUND_COMPLETED;
+            LocalDateTime approvedAt = resv.getCheckinDate().minusDays(7).atTime(10, 30);
+
+            ++pc;
+            PaymentEntity payment = new PaymentEntity();
+            payment.setReservation(resv);
+            payment.setOrderId(resv.getOrderId());
+            payment.setPaymentKey("PAY-KEY-" + String.format("%05d", pc));
+            payment.setAmount(resv.getTotalPrice());
+            payment.setCancelAmount(isRefunded ? resv.getTotalPrice() : 0L);
+            payment.setPaymentMethod(PaymentMethod.CARD);
+            payment.setStatus(isRefunded ? PaymentStatus.REFUNDED : PaymentStatus.SUCCESS);
+            payment.setCardCompany(cardCompanies[pc % cardCompanies.length]);
+            payment.setCardNumber("1234-****-****-" + String.format("%04d", pc % 10000));
+            payment.setApprovedAt(approvedAt);
+            payment.setCanceledAt(isRefunded ? approvedAt.plusDays(1) : null);
+            payment = paymentRepository.save(payment);
+
+            salesRepository.save(SalesEntity.builder()
+                    .payment(payment)
+                    .salesAmount(resv.getTotalPrice())
+                    .cancelAmount(isRefunded ? resv.getTotalPrice() : 0L)
+                    .netSalesAmount(isRefunded ? 0L : resv.getTotalPrice())
+                    .salesDate(approvedAt)
+                    .build());
+
+            if (isRefunded) {
+                refundRepository.save(RefundEntity.builder()
+                        .reservation(resv)
+                        .transactionKey("REFUND-" + String.format("%05d", pc))
+                        .refundAmount(resv.getTotalPrice())
+                        .refundReason(RefundReason.SIMPLE_CHANGE)
+                        .refundedAt(approvedAt.plusDays(2))
+                        .build());
+            }
+        }
+        log.info("[DataInitializer] 결제 {}건, 환불 {}건 삽입 완료", pc,
+                reservations.stream().filter(r -> r.getStatus() == ReservationStatus.REFUND_COMPLETED).count());
+    }
+
+    // ───────────────────────────────────────────────
+    // 정산(Payout) + 세금계산서(TaxInvoice)
+    // ───────────────────────────────────────────────
+    private void seedPayoutsAndInvoices() {
+        List<SalesEntity> allSales = salesRepository.findAll();
+        int invNo = 0;
+        LocalDate today = LocalDate.now();
+
+        for (SalesEntity sale : allSales) {
+            // 판매자 추출: sale → payment → reservation → stay → space → seller
+            MemberEntity seller;
+            try {
+                seller = sale.getPayment().getReservation().getStay().getSpace().getSeller();
+            } catch (Exception e) {
+                continue;
+            }
+            if (seller == null) continue;
+
+            long orig   = sale.getSalesAmount();
+            long fee    = (long) (orig * 0.1);   // 10% 플랫폼 수수료
+            long payout = orig - fee;
+
+            // 순매출 > 0 인 건 = 실제 매출 발생 → COMPLETED 정산
+            boolean completed = sale.getNetSalesAmount() > 0;
+
+            // 정산일 = 매출 발생월 다음달 10일 09:00
+            LocalDateTime payoutDate = completed
+                    ? sale.getSalesDate().toLocalDate()
+                            .plusMonths(1).withDayOfMonth(10).atTime(9, 0)
+                    : null;
+
+            PayoutEntity p = payoutRepository.save(PayoutEntity.builder()
+                    .seller(seller)
+                    .sales(sale)
+                    .originalAmount(orig)
+                    .feeAmount(fee)
+                    .payoutAmount(payout)
+                    .status(completed ? PayoutStatus.COMPLETED : PayoutStatus.READY)
+                    .payoutDate(payoutDate)
+                    .build());
+
+            // COMPLETED 정산만 세금계산서 발행
+            if (completed) {
+                long supply = (long) (payout / 1.1);        // 공급가액 (부가세 역산)
+                long tax    = payout - supply;               // 부가세
+                String issueNo = String.format("INV-%s-%04d",
+                        today.toString().replace("-", ""), ++invNo);
+
+                taxInvoiceRepository.save(TaxInvoiceEntity.builder()
+                        .issueNo(issueNo)
+                        .payout(p)
+                        .seller(seller)
+                        .supplyValue(supply)
+                        .taxAmount(tax)
+                        .totalAmount(payout)
+                        .issuedAt(payoutDate)
+                        .build());
+            }
+        }
+        log.info("[DataInitializer] 정산 {}건, 세금계산서 {}건 삽입 완료",
+                payoutRepository.count(), taxInvoiceRepository.count());
+    }
+
+    // ───────────────────────────────────────────────
+    // 쿠폰 발급 — user01~03 각각 WELCOME-10 발급
+    // ───────────────────────────────────────────────
+    private void seedMemberCoupons(List<MemberEntity> users) {
+        couponRepository.findByCouponCode("WELCOME-10").ifPresent(coupon -> {
+            LocalDateTime expiredAt = LocalDateTime.now().plusDays(7);
+            users.forEach(user -> memberCouponRepository.save(
+                    MemberCouponEntity.builder()
+                            .member(user)
+                            .couponId(coupon)
+                            .usedYn("N")
+                            .expiredYn("N")
+                            .expiredAt(expiredAt)
+                            .build()));
+        });
+    }
+
+    // ───────────────────────────────────────────────
+    // 찜 — user01: 공간1~3, user02: 공간4~6, user03: 공간7~9
+    // ───────────────────────────────────────────────
+    private void seedWishlists(List<MemberEntity> users, List<SpaceEntity> spaces) {
+        for (int u = 0; u < users.size(); u++) {
+            MemberEntity user = users.get(u);
+            for (int s = 0; s < 3; s++) {
+                int spaceIdx = (u * 3 + s) % spaces.size();
+                wishlistRepository.save(WishlistEntity.builder()
+                        .member(user)
+                        .space(spaces.get(spaceIdx))
+                        .build());
+            }
         }
     }
 }

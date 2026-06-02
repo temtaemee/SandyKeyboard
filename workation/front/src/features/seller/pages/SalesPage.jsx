@@ -1,286 +1,293 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
-import { DollarSign, TrendingUp, CalendarDays, Users, RefreshCw } from 'lucide-react';
-import { reservationApi } from '../api/reservationApi';
+import { DollarSign, TrendingUp, BarChart2, RefreshCw, List, Calendar } from 'lucide-react';
+import { salesApi } from '../api/salesApi';
+import SellerCalendar from '../components/common/SellerCalendar';
+import SellerPagination from '../components/common/SellerPagination';
 
 const ACCENT = '#3ec9a7';
-
-// 매출로 집계할 상태 (취소/환불 제외)
-const SALES_STATUSES = ['PAYMENT_COMPLETED', 'RESERVED', 'COMPLETED'];
-
-const STATUS_COLOR = {
-  PAYMENT_COMPLETED: '#c2410c',
-  RESERVED:          '#15803d',
-  USER_CANCELLED:    '#dc2626',
-  SELLER_CANCELLED:  '#dc2626',
-  REFUND_COMPLETED:  '#7c3aed',
-  COMPLETED:         '#0369a1',
-  PENDING:           '#64748b',
-};
-const STATUS_BG = {
-  PAYMENT_COMPLETED: '#ffedd5',
-  RESERVED:          '#dcfce7',
-  USER_CANCELLED:    '#fee2e2',
-  SELLER_CANCELLED:  '#fee2e2',
-  REFUND_COMPLETED:  '#ede9fe',
-  COMPLETED:         '#e0f2fe',
-  PENDING:           '#f1f5f9',
-};
-
 const fmt = (n) => Number(n || 0).toLocaleString() + '원';
 
-function getYearMonth(dateStr) {
-  if (!dateStr) return null;
-  return String(dateStr).slice(0, 7);
+function getYM(dtStr) {
+  return dtStr ? String(dtStr).slice(0, 7) : null;
 }
 
 export default function SalesPage() {
-  const [allData, setAllData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [filterMonth, setFilterMonth] = useState('ALL');
+  const [summary, setSummary]   = useState(null);
+  const [list, setList]         = useState([]);
+  const [chartBase, setChartBase] = useState([]); // 차트 전용 — 페이지 이동해도 고정
+  const [totalPages, setTotalPages] = useState(0);
+  const [pno, setPno]           = useState(0);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState(null);
   const [fetchedAt, setFetchedAt] = useState(null);
+  const [viewMode, setViewMode] = useState('table');
 
-  const load = async () => {
-    setLoading(true);
-    setError(null);
+  // 날짜 범위 필터 (client-side, salesDate 기준)
+  const todayStr      = new Date().toISOString().slice(0, 10);
+  const thisMonthStart = todayStr.slice(0, 7) + '-01';
+  const [fromDate, setFromDate] = useState(thisMonthStart);
+  const [toDate, setToDate]     = useState(todayStr);
+  const [activeQuick, setActiveQuick] = useState('this');
+
+  const setQuick = (key) => {
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const y = now.getFullYear(), m = now.getMonth();
+    if (key === 'this') {
+      setFromDate(`${y}-${pad(m + 1)}-01`);
+      setToDate(now.toISOString().slice(0, 10));
+    } else if (key === 'prev') {
+      const pm = new Date(y, m - 1, 1);
+      const last = new Date(y, m, 0).getDate();
+      setFromDate(`${pm.getFullYear()}-${pad(pm.getMonth() + 1)}-01`);
+      setToDate(`${pm.getFullYear()}-${pad(pm.getMonth() + 1)}-${last}`);
+    } else if (key === '3m') {
+      const d = new Date(y, m - 2, 1);
+      setFromDate(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-01`);
+      setToDate(now.toISOString().slice(0, 10));
+    } else {
+      setFromDate(''); setToDate('');
+    }
+    setActiveQuick(key);
+  };
+
+  const loadSummary = async () => {
     try {
-      // 한 번에 최대 500건 조회 (size 파라미터 백엔드 추가 필요)
-      const res = await reservationApi.getList({ pno: 0, size: 500 });
-      const content = res.data?.content ?? [];
-      setAllData(content);
-      setFetchedAt(new Date().toLocaleTimeString());
+      const res = await salesApi.getSummary();
+      setSummary(res.data);
+    } catch { setSummary(null); }
+  };
+
+  const loadList = useCallback(async (page = 0) => {
+    setLoading(true); setError(null);
+    try {
+      const res = await salesApi.getList(page);
+      const data = res.data;
+      setList(data.content ?? []);
+      setTotalPages(data.totalPages ?? 0);
+      setPno(page);
     } catch (e) {
-      setError(e.response?.data?.message ?? '데이터를 불러올 수 없습니다.');
+      setError(e.response?.data?.message ?? '매출 데이터를 불러올 수 없습니다.');
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // 차트용 전체 데이터 — 최초 1회만 모든 페이지 로드
+  const loadAllForChart = useCallback(async () => {
+    try {
+      const res0 = await salesApi.getList(0);
+      const data0 = res0.data;
+      const totalPgs = data0.totalPages ?? 0;
+      const all = [...(data0.content ?? [])];
+      if (totalPgs > 1) {
+        const rest = await Promise.all(
+          Array.from({ length: totalPgs - 1 }, (_, i) => salesApi.getList(i + 1))
+        );
+        rest.forEach(r => all.push(...(r.data?.content ?? [])));
+      }
+      setChartBase(all);
+    } catch {}
+  }, []);
+
+  const load = async () => {
+    setFetchedAt(new Date().toLocaleTimeString());
+    await Promise.all([loadSummary(), loadList(0)]);
+    loadAllForChart(); // 차트 데이터는 백그라운드로 전체 로드
   };
 
   useEffect(() => { load(); }, []);
 
-  // 매출로 집계되는 예약만 필터
-  const salesData = allData.filter((r) => SALES_STATUSES.includes(r.status));
+  // client-side 날짜 범위 필터 (salesDate 기준)
+  const inRange = (dtStr) => {
+    if (!dtStr) return true;
+    const d = String(dtStr).slice(0, 10);
+    if (fromDate && d < fromDate) return false;
+    if (toDate   && d > toDate)   return false;
+    return true;
+  };
+  const filtered = list.filter((s) => inRange(s.salesDate));
 
-  // 월별 그룹핑
-  const byMonth = salesData.reduce((acc, r) => {
-    const m = getYearMonth(r.checkinDate);
+  // 월별 차트 — chartBase 기준 (페이지 이동 시 변하지 않음)
+  const byMonth = chartBase.reduce((acc, s) => {
+    const m = getYM(s.salesDate);
     if (!m) return acc;
-    if (!acc[m]) acc[m] = { revenue: 0, count: 0 };
-    acc[m].revenue += Number(r.totalPrice || 0);
+    if (!acc[m]) acc[m] = { net: 0, count: 0 };
+    acc[m].net   += Number(s.netSalesAmount || 0);
     acc[m].count += 1;
     return acc;
   }, {});
+  const last6Months = (() => {
+    const now = new Date();
+    return Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    });
+  })();
+  const chartMax = Math.max(...last6Months.map((m) => byMonth[m]?.net ?? 0), 1);
 
-  const monthKeys = Object.keys(byMonth).sort();
-  const thisMonthKey = monthKeys[monthKeys.length - 1] ?? null;
-  const prevMonthKey = monthKeys[monthKeys.length - 2] ?? null;
-  const thisMonthData = thisMonthKey ? byMonth[thisMonthKey] : { revenue: 0, count: 0 };
-  const prevMonthData = prevMonthKey ? byMonth[prevMonthKey] : null;
-  const growth = prevMonthData && prevMonthData.revenue > 0
-    ? Math.round(((thisMonthData.revenue - prevMonthData.revenue) / prevMonthData.revenue) * 100)
-    : null;
-
-  const totalRevenue = salesData.reduce((s, r) => s + Number(r.totalPrice || 0), 0);
-
-  // 스테이별 매출 집계
-  const byStay = salesData.reduce((acc, r) => {
-    const key = r.stayName ?? `숙소 #${r.stayId}`;
-    if (!acc[key]) acc[key] = { stayName: key, spaceName: r.spaceName ?? '', revenue: 0, count: 0 };
-    acc[key].revenue += Number(r.totalPrice || 0);
-    acc[key].count += 1;
-    return acc;
-  }, {});
-  const topStays = Object.values(byStay)
-    .sort((a, b) => b.revenue - a.revenue)
-    .slice(0, 5);
-
-  const maxRevenue = topStays[0]?.revenue ?? 0;
-
-  // 차트 데이터
-  const chartMonths = monthKeys.slice(-6); // 최근 6개월
-  const chartMax = Math.max(...chartMonths.map((m) => byMonth[m]?.revenue ?? 0), 1);
-
-  // 테이블 필터
-  const tableMonths = ['ALL', ...monthKeys];
-  const filteredRecords = filterMonth === 'ALL'
-    ? allData
-    : allData.filter((r) => getYearMonth(r.checkinDate) === filterMonth);
+  const rangeLabel = fromDate && toDate
+    ? `${fromDate} ~ ${toDate}`
+    : fromDate ? `${fromDate} ~` : toDate ? `~ ${toDate}` : '전체 기간';
 
   return (
     <Wrap>
       <PageHeader>
         <TitleGroup>
           <PageTitle>매출 관리</PageTitle>
-          <PageSub>
-            공간 및 스테이 매출 현황 {fetchedAt && <FetchTime>— {fetchedAt} 기준</FetchTime>}
-          </PageSub>
+          <PageSub>공간 및 스테이 실시간 매출 현황 {fetchedAt && <FetchTime>— {fetchedAt} 기준</FetchTime>}</PageSub>
         </TitleGroup>
-        <RefreshBtn onClick={load} disabled={loading}>
-          <RefreshCw size={14} />새로고침
-        </RefreshBtn>
+        <HeaderRight>
+          <ViewToggle>
+            <ViewBtn $active={viewMode === 'table'} onClick={() => setViewMode('table')}><List size={13} />목록</ViewBtn>
+            <ViewBtn $active={viewMode === 'calendar'} onClick={() => setViewMode('calendar')}><Calendar size={13} />달력</ViewBtn>
+          </ViewToggle>
+          <RefreshBtn onClick={load} disabled={loading}><RefreshCw size={14} />새로고침</RefreshBtn>
+        </HeaderRight>
       </PageHeader>
 
       {error && <ErrorBar>{error}</ErrorBar>}
 
-      {/* 요약 카드 */}
+      {/* 날짜 범위 필터 */}
+      <DateFilterBar>
+        <QuickBtns>
+          {[['this','이번달'],['prev','저번달'],['3m','최근 3개월'],['all','전체']].map(([k,l]) => (
+            <QuickBtn key={k} $active={activeQuick === k} onClick={() => setQuick(k)}>{l}</QuickBtn>
+          ))}
+        </QuickBtns>
+        <DateRangeGroup>
+          <DateInput type="date" value={fromDate} onChange={(e) => { setFromDate(e.target.value); setActiveQuick('custom'); }} />
+          <DateSep>~</DateSep>
+          <DateInput type="date" value={toDate}   onChange={(e) => { setToDate(e.target.value);   setActiveQuick('custom'); }} />
+        </DateRangeGroup>
+        <RangeLabel>{rangeLabel} · {filtered.length}건</RangeLabel>
+      </DateFilterBar>
+
+      {/* 요약 카드 — API 전체 데이터 기준 */}
       <SummaryGrid>
         <SummaryCard>
           <IconBg $color="#dcfce7"><DollarSign size={20} color="#15803d" /></IconBg>
           <SummaryLabel>총 매출 (누적)</SummaryLabel>
-          <SummaryValue>{fmt(totalRevenue)}</SummaryValue>
-          <SummaryNote>결제완료 + 예약확정 + 이용완료 합산</SummaryNote>
+          <SummaryValue>{fmt(summary?.totalSales)}</SummaryValue>
+          <SummaryNote>전체 결제 발생 금액</SummaryNote>
         </SummaryCard>
         <SummaryCard>
-          <IconBg $color="#dbeafe"><TrendingUp size={20} color="#1d4ed8" /></IconBg>
-          <SummaryLabel>이번 달 매출</SummaryLabel>
-          <SummaryValue>{fmt(thisMonthData.revenue)}</SummaryValue>
-          <SummaryNote $positive={growth !== null ? growth >= 0 : undefined}>
-            {growth !== null ? `전월 대비 ${growth >= 0 ? '+' : ''}${growth}%` : '이전 데이터 없음'}
-          </SummaryNote>
+          <IconBg $color="#fee2e2"><TrendingUp size={20} color="#dc2626" /></IconBg>
+          <SummaryLabel>총 취소액 (누적)</SummaryLabel>
+          <SummaryValue>{fmt(summary?.totalCancel)}</SummaryValue>
+          <SummaryNote>환불 처리된 금액</SummaryNote>
         </SummaryCard>
         <SummaryCard>
-          <IconBg $color="#ffedd5"><CalendarDays size={20} color="#c2410c" /></IconBg>
-          <SummaryLabel>이번 달 예약</SummaryLabel>
-          <SummaryValue>{thisMonthData.count}건</SummaryValue>
-          <SummaryNote>매출 집계 기준</SummaryNote>
+          <IconBg $color="#dbeafe"><BarChart2 size={20} color="#1d4ed8" /></IconBg>
+          <SummaryLabel>순 매출 (누적)</SummaryLabel>
+          <SummaryValue>{fmt(summary?.totalNetSales)}</SummaryValue>
+          <SummaryNote>취소 차감 후 실매출</SummaryNote>
         </SummaryCard>
         <SummaryCard>
-          <IconBg $color="#ede9fe"><Users size={20} color="#7c3aed" /></IconBg>
-          <SummaryLabel>전체 예약 건수</SummaryLabel>
-          <SummaryValue>{salesData.length}건</SummaryValue>
-          <SummaryNote>취소/환불 제외</SummaryNote>
+          <IconBg $color="#ede9fe"><BarChart2 size={20} color="#7c3aed" /></IconBg>
+          <SummaryLabel>선택 기간 순매출</SummaryLabel>
+          <SummaryValue>{fmt(filtered.reduce((s,r)=>s+Number(r.netSalesAmount||0),0))}</SummaryValue>
+          <SummaryNote>{rangeLabel}</SummaryNote>
         </SummaryCard>
       </SummaryGrid>
 
-      <BottomGrid>
-        {/* 월별 매출 차트 */}
-        <Card>
-          <CardTitle>월별 매출 추이 (최근 6개월)</CardTitle>
-          {loading ? (
-            <ChartLoading>로딩 중...</ChartLoading>
-          ) : chartMonths.length === 0 ? (
-            <ChartLoading>데이터 없음</ChartLoading>
-          ) : (
+      {/* 달력 뷰 */}
+      {viewMode === 'calendar' && (
+        <CalCard>
+          <SellerCalendar
+            events={filtered.map((s) => ({
+              date: s.salesDate?.slice(0, 10),
+              label: `${Number(s.netSalesAmount||0).toLocaleString()}원`,
+              color: s.cancelAmount > 0 ? '#dc2626' : '#15803d',
+              bg:    s.cancelAmount > 0 ? '#fee2e2' : '#dcfce7',
+              cancelled: s.netSalesAmount === 0,
+              tooltip: {
+                id: s.salesId,
+                space: s.spaceName,
+                stay: s.stayName,
+                amount: s.salesAmount,
+                status: s.cancelAmount > 0 ? `취소 ${fmt(s.cancelAmount)}` : '정상',
+              },
+            })).filter((e) => e.date)}
+          />
+        </CalCard>
+      )}
+
+      {/* 목록 뷰 */}
+      {viewMode === 'table' && (
+        <>
+          {/* 월별 차트 */}
+          <Card>
+            <CardTitle>월별 순매출 추이 (최근 6개월)</CardTitle>
             <ChartArea>
-              {chartMonths.map((m) => {
-                const rev = byMonth[m]?.revenue ?? 0;
-                const pct = chartMax > 0 ? (rev / chartMax) * 100 : 0;
+              {last6Months.map((m) => {
+                const net = byMonth[m]?.net ?? 0;
+                const pct = chartMax > 0 ? (net / chartMax) * 100 : 0;
+                const label = net >= 100000000
+                  ? `${(net / 100000000).toFixed(1)}억`
+                  : net >= 10000
+                  ? `${Math.round(net / 10000)}만`
+                  : net > 0 ? net.toLocaleString() : '';
                 return (
                   <BarGroup key={m}>
-                    <BarTooltip>{rev.toLocaleString()}원</BarTooltip>
-                    <BarWrap><Bar $pct={pct} /></BarWrap>
+                    <BarAmount $empty={net === 0}>{label}</BarAmount>
+                    <BarWrap>
+                      <Bar $pct={pct} $empty={net === 0} title={net > 0 ? net.toLocaleString() + '원' : '-'} />
+                    </BarWrap>
                     <BarLabel>{m.slice(5)}월</BarLabel>
                   </BarGroup>
                 );
               })}
             </ChartArea>
-          )}
-        </Card>
+          </Card>
 
-        {/* 스테이별 매출 */}
-        <Card>
-          <CardTitle>매출 상위 스테이</CardTitle>
-          {loading ? (
-            <ChartLoading>로딩 중...</ChartLoading>
-          ) : topStays.length === 0 ? (
-            <ChartLoading>데이터 없음</ChartLoading>
-          ) : (
-            <TopList>
-              {topStays.map((s, i) => {
-                const pct = maxRevenue > 0 ? (s.revenue / maxRevenue) * 100 : 0;
-                return (
-                  <TopItem key={i}>
-                    <RankBadge $top={i === 0}>{i + 1}</RankBadge>
-                    <TopInfo>
-                      <TopName>{s.stayName}</TopName>
-                      {s.spaceName && <TopSpace>{s.spaceName}</TopSpace>}
-                      <TopBar><TopBarFill $pct={pct} /></TopBar>
-                    </TopInfo>
-                    <TopRevenue>
-                      <RevenueAmt>{s.revenue.toLocaleString()}원</RevenueAmt>
-                      <RevenueCount>{s.count}건</RevenueCount>
-                    </TopRevenue>
-                  </TopItem>
-                );
-              })}
-            </TopList>
-          )}
-        </Card>
-      </BottomGrid>
+          {/* 매출 내역 테이블 */}
+          <Card>
+            <TableHeaderRow>
+              <CardTitle style={{ marginBottom: 0 }}>매출 내역</CardTitle>
+            </TableHeaderRow>
+            <Table>
+              <colgroup>
+                <col width="70" /><col /><col /><col width="130" />
+                <col width="130" /><col width="120" /><col width="100" />
+              </colgroup>
+              <thead>
+                <tr>
+                  {['#','공간','스테이','매출금액','취소금액','순매출','일자'].map((h) => (
+                    <Th key={h}>{h}</Th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr><Td colSpan={7}><Empty>로딩 중...</Empty></Td></tr>
+                ) : filtered.length === 0 ? (
+                  <tr><Td colSpan={7}><Empty>해당 기간 매출 내역이 없습니다</Empty></Td></tr>
+                ) : (
+                  filtered.map((s) => (
+                    <tr key={s.salesId}>
+                      <Td><IdText>#{s.salesId}</IdText></Td>
+                      <Td>{s.spaceName ?? '-'}</Td>
+                      <Td>{s.stayName ?? '-'}</Td>
+                      <Td><AmtText>{fmt(s.salesAmount)}</AmtText></Td>
+                      <Td>
+                        {s.cancelAmount > 0
+                          ? <CancelText>-{fmt(s.cancelAmount)}</CancelText>
+                          : <span style={{color:'#94a3b8'}}>-</span>}
+                      </Td>
+                      <Td><NetText $cancelled={s.netSalesAmount === 0}>{fmt(s.netSalesAmount)}</NetText></Td>
+                      <Td>{s.salesDate?.slice(0, 10) ?? '-'}</Td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </Table>
 
-      {/* 매출 내역 테이블 */}
-      <Card>
-        <TableHeaderRow>
-          <CardTitle style={{ marginBottom: 0 }}>예약 내역</CardTitle>
-          <FilterSelect value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)}>
-            {tableMonths.map((m) => (
-              <option key={m} value={m}>{m === 'ALL' ? '전체 기간' : `${m.slice(5)}월`}</option>
-            ))}
-          </FilterSelect>
-        </TableHeaderRow>
-
-        <Table>
-          <colgroup>
-            <col width="70" />
-            <col />
-            <col width="90" />
-            <col width="100" />
-            <col width="100" />
-            <col width="50" />
-            <col width="120" />
-            <col width="90" />
-          </colgroup>
-          <thead>
-            <tr>
-              {['예약번호', '공간 / 스테이', '예약자', '체크인', '체크아웃', '박', '결제금액', '상태'].map((h) => (
-                <Th key={h}>{h}</Th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><Td colSpan={8}><Empty>로딩 중...</Empty></Td></tr>
-            ) : filteredRecords.length === 0 ? (
-              <tr><Td colSpan={8}><Empty>해당 기간 내역이 없습니다</Empty></Td></tr>
-            ) : (
-              filteredRecords.map((r) => {
-                const nights = r.checkinDate && r.checkoutDate
-                  ? Math.max(
-                      Math.round((new Date(r.checkoutDate) - new Date(r.checkinDate)) / (1000 * 60 * 60 * 24)),
-                      0
-                    )
-                  : '-';
-                return (
-                  <tr key={r.id}>
-                    <Td><IdText>#{r.id}</IdText></Td>
-                    <Td>
-                      <SpaceCell>
-                        {r.spaceName && <SpaceNameSm>{r.spaceName}</SpaceNameSm>}
-                        <StayNameSm>{r.stayName ?? `숙소 #${r.stayId}`}</StayNameSm>
-                      </SpaceCell>
-                    </Td>
-                    <Td>{r.primaryGuestName}</Td>
-                    <Td>{r.checkinDate}</Td>
-                    <Td>{r.checkoutDate}</Td>
-                    <Td>{nights}</Td>
-                    <Td>
-                      <AmtText $cancelled={['USER_CANCELLED', 'SELLER_CANCELLED', 'REFUND_COMPLETED'].includes(r.status)}>
-                        {fmt(r.totalPrice)}
-                      </AmtText>
-                    </Td>
-                    <Td>
-                      <StatusBadge $color={STATUS_COLOR[r.status]} $bg={STATUS_BG[r.status]}>
-                        {r.statusLabel ?? r.status}
-                      </StatusBadge>
-                    </Td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </Table>
-      </Card>
+            <SellerPagination pno={pno} total={totalPages} onPage={loadList} />
+          </Card>
+        </>
+      )}
     </Wrap>
   );
 }
@@ -289,318 +296,137 @@ export default function SalesPage() {
 
 const Wrap = styled.div`display: flex; flex-direction: column; gap: 24px;`;
 
-const PageHeader = styled.div`
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-`;
-
+const PageHeader = styled.div`display: flex; align-items: flex-start; justify-content: space-between;`;
 const TitleGroup = styled.div`display: flex; flex-direction: column; gap: 4px;`;
+const PageTitle  = styled.h1`font-size: 24px; font-weight: 700; color: ${({ theme }) => theme.colors.adminTextDark}; letter-spacing: -0.4px;`;
+const PageSub    = styled.p`font-size: 14px; color: ${({ theme }) => theme.colors.textMuted};`;
+const FetchTime  = styled.span`font-size: 12px; color: ${({ theme }) => theme.colors.textLight};`;
 
-const PageTitle = styled.h1`
-  font-size: 24px;
-  font-weight: 700;
-  color: ${({ theme }) => theme.colors.adminTextDark};
-  letter-spacing: -0.4px;
+const HeaderRight = styled.div`display: flex; align-items: center; gap: 10px;`;
+
+const ViewToggle = styled.div`display: flex; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;`;
+const ViewBtn = styled.button`
+  display: flex; align-items: center; gap: 5px;
+  padding: 0 14px; height: 34px; font-size: 13px; font-weight: 500; font-family: inherit; cursor: pointer;
+  background: ${({ $active }) => $active ? ACCENT : 'white'};
+  color: ${({ $active }) => $active ? 'white' : '#64748b'}; border: none; transition: all 0.15s;
+  &:hover { background: ${({ $active }) => $active ? ACCENT : '#f1f5f9'}; }
 `;
-
-const PageSub = styled.p`
-  font-size: 14px;
-  color: ${({ theme }) => theme.colors.textMuted};
-`;
-
-const FetchTime = styled.span`font-size: 12px; color: ${({ theme }) => theme.colors.textLight};`;
 
 const RefreshBtn = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  height: 36px;
-  padding: 0 14px;
-  border-radius: 8px;
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  font-size: 13px;
-  color: ${({ theme }) => theme.colors.textMid};
-  background: white;
-  font-family: inherit;
-  cursor: pointer;
-  opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
+  display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 8px;
+  border: 1px solid ${({ theme }) => theme.colors.border}; font-size: 13px;
+  color: ${({ theme }) => theme.colors.textMid}; background: white; font-family: inherit;
+  cursor: pointer; opacity: ${({ disabled }) => disabled ? 0.5 : 1};
   &:hover:not(:disabled) { border-color: ${ACCENT}; color: ${ACCENT}; }
 `;
 
-const ErrorBar = styled.p`
-  padding: 12px 16px;
-  background: #fee2e2;
-  color: #b91c1c;
-  font-size: 13px;
-  border-radius: 8px;
-`;
+const ErrorBar = styled.p`padding: 12px 16px; background: #fee2e2; color: #b91c1c; font-size: 13px; border-radius: 8px;`;
 
-const SummaryGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+const DateFilterBar = styled.div`
+  display: flex; align-items: center; gap: 16px; padding: 14px 20px;
+  background: white; border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 10px; box-shadow: ${({ theme }) => theme.shadows.card}; flex-wrap: wrap;
 `;
+const QuickBtns = styled.div`display: flex; gap: 6px;`;
+const QuickBtn = styled.button`
+  height: 32px; padding: 0 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  font-family: inherit; cursor: pointer;
+  border: 1px solid ${({ $active }) => $active ? ACCENT : '#e2e8f0'};
+  background: ${({ $active }) => $active ? ACCENT : 'white'};
+  color: ${({ $active }) => $active ? 'white' : '#64748b'}; transition: all 0.15s;
+  &:hover { border-color: ${ACCENT}; }
+`;
+const DateRangeGroup = styled.div`display: flex; align-items: center; gap: 8px;`;
+const DateInput = styled.input`
+  height: 34px; padding: 0 10px; border-radius: 8px; border: 1px solid ${({ theme }) => theme.colors.border};
+  font-size: 13px; font-family: inherit; color: ${({ theme }) => theme.colors.adminTextDark}; background: white;
+  &:focus { outline: none; border-color: ${ACCENT}; }
+`;
+const DateSep = styled.span`font-size: 14px; color: #94a3b8;`;
+const RangeLabel = styled.span`font-size: 12px; color: ${({ theme }) => theme.colors.textMuted}; margin-left: auto;`;
 
+const SummaryGrid = styled.div`display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;`;
 const SummaryCard = styled.div`
-  background: white;
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 10px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  box-shadow: ${({ theme }) => theme.shadows.card};
+  background: white; border: 1px solid ${({ theme }) => theme.colors.border}; border-radius: 10px;
+  padding: 20px; display: flex; flex-direction: column; gap: 6px; box-shadow: ${({ theme }) => theme.shadows.card};
 `;
-
 const IconBg = styled.div`
-  width: 38px;
-  height: 38px;
-  border-radius: 8px;
+  width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
   background: ${({ $color }) => $color};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 2px;
 `;
+const SummaryLabel = styled.p`font-size: 12px; font-weight: 500; color: ${({ theme }) => theme.colors.textMuted}; padding-top: 8px;`;
+const SummaryValue = styled.p`font-size: 22px; font-weight: 700; color: ${({ theme }) => theme.colors.adminTextDark}; letter-spacing: -0.4px;`;
+const SummaryNote  = styled.p`font-size: 11px; color: ${({ theme }) => theme.colors.textLight};`;
 
-const SummaryLabel = styled.p`
-  font-size: 11px;
-  font-weight: 500;
-  color: ${({ theme }) => theme.colors.textMuted};
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-`;
-
-const SummaryValue = styled.p`
-  font-size: 20px;
-  font-weight: 700;
-  color: ${({ theme }) => theme.colors.adminTextDark};
-  font-family: ${({ theme }) => theme.fonts.number};
-`;
-
-const SummaryNote = styled.p`
-  font-size: 12px;
-  color: ${({ $positive, theme }) =>
-    $positive === undefined ? theme.colors.textMuted :
-    $positive ? '#15803d' : '#dc2626'};
-  font-weight: ${({ $positive }) => ($positive !== undefined ? '600' : '400')};
-`;
-
-const BottomGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
+const CalCard = styled.div`
+  background: white; border: 1px solid #e2e8f0; border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden;
 `;
 
 const Card = styled.div`
-  background: white;
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: ${({ theme }) => theme.shadows.card};
+  background: white; border: 1px solid ${({ theme }) => theme.colors.border}; border-radius: 12px;
+  box-shadow: ${({ theme }) => theme.shadows.card}; overflow: hidden;
 `;
-
-const CardTitle = styled.h3`
-  font-size: 14px;
-  font-weight: 600;
-  color: ${({ theme }) => theme.colors.adminTextDark};
-  margin-bottom: 16px;
-`;
-
-const ChartLoading = styled.div`
-  height: 160px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  color: ${({ theme }) => theme.colors.textMuted};
-`;
+const CardTitle = styled.h2`font-size: 16px; font-weight: 700; color: ${({ theme }) => theme.colors.adminTextDark}; margin-bottom: 16px; padding: 20px 20px 0;`;
+const TableHeaderRow = styled.div`display: flex; align-items: center; justify-content: space-between; padding: 20px 20px 0;`;
 
 const ChartArea = styled.div`
   display: flex;
   align-items: flex-end;
-  gap: 12px;
-  height: 160px;
-  padding: 0 8px;
+  justify-content: center;
+  gap: 20px;
+  padding: 20px 32px 16px;
+  height: 180px;
 `;
-
 const BarGroup = styled.div`
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  position: relative;
-  &:hover > div:first-child { opacity: 1; }
-`;
-
-const BarTooltip = styled.div`
-  position: absolute;
-  top: -28px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #1e293b;
-  color: white;
-  font-size: 11px;
-  padding: 4px 8px;
-  border-radius: 4px;
-  white-space: nowrap;
-  opacity: 0;
-  transition: opacity 0.15s;
-  pointer-events: none;
-  z-index: 1;
-`;
-
-const BarWrap = styled.div`
-  flex: 1;
-  width: 100%;
-  display: flex;
-  align-items: flex-end;
-`;
-
-const Bar = styled.div`
-  width: 100%;
-  height: ${({ $pct }) => Math.max($pct, 4)}%;
-  background: ${ACCENT};
-  border-radius: 4px 4px 0 0;
-  opacity: 0.85;
-  transition: opacity 0.15s;
-  &:hover { opacity: 1; }
-`;
-
-const BarLabel = styled.p`
-  font-size: 11px;
-  color: ${({ theme }) => theme.colors.textMuted};
-`;
-
-const TopList = styled.div`display: flex; flex-direction: column; gap: 12px;`;
-
-const TopItem = styled.div`display: flex; align-items: center; gap: 10px;`;
-
-const RankBadge = styled.div`
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  background: ${({ $top }) => ($top ? ACCENT : '#f1f5f9')};
-  color: ${({ $top }) => ($top ? 'white' : '#64748b')};
-  font-size: 12px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 52px;
+  height: 100%;
   flex-shrink: 0;
 `;
-
-const TopInfo = styled.div`flex: 1; display: flex; flex-direction: column; gap: 3px;`;
-
-const TopName = styled.p`
-  font-size: 13px;
-  font-weight: 500;
-  color: ${({ theme }) => theme.colors.adminTextDark};
+const BarAmount = styled.span`
+  font-size: 11px;
+  font-weight: 700;
+  color: ${({ $empty }) => $empty ? '#cbd5e1' : '#0f172a'};
+  white-space: nowrap;
+  min-height: 16px;
 `;
-
-const TopSpace = styled.p`font-size: 11px; color: ${({ theme }) => theme.colors.textMuted};`;
-
-const TopBar = styled.div`
-  height: 4px;
-  background: ${({ theme }) => theme.colors.borderLight};
-  border-radius: 999px;
-  overflow: hidden;
-  margin-top: 2px;
+const BarWrap = styled.div`flex: 1; width: 100%; display: flex; align-items: flex-end;`;
+const Bar = styled.div`
+  width: 100%;
+  height: ${({ $pct, $empty }) => $empty ? '3px' : `${Math.max($pct, 4)}%`};
+  background: ${({ $empty }) => $empty ? '#e2e8f0' : ACCENT};
+  border-radius: 4px 4px 0 0;
+  transition: height 0.3s ease;
 `;
-
-const TopBarFill = styled.div`
-  height: 100%;
-  width: ${({ $pct }) => $pct}%;
-  background: ${ACCENT};
-  border-radius: 999px;
-`;
-
-const TopRevenue = styled.div`text-align: right; display: flex; flex-direction: column; gap: 2px; flex-shrink: 0;`;
-
-const RevenueAmt = styled.p`
-  font-size: 13px;
+const BarLabel = styled.span`
+  font-size: 12px;
   font-weight: 600;
-  color: ${({ theme }) => theme.colors.adminTextDark};
-  font-family: ${({ theme }) => theme.fonts.number};
-`;
-
-const RevenueCount = styled.p`font-size: 11px; color: ${({ theme }) => theme.colors.textMuted};`;
-
-const TableHeaderRow = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-`;
-
-const FilterSelect = styled.select`
-  height: 34px;
-  padding: 0 10px;
-  border-radius: 8px;
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  font-size: 13px;
-  color: ${({ theme }) => theme.colors.adminTextDark};
-  background: white;
-  font-family: inherit;
-  cursor: pointer;
+  color: #64748b;
+  white-space: nowrap;
 `;
 
 const Table = styled.table`width: 100%; border-collapse: collapse;`;
-
 const Th = styled.th`
-  text-align: left;
-  padding: 10px 12px;
-  font-size: 11px;
-  font-weight: 600;
-  color: ${({ theme }) => theme.colors.textMuted};
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  background: ${({ theme }) => theme.colors.bgSection};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-  white-space: nowrap;
+  text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 600;
+  color: ${({ theme }) => theme.colors.textMuted}; text-transform: uppercase; letter-spacing: 0.4px;
+  background: ${({ theme }) => theme.colors.bgSection}; border-bottom: 1px solid ${({ theme }) => theme.colors.border};
 `;
-
 const Td = styled.td`
-  padding: 11px 12px;
-  font-size: 13px;
-  color: ${({ theme }) => theme.colors.textMid};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
-  vertical-align: middle;
+  padding: 12px 14px; font-size: 13px; color: ${({ theme }) => theme.colors.textMid};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight}; vertical-align: middle;
 `;
-
-const Empty = styled.div`
-  padding: 40px;
-  text-align: center;
-  color: ${({ theme }) => theme.colors.textMuted};
-  font-size: 14px;
+const IdText     = styled.span`font-size: 12px; font-weight: 600; color: ${ACCENT};`;
+const AmtText    = styled.span`font-weight: 600; color: ${({ theme }) => theme.colors.adminTextDark};`;
+const CancelText = styled.span`font-weight: 600; color: #dc2626;`;
+const NetText    = styled.span`
+  font-weight: 700;
+  color: ${({ $cancelled }) => $cancelled ? '#94a3b8' : '#15803d'};
+  text-decoration: ${({ $cancelled }) => $cancelled ? 'line-through' : 'none'};
 `;
+const Empty = styled.div`padding: 48px; text-align: center; font-size: 13px; color: ${({ theme }) => theme.colors.textMuted};`;
 
-const IdText = styled.span`
-  font-family: 'Plus Jakarta Sans', monospace;
-  font-size: 12px;
-  color: ${({ theme }) => theme.colors.textMuted};
-`;
-
-const SpaceCell = styled.div`display: flex; flex-direction: column; gap: 2px;`;
-const SpaceNameSm = styled.p`font-size: 11px; color: ${({ theme }) => theme.colors.textLight};`;
-const StayNameSm = styled.p`font-size: 13px; font-weight: 500; color: ${({ theme }) => theme.colors.adminTextDark};`;
-
-const AmtText = styled.span`
-  font-family: ${({ theme }) => theme.fonts.number};
-  font-weight: 600;
-  color: ${({ $cancelled, theme }) => ($cancelled ? theme.colors.textLight : theme.colors.adminTextDark)};
-  text-decoration: ${({ $cancelled }) => ($cancelled ? 'line-through' : 'none')};
-`;
-
-const StatusBadge = styled.span`
-  display: inline-block;
-  padding: 3px 9px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 600;
-  color: ${({ $color }) => $color};
-  background: ${({ $bg }) => $bg};
-  white-space: nowrap;
-`;
