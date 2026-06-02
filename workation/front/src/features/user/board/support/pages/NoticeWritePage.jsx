@@ -35,10 +35,12 @@ export default function NoticeWritePage() {
     pinYn,
     setPinYn,
     files,
+    existingFiles,
     submitting,
     loadingEdit,
     handleFileChange,
     handleRemoveFile,
+    handleRemoveExistingFile,
     handleSubmit,
   } = useNoticeWrite();
 
@@ -84,35 +86,42 @@ export default function NoticeWritePage() {
           </PinToggle>
         </Row>
 
-        {!isEdit && (
-          <Row $alignTop>
-            <Label>파일 첨부</Label>
-            <FileArea>
-              <FileLabel htmlFor="notice-file-upload">
-                📎 파일 선택
-                <FileInput
-                  id="notice-file-upload"
-                  type="file"
-                  multiple
-                  onChange={handleFileChange}
-                />
-              </FileLabel>
-              <FileHint>모든 파일 형식 첨부 가능합니다</FileHint>
-              {files.length > 0 && (
-                <FileList>
-                  {files.map((file, i) => (
-                    <FileItem key={i}>
-                      <FileName>📎 {file.name}</FileName>
-                      <RemoveBtn onClick={() => handleRemoveFile(i)}>
-                        ✕
-                      </RemoveBtn>
-                    </FileItem>
-                  ))}
-                </FileList>
-              )}
-            </FileArea>
-          </Row>
-        )}
+        {/* 파일 첨부 — 등록/수정 모두 표시 */}
+        <Row $alignTop>
+          <Label>파일 첨부</Label>
+          <FileArea>
+            <FileLabel htmlFor="notice-file-upload">
+              📎 파일 선택
+              <FileInput
+                id="notice-file-upload"
+                type="file"
+                multiple
+                onChange={handleFileChange}
+              />
+            </FileLabel>
+            <FileHint>모든 파일 형식 첨부 가능합니다</FileHint>
+
+            <FileList>
+              {/* 기존 파일 목록 (수정 시) */}
+              {existingFiles.map((file, i) => (
+                <FileItem key={`existing-${file.id}`}>
+                  <FileName>📎 {file.originalFileName}</FileName>
+                  <RemoveBtn onClick={() => handleRemoveExistingFile(i)}>
+                    ✕
+                  </RemoveBtn>
+                </FileItem>
+              ))}
+
+              {/* 새로 추가한 파일 목록 */}
+              {files.map((file, i) => (
+                <FileItem key={`new-${i}`}>
+                  <FileName>📎 {file.name}</FileName>
+                  <RemoveBtn onClick={() => handleRemoveFile(i)}>✕</RemoveBtn>
+                </FileItem>
+              ))}
+            </FileList>
+          </FileArea>
+        </Row>
       </Board>
 
       <ButtonGroup>

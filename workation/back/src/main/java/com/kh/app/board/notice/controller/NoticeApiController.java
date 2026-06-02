@@ -24,11 +24,9 @@ public class NoticeApiController {
     private final NoticeService noticeService;
 
     // ─────────────────────────────────────────
-    // 일반 사용자 공개 API (delYn = 'N' 조건 있음)
+    // 일반 사용자 공개 API
     // ─────────────────────────────────────────
 
-    // 목록 조회
-    // GET /api/public/notices?page=0
     @GetMapping("/public/notices")
     public ResponseEntity<Page<NoticeListRespDto>> findAll(
             @RequestParam(defaultValue = "0") int page
@@ -36,8 +34,6 @@ public class NoticeApiController {
         return ResponseEntity.ok(noticeService.findAll(page));
     }
 
-    // 상세 조회
-    // GET /api/public/notices/{id}
     @GetMapping("/public/notices/{id}")
     public ResponseEntity<NoticeRespDto> findById(@PathVariable Long id) {
         return ResponseEntity.ok(noticeService.findById(id));
@@ -47,8 +43,6 @@ public class NoticeApiController {
     // Admin 전용 API
     // ─────────────────────────────────────────
 
-    // 목록 조회 (삭제된 것 포함)
-    // GET /api/admin/notices?page=0
     @GetMapping("/admin/notices")
     public ResponseEntity<Page<NoticeListRespDto>> findAllForAdmin(
             @RequestParam(defaultValue = "0") int page
@@ -56,15 +50,12 @@ public class NoticeApiController {
         return ResponseEntity.ok(noticeService.findAllForAdmin(page));
     }
 
-    // 상세 조회 (삭제된 것 포함)
-    // GET /api/admin/notices/{id}
     @GetMapping("/admin/notices/{id}")
     public ResponseEntity<NoticeRespDto> findByIdForAdmin(@PathVariable Long id) {
         return ResponseEntity.ok(noticeService.findByIdForAdmin(id));
     }
 
     // 등록
-    // POST /api/admin/notices
     @PostMapping(value = "/admin/notices", consumes = "multipart/form-data")
     public ResponseEntity<Long> create(
             @RequestPart("dto") NoticeCreateReqDto dto,
@@ -75,19 +66,19 @@ public class NoticeApiController {
         return ResponseEntity.status(HttpStatus.CREATED).body(id);
     }
 
-    // 수정
-    // PUT /api/admin/notices/{id}
-    @PutMapping("/admin/notices/{id}")
+    // 수정 — multipart로 변경 (파일 추가 + deletedFileIds 전송)
+    @PutMapping(value = "/admin/notices/{id}", consumes = "multipart/form-data")
     public ResponseEntity<Void> update(
             @PathVariable Long id,
-            @RequestBody NoticeUpdateReqDto dto
+            @RequestPart("dto") NoticeUpdateReqDto dto,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files,
+            @RequestParam(value = "deletedFileIds", required = false) List<Long> deletedFileIds
     ) {
-        noticeService.update(id, dto);
+        noticeService.update(id, dto, files, deletedFileIds);
         return ResponseEntity.ok().build();
     }
 
-    // 삭제 (소프트 삭제)
-    // DELETE /api/admin/notices/{id}
+    // 삭제
     @DeleteMapping("/admin/notices/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         noticeService.delete(id);
