@@ -1,10 +1,14 @@
 package com.kh.app.product.stay.repository;
 
 import com.kh.app.product.stay.dto.request.StaySearchReqDto;
+import com.kh.app.product.stay.dto.response.BookedPeriodResDto;
 import com.kh.app.product.stay.entity.QStayEntity;
 import com.kh.app.product.stay.entity.QStayOptionEntity;
 import com.kh.app.product.stay.entity.StayEntity;
 import com.kh.app.product.stay.entity.StayOption;
+import com.kh.app.transaction.reservation.entity.QReservationEntity;
+import com.kh.app.transaction.reservation.entity.ReservationStatus;
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
@@ -14,7 +18,10 @@ import org.springframework.stereotype.Repository;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @RequiredArgsConstructor
 @Repository
@@ -172,5 +179,52 @@ public class StayRepositoryImpl implements StayRepositoryCustom {
                         .groupBy(stayOption.stay.id)
                         .having(stayOption.stay.id.count().goe(options.size()))
         );
+    }
+
+    @Override
+    public Set<Long> findBookedStayIds(LocalDate startDate, LocalDate endDate) {
+        QReservationEntity reservation = QReservationEntity.reservationEntity;
+
+        List<Long> ids = queryFactory
+                .select(reservation.stay.id)
+                .from(reservation)
+                .where(
+                        reservation.checkinDate.lt(endDate),
+                        reservation.checkoutDate.gt(startDate),
+                        reservation.status.notIn(
+                                ReservationStatus.USER_CANCELLED,
+                                ReservationStatus.SELLER_CANCELLED,
+                                ReservationStatus.REFUND_COMPLETED
+                        )
+                )
+                .fetch();
+
+        return new HashSet<>(ids);
+    }
+
+    @Override
+    public List<BookedPeriodResDto> findBookedPeriods(Long stayId) {
+        QReservationEntity reservation = QReservationEntity.reservationEntity;
+
+        List<Tuple> tuples = queryFactory
+                .select(reservation.checkinDate, reservation.checkoutDate)
+                .from(reservation)
+                .where(
+                        reservation.stay.id.eq(stayId),
+                        reservation.status.notIn(
+                                ReservationStatus.USER_CANCELLED,
+                                ReservationStatus.SELLER_CANCELLED,
+                                ReservationStatus.REFUND_COMPLETED
+                        )
+                )
+                .orderBy(reservation.checkinDate.asc())
+                .fetch();
+
+        return tuples.stream()
+                .map(t -> BookedPeriodResDto.builder()
+                        .checkinDate(t.get(reservation.checkinDate))
+                        .checkoutDate(t.get(reservation.checkoutDate))
+                        .build())
+                .toList();
     }
 }

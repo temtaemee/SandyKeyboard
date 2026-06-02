@@ -16,6 +16,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.format.annotation.DateTimeFormat;
+
+import java.time.LocalDate;
 import java.util.List;
 
 @Tag(name = "Space - Public", description = "공간 공개 조회 API (visibleYn=Y + delYn=N 강제)")
@@ -37,11 +40,19 @@ public class SpacePublicApiController {
     @GetMapping
     public ResponseEntity<List<SpaceResDto>> searchList(
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Area area
+            @RequestParam(required = false) Area area,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) Integer capacity,
+            @RequestParam(required = false) List<Long> arcadeIds
     ) {
         SpaceSearchReqDto dto = new SpaceSearchReqDto();
         dto.setKeyword(keyword);
         dto.setArea(area);
+        dto.setStartDate(startDate);
+        dto.setEndDate(endDate);
+        dto.setCapacity(capacity);
+        dto.setArcadeIds(arcadeIds);
         return ResponseEntity.ok(spaceService.searchListForPublic(dto));
     }
 
