@@ -2,9 +2,11 @@ import styled from 'styled-components';
 import { Heart, Layout, MapPin, Star, Trash2 } from 'lucide-react';
 import useWishlist from '../hooks/useWishlist';
 import MyPageSidebar from '../components/MyPageSidebar';
+import { useNavigate } from 'react-router-dom';
 
 function MyWishlistPage() {
   const { wishlist, isLoading, asyncDeleteWishlist } = useWishlist();
+  const navi = useNavigate();
 
   if (isLoading) {
     return <div>로딩중...</div>;
@@ -27,7 +29,12 @@ function MyWishlistPage() {
 
           <CardList>
             {wishlist.map((item) => (
-              <Card key={item.wishlistId}>
+              <Card
+                key={item.wishlistId}
+                onClick={() => {
+                  navi(`/resv/space/${item.spaceId}`);
+                }}
+              >
                 <ThumbnailWrapper>
                   <Thumbnail
                     src={
@@ -60,7 +67,8 @@ function MyWishlistPage() {
                   </Rating>
 
                   <DeleteButton
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       asyncDeleteWishlist(item.wishlistId);
                     }}
                   >
@@ -82,6 +90,8 @@ function MyWishlistPage() {
 
 export default MyWishlistPage;
 
+/* ================= 교정된 스타일 컴포넌트 구역 ================= */
+
 const Container = styled.div`
   display: flex;
   min-height: calc(100vh - 160px);
@@ -90,20 +100,22 @@ const Container = styled.div`
 
 const Main = styled.main`
   flex: 1;
-  padding: 48px 32px;
+  padding: 48px; /* 💡 마이페이지와 완벽 동기화 (상하좌우 48px 대칭 패딩) */
 
-  display: flex;
-  justify-content: center;
+  /* ❌ 기존의 display: flex 및 justify-content: center 제거 완료! */
 `;
 
 const ContentWrapper = styled.div`
   width: 100%;
-  max-width: 980px;
+  max-width: 1200px; /* 💡 대시보드 카드의 와이드한 비율과 조화를 이루도록 확장 */
 `;
 
 const HeaderSection = styled.div`
   margin-bottom: 32px;
+  /* 💡 타이틀과 서브타이틀이 왼쪽 정렬된 메인 본문에 자연스럽게 녹아듭니다. */
 `;
+
+// ... 아래의 나머지 스타일 컴포넌트(Title, CardList 등)들은 기존 코드 그대로 유지하시면 됩니다!
 
 const Title = styled.h1`
   font-size: 34px;

@@ -50,9 +50,10 @@ function MyReservationPage() {
     return reservationList.filter((item) => {
       // 1. 확정된 예약 탭: 결제 완료(PAYMENT_COMPLETED) 또는 판매자 승인으로 확정된 상태(RESERVED)
       if (activeTab === '확정된 예약') {
-        return (
-          item.status === 'PAYMENT_COMPLETED' || item.status === 'RESERVED'
-        );
+        return item.status === 'RESERVED';
+      }
+      if (activeTab === '승인 대기') {
+        return item.status === 'PAYMENT_COMPLETED';
       }
 
       // 2. 이용 완료 탭: 숙소 이용이 완전히 끝난 상태(COMPLETED)
@@ -103,7 +104,13 @@ function MyReservationPage() {
 
         {/* 🟩 4. 탭 구역 동적 렌더링 및 활성화 이벤트 등록 */}
         <TabArea>
-          {['전체 예약', '확정된 예약', '이용 완료', '취소 내역'].map((tab) => (
+          {[
+            '전체 예약',
+            '승인 대기',
+            '확정된 예약',
+            '이용 완료',
+            '취소 내역',
+          ].map((tab) => (
             <TabButton
               key={tab}
               $active={activeTab === tab}

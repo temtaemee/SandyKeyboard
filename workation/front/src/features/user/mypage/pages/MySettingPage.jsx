@@ -117,14 +117,14 @@ const Container = styled.div`
 
 const Main = styled.main`
   flex: 1;
-  padding: 48px 32px;
-  display: flex;
-  justify-content: center;
+  padding: 48px; /* 💡 마이페이지/찜목록과 동일하게 48px 사방 패딩으로 통일 */
+
+  /* ❌ 기존 가운데 정렬을 일으키던 display: flex 및 justify-content 제거 완료! */
 `;
 
 const ContentWrapper = styled.div`
   width: 100%;
-  max-width: 980px;
+  max-width: 1200px; /* 💡 마이페이지 그리드 스펙인 1200px 와이드 뷰로 시원하게 확장 */
 `;
 
 const PageTitle = styled.h1`
