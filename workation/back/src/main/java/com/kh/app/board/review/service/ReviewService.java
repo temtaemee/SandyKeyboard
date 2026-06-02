@@ -188,11 +188,11 @@ public class ReviewService {
 
     // ReviewService에 추가할 메서드들
 
-    // seller용 - 본인 숙소 리뷰 목록 조회
+    // seller용 - 본인 숙소 리뷰 목록 조회 (공간별 필터 추가)
     @Transactional(readOnly = true)
-    public Page<ReviewListRespDto> findReviewsBySeller(Long memberId, int page) {
+    public Page<ReviewListRespDto> findReviewsBySeller(Long memberId, int page, Long spaceId) {
         Pageable pageable = PageRequest.of(page, 10);
-        return reviewRepository.findAllBySeller(memberId, pageable)
+        return reviewRepository.findAllBySeller(memberId, spaceId, pageable)
                 .map(review -> {
                     List<ReviewImageEntity> images =
                             reviewImageRepository.findAllByReviewIdAndDelYn(review.getId(), "N");
