@@ -70,6 +70,10 @@ public class MemberProfileEntity {
         this.addressDetail = addressDetail;
     }
 
+    public void assignCompany(CompanyEntity company){
+        this.company = company;
+    }
+
     public void updateProfileImageUrl(String profileImageUrl) {
         this.profileImageUrl = profileImageUrl;
     }

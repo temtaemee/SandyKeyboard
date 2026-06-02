@@ -24,7 +24,7 @@ public class CompanyEntity extends BaseEntity {
     @Column(name = "BUSINESS_NO", length = 50)
     private String businessNo;
 
-    public void update(CompanyCreateReqDto dto){
+    public void update(CompanyCreateReqDto dto) {
         this.companyName = dto.getCompanyName();
         this.businessNo = dto.getBusinessNo();
     }
