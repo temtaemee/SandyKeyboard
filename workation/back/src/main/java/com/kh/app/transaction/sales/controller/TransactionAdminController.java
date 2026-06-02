@@ -2,10 +2,7 @@ package com.kh.app.transaction.sales.controller;
 
 import com.kh.app.transaction.payout.dto.response.PayoutListResDto;
 import com.kh.app.transaction.payout.service.PayoutService;
-import com.kh.app.transaction.sales.dto.response.DashboardSummaryResDto;
-import com.kh.app.transaction.sales.dto.response.MonthlySalesStatsResDto;
-import com.kh.app.transaction.sales.dto.response.SalesSummaryListResDto;
-import com.kh.app.transaction.sales.dto.response.SalesSummaryResDto;
+import com.kh.app.transaction.sales.dto.response.*;
 import com.kh.app.transaction.sales.entity.SalesEntity;
 import com.kh.app.transaction.sales.service.SalesService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,6 +12,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api")
@@ -118,6 +117,12 @@ public class TransactionAdminController {
         return ResponseEntity.ok(salesService.getMonthlySalesStatistics(year, month));
     }
 
+    //프론트엔드 활용: 프론트엔드에서는 이 리스트를 받아서 Chart.js나 Recharts
+    // 같은 라이브러리에 넣으면, X축은 yearMonth, Y축은 totalNetSales로 하는 "월별 매출 추이 그래프"를 즉시 그릴 수 있습니다.
+    @GetMapping("/admin/sales/graph-stats")
+    public ResponseEntity<MonthlySalesGraphResDto> getGraphStats() {
+        return ResponseEntity.ok(salesService.getGraphStats());
+    }
 
 
 }
