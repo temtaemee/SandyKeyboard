@@ -1,21 +1,41 @@
-// src/features/user/destination/pages/SpaceDetailPage.jsx
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import useDestination from '../hooks/useDestination'; // 💡 훅 임포트
+import useDestination from '../hooks/useDestination';
+import useWishlist from '../../mypage/hooks/useWishlist';
 
 function SpaceDetailPage() {
   const { spaceId } = useParams();
   const navigate = useNavigate();
+
+  // 1. 훅은 항상 컴포넌트 최상단에서 호출
   const {
     currentSpace: space,
     loading,
     loadSpaceDetail,
     resetDetails,
-  } = useDestination(); // 💡 훅 연동
-  const [currentImgIdx, setCurrentImgIdx] = useState(0);
+  } = useDestination();
 
+  const { wishlist, asyncInsertWishlist, asyncDeleteWishlist } = useWishlist();
+
+  // 2. 찜 관련 상태 계산
+  const isWished =
+    Array.isArray(wishlist) &&
+    wishlist.some((item) => item.spaceId === Number(spaceId));
+  const wishItem = Array.isArray(wishlist)
+    ? wishlist.find((item) => item.spaceId === Number(spaceId))
+    : null;
+
+  const handleWishToggle = async () => {
+    if (!spaceId) return;
+    if (isWished && wishItem) {
+      await asyncDeleteWishlist(wishItem.wishlistId);
+    } else {
+      await asyncInsertWishlist(spaceId);
+    }
+  };
+
+  const [currentImgIdx, setCurrentImgIdx] = useState(0);
   const SERVER_HOST = 'http://localhost:80';
 
   useEffect(() => {
@@ -23,7 +43,7 @@ function SpaceDetailPage() {
       alert('존재하지 않거나 비공개된 공간입니다.');
       navigate('/resv/destination');
     });
-    return () => resetDetails(); // 이탈 시 클린업
+    return () => resetDetails();
   }, [spaceId]);
 
   if (loading || !space)
@@ -36,15 +56,12 @@ function SpaceDetailPage() {
     return `${SERVER_HOST}${rawPath.startsWith('/') ? '' : '/'}${rawPath}`;
   };
 
+  // 이미지 처리 로직
   const sliderImages = [];
-
-  // 1. 썸네일 추가
   if (space.thumbnailUrl) {
     const parsedThumb = getRealImageUrl(space.thumbnailUrl);
     if (parsedThumb) sliderImages.push(parsedThumb);
   }
-
-  // 2. 이제 pictures는 List<PictureInfo> 형태이므로 바로 filePath 접근 가능
   if (space.pictures && Array.isArray(space.pictures)) {
     space.pictures.forEach((p) => {
       const parsedUrl = getRealImageUrl(p.filePath);
@@ -52,8 +69,6 @@ function SpaceDetailPage() {
         sliderImages.push(parsedUrl);
     });
   }
-
-  // 3. 숙소 사진 추가 로직 유지
   if (space.stays && space.stays.length > 0) {
     space.stays.forEach((st) => {
       if (st.pictures && st.pictures.length > 0) {
@@ -122,7 +137,12 @@ function SpaceDetailPage() {
         </MainVisual>
 
         <ContentSection>
-          <SpaceName>{space.name}</SpaceName>
+          <SpaceName>
+            {space.name}
+            <WishButton onClick={handleWishToggle}>
+              {isWished ? '❤️' : '🤍'}
+            </WishButton>
+          </SpaceName>
           <SpaceSummary>
             {space.summary ||
               '바다 가까운 아늑하고 몰입도 높은 프리미엄 업무 환경'}
@@ -206,8 +226,8 @@ function SpaceDetailPage() {
   );
 }
 
+// ... (이하 Styled Components는 기존과 동일하게 유지하세요)
 export default SpaceDetailPage;
-
 /* ========================================================================= */
 /* Styled Components 비주얼 고도화 정의부 */
 /* ========================================================================= */
@@ -457,4 +477,15 @@ const EmptyText = styled.p`
   color: #94a3b8;
   text-align: center;
   padding: 40px 0;
+`;
+const WishButton = styled.button`
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  margin-left: 15px;
+  transition: transform 0.2s;
+  &:hover {
+    transform: scale(1.2);
+  }
 `;
