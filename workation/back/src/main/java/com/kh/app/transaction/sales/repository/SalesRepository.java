@@ -58,6 +58,13 @@ public interface SalesRepository extends JpaRepository<SalesEntity, Long> {
             "AND FUNCTION('MONTH', s.salesDate) = :month")
     Object[] sumSalesByYearMonth(@Param("year") int year, @Param("month") int month);
 
+    // 최근 6개월 12개월 매출
+    @Query("SELECT FUNCTION('YEAR', s.salesDate) as y, FUNCTION('MONTH', s.salesDate) as m, SUM(s.netSalesAmount) " +
+            "FROM SalesEntity s " +
+            "WHERE s.salesDate >= :startDate " +
+            "GROUP BY FUNCTION('YEAR', s.salesDate), FUNCTION('MONTH', s.salesDate) " +
+            "ORDER BY y DESC, m DESC")
+    List<Object[]> findMonthlySalesStats(@Param("startDate") LocalDateTime startDate);
 
 
 }

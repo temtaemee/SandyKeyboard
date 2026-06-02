@@ -2,10 +2,7 @@ package com.kh.app.transaction.sales.service;
 
 import com.kh.app.transaction.payment.entity.PaymentEntity;
 import com.kh.app.transaction.reservation.repository.ReservationRepository;
-import com.kh.app.transaction.sales.dto.response.AreaSalesResDto;
-import com.kh.app.transaction.sales.dto.response.DashboardSummaryResDto;
-import com.kh.app.transaction.sales.dto.response.MonthlySalesStatsResDto;
-import com.kh.app.transaction.sales.dto.response.SalesSummaryResDto;
+import com.kh.app.transaction.sales.dto.response.*;
 import com.kh.app.transaction.sales.entity.SalesEntity;
 import com.kh.app.transaction.sales.repository.SalesRepository;
 import lombok.RequiredArgsConstructor;
@@ -164,6 +161,26 @@ public class SalesService {
         return MonthlySalesStatsResDto.builder()
                 .totalSalesInfo(totalSalesInfo)
                 .areaSalesList(areaSalesList)
+                .build();
+    }
+
+
+    // 헬퍼 메서드에서 DTO 반환
+    public List<MonthlyStatsResDto> getRecentMonthlySales(int months) {
+        LocalDateTime startDate = LocalDateTime.now().minusMonths(months).withDayOfMonth(1).toLocalDate().atStartOfDay();
+        List<Object[]> results = salesRepository.findMonthlySalesStats(startDate);
+
+        return results.stream().map(row -> MonthlyStatsResDto.builder()
+                        .yearMonth(row[0] + "-" + String.format("%02d", ((Number)row[1]).intValue()))
+                        .totalNetSales(((Number) row[2]).longValue()) // 안전한 형변환
+                        .build())
+                .toList();
+    }
+
+    public MonthlySalesGraphResDto getGraphStats() {
+        return MonthlySalesGraphResDto.builder()
+                .sixMonths(getRecentMonthlySales(6))
+                .twelveMonths(getRecentMonthlySales(12))
                 .build();
     }
 
