@@ -9,6 +9,13 @@ const AREA_LABEL = {
   GYEONGBUK: '경북', JEONNAM: '전남', JEONBUK: '전북', JEJU: '제주',
 };
 
+const APPROVAL_LABEL = { PENDING: '승인 대기', APPROVED: '승인됨', REJECTED: '반려됨' };
+const APPROVAL_COLOR = {
+  PENDING:  { bg: '#fef3c7', color: '#92400e' },
+  APPROVED: { bg: '#d1fae5', color: '#065f46' },
+  REJECTED: { bg: '#fee2e2', color: '#991b1b' },
+};
+
 /**
  * 공간 목록 테이블
  * @param {array} spaces SpaceResDto[]
@@ -34,6 +41,7 @@ export default function SpaceTable({
             <Th>ID</Th>
             <Th>공간명</Th>
             <Th>지역</Th>
+            <Th>승인 상태</Th>
             <Th>노출여부</Th>
             <Th>등록일</Th>
             <Th>액션</Th>
@@ -51,6 +59,13 @@ export default function SpaceTable({
                 </SpaceNameBtn>
               </Td>
               <Td>{AREA_LABEL[space.area] ?? space.area ?? '-'}</Td>
+              <Td>
+                {space.approvalStatus ? (
+                  <ApprovalChip $status={space.approvalStatus}>
+                    {APPROVAL_LABEL[space.approvalStatus] ?? space.approvalStatus}
+                  </ApprovalChip>
+                ) : '-'}
+              </Td>
               <Td>
                 <VisibleCell>
                   <Badge visibleYn={space.visibleYn} />
@@ -180,4 +195,15 @@ const DeleteBtn = styled(ActionBtn)`
     background: #fee2e2;
     color: #b91c1c;
   }
+`;
+
+const ApprovalChip = styled.span`
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+  background: ${({ $status }) => APPROVAL_COLOR[$status]?.bg ?? '#f1f5f9'};
+  color: ${({ $status }) => APPROVAL_COLOR[$status]?.color ?? '#475569'};
 `;

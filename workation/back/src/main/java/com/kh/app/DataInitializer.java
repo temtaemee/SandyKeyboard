@@ -712,6 +712,7 @@ public class DataInitializer implements CommandLineRunner {
         for (int i = 0; i < completed.size(); i++) {
             reviewRepository.save(ReviewEntity.builder()
                     .member(completed.get(i).getMember())
+                    .reservation(completed.get(i))
                     .title(titles[i % titles.length])
                     .content(body)
                     .tag(tags[i % tags.length])
