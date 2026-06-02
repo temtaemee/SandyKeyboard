@@ -4,6 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { DollarSign, CalendarDays, Star, Building2, ChevronRight } from 'lucide-react';
 import { spaceApi } from '../api/spaceApi';
+import { salesApi } from '../api/salesApi';
+import { reservationApi } from '../api/reservationApi';
+import { sellerReviewApi } from '../api/reviewApi';
 
 /* ── 지역 라벨 맵 ── */
 const AREA_LABEL = {
@@ -129,11 +132,17 @@ const STATUS_MAP = {
 
 export default function SellerDashboardPage() {
   const navigate = useNavigate();
-  const [spaces, setSpaces] = useState([]);
+  const [spaces, setSpaces]           = useState([]);
   const [spacesLoading, setSpacesLoading] = useState(true);
   const [spacesError, setSpacesError] = useState(false);
   const [togglingIds, setTogglingIds] = useState(new Set());
-  const [toastMsg, setToastMsg] = useState(null);
+  const [toastMsg, setToastMsg]       = useState(null);
+
+  // 실제 API 연동 통계
+  const [salesSummary, setSalesSummary]     = useState(null);
+  const [resvTotal, setResvTotal]           = useState(null);
+  const [reviewCount, setReviewCount]       = useState(null);
+  const [recentResvs, setRecentResvs]       = useState([]);
 
   const showToast = (msg) => {
     setToastMsg(msg);
@@ -142,24 +151,42 @@ export default function SellerDashboardPage() {
 
   useEffect(() => {
     const load = async () => {
+      // 공간 목록
       try {
         const spacesRes = await spaceApi.getMySpaces();
-        const mySpaces = spacesRes.data.map((s) => ({
-          id: s.id,
-          name: s.name,
+        setSpaces(spacesRes.data.map((s) => ({
+          id: s.id, name: s.name,
           location: formatLocation(s.area, s.address1),
           visible: s.visibleYn === 'Y',
           approvalStatus: s.approvalStatus,
           approvedAt: s.approvedAt,
           adminHidden: s.adminHidden,
-        }));
-        setSpaces(mySpaces);
+        })));
       } catch (e) {
         console.error('공간 목록 로딩 실패', e);
         setSpacesError(true);
       } finally {
         setSpacesLoading(false);
       }
+
+      // 매출 요약
+      try {
+        const res = await salesApi.getSummary();
+        setSalesSummary(res.data);
+      } catch { setSalesSummary(null); }
+
+      // 예약 건수
+      try {
+        const res = await reservationApi.getList({ pno: 0 });
+        setResvTotal(res.data?.totalElements ?? 0);
+        setRecentResvs((res.data?.content ?? []).slice(0, 5));
+      } catch { setResvTotal(0); }
+
+      // 리뷰 수
+      try {
+        const res = await sellerReviewApi.getCount();
+        setReviewCount(res.data?.count ?? 0);
+      } catch { setReviewCount(0); }
     };
     load();
   }, []);
@@ -189,15 +216,27 @@ export default function SellerDashboardPage() {
     }
   };
 
+  const fmtWon = (n) => n != null ? `₩${Number(n).toLocaleString()}` : '-';
   const statCards = [
-    { id: 1, label: '이번달 매출', value: '₩4,820,000', icon: 'revenue' },
-    { id: 2, label: '이번달 예약', value: '38건',        icon: 'calendar' },
-    { id: 3, label: '최근 리뷰',  value: '12건',        icon: 'star' },
     {
-      id: 4,
-      label: '등록 공간',
+      id: 1, label: '누적 순매출',
+      value: salesSummary ? fmtWon(salesSummary.totalNetSales) : '-',
+      icon: 'revenue', to: '/seller/sales',
+    },
+    {
+      id: 2, label: '전체 예약',
+      value: resvTotal != null ? `${resvTotal}건` : '-',
+      icon: 'calendar', to: '/seller/reservations',
+    },
+    {
+      id: 3, label: '받은 리뷰',
+      value: reviewCount != null ? `${reviewCount}건` : '-',
+      icon: 'star', to: '/seller/reviews',
+    },
+    {
+      id: 4, label: '등록 공간',
       value: spacesLoading ? '-' : spacesError ? '-' : `${spaces.length}개`,
-      icon: 'building',
+      icon: 'building', to: '/seller/spaces',
     },
   ];
 
@@ -216,7 +255,7 @@ export default function SellerDashboardPage() {
         {statCards.map((card) => {
           const { el, bg } = STAT_ICON[card.icon];
           return (
-            <StatCard key={card.id}>
+            <StatCard key={card.id} onClick={() => navigate(card.to)}>
               <CardTop>
                 <IconBg $bg={bg}>{el}</IconBg>
               </CardTop>
@@ -333,26 +372,24 @@ export default function SellerDashboardPage() {
             </tr>
           </thead>
           <tbody>
-            {RECENT_RESERVATIONS.map((r) => {
-              const s = STATUS_MAP[r.status];
+            {recentResvs.length === 0 ? (
+              <Tr>
+                <Td colSpan={7} style={{ textAlign: 'center', color: '#94a3b8', padding: '32px' }}>
+                  예약 내역이 없습니다
+                </Td>
+              </Tr>
+            ) : recentResvs.map((r) => {
+              const s = STATUS_MAP[r.status] ?? { label: r.statusLabel ?? r.status, bg: '#f1f5f9', color: '#64748b' };
               return (
                 <Tr key={r.id}>
+                  <Td><ResvId>#{r.id}</ResvId></Td>
+                  <Td>{r.primaryGuestName ?? '-'}</Td>
+                  <Td>{r.spaceName ?? '-'} / {r.stayName ?? '-'}</Td>
+                  <Td>{r.checkinDate ?? '-'}</Td>
+                  <Td>{r.checkoutDate ?? '-'}</Td>
+                  <Td><Amount>₩{Number(r.totalPrice ?? 0).toLocaleString()}</Amount></Td>
                   <Td>
-                    <ResvId>{r.id}</ResvId>
-                  </Td>
-                  <Td>{r.guest}</Td>
-                  <Td>
-                    {r.space} / {r.stay}
-                  </Td>
-                  <Td>{r.checkIn}</Td>
-                  <Td>{r.checkOut}</Td>
-                  <Td>
-                    <Amount>{r.amount}</Amount>
-                  </Td>
-                  <Td>
-                    <StatusBadge $bg={s.bg} $color={s.color}>
-                      {s.label}
-                    </StatusBadge>
+                    <StatusBadge $bg={s.bg} $color={s.color}>{s.label}</StatusBadge>
                   </Td>
                 </Tr>
               );
@@ -401,10 +438,12 @@ const StatCard = styled.div`
   flex-direction: column;
   gap: 4px;
   box-shadow: ${({ theme }) => theme.shadows.card};
+  cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    border-color: ${ACCENT};
   }
 `;
 

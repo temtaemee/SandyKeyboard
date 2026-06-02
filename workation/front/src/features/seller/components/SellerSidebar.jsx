@@ -13,6 +13,7 @@ import {
   User,
   ExternalLink,
   LogOut,
+  RotateCcw,
 } from 'lucide-react';
 import { SELLER_NAV_ITEMS } from '../data/sellerConstants';
 
@@ -24,6 +25,7 @@ const ICONS = {
   trending: <TrendingUp size={18} />,
   credit: <CreditCard size={18} />,
   star: <Star size={18} />,
+  refund: <RotateCcw size={18} />,
   tag: <Tag size={18} />,
   user: <User size={18} />,
   external: <ExternalLink size={18} />,
