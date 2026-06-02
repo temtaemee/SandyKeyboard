@@ -23,8 +23,8 @@ public interface PayoutRepository extends JpaRepository<PayoutEntity, Long> {
     // 💡 특정 기간(정산 완료일 기준)의 정산금액 및 수수료 합계 조회
     @Query("SELECT SUM(p.payoutAmount), SUM(p.feeAmount) FROM PayoutEntity p " +
             "WHERE p.status = 'COMPLETED' " +
-            "AND FUNCTION('YEAR', p.payoutDate) = :year " +
-            "AND FUNCTION('MONTH', p.payoutDate) = :month")
+            "AND YEAR(p.payoutDate) = :year " +
+            "AND MONTH(p.payoutDate) = :month")
     List<Object[]> sumAmountByYearMonth(@Param("year") int year, @Param("month") int month);
 
 }

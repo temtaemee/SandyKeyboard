@@ -25,8 +25,8 @@ public interface SalesRepository extends JpaRepository<SalesEntity, Long> {
     List<SalesEntity> findUnprocessedSales(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
     // 💡 조건: 이번 달 매출 전표 데이터 중 누적된 총 취소 금액(cancelAmount)의 합산 구하기
-    @Query("SELECT COALESCE(SUM(s.cancelAmount), 0) FROM SalesEntity s " +
-            "WHERE s.salesDate >= :start AND s.salesDate <= :end")
+    @Query("SELECT COALESCE(SUM(r.refundAmount), 0) FROM RefundEntity r " +
+            "WHERE r.refundedAt >= :start AND r.refundedAt <= :end")
     long sumCancelAmountByMonth(
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
@@ -48,14 +48,14 @@ public interface SalesRepository extends JpaRepository<SalesEntity, Long> {
     // 어드민 이 지역별 매출조회
     @Query("SELECT s.payment.reservation.stay.space.area, SUM(s.netSalesAmount) " +
             "FROM SalesEntity s " +
-            "WHERE FUNCTION('YEAR', s.salesDate) = :year " +
-            "AND FUNCTION('MONTH', s.salesDate) = :month " +
+            "WHERE YEAR(s.salesDate) = :year " +
+            "AND MONTH(s.salesDate) = :month " +
             "GROUP BY s.payment.reservation.stay.space.area")
     List<Object[]> sumNetSalesByArea(@Param("year") int year, @Param("month") int month);
 
     @Query("SELECT SUM(s.salesAmount), SUM(s.cancelAmount), SUM(s.netSalesAmount) FROM SalesEntity s " +
-            "WHERE FUNCTION('YEAR', s.salesDate) = :year " +
-            "AND FUNCTION('MONTH', s.salesDate) = :month")
+            "WHERE YEAR(s.salesDate) = :year " +
+            "AND MONTH(s.salesDate) = :month")
     Object[] sumSalesByYearMonth(@Param("year") int year, @Param("month") int month);
 
     // 최근 6개월 12개월 매출

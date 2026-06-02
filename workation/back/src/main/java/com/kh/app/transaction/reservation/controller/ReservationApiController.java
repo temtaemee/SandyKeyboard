@@ -63,7 +63,7 @@ public class ReservationApiController {
 
 
 
-    //결제 완료후 보기
+
     @GetMapping("/user/reservation")
     public ResponseEntity<List<ReservationResDto>> getMyReservations(
             @AuthenticationPrincipal(expression = "username") String username
@@ -74,7 +74,7 @@ public class ReservationApiController {
         );
     }
 
-    //결제 완료후 보기
+
     // 일반 유저 예약 완료 후 상세보기 (통합 패키지 버전)
     @GetMapping("/user/reservation/{id}")
     public ResponseEntity<ReservationDetailResDto> getOne(@PathVariable Long id) {
