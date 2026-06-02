@@ -8,6 +8,8 @@ import com.kh.app.transaction.sales.dto.response.SalesSummaryResDto;
 import com.kh.app.transaction.sales.entity.SalesEntity;
 import com.kh.app.transaction.sales.service.SalesService;
 import io.swagger.v3.oas.annotations.Operation;
+import lombok.Builder;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -51,7 +53,6 @@ public class TransactionAdminController {
     public ResponseEntity<Page<PayoutListResDto>> getAdminPayoutList(
             @RequestParam(defaultValue = "0") int pno
     ) {
-        // PayoutService에 추가할 메서드 호출
         Page<PayoutListResDto> result = payoutService.getAllPayoutList(pno);
         return ResponseEntity.ok(result);
     }
@@ -99,6 +100,15 @@ public class TransactionAdminController {
         return ResponseEntity.ok(responsePage);
     }
 
+    //어드민 월별정산 조회
+    @GetMapping("/admin/payout/summary")
+    @Operation(summary = "정산 통계 조회", description = "기본값은 자동 계산된 기간, 파라미터 전달 시 해당 월 정산 요약 조회")
+    public ResponseEntity<com.kh.app.transaction.payout.dto.response.PayoutSummaryResDto> getPayoutSummary(
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer month
+    ) {
+        return ResponseEntity.ok(payoutService.getPayoutStatistics(year, month));
+    }
 
 
 
