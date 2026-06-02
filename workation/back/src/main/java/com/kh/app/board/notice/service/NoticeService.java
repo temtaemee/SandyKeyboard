@@ -34,9 +34,8 @@ public class NoticeService {
     private final MemberRepository memberRepository;
     private final S3Service s3Service;
 
-    // ── 일반 사용자용 (delYn = 'N' 조건 있음) ──────────────────
+    // ── 일반 사용자용 ──────────────────────────────────────
 
-    // 목록 조회
     public Page<NoticeListRespDto> findAll(int page) {
         Pageable pageable = PageRequest.of(page, 10);
         return noticeRepository
@@ -44,7 +43,6 @@ public class NoticeService {
                 .map(NoticeListRespDto::from);
     }
 
-    // 상세 조회
     public NoticeRespDto findById(Long id) {
         NoticeEntity notice = noticeRepository
                 .findByIdAndDelYn(id, "N")
@@ -54,9 +52,8 @@ public class NoticeService {
         return NoticeRespDto.from(notice, files);
     }
 
-    // ── Admin용 (delYn 조건 없이 전체 조회) ──────────────────
+    // ── Admin용 ──────────────────────────────────────────
 
-    // 목록 조회 (삭제된 것 포함)
     public Page<NoticeListRespDto> findAllForAdmin(int page) {
         Pageable pageable = PageRequest.of(page, 10);
         return noticeRepository
@@ -64,7 +61,6 @@ public class NoticeService {
                 .map(NoticeListRespDto::from);
     }
 
-    // 상세 조회 (삭제된 것 포함)
     public NoticeRespDto findByIdForAdmin(Long id) {
         NoticeEntity notice = noticeRepository
                 .findById(id)
@@ -74,9 +70,8 @@ public class NoticeService {
         return NoticeRespDto.from(notice, files);
     }
 
-    // ── 등록/수정/삭제 ──────────────────────────────────────
+    // ── 등록 ─────────────────────────────────────────────
 
-    // 등록
     @Transactional
     public Long create(NoticeCreateReqDto dto, List<MultipartFile> files) {
         MemberEntity member = memberRepository.findById(dto.getMemberId())
@@ -85,41 +80,63 @@ public class NoticeService {
         NoticeEntity notice = dto.toEntity(member);
         noticeRepository.save(notice);
 
-        if (files != null && !files.isEmpty()) {
-            for (MultipartFile file : files) {
-                if (file.isEmpty()) continue;
-                try {
-                    String s3Key = s3Service.upload(file, "notice");
-                    NoticeFileEntity noticeFile = NoticeFileEntity.builder()
-                            .notice(notice)
-                            .originalFileName(file.getOriginalFilename())
-                            .s3Key(s3Key)
-                            .build();
-                    noticeFileRepository.save(noticeFile);
-                } catch (IOException e) {
-                    log.error("파일 업로드 실패", e);
-                    throw new RuntimeException("파일 업로드에 실패했습니다.", e);
-                }
-            }
-        }
+        uploadFiles(notice, files);
+
         return notice.getId();
     }
 
-    // 수정
+    // ── 수정 ─────────────────────────────────────────────
+
     @Transactional
-    public void update(Long id, NoticeUpdateReqDto dto) {
+    public void update(Long id, NoticeUpdateReqDto dto,
+                       List<MultipartFile> newFiles, List<Long> deletedFileIds) {
         NoticeEntity notice = noticeRepository
-                .findById(id) // admin은 삭제된 것도 수정 가능
+                .findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("공지사항을 찾을 수 없습니다."));
+
+        // 제목/내용/고정여부 수정
         notice.update(dto.getTitle(), dto.getContent(), dto.getPinYn());
+
+        // 삭제 요청된 기존 파일 소프트 삭제
+        if (deletedFileIds != null && !deletedFileIds.isEmpty()) {
+            deletedFileIds.forEach(fileId ->
+                    noticeFileRepository.findById(fileId)
+                            .ifPresent(NoticeFileEntity::delete)
+            );
+        }
+
+        // 새 파일 추가
+        uploadFiles(notice, newFiles);
     }
 
-    // 삭제 (소프트 삭제)
+    // ── 삭제 ─────────────────────────────────────────────
+
     @Transactional
     public void delete(Long id) {
         NoticeEntity notice = noticeRepository
-                .findById(id) // admin은 삭제된 것도 재삭제 가능
+                .findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("공지사항을 찾을 수 없습니다."));
         notice.delete();
+    }
+
+    // ── 공통 파일 업로드 유틸 ────────────────────────────
+
+    private void uploadFiles(NoticeEntity notice, List<MultipartFile> files) {
+        if (files == null || files.isEmpty()) return;
+        for (MultipartFile file : files) {
+            if (file.isEmpty()) continue;
+            try {
+                String s3Key = s3Service.upload(file, "notice");
+                NoticeFileEntity noticeFile = NoticeFileEntity.builder()
+                        .notice(notice)
+                        .originalFileName(file.getOriginalFilename())
+                        .s3Key(s3Key)
+                        .build();
+                noticeFileRepository.save(noticeFile);
+            } catch (IOException e) {
+                log.error("파일 업로드 실패", e);
+                throw new RuntimeException("파일 업로드에 실패했습니다.", e);
+            }
+        }
     }
 }

@@ -22,8 +22,10 @@ export function useNoticeWrite() {
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [pinYn, setPinYn] = useState('N'); // 공지 고정 여부
-  const [files, setFiles] = useState([]);
+  const [pinYn, setPinYn] = useState('N');
+  const [files, setFiles] = useState([]); // 새로 추가할 파일
+  const [existingFiles, setExistingFiles] = useState([]); // 기존 파일 목록
+  const [deletedFileIds, setDeletedFileIds] = useState([]); // 삭제할 기존 파일 ID
   const [submitting, setSubmitting] = useState(false);
   const [loadingEdit, setLoadingEdit] = useState(isEdit);
 
@@ -34,6 +36,7 @@ export function useNoticeWrite() {
         setTitle(data.title ?? '');
         setContent(data.content ?? '');
         setPinYn(data.pinYn ?? 'N');
+        setExistingFiles(data.files ?? []); // 기존 파일 목록 세팅
       })
       .catch((err) => {
         console.error('수정할 공지를 불러오지 못했습니다.', err);
@@ -49,8 +52,18 @@ export function useNoticeWrite() {
     e.target.value = '';
   }
 
+  // 새로 추가한 파일 제거
   function handleRemoveFile(i) {
     setFiles((prev) => prev.filter((_, idx) => idx !== i));
+  }
+
+  // 기존 파일 제거 (삭제 ID 목록에 추가)
+  function handleRemoveExistingFile(i) {
+    const removed = existingFiles[i];
+    if (removed?.id) {
+      setDeletedFileIds((prev) => [...prev, removed.id]);
+    }
+    setExistingFiles((prev) => prev.filter((_, idx) => idx !== i));
   }
 
   async function handleSubmit() {
@@ -60,7 +73,12 @@ export function useNoticeWrite() {
     try {
       setSubmitting(true);
       if (isEdit) {
-        await updateNotice(editId, { title, content, pinYn });
+        await updateNotice(
+          editId,
+          { title, content, pinYn },
+          files,
+          deletedFileIds
+        );
       } else {
         const memberId = getMemberIdFromToken();
         if (!memberId) return alert('로그인이 필요합니다.');
@@ -84,10 +102,12 @@ export function useNoticeWrite() {
     pinYn,
     setPinYn,
     files,
+    existingFiles,
     submitting,
     loadingEdit,
     handleFileChange,
     handleRemoveFile,
+    handleRemoveExistingFile,
     handleSubmit,
   };
 }
