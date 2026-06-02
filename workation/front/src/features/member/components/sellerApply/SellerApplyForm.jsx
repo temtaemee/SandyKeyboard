@@ -37,6 +37,13 @@ function SellerApplyForm() {
   // 3. 신청 제출
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const businessNumRegex = /^[0-9]{10}$/;
+    if (!businessNumRegex.test(formData.businessNumber)) {
+      alert('사업자 등록번호 10자리를 정확히 입력해주세요. (숫자만 입력)');
+      return; // 🚀 여기서 차단하여 백엔드로 허수 데이터가 가는 것을 방지!
+    }
+
     try {
       // 주소 중복을 피하기 위해 baseURL 이후의 경로만 작성
       const response = await api.post('/user/seller', formData);
@@ -72,7 +79,10 @@ function SellerApplyForm() {
           <Label>사업자 등록번호</Label>
           <Input
             name="businessNumber"
-            placeholder="'-' 제외하고 숫자만 입력"
+            type="text"
+            inputMode="numeric"
+            maxLength={10}
+            placeholder="'-' 제외하고 숫자 10자리만 입력 (법인번호 X)"
             onChange={handleChange}
             required
           />
