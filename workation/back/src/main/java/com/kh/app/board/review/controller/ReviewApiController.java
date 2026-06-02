@@ -42,9 +42,7 @@ public class ReviewApiController {
 
     // 댓글 목록 조회
     @GetMapping("/api/public/reviews/{id}/comments")
-    public ResponseEntity<List<CommentRespDto>> findComments(
-            @PathVariable Long id
-    ) {
+    public ResponseEntity<List<CommentRespDto>> findComments(@PathVariable Long id) {
         return ResponseEntity.ok(reviewService.findComments(id));
     }
 
@@ -54,30 +52,20 @@ public class ReviewApiController {
             @RequestParam(defaultValue = "0") int page,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-
         Long memberId = userDetails.getUserVo().getId();
-
-        return ResponseEntity.ok(
-                reviewService.findMyReview(memberId, page)
-        );
+        return ResponseEntity.ok(reviewService.findMyReview(memberId, page));
     }
 
     // 리뷰 등록
     @PostMapping("/api/user/reviews")
     public ResponseEntity<Long> create(
             @RequestPart("dto") ReviewCreateReqDto dto,
-            @RequestPart(value = "images", required = false)
-            List<MultipartFile> images,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-
         Long memberId = userDetails.getUserVo().getId();
-
         Long id = reviewService.create(dto, images, memberId);
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(id);
+        return ResponseEntity.status(HttpStatus.CREATED).body(id);
     }
 
     // 리뷰 수정
@@ -85,15 +73,11 @@ public class ReviewApiController {
     public ResponseEntity<Void> update(
             @PathVariable Long id,
             @RequestPart("dto") ReviewUpdateReqDto dto,
-            @RequestPart(value = "images", required = false)
-            List<MultipartFile> images,
-            @RequestParam(value = "deletedImageIds", required = false)
-            List<Long> deletedImageIds,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images,
+            @RequestParam(value = "deletedImageIds", required = false) List<Long> deletedImageIds,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-
         reviewService.update(id, dto, images, deletedImageIds);
-
         return ResponseEntity.ok().build();
     }
 
@@ -103,9 +87,7 @@ public class ReviewApiController {
             @PathVariable Long id,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-
         reviewService.delete(id);
-
         return ResponseEntity.ok().build();
     }
 
@@ -116,15 +98,9 @@ public class ReviewApiController {
             @RequestBody CommentCreateReqDto dto,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-
         Long memberId = userDetails.getUserVo().getId();
-
-        Long commentId =
-                reviewService.createComment(id, dto, memberId);
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(commentId);
+        Long commentId = reviewService.createComment(id, dto, memberId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(commentId);
     }
 
     // 댓글 삭제
@@ -134,9 +110,35 @@ public class ReviewApiController {
             @PathVariable Long commentId,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-
         reviewService.deleteComment(commentId);
+        return ResponseEntity.ok().build();
+    }
 
+    // ─────────────────────────────────────────
+    // SELLER 전용
+    // ─────────────────────────────────────────
+
+    // 본인 숙소 리뷰 목록 조회
+// GET /api/seller/reviews?page=0
+    @GetMapping("/api/seller/reviews")
+    public ResponseEntity<Page<ReviewListRespDto>> findReviewsBySeller(
+            @RequestParam(defaultValue = "0") int page,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long memberId = userDetails.getUserVo().getId();
+        return ResponseEntity.ok(reviewService.findReviewsBySeller(memberId, page));
+    }
+
+    // 본인 숙소 리뷰 수정
+// PUT /api/seller/reviews/{id}
+    @PutMapping("/api/seller/reviews/{id}")
+    public ResponseEntity<Void> updateBySeller(
+            @PathVariable Long id,
+            @RequestBody ReviewUpdateReqDto dto,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long memberId = userDetails.getUserVo().getId();
+        reviewService.updateBySeller(id, dto, memberId);
         return ResponseEntity.ok().build();
     }
 }
