@@ -7,6 +7,7 @@ import com.kh.app.transaction.reservation.dto.response.ReservationAdminListResDt
 import com.kh.app.transaction.reservation.dto.response.ReservationDetailResDto;
 import com.kh.app.transaction.reservation.dto.response.ReservationResDto;
 import com.kh.app.transaction.reservation.entity.ReservationEntity;
+import com.kh.app.transaction.reservation.entity.ReservationStatus;
 import com.kh.app.transaction.reservation.service.ReservationService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.persistence.EntityNotFoundException;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -125,20 +128,18 @@ public class ReservationApiController {
 
 
     // 판매자 전용 예약 목록 및 동적 조건 검색 조회
-    @Operation(summary = "판매자 보유 숙소 예약 목록 검색 조회", description = "로그인한 판매자가 예약번호, 예약자명, 체크인 날짜로 필터링하여 검색합니다.")
+    @Operation(summary = "판매자 보유 숙소 예약 목록 검색 조회", description = "...")
     @GetMapping("/seller/reservation/list")
     public ResponseEntity<Page<ReservationAdminListResDto>> getSellerReservationList(
             @RequestParam(defaultValue = "0") int pno,
             @AuthenticationPrincipal(expression = "username") String sellerUsername,
             @RequestParam(required = false) Long reservationId,
             @RequestParam(required = false) String guestName,
-            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate checkinDate
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkinDate,
+            @RequestParam(required = false) ReservationStatus status // 💡 추가
     ) {
-        log.info("판매자 예약 동적 검색 요청 - 판매자: {}, 예약번호: {}, 예약자명: {}, 체크인날짜: {}",
-                sellerUsername, reservationId, guestName, checkinDate);
-
         Page<ReservationAdminListResDto> reservationPage =
-                reservationService.getSellerReservationList(pno, sellerUsername, reservationId, guestName, checkinDate);
+                reservationService.getSellerReservationList(pno, sellerUsername, reservationId, guestName, checkinDate, status);
 
         return ResponseEntity.ok(reservationPage);
     }

@@ -306,10 +306,10 @@ public class ReservationService {
      * 💡 판매자(Seller) 전용 예약 목록 조회 (동적 다중 검색 기능 탑재)
      */
     public Page<ReservationAdminListResDto> getSellerReservationList(
-            int pno, String sellerUsername, Long reservationId, String guestName, java.time.LocalDate checkinDate
+            int pno, String sellerUsername, Long reservationId, String guestName, LocalDate checkinDate, ReservationStatus status
     ) {
-        org.springframework.data.domain.PageRequest pageRequest = org.springframework.data.domain.PageRequest.of(pno, 10);
-        return reservationRepository.findSellerReservationList(pageRequest, sellerUsername, reservationId, guestName, checkinDate);
+        PageRequest pageRequest = PageRequest.of(pno, 10);
+        return reservationRepository.findSellerReservationList(pageRequest, sellerUsername, reservationId, guestName, checkinDate, status);
     }
 
     /**

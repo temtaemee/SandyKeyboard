@@ -2,9 +2,12 @@ package com.kh.app.transaction.reservation.repository;
 
 import com.kh.app.transaction.reservation.dto.response.ReservationAdminListResDto;
 import com.kh.app.transaction.reservation.entity.ReservationEntity;
+import com.kh.app.transaction.reservation.entity.ReservationStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDate;
 import java.util.Optional;
 
 public interface ReservationRepositoryCustom {
@@ -23,11 +26,12 @@ public interface ReservationRepositoryCustom {
     Optional<ReservationEntity> findAdminOneById(Long id);
 
     Page<ReservationAdminListResDto> findSellerReservationList(
-            org.springframework.data.domain.Pageable pageable,
+            Pageable pageable,
             String sellerUsername,
-            Long reservationId,      // 💡 추가
-            String guestName,        // 💡 추가
-            java.time.LocalDate checkinDate // 💡 추가 (날짜 검색용)
+            Long reservationId,
+            String guestName,
+            LocalDate checkinDate,
+            ReservationStatus status // 💡 추가
     );
 
     Optional<ReservationEntity> findSellerOneById(Long id);
