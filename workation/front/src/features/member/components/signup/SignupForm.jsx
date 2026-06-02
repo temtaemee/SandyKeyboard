@@ -1,90 +1,79 @@
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom'; // 🚀 useLocation은 불필요하므로 제거하고 하나로 통일
 import styled from 'styled-components';
 import useJoin from '../../hooks/useJoin';
 import AddressSearchModal from '../../../../home/components/AddressSearchModal';
-import api from '../../../../app/api/axios';
+import CompanySearchModal from './CompanySearchModal';
 
 function SignupForm() {
-  const { fetchJoin, navi } = useJoin();
+  // 💡 커스텀 훅에서 필요한 인터페이스만 구조분해할당으로 깔끔하게 수급받습니다.
+  const {
+    isSocial,
+    vo,
+    isModalOpen,
+    setIsModalOpen,
+    handleChange,
+    handleAddressSelect,
+    handleSubmit,
+    setPasswordCheck,
+    navi,
+    isCompanyModalOpen,
+    setIsCompanyModalOpen,
+    selectedCompanyName,
+    handleCompanySelect,
+    handleClearCompany, // 💡 추가 수급
+  } = useJoin();
 
-  // 🚀 모든 쿼리 스트링 파싱을 하나로 통일
-  const [searchParams] = useSearchParams();
-  const isSocial = searchParams.get('type') === 'social';
-  const socialEmail = searchParams.get('email') || '';
-  const socialProfileImageUrl = searchParams.get('profileImageUrl') || ''; // 카카오가 던져준 사진 주소
-
-  // 🎯 핀포인트 교정: useState 최초 생성 시점에 소셜 데이터를 미리 꽂아둡니다!
-  const [vo, setVo] = useState({
-    name: '',
-    username: isSocial ? socialEmail : '',
-    password: isSocial ? 'SOCIAL_AUTHENTICATED_BY_KAKAO' : '',
-    phone: '',
-    email: isSocial ? socialEmail : '',
-    preferredArea: '',
-    zonecode: '',
-    profileImageUrl: isSocial ? socialProfileImageUrl : '', // 🚀 초기값에 다이렉트 주입하여 빈칸 전송 버그 해결!
-    address: '',
-    addressDetail: '',
-  });
-
-  const [passwordCheck, setPasswordCheck] = useState(
-    isSocial ? 'SOCIAL_AUTHENTICATED_BY_KAKAO' : ''
-  );
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // 🚀 초기값에서 데이터를 선제 가드했기 때문에, 이 useEffect는 초기 마운트 시 패스워드 정합성 유지만 가볍게 처리합니다.
-  useEffect(() => {
-    if (isSocial && socialEmail && socialProfileImageUrl) {
-      // ⚠️ 주소 모달 리렌더링 시 데이터 유실 방어용 if문
-      setVo((prev) => ({
-        ...prev,
-        username: socialEmail,
-        email: socialEmail,
-        password: 'SOCIAL_AUTHENTICATED_BY_KAKAO',
-        profileImageUrl: socialProfileImageUrl,
-      }));
-      setPasswordCheck('SOCIAL_AUTHENTICATED_BY_KAKAO');
-    }
-  }, [isSocial, socialEmail, socialProfileImageUrl]);
-
-  function handleChange(e) {
-    const { name, value } = e.target;
-    setVo((prev) => ({ ...prev, [name]: value }));
-  }
-
-  const handleAddressSelect = (selectedAddress) => {
-    setVo((prev) => ({
-      ...prev,
-      zonecode: selectedAddress.zonecode,
-      address: selectedAddress.address,
-    }));
+  // 🛠️ 내부 서브 컴포넌트 1: 소셜 아바타 프리뷰 존
+  const renderSocialAvatar = () => {
+    if (!isSocial || !vo.profileImageUrl) return null;
+    return (
+      <PreviewAvatarZone>
+        <img src={vo.profileImageUrl} alt="카카오 프로필 미리보기" />
+        <span className="preview-label">카카오 프로필 사진 연동 완료</span>
+      </PreviewAvatarZone>
+    );
   };
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (isSocial) {
-      try {
-        // 🚀 이제 vo.profileImageUrl에 값이 확실하게 보장된 채 전송됩니다.
-        await api.post('/guest/social-join', vo);
-        const tempToken = searchParams.get('tempToken');
-        if (tempToken) {
-          localStorage.setItem('accessToken', tempToken);
-        }
-        alert('방문을 환영합니다! 모래묻은 키보드 연동이 완료되었습니다. 🦀🔵');
-        navi('/');
-      } catch (error) {
-        console.error(error);
-        alert('소셜 회원정보 저장 중 오류가 발생했습니다.');
-      }
-    } else {
-      if (vo.password !== passwordCheck) {
-        alert('비밀번호가 일치하지 않습니다.');
-        return;
-      }
-      await fetchJoin(vo);
-    }
-  }
+  // 🛠️ 내부 서브 컴포넌트 2: 일반 회원 전용 크리덴셜 입력 필드
+  const renderGeneralCredentials = () => {
+    if (isSocial) return null;
+    return (
+      <>
+        <InputWrapper>
+          <Label>아이디</Label>
+          <Input
+            type="text"
+            name="username"
+            value={vo.username}
+            placeholder="ID입력"
+            onChange={handleChange}
+            required
+          />
+        </InputWrapper>
+
+        <InputWrapper>
+          <Label>비밀번호</Label>
+          <Input
+            type="password"
+            name="password"
+            placeholder="••••••••"
+            onChange={handleChange}
+            required
+          />
+        </InputWrapper>
+
+        <InputWrapper>
+          <Label>비밀번호 확인</Label>
+          <Input
+            type="password"
+            name="password2"
+            placeholder="••••••••"
+            onChange={(e) => setPasswordCheck(e.target.value)}
+            required
+          />
+        </InputWrapper>
+      </>
+    );
+  };
 
   return (
     <Card>
@@ -243,6 +232,42 @@ function SignupForm() {
             <option value="JEJU">제주</option>
           </Select>
         </InputWrapper>
+
+        <InputWrapper>
+          <Label>소속 기업 (선택)</Label>
+          <AddressRow>
+            <Input
+              type="text"
+              placeholder="오른쪽 버튼을 눌러 기업을 검색하세요"
+              value={selectedCompanyName}
+              readOnly // 💡 유저가 타이핑 오타 내지 못하게 차단
+            />
+            {selectedCompanyName ? (
+              <AddressButton
+                type="button"
+                style={{ borderColor: '#ef4444', color: '#ef4444' }}
+                onClick={handleClearCompany}
+              >
+                선택 취소
+              </AddressButton>
+            ) : (
+              <AddressButton
+                type="button"
+                onClick={() => setIsCompanyModalOpen(true)}
+              >
+                기업 검색
+              </AddressButton>
+            )}
+          </AddressRow>
+        </InputWrapper>
+
+        {/* 💡 기업 검색 모달 컴포넌트 하단에 조건부 배치 */}
+        {isCompanyModalOpen && (
+          <CompanySearchModal
+            onClose={() => setIsCompanyModalOpen(false)}
+            onSelect={handleCompanySelect}
+          />
+        )}
 
         <AgreeArea>
           <input type="checkbox" required />

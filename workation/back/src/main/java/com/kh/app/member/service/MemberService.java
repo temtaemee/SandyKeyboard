@@ -1,6 +1,9 @@
 package com.kh.app.member.service;
 
+import com.kh.app.board.review.repository.CommentRepository;
 import com.kh.app.common.dto.PageRespDto;
+import com.kh.app.company.entity.CompanyEntity;
+import com.kh.app.company.repository.CompanyRepository;
 import com.kh.app.member.dto.request.*;
 import com.kh.app.member.dto.response.*;
 import com.kh.app.member.entity.*;
@@ -9,6 +12,7 @@ import com.kh.app.member.repository.MemberRepository;
 import com.kh.app.member.repository.ProfileRepository;
 import com.kh.app.member.repository.SellerRepository;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.SimpleMailMessage;
@@ -35,6 +39,7 @@ public class MemberService {
     private final Map<String, String> authCodeStore
             = new ConcurrentHashMap<>();
     private final Set<String> verifiedEmailSet = new HashSet<>();
+    private final CompanyRepository companyRepository;
 
     @Transactional
     public void join(MemberJoinReqDto dto) {
@@ -48,7 +53,15 @@ public class MemberService {
 
         // PROFILE 저장
         MemberProfileEntity profile = dto.toProfileEntity(member);
-        profileRepository.save(profile);
+        MemberProfileEntity memberProfile = profileRepository.save(profile);
+        if (dto.getCompanyId() != null) {
+            // 팀원이 만들어둔 companyRepository를 주입받아 사용합니다.
+            CompanyEntity company = companyRepository.findById(dto.getCompanyId())
+                    .orElseThrow(() -> new EntityNotFoundException("해당 기업 정보가 존재하지 않습니다."));
+
+            // 2. 생성된 memberEntity 객체에 기업 할당
+            memberProfile.assignCompany(company);
+        }
 
     }
 
