@@ -45,6 +45,19 @@ public interface SalesRepository extends JpaRepository<SalesEntity, Long> {
             "ORDER BY s.id DESC")
     Page<SalesEntity> findBySellerId(@Param("sellerId") Long sellerId, Pageable pageable);
 
+    // 어드민 이 지역별 매출조회
+    @Query("SELECT s.payment.reservation.stay.space.area, SUM(s.netSalesAmount) " +
+            "FROM SalesEntity s " +
+            "WHERE FUNCTION('YEAR', s.salesDate) = :year " +
+            "AND FUNCTION('MONTH', s.salesDate) = :month " +
+            "GROUP BY s.payment.reservation.stay.space.area")
+    List<Object[]> sumNetSalesByArea(@Param("year") int year, @Param("month") int month);
+
+    @Query("SELECT SUM(s.salesAmount), SUM(s.cancelAmount), SUM(s.netSalesAmount) FROM SalesEntity s " +
+            "WHERE FUNCTION('YEAR', s.salesDate) = :year " +
+            "AND FUNCTION('MONTH', s.salesDate) = :month")
+    Object[] sumSalesByYearMonth(@Param("year") int year, @Param("month") int month);
+
 
 
 }

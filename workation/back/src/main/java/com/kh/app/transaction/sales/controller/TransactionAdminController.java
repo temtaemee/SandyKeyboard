@@ -3,13 +3,12 @@ package com.kh.app.transaction.sales.controller;
 import com.kh.app.transaction.payout.dto.response.PayoutListResDto;
 import com.kh.app.transaction.payout.service.PayoutService;
 import com.kh.app.transaction.sales.dto.response.DashboardSummaryResDto;
+import com.kh.app.transaction.sales.dto.response.MonthlySalesStatsResDto;
 import com.kh.app.transaction.sales.dto.response.SalesSummaryListResDto;
 import com.kh.app.transaction.sales.dto.response.SalesSummaryResDto;
 import com.kh.app.transaction.sales.entity.SalesEntity;
 import com.kh.app.transaction.sales.service.SalesService;
 import io.swagger.v3.oas.annotations.Operation;
-import lombok.Builder;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -108,6 +107,15 @@ public class TransactionAdminController {
             @RequestParam(required = false) Integer month
     ) {
         return ResponseEntity.ok(payoutService.getPayoutStatistics(year, month));
+    }
+
+    //어드민 지역별 매출 조회
+    @GetMapping("/admin/sales/monthly-stats")
+    public ResponseEntity<MonthlySalesStatsResDto> getMonthlyStats(
+            @RequestParam int year,
+            @RequestParam int month
+    ) {
+        return ResponseEntity.ok(salesService.getMonthlySalesStatistics(year, month));
     }
 
 

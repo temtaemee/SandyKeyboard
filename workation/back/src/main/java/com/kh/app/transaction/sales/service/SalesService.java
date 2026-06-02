@@ -2,7 +2,9 @@ package com.kh.app.transaction.sales.service;
 
 import com.kh.app.transaction.payment.entity.PaymentEntity;
 import com.kh.app.transaction.reservation.repository.ReservationRepository;
+import com.kh.app.transaction.sales.dto.response.AreaSalesResDto;
 import com.kh.app.transaction.sales.dto.response.DashboardSummaryResDto;
+import com.kh.app.transaction.sales.dto.response.MonthlySalesStatsResDto;
 import com.kh.app.transaction.sales.dto.response.SalesSummaryResDto;
 import com.kh.app.transaction.sales.entity.SalesEntity;
 import com.kh.app.transaction.sales.repository.SalesRepository;
@@ -17,7 +19,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -139,6 +143,31 @@ public class SalesService {
                 .totalNetSales(totalNetSales)
                 .build();
     }
+
+    @Transactional(readOnly = true)
+    public MonthlySalesStatsResDto getMonthlySalesStatistics(int year, int month) {
+        // 1. 전체 매출 통계 조회
+        Object[] totalRow = salesRepository.sumSalesByYearMonth(year, month);
+
+        SalesSummaryResDto totalSalesInfo = SalesSummaryResDto.builder()
+                .totalSales(totalRow != null && totalRow[0] != null ? (Long) totalRow[0] : 0L)
+                .totalCancel(totalRow != null && totalRow[1] != null ? (Long) totalRow[1] : 0L)
+                .totalNetSales(totalRow != null && totalRow[2] != null ? (Long) totalRow[2] : 0L)
+                .build();
+
+        // 2. 지역별 매출 조회 및 팩토리 메서드 사용
+        List<AreaSalesResDto> areaSalesList = salesRepository.sumNetSalesByArea(year, month).stream()
+                .map(row -> AreaSalesResDto.from((com.kh.app.product.space.entity.Area) row[0], (Long) row[1]))
+                .toList();
+
+        // 3. 빌더를 사용한 깔끔한 DTO 반환
+        return MonthlySalesStatsResDto.builder()
+                .totalSalesInfo(totalSalesInfo)
+                .areaSalesList(areaSalesList)
+                .build();
+    }
+
+
 
 
 
