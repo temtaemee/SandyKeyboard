@@ -35,7 +35,8 @@ function SignupForm() {
 
   // 🚀 초기값에서 데이터를 선제 가드했기 때문에, 이 useEffect는 초기 마운트 시 패스워드 정합성 유지만 가볍게 처리합니다.
   useEffect(() => {
-    if (isSocial && socialEmail) {
+    if (isSocial && socialEmail && socialProfileImageUrl) {
+      // ⚠️ 주소 모달 리렌더링 시 데이터 유실 방어용 if문
       setVo((prev) => ({
         ...prev,
         username: socialEmail,

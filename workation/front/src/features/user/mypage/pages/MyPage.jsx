@@ -56,10 +56,8 @@ function MyPage() {
 
               <ProfileInfo>
                 <UserName>{memberInfo?.name || '이름 없음'}</UserName>
-                <UserSubTitle>Remote Explorer</UserSubTitle>
 
                 <BadgeArea>
-                  {/* 관리하지 않는 등급 배지는 삭제 처리를 완료했습니다. ✨ */}
                   <JoinDate>{formatDate(memberInfo?.joinDate)} 가입</JoinDate>
                 </BadgeArea>
 
@@ -174,8 +172,13 @@ function MyPage() {
                 </ReservationInfo>
 
                 <ButtonArea>
-                  <PrimaryButton>예약 상세 확인</PrimaryButton>
-                  <SecondaryButton>예약 변경/취소</SecondaryButton>
+                  <PrimaryButton
+                    onClick={() => {
+                      navi(`/mypage/reservation/${currentRes.reservationId}`);
+                    }}
+                  >
+                    예약 상세 확인
+                  </PrimaryButton>
                 </ButtonArea>
               </ReservationContent>
             </ReservationCard>
@@ -193,7 +196,12 @@ function MyPage() {
               </EmptyHistoryText>
             ) : (
               pastWorkations.map((history) => (
-                <HistoryItem key={history.reservationId}>
+                <HistoryItem
+                  key={history.reservationId}
+                  onClick={() => {
+                    navi(`/mypage/reservation/${history.reservationId}`);
+                  }}
+                >
                   <HistoryThumb
                     src={history.workspaceImageUrl}
                     alt={history.workspaceName}
@@ -522,6 +530,18 @@ const HistoryItem = styled.div`
   margin-bottom: 18px;
   border-bottom: 1px solid #f1f5f9;
   padding-bottom: 14px;
+
+  /* 💡 디테일 강화 추가 스펙 */
+  cursor: pointer; /* 1. 마우스 올렸을 때 손가락 모양으로 변경 */
+  transition: all 0.2s ease-in-out; /* 2. 호버 효과가 부드럽게 일어나도록 애니메이션 추가 */
+  border-radius: 12px; /* 3. 호버 시 배경색이 둥글게 예쁘게 퍼지도록 처리 */
+
+  &:hover {
+    background-color: #f8fafc; /* 4. 마우스 올렸을 때 은은한 회색빛 배경색 추가 */
+    padding-left: 8px; /* (선택) 5. 오른쪽으로 살짝 밀리는 모션 디테일 */
+    padding-right: 8px; /* (선택) 5. 패딩 좌우 균형 맞추기 */
+  }
+
   &:last-child {
     border-bottom: none;
     padding-bottom: 0;

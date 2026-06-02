@@ -35,6 +35,12 @@ public class MyPageService {
     private final StayService stayService;
     private final SpaceService spaceService;
 
+    private static final List<String> INVALID_STATUSES = List.of(
+            ReservationStatus.USER_CANCELLED.name(),
+            ReservationStatus.SELLER_CANCELLED.name(),
+            ReservationStatus.REFUND_COMPLETED.name()
+    );
+
     public MyPageDashboardRespDto getDashboardData(Long memberId, String username) {
 
         // 1. 회원 정보 조회
@@ -71,15 +77,17 @@ public class MyPageService {
                 .filter(res -> List.of("PENDING", "PAYMENT_COMPLETED", "RESERVED").contains(res.getStatus()))
                 .count();
 
-        // ================= ⭐ 하드코딩 통계 데이터 깨부수기 끝 ⭐ =================
+        // 4. 현재 진행 중인 예약 필터링 (취소/환불되지 않은 유효한 예약 중 첫 번째 건)
+        ReservationResDto currentValidRes = myReservations.stream()
+                .filter(res -> res.getStatus() != null)
+                .filter(res -> !INVALID_STATUSES.contains(res.getStatus())) // 취소, 환불 제외 💡
+                .findFirst() // 조건에 맞는 가장 첫 번째 건 추출 💡
+                .orElse(null);
 
-        // 4. 첫 번째 예약 정보가 있다면 방 상세 정보 및 공간 주소 연동 처리
         MyPageDashboardRespDto.CurrentReservationDto currentResDto = null;
-        if (!myReservations.isEmpty()) {
-            ReservationResDto res = myReservations.get(0);
-
+        if (currentValidRes != null) {
             try {
-                StayResDto stayInfo = stayService.selectOne(res.getStayId());
+                StayResDto stayInfo = stayService.selectOne(currentValidRes.getStayId());
                 SpaceResDto spaceInfo = spaceService.selectOne(stayInfo.getSpaceId());
 
                 String mainImageUrl = (stayInfo.getPictures() != null && !stayInfo.getPictures().isEmpty())
@@ -87,11 +95,11 @@ public class MyPageService {
                         : "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1200";
 
                 currentResDto = MyPageDashboardRespDto.CurrentReservationDto.builder()
-                        .reservationId(res.getId())
-                        .workspaceName(res.getStayName())
+                        .reservationId(currentValidRes.getId())
+                        .workspaceName(currentValidRes.getStayName())
                         .roomTypeName(stayInfo.getName())
-                        .startDate(res.getCheckinDate() != null ? res.getCheckinDate().atStartOfDay() : null)
-                        .endDate(res.getCheckoutDate() != null ? res.getCheckoutDate().atStartOfDay() : null)
+                        .startDate(currentValidRes.getCheckinDate() != null ? currentValidRes.getCheckinDate().atStartOfDay() : null)
+                        .endDate(currentValidRes.getCheckoutDate() != null ? currentValidRes.getCheckoutDate().atStartOfDay() : null)
                         .locationAddress(spaceInfo.getAddress1())
                         .roomImageUrl(mainImageUrl)
                         .build();
@@ -100,10 +108,14 @@ public class MyPageService {
             }
         }
 
-        // 5. 지난 워케이션 다시 보기 매핑 (최대 2건)
+        // 5. 지난 워케이션 다시 보기 매핑 (현재 예약으로 노출된 건은 제외하고, 취소 안 된 건 최대 2건)
+        final Long currentResId = (currentValidRes != null) ? currentValidRes.getId() : null; // 비교용 ID 추출
+
         List<MyPageDashboardRespDto.PastWorkationDto> pastList = myReservations.stream()
-                .skip(1)
-                .limit(2)
+                .filter(res -> res.getStatus() != null)
+                .filter(res -> !INVALID_STATUSES.contains(res.getStatus())) // 취소, 환불 제외 💡
+                .filter(res -> currentResId == null || !res.getId().equals(currentResId))    // 현재 대시보드 뜬 건 제외 💡
+                .limit(2) // 최대 2건
                 .map(res -> {
                     String pastImageUrl = "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=400";
                     try {
