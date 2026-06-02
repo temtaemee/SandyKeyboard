@@ -117,8 +117,8 @@ public class TransactionAdminController {
         return ResponseEntity.ok(salesService.getMonthlySalesStatistics(year, month));
     }
 
-    //프론트엔드 활용: 프론트엔드에서는 이 리스트를 받아서 Chart.js나 Recharts
-    // 같은 라이브러리에 넣으면, X축은 yearMonth, Y축은 totalNetSales로 하는 "월별 매출 추이 그래프"를 즉시 그릴 수 있습니다.
+    //프론트엔드 활용: 프론트엔드에서는 이 리스트를 받아서 Chart.js나 Recharts 같은 라이브러리에 넣으면
+    //  X축은 yearMonth, Y축은 totalNetSales로 하는 "월별 매출 추이 그래프"를 즉시 그릴 수 있습니다.
     @GetMapping("/admin/sales/graph-stats")
     public ResponseEntity<MonthlySalesGraphResDto> getGraphStats() {
         return ResponseEntity.ok(salesService.getGraphStats());
