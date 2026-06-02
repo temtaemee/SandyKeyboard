@@ -59,11 +59,11 @@ export default function RefundPage() {
         <Table>
           <colgroup>
             <col width="70" /><col width="90" /><col /><col width="130" />
-            <col width="130" /><col width="110" /><col width="80" />
+            <col width="130" /><col width="110" />
           </colgroup>
           <thead>
             <tr>
-              {['환불#', '예약#', '공간 / 스테이', '환불금액', '환불사유', '처리일시', '상세'].map((h) => (
+              {['환불#', '예약#', '스테이 / 예약자', '환불금액', '환불사유', '처리일시'].map((h) => (
                 <Th key={h}>{h}</Th>
               ))}
             </tr>
@@ -74,21 +74,18 @@ export default function RefundPage() {
             ) : list.length === 0 ? (
               <tr><Td colSpan={7}><Empty>환불 내역이 없습니다</Empty></Td></tr>
             ) : list.map((r) => (
-              <Tr key={r.refundId ?? r.id}>
+              <Tr key={r.refundId ?? r.id} $clickable onClick={() => setDetail(r)}>
                 <Td><IdText>#{r.refundId ?? r.id}</IdText></Td>
                 <Td><IdText>#{r.reservationId}</IdText></Td>
                 <Td>
                   <StayCell>
-                    <SpaceText>{r.spaceName ?? '-'}</SpaceText>
                     <StayText>{r.stayName ?? '-'}</StayText>
+                    {r.guestName && <GuestText>{r.guestName} ({r.memberUsername})</GuestText>}
                   </StayCell>
                 </Td>
                 <Td><AmtText>{fmt(r.refundAmount)}</AmtText></Td>
-                <Td>{REASON_LABEL[r.refundReason] ?? r.refundReason ?? '-'}</Td>
+                <Td>{REASON_LABEL[r.refundReasonLabel] ?? r.refundReasonLabel ?? '-'}</Td>
                 <Td>{r.refundedAt?.slice(0, 16).replace('T', ' ') ?? '-'}</Td>
-                <Td>
-                  <DetailBtn onClick={() => setDetail(r)}>상세</DetailBtn>
-                </Td>
               </Tr>
             ))}
           </tbody>
@@ -108,10 +105,10 @@ export default function RefundPage() {
             <ModalBody>
               {[
                 ['예약번호',  `#${detail.reservationId}`],
-                ['공간',      detail.spaceName],
                 ['스테이',    detail.stayName],
+                ['예약자',    detail.guestName ? `${detail.guestName} (${detail.memberUsername})` : null],
                 ['환불금액',  fmt(detail.refundAmount)],
-                ['환불사유',  REASON_LABEL[detail.refundReason] ?? detail.refundReason],
+                ['환불사유',  REASON_LABEL[detail.refundReasonLabel] ?? detail.refundReasonLabel],
                 ['처리일시',  detail.refundedAt?.slice(0, 16).replace('T', ' ')],
                 ['트랜잭션키', detail.transactionKey],
               ].map(([k, v]) => (
@@ -148,13 +145,17 @@ const Card = styled.div`background: white; border: 1px solid ${({ theme }) => th
 const Table = styled.table`width: 100%; border-collapse: collapse;`;
 const Th = styled.th`text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 600; color: ${({ theme }) => theme.colors.textMuted}; text-transform: uppercase; letter-spacing: 0.4px; background: ${({ theme }) => theme.colors.bgSection}; border-bottom: 1px solid ${({ theme }) => theme.colors.border};`;
 const Td = styled.td`padding: 12px 14px; font-size: 13px; color: ${({ theme }) => theme.colors.textMid}; border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight}; vertical-align: middle;`;
-const Tr = styled.tr`&:hover { background: ${({ theme }) => theme.colors.bgSection}; }`;
+const Tr = styled.tr`
+  cursor: ${({ $clickable }) => $clickable ? 'pointer' : 'default'};
+  &:hover { background: ${({ theme }) => theme.colors.bgSection}; }
+`;
 const IdText = styled.span`font-size: 12px; font-weight: 600; color: ${ACCENT};`;
 const StayCell = styled.div`display: flex; flex-direction: column; gap: 2px;`;
 const SpaceText = styled.p`font-size: 11px; color: ${({ theme }) => theme.colors.textLight};`;
-const StayText = styled.p`font-size: 13px; font-weight: 500; color: ${({ theme }) => theme.colors.adminTextDark};`;
+const StayText  = styled.p`font-size: 13px; font-weight: 500; color: ${({ theme }) => theme.colors.adminTextDark};`;
+const GuestText = styled.p`font-size: 11px; color: ${({ theme }) => theme.colors.textMuted};`;
 const AmtText = styled.span`font-weight: 700; color: #dc2626;`;
-const DetailBtn = styled.button`font-size: 12px; font-weight: 600; color: ${ACCENT}; cursor: pointer; font-family: inherit; &:hover { text-decoration: underline; }`;
+
 const Empty = styled.div`padding: 60px; text-align: center; font-size: 14px; color: ${({ theme }) => theme.colors.textMuted};`;
 
 
