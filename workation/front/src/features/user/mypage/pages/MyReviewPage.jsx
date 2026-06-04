@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Pencil, Trash2, Search, Star } from 'lucide-react';
-import { deleteReview, getReviewList } from '../../board/review/api/reviewApi';
+import { deleteReview, getMyReviewList } from '../../board/review/api/reviewApi';
 import MyPageSidebar from '../components/MyPageSidebar';
 import { useNavigate } from 'react-router-dom';
 
@@ -13,7 +13,7 @@ function MyReviewPage() {
 
   // 2. API 호출 및 데이터 로드
   useEffect(() => {
-    getReviewList(0) // 우선 0페이지 호출
+    getMyReviewList(0) // 내 리뷰 목록 API 호출
       .then((data) => {
         // Spring Boot Pageable 응답 구조일 경우 보통 data.content에 리스트가 들어있습니다.
         // 만약 컨트롤러에서 List<ReviewListRespDto> 자체를 반환한다면 그냥 'data'를 넣으시면 됩니다.
