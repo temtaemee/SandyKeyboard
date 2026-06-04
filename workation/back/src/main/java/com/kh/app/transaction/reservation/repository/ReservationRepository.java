@@ -37,10 +37,11 @@ public interface ReservationRepository extends JpaRepository<ReservationEntity, 
             @Param("end") LocalDate end
     );
 
-    // 💡 1. 예약 저장 시 겹치는 예약이 있는지 확인하는 방어 쿼리
     @Query("SELECT COUNT(r) FROM ReservationEntity r " +
             "WHERE r.stay.id = :stayId " +
             "AND r.checkinDate < :checkoutDate " +
+            // 💡 중요: 체크아웃 날짜가 체크인 날짜보다 '커야만(>) 겹치는 것'입니다.
+            // 같으면(=) 겹치지 않는 것으로 간주합니다.
             "AND r.checkoutDate > :checkinDate " +
             "AND r.status IN (com.kh.app.transaction.reservation.entity.ReservationStatus.PAYMENT_COMPLETED, " +
             "                 com.kh.app.transaction.reservation.entity.ReservationStatus.RESERVED, " +
@@ -60,5 +61,17 @@ public interface ReservationRepository extends JpaRepository<ReservationEntity, 
     List<ReservationEntity> findFullyBookedDates(@Param("stayId") Long stayId);
 
 
+    @Query("SELECT r FROM ReservationEntity r " +
+            "WHERE r.stay.id = :stayId " +
+            "AND r.checkinDate < :checkoutDate " +
+            "AND r.checkoutDate > :checkinDate " +
+            "AND r.status IN (com.kh.app.transaction.reservation.entity.ReservationStatus.PAYMENT_COMPLETED, " +
+            "                 com.kh.app.transaction.reservation.entity.ReservationStatus.RESERVED, " +
+            "                 com.kh.app.transaction.reservation.entity.ReservationStatus.COMPLETED)")
+    List<ReservationEntity> findConflictReservations(
+            @Param("stayId") Long stayId,
+            @Param("checkinDate") LocalDate checkinDate,
+            @Param("checkoutDate") LocalDate checkoutDate
+    );
 
 }
