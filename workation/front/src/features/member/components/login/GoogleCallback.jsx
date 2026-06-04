@@ -2,6 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../../app/api/axios';
+import { restoreAccount } from '../../api/memberApi';
 
 function GoogleCallback() {
   const navigate = useNavigate();

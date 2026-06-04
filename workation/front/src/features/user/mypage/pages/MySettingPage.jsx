@@ -12,8 +12,8 @@ function MySettingPage() {
 
   async function accountDelete() {
     try {
-      const result = confirm(
-        '정말 탈퇴하시겠습니까? 데이터는 복구되지 않습니다.'
+      const result = window.confirm(
+        '탈퇴하시겠습니까? 계정 정보는 일정 기간 동안 보관되며, 추후 다시 로그인하시면 언제든 복구할 수 있습니다'
       );
       if (!result) return;
 
