@@ -172,9 +172,11 @@ function MyReservationDetailPage() {
             <ProductCard>
               <ProductImage
                 src={
-                  stay.imageUrl ||
-                  space.imageUrl ||
-                  'https://via.placeholder.com/800x450?text=No+Image'
+                  // 💡 stay.pictures[0]이 존재하면 그 경로를, 없으면 기존대로 space.imageUrl 등을 사용
+                  stay.pictures && stay.pictures.length > 0
+                    ? stay.pictures[0].filePath
+                    : space.imageUrl ||
+                      'https://via.placeholder.com/800x450?text=No+Image'
                 }
                 alt={stay.name || space.name || '상품 이미지'}
               />

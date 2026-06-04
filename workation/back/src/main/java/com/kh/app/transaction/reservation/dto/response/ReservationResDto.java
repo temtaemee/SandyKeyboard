@@ -3,17 +3,20 @@ package com.kh.app.transaction.reservation.dto.response;
 import com.kh.app.transaction.reservation.entity.ReservationEntity;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.time.LocalDate;
 
 @Getter
 @Builder
+@ToString
 public class ReservationResDto {
 
     private Long id;
     private Long memberId;
     private Long stayId;
     private String stayName;          // 💡 화면에 보여줄 숙소명 필드 추가
+    private String stayImageUrl;
 
     private Integer guestCount;
     private String primaryGuestName;
@@ -29,7 +32,7 @@ public class ReservationResDto {
     private String statusLabel;       // 한글 라벨 (예약 대기, 결제 완료 등)
 
 
-    public static ReservationResDto from(ReservationEntity entity) {
+    public static ReservationResDto from(ReservationEntity entity,String stayImageUrl ) {
         // 💡 널 포인터 예외(NPE)를 방지하기 위한 안전한 숙소 정보 추출
         Long extractedStayId = null;
         String extractedStayName = null;
@@ -46,7 +49,7 @@ public class ReservationResDto {
                 // 💡 임시 stayId 대신 객체 그래프 탐색 구조로 변경 완료
                 .stayId(extractedStayId)
                 .stayName(extractedStayName)
-
+                .stayImageUrl(stayImageUrl )
                 .guestCount(entity.getGuestCount())
                 .primaryGuestName(entity.getPrimaryGuestName())
                 .checkinDate(entity.getCheckinDate())
