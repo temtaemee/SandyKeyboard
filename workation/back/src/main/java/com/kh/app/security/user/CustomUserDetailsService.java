@@ -23,6 +23,9 @@ public class CustomUserDetailsService implements UserDetailsService {
         MemberEntity entity = memberRepository
                 .findByUsername(username)
                 .orElseThrow(()-> new UsernameNotFoundException("회원 없음"));
+        if (entity.getDeletedAt() != null) {
+            throw new UsernameNotFoundException("탈퇴 처리된 계정입니다.");
+        }
 
         List<String> roles = entity.getRoleSet()
                 .stream()

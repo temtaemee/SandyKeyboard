@@ -5,6 +5,7 @@ import com.kh.app.member.dto.response.SocialLoginRespDto;
 import com.kh.app.member.entity.MemberEntity;
 import com.kh.app.member.entity.SocialAccountEntity;
 import com.kh.app.member.entity.MemberProfileEntity;
+import com.kh.app.member.exception.SocialWithdrawnUserException;
 import com.kh.app.member.repository.MemberRepository;
 import com.kh.app.member.repository.ProfileRepository;
 import com.kh.app.member.repository.SocialAccountRepository;
@@ -13,6 +14,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
@@ -57,7 +59,7 @@ public class KakaoAuthService {
         }
 
         // 3. DB 회원 검증 및 신규 유저 판단 플래그 세팅
-        Optional<MemberEntity> memberOpt = memberRepository.findByUsername(email);
+        Optional<MemberEntity> memberOpt = memberRepository.findMemberByUsername(email);
         MemberEntity memberEntity;
         boolean isNewUser = false;
 
@@ -77,6 +79,11 @@ public class KakaoAuthService {
             isNewUser = true;
         } else {
             memberEntity = memberOpt.get();
+
+            if (memberEntity.getDeletedAt() != null) {
+                // 🌟 꼼수 문자열 더하기 대신, 예외 객체에 이메일을 다이렉트로 주입!
+                throw new SocialWithdrawnUserException("탈퇴 처리된 계정입니다.", email);
+            }
 
             // 소셜 연동 데이터 누락 방어
             Optional<SocialAccountEntity> socialOpt = socialAccountRepository.findBySocialIdAndProvider(socialId, "KAKAO");

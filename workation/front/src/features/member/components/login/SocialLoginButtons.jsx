@@ -65,7 +65,7 @@ function SocialLoginButtons() {
             d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.47-5.78c-2.07 1.42-4.73 2.27-8.42 2.27-6.26 0-11.57-4.22-13.46-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
           />
         </svg>
-        <span class="btn-text">Sign in with Google</span>
+        <span className="btn-text">Sign in with Google</span>
       </GoogleLoginButton>
     </ContainerWrapper>
   );

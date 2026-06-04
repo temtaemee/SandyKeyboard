@@ -45,6 +45,13 @@ export async function resetPassword(vo) {
     return resp.data;
 }
 
+export async function restoreAccount(vo) {
+    const resp = await api.post(`/guest/restore`, {
+        username: vo.username
+    });
+    return resp.data
+}
+
 
 
 

@@ -73,13 +73,16 @@ public class MemberEntity{
         this.banYn = "Y";
     }
 
-
     public void unban() {
         this.banYn = "N";
     }
 
     public void changePassword(String encodedPassword) {
         this.password = encodedPassword;
+    }
+
+    public void unDelete(){
+        this.deletedAt = null;
     }
 }
 

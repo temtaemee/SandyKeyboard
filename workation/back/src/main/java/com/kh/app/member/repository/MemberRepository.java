@@ -20,4 +20,6 @@ public interface MemberRepository extends JpaRepository<MemberEntity, Long>,Memb
     and m.deletedAt is null
 """)
     Optional<MemberEntity> findByUsername(String username);
+
+    Optional<MemberEntity> findMemberByUsername(String username);
 }
