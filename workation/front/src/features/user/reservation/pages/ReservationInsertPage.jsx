@@ -1,14 +1,10 @@
-// src/features/reservation/pages/ReservationInsertPage.jsx
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { loadTossPayments } from '@tosspayments/payment-sdk';
-
-// 💡 react-datepicker 라이브러리 및 스타일 임포트
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { ko } from 'date-fns/locale'; // 한글 패치용
+import { ko } from 'date-fns/locale';
 
 import useReservationInsert from '../hooks/useReservationInsert';
 import { getAvailableCoupons, getBookedDates } from '../api/reservationApi';
@@ -16,11 +12,11 @@ import { getAvailableCoupons, getBookedDates } from '../api/reservationApi';
 function ReservationInsertPage() {
   const clientKey = 'test_ck_5OWRapdA8djRAOLzPxRYVo1zEqZK';
   const { stayId } = useParams();
-
   const { insertReservation } = useReservationInsert();
 
   const [coupons, setCoupons] = useState([]);
-  const [excludeDates, setExcludeDates] = useState([]); // 💡 달력에서 완전히 막아버릴 Date 객체 배열
+  const [excludeDates, setExcludeDates] = useState([]);
+  const [bookingStartDates, setBookingStartDates] = useState([]); // 예약 시작일들 저장용
 
   const [vo, setVo] = useState({
     couponId: '',
@@ -45,51 +41,58 @@ function ReservationInsertPage() {
 
         const datesResp = await getBookedDates(stayId);
 
-        // 💡 [핵심] 백엔드에서 준 [{checkin: "2026-06-01", checkout: "2026-06-03"}] 범위를
-        // 달력이 인식할 수 있는 개별 Date 객체 배열로 쪼개서 변환합니다.
         const parsedDates = [];
+        const startDates = [];
+
         datesResp.data.forEach((range) => {
           let current = new Date(range.checkin);
           const end = new Date(range.checkout);
 
-          // 체크아웃 당일은 나가는 날이므로 다음 사람이 체크인할 수 있게 예약 종료일 전날까지만 달력에서 막습니다.
+          startDates.push(new Date(range.checkin));
+
+          // 기존 예약 기간은 달력에서 막음 (체크아웃 당일은 선택 가능해야 하므로 < 로 유지)
           while (current < end) {
             parsedDates.push(new Date(current));
             current.setDate(current.getDate() + 1);
           }
         });
         setExcludeDates(parsedDates);
+        setBookingStartDates(startDates);
       } catch (err) {
-        console.error('페이지 초기 데이터 로딩 오류:', err);
+        console.error('데이터 로딩 오류:', err);
       }
     }
     initPageData();
   }, [stayId]);
 
+  // 체크인 날짜 이후의 가장 가까운 예약 시작일을 찾음
+  const getNextAvailableLimit = (checkinDateStr) => {
+    if (!checkinDateStr) return null;
+    const checkin = new Date(checkinDateStr);
+
+    const futureBookings = bookingStartDates
+      .filter((date) => date > checkin)
+      .sort((a, b) => a - b);
+
+    return futureBookings.length > 0 ? futureBookings[0] : null;
+  };
+
   function handleChange(e) {
-    setVo({
-      ...vo,
-      [e.target.name]: e.target.value,
-    });
+    setVo({ ...vo, [e.target.name]: e.target.value });
   }
 
-  // 💡 [수정완료] 함수형 컴포넌트 내부 문법에 맞게 const 선언부 보완 (화면 안 뜨던 핵심 원인)
   const handleDateChange = (date, fieldName) => {
     if (!date) {
       setVo((prev) => ({ ...prev, [fieldName]: '' }));
       return;
     }
 
-    // 💡 한국 시간(KST) 기준으로 날짜 문자열 생성 (YYYY-MM-DD)
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const formattedDate = `${year}-${month}-${day}`;
 
-    setVo((prev) => ({
-      ...prev,
-      [fieldName]: formattedDate,
-    }));
+    setVo((prev) => ({ ...prev, [fieldName]: formattedDate }));
   };
 
   function handleFileChange(e) {
@@ -99,48 +102,40 @@ function ReservationInsertPage() {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!vo.checkinDate || !vo.checkoutDate) {
-      alert('체크인 및 체크아웃 날짜를 선택해 주세요.');
+      alert('날짜를 선택해 주세요.');
       return;
     }
-
     try {
       const { reservationId, totalPrice } = await insertReservation(
         stayId,
         vo,
         fileList
       );
-      console.log('백엔드 정산 금액 확인: ', totalPrice);
       await requestPayment(reservationId, totalPrice);
     } catch (err) {
-      console.error(err);
       alert(err.response?.data?.message || '예약 처리 중 오류가 발생했습니다.');
     }
   }
 
   async function requestPayment(reservationId, totalPrice) {
     const tossPayments = await loadTossPayments(clientKey);
-    const currentOrigin = window.location.origin;
-
     await tossPayments.requestPayment('CARD', {
       amount: totalPrice,
       orderId: `ORDER_${reservationId}_${Date.now()}`,
       orderName: '숙소 예약 결제',
       customerName: vo.primaryGuestName,
       customerEmail: vo.primaryGuestEmail,
-      successUrl: `${currentOrigin}/resv/payment/success?reservationId=${reservationId}`,
-      failUrl: `${currentOrigin}/payment/fail`,
+      successUrl: `${window.location.origin}/resv/payment/success?reservationId=${reservationId}`,
+      failUrl: `${window.location.origin}/payment/fail`,
     });
   }
-
   return (
     <Wrapper>
       <Container>
         <Title>예약 / 결제</Title>
-
         <StyledForm onSubmit={handleSubmit}>
           <Section>
             <SectionTitle>예약 정보</SectionTitle>
-
             <InputGroup>
               <Label>적용 가능한 쿠폰</Label>
               <Select
@@ -156,52 +151,44 @@ function ReservationInsertPage() {
                 ))}
               </Select>
             </InputGroup>
-
             <InputGroup>
               <Label>인원 수</Label>
               <Input
                 type="number"
                 name="guestCount"
                 min="1"
-                placeholder="인원 수 입력"
                 value={vo.guestCount}
                 onChange={handleChange}
               />
             </InputGroup>
-
             <InputGroup>
               <Label>대표 예약자 이름</Label>
               <Input
                 type="text"
                 name="primaryGuestName"
-                placeholder="이름 입력"
                 value={vo.primaryGuestName}
                 onChange={handleChange}
                 required
               />
             </InputGroup>
-
             <Row>
               <InputGroup>
                 <Label>체크인 날짜</Label>
-                {/* 💡 기본 input을 커스텀 DatePicker로 교체 */}
                 <DatePickerWrapper>
                   <StyledDatePicker
                     locale={ko}
                     dateFormat="yyyy-MM-dd"
                     selected={vo.checkinDate ? new Date(vo.checkinDate) : null}
                     onChange={(date) => handleDateChange(date, 'checkinDate')}
-                    minDate={new Date()} // 오늘 이전 날짜 차단
-                    excludeDates={excludeDates} // 🔒 이미 예약된 모든 날짜 창에서 선택 차단!
+                    minDate={new Date()}
+                    excludeDates={excludeDates}
                     placeholderText="체크인 선택"
                     required
                   />
                 </DatePickerWrapper>
               </InputGroup>
-
               <InputGroup>
                 <Label>체크아웃 날짜</Label>
-                {/* 💡 기본 input을 커스텀 DatePicker로 교체 */}
                 <DatePickerWrapper>
                   <StyledDatePicker
                     locale={ko}
@@ -211,9 +198,16 @@ function ReservationInsertPage() {
                     }
                     onChange={(date) => handleDateChange(date, 'checkoutDate')}
                     minDate={
-                      vo.checkinDate ? new Date(vo.checkinDate) : new Date()
-                    } // 체크인 이후 날짜만 활성화
-                    excludeDates={excludeDates} // 🔒 이미 예약된 모든 날짜 창에서 선택 차단!
+                      vo.checkinDate
+                        ? new Date(
+                            new Date(vo.checkinDate).setDate(
+                              new Date(vo.checkinDate).getDate() + 1
+                            )
+                          )
+                        : new Date(new Date().setDate(new Date().getDate() + 1))
+                    }
+                    // 💡 2. 체크아웃은 다음 예약 시작일까지만 선택 가능
+                    maxDate={getNextAvailableLimit(vo.checkinDate)}
                     placeholderText="체크아웃 선택"
                     required
                   />
@@ -299,7 +293,6 @@ function ReservationInsertPage() {
               </FileText>
             </FileBox>
           </Section>
-
           <SubmitButton type="submit">결제하기</SubmitButton>
         </StyledForm>
       </Container>
