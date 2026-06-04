@@ -77,7 +77,8 @@ public class ReviewApiController {
             @RequestParam(value = "deletedImageIds", required = false) List<Long> deletedImageIds,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        reviewService.update(id, dto, images, deletedImageIds);
+        Long memberId = userDetails.getUserVo().getId();
+        reviewService.update(id, dto, images, deletedImageIds, memberId);
         return ResponseEntity.ok().build();
     }
 
@@ -87,7 +88,8 @@ public class ReviewApiController {
             @PathVariable Long id,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        reviewService.delete(id);
+        Long memberId = userDetails.getUserVo().getId();
+        reviewService.delete(id, memberId);
         return ResponseEntity.ok().build();
     }
 
