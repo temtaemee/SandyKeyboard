@@ -578,3 +578,17 @@ export const Star = styled.span`
   font-size: 14px;
   color: ${({ $filled }) => ($filled ? '#f59e0b' : '#e2e8f0')};
 `;
+
+export const StayInfo = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: ${({ theme }) => theme.radius.full};
+  background: ${({ theme }) => theme.colors.primary}10;
+  border: 1px solid ${({ theme }) => theme.colors.primary}30;
+  color: ${({ theme }) => theme.colors.primary};
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+`;

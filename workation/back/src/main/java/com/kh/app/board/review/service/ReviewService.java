@@ -18,6 +18,8 @@ import com.kh.app.member.repository.MemberRepository;
 import com.kh.app.transaction.reservation.entity.ReservationEntity;
 import com.kh.app.transaction.reservation.entity.ReservationStatus;
 import com.kh.app.transaction.reservation.repository.ReservationRepository;
+import com.kh.app.product.space.repository.SpacePictureRepository;
+import com.kh.app.transaction.reservation.dto.response.ReservationResDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -41,6 +43,7 @@ public class ReviewService {
     private final CommentRepository commentRepository;
     private final MemberRepository memberRepository;
     private final ReservationRepository reservationRepository; // 추가
+    private final SpacePictureRepository spacePictureRepository;
     private final S3Service s3Service;
 
     // 전체 목록 조회 (페이징)
@@ -194,6 +197,22 @@ public class ReviewService {
         CommentEntity comment = commentRepository.findByIdAndDelYn(commentId, "N")
                 .orElseThrow(() -> new IllegalArgumentException("댓글을 찾을 수 없습니다."));
         comment.delete();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReservationResDto> findUnreviewedReservations(Long memberId) {
+        return reservationRepository.findUnreviewedReservations(memberId)
+                .stream()
+                .map(reservation -> {
+                    String imageUrl = null;
+                    if (reservation.getStay() != null && reservation.getStay().getSpace() != null) {
+                        imageUrl = spacePictureRepository.findBySpaceIdAndMainYn(reservation.getStay().getSpace().getId(), "Y")
+                                .map(p -> p.getFilePath().startsWith("http") ? p.getFilePath() : s3Service.getFileUrl(p.getFilePath()))
+                                .orElse(null);
+                    }
+                    return ReservationResDto.from(reservation, imageUrl);
+                })
+                .toList();
     }
 
     // ReviewService에 추가할 메서드들

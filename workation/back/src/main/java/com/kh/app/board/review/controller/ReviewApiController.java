@@ -19,6 +19,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+import com.kh.app.transaction.reservation.dto.response.ReservationResDto;
+
 @RestController
 @RequiredArgsConstructor
 @Slf4j
@@ -54,6 +56,15 @@ public class ReviewApiController {
     ) {
         Long memberId = userDetails.getUserVo().getId();
         return ResponseEntity.ok(reviewService.findMyReview(memberId, page));
+    }
+
+    // 리뷰 작성 가능한 예약 목록 조회
+    @GetMapping("/api/user/reviews/unreviewed-reservations")
+    public ResponseEntity<List<ReservationResDto>> findUnreviewedReservations(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long memberId = userDetails.getUserVo().getId();
+        return ResponseEntity.ok(reviewService.findUnreviewedReservations(memberId));
     }
 
     // 리뷰 등록

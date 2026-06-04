@@ -72,6 +72,7 @@ import {
   PageBtn,
   Stars,
   Star,
+  StayInfo,
 } from '../styles/ReviewListPage.styles';
 
 function StarDisplay({ rating }) {
@@ -322,6 +323,7 @@ function ReviewCard({ review, onDelete, onEdit }) {
           </TitleRow>
           <WriterMeta>
             <WriterName>{review.writer}</WriterName>
+            {review.stayName && <StayInfo>📍 {review.stayName}</StayInfo>}
             <StarDisplay rating={review.rating} />
             <ReviewLikeBtn reviewId={review.id} />
             <DateText>{formatDate(review.createdAt)}</DateText>

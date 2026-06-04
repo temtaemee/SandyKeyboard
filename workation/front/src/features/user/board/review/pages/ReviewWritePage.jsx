@@ -26,6 +26,7 @@ import {
   ButtonGroup,
   CancelButton,
   SubmitButton,
+  Select,
 } from '../styles/ReviewWritePage.styles';
 
 function StarRating({ rating, onChange }) {
@@ -68,6 +69,12 @@ export default function ReviewWritePage() {
     handleRemoveNewImage,
     handleRemoveExistingImage,
     handleSubmit,
+    unreviewedReservations,
+    reservationId,
+    setReservationId,
+    stayName,
+    checkinDate,
+    checkoutDate,
   } = useReviewWrite();
 
   if (loadingEdit)
@@ -89,6 +96,32 @@ export default function ReviewWritePage() {
             onChange={(e) => setTitle(e.target.value)}
           />
         </Row>
+        {isEdit ? (
+          <Row>
+            <Label>다녀온 곳</Label>
+            <Input
+              value={stayName ? `${stayName} (${checkinDate} ~ ${checkoutDate})` : '다녀온 곳 정보 없음'}
+              readOnly
+              disabled
+              style={{ backgroundColor: '#f5f5f5', color: '#666', border: '1px solid #ddd', cursor: 'not-allowed' }}
+            />
+          </Row>
+        ) : (
+          <Row>
+            <Label>다녀온 곳</Label>
+            <Select
+              value={reservationId}
+              onChange={(e) => setReservationId(e.target.value)}
+            >
+              <option value="">예약을 선택하세요</option>
+              {unreviewedReservations.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.stayName} ({r.checkinDate} ~ {r.checkoutDate})
+                </option>
+              ))}
+            </Select>
+          </Row>
+        )}
         <Row>
           <Label>별점</Label>
           <StarRating rating={rating} onChange={setRating} />

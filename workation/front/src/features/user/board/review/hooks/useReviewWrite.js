@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { createReview, updateReview, getReviewDetail } from '../api/reviewApi';
+import { createReview, updateReview, getReviewDetail, getUnreviewedReservations } from '../api/reviewApi';
 
 export function useReviewWrite() {
   const navigate = useNavigate();
@@ -21,6 +21,16 @@ export function useReviewWrite() {
   const [submitting, setSubmitting] = useState(false);
   const [loadingEdit, setLoadingEdit] = useState(isEdit);
 
+  // 다녀온 예약 목록 (미작성 리뷰용)
+  const [unreviewedReservations, setUnreviewedReservations] = useState([]);
+  const [reservationId, setReservationId] = useState('');
+
+  // 수정 모드일 때 보여줄 다녀온 곳 정보
+  const [stayName, setStayName] = useState('');
+  const [checkinDate, setCheckinDate] = useState('');
+  const [checkoutDate, setCheckoutDate] = useState('');
+
+  // 수정 모드: 기존 리뷰 데이터 로드
   useEffect(() => {
     if (!isEdit) return;
     getReviewDetail(editId)
@@ -30,6 +40,9 @@ export function useReviewWrite() {
         setTag(data.tag ?? '');
         setRating(data.rating ?? 5);
         setExistingImages(data.images ?? []);
+        setStayName(data.stayName ?? '');
+        setCheckinDate(data.checkinDate ?? '');
+        setCheckoutDate(data.checkoutDate ?? '');
       })
       .catch((err) => {
         console.error('수정할 후기를 불러오지 못했습니다.', err);
@@ -38,6 +51,14 @@ export function useReviewWrite() {
       })
       .finally(() => setLoadingEdit(false));
   }, [editId]);
+
+  // 신규 작성 모드: 다녀온 예약 목록 로드
+  useEffect(() => {
+    if (isEdit) return;
+    getUnreviewedReservations()
+      .then((data) => setUnreviewedReservations(data))
+      .catch((err) => console.error('예약 목록을 불러오지 못했습니다.', err));
+  }, [isEdit]);
 
   function handleFileChange(e) {
     [...e.target.files].forEach((file) => {
@@ -66,10 +87,11 @@ export function useReviewWrite() {
     if (!title.trim()) return alert('제목을 입력해주세요.');
     if (!content.trim()) return alert('내용을 입력해주세요.');
     if (rating === 0) return alert('별점을 선택해주세요.');
+    if (!isEdit && !reservationId) return alert('다녀온 예약을 선택해주세요.');
 
     try {
       setSubmitting(true);
-      const dto = { title, content, tag, rating };
+      const dto = { title, content, tag, rating, reservationId: isEdit ? undefined : Number(reservationId) };
       const imageFiles = images.map((img) => img.file);
 
       if (isEdit) {
@@ -109,5 +131,11 @@ export function useReviewWrite() {
     handleRemoveNewImage,
     handleRemoveExistingImage,
     handleSubmit,
+    unreviewedReservations,
+    reservationId,
+    setReservationId,
+    stayName,
+    checkinDate,
+    checkoutDate,
   };
 }

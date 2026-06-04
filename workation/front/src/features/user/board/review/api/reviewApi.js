@@ -47,6 +47,12 @@ export const getMyReviewList = (page = 0) =>
   api.get(`${USER_BASE}/my`, { params: { page } }).then((res) => res.data);
 
 /**
+ * 리뷰 작성 가능한 예약 목록 조회 (이용 완료 + 리뷰 미작성)
+ */
+export const getUnreviewedReservations = () =>
+  api.get(`${USER_BASE}/unreviewed-reservations`).then((res) => res.data);
+
+/**
  * 리뷰 상세 조회
  *
  * id : 리뷰 게시글 번호
