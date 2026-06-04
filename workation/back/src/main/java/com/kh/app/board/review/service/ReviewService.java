@@ -124,10 +124,15 @@ public class ReviewService {
         return review.getId();
     }
 
-    // 수정 (기존 유지)
-    public void update(Long id, ReviewUpdateReqDto dto, List<MultipartFile> images, List<Long> deletedImageIds) {
+    // 수정
+    public void update(Long id, ReviewUpdateReqDto dto, List<MultipartFile> images, List<Long> deletedImageIds, Long memberId) {
         ReviewEntity review = reviewRepository.findByIdAndDelYn(id, "N")
                 .orElseThrow(() -> new IllegalArgumentException("후기를 찾을 수 없습니다."));
+
+        if (!review.getMember().getId().equals(memberId)) {
+            throw new IllegalArgumentException("본인의 후기만 수정할 수 있습니다.");
+        }
+
         review.update(dto.getTitle(), dto.getContent(), dto.getTag(), dto.getRating());
 
         if (deletedImageIds != null && !deletedImageIds.isEmpty()) {
@@ -155,9 +160,14 @@ public class ReviewService {
     }
 
     // 삭제
-    public void delete(Long id) {
+    public void delete(Long id, Long memberId) {
         ReviewEntity review = reviewRepository.findByIdAndDelYn(id, "N")
                 .orElseThrow(() -> new IllegalArgumentException("후기를 찾을 수 없습니다."));
+
+        if (!review.getMember().getId().equals(memberId)) {
+            throw new IllegalArgumentException("본인의 후기만 삭제할 수 있습니다.");
+        }
+
         review.delete();
     }
 
