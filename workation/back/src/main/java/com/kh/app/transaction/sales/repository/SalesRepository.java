@@ -25,8 +25,8 @@ public interface SalesRepository extends JpaRepository<SalesEntity, Long> {
     List<SalesEntity> findUnprocessedSales(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
     // 💡 조건: 이번 달 매출 전표 데이터 중 누적된 총 취소 금액(cancelAmount)의 합산 구하기
-    @Query("SELECT COALESCE(SUM(r.refundAmount), 0) FROM RefundEntity r " +
-            "WHERE r.refundedAt >= :start AND r.refundedAt <= :end")
+    @Query("SELECT COALESCE(SUM(s.cancelAmount), 0) FROM SalesEntity s " +
+            "WHERE s.salesDate >= :start AND s.salesDate <= :end")
     long sumCancelAmountByMonth(
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
@@ -34,7 +34,7 @@ public interface SalesRepository extends JpaRepository<SalesEntity, Long> {
 
     /**
      * 💡 판매자 고유 ID 기반 실시간 매출 목록 페이징 조회
-     * 정산(Payout)과 상관없이 결제 완료 시점의 매출 전표를 최신순으로 가져옵니다.
+     *      * 정산(Payout)과 상관없이 결제 완료 시점의 매출 전표를 최신순으로 가져옵니다.
      */
     @Query("SELECT s FROM SalesEntity s " +
             "JOIN s.payment p " +
