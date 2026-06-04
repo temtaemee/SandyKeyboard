@@ -75,8 +75,17 @@ function ReservationInsertPage() {
 
   // 💡 [수정완료] 함수형 컴포넌트 내부 문법에 맞게 const 선언부 보완 (화면 안 뜨던 핵심 원인)
   const handleDateChange = (date, fieldName) => {
-    // 백엔드가 포맷팅 에러를 내지 않도록 YYYY-MM-DD 문자열 형태로 가공해서 넣어줍니다.
-    const formattedDate = date ? date.toISOString().split('T')[0] : '';
+    if (!date) {
+      setVo((prev) => ({ ...prev, [fieldName]: '' }));
+      return;
+    }
+
+    // 💡 한국 시간(KST) 기준으로 날짜 문자열 생성 (YYYY-MM-DD)
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const formattedDate = `${year}-${month}-${day}`;
+
     setVo((prev) => ({
       ...prev,
       [fieldName]: formattedDate,

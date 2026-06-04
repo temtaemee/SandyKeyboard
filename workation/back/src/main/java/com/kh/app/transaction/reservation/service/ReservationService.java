@@ -72,9 +72,22 @@ public class ReservationService {
 
     @Transactional
     public Map<String, Object> create(String username, Long stayId, ReservationCreateReqDto dto, List<MultipartFile> fileList) throws IOException {
+        // 1. 중복 검사
         long duplicateCount = reservationRepository.countDuplicateReservations(stayId, dto.getCheckinDate(), dto.getCheckoutDate());
+
         if (duplicateCount > 0) {
-            throw new IllegalStateException("선택하신 기간은 이미 다른 회원의 예약이 완료된 일정입니다. 다른 날짜를 선택해 주세요.");
+            // 💡 충돌 예약 건 조회
+            List<ReservationEntity> conflicts = reservationRepository.findConflictReservations(stayId, dto.getCheckinDate(), dto.getCheckoutDate());
+
+            // 💡 상세 로그 출력
+            for (ReservationEntity res : conflicts) {
+                log.error("▶️ 중복 예약 발견! 신규 요청: {} ~ {}, 기존 예약 ID: {}, 기간: {} ~ {}",
+                        dto.getCheckinDate(), dto.getCheckoutDate(), res.getId(), res.getCheckinDate(), res.getCheckoutDate());
+                log.error("▶️ 중복 예약 발견! [ID: {}, 상태: {}, 기간: {} ~ {}]",
+                        res.getId(), res.getStatus(), res.getCheckinDate(), res.getCheckoutDate());
+            }
+
+            throw new IllegalStateException("선택하신 기간은 이미 다른 회원의 예약이 완료된 일정입니다.");
         }
 
         MemberEntity memberEntity = memberRepository.findByUsername(username)
