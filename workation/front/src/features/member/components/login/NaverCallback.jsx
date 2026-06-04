@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'; // 💡 중복 실행 방지용 useRef 추가
 import { useNavigate } from 'react-router-dom';
 import api from '../../../../app/api/axios';
+import { restoreAccount } from '../../api/memberApi';
 
 function NaverCallback() {
   const navigate = useNavigate();
