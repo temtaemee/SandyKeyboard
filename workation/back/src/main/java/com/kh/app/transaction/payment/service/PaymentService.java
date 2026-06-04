@@ -2,6 +2,8 @@ package com.kh.app.transaction.payment.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kh.app.middle.coupon.entity.MemberCouponEntity;
+import com.kh.app.middle.coupon.repository.MemberCouponRepository;
 import com.kh.app.notification.dto.request.NotificationCreateReqDto;
 import com.kh.app.notification.entity.NotificationType;
 import com.kh.app.notification.service.NotificationService;
@@ -45,6 +47,7 @@ public class PaymentService {
     private final NotificationService notificationService;
     private final SalesService salesService;
     private final PayoutService payoutService;
+    private final MemberCouponRepository memberCouponRepository;
 
 
     @Transactional
@@ -145,6 +148,21 @@ public class PaymentService {
 
             paymentRepository.save(payment);
             reservation.completePayment();
+
+            // 💡 [추가] 쿠폰 사용 처리 로직
+            if (reservation.getCoupon() != null) {
+                // 1. 해당 예약에 연결된 쿠폰이 맞는지 확인하고 MemberCouponEntity를 가져옵니다.
+                // (ReservationEntity에 member와 coupon이 있으므로 가능)
+                MemberCouponEntity memberCoupon = memberCouponRepository
+                        .findByMemberAndCouponId(reservation.getMember(), reservation.getCoupon())
+                        .orElseThrow(() -> new EntityNotFoundException("사용자의 쿠폰 내역을 찾을 수 없습니다."));
+
+                // 2. 쿠폰 사용 처리 및 수량 감소
+                memberCoupon.useCoupon();
+                reservation.getCoupon().decrementQty();
+
+                log.info("▶️ [쿠폰 사용 완료] 예약 ID: {}, 쿠폰 ID: {}", reservation.getId(), reservation.getCoupon().getId());
+            }
 
             // 1. 매출 원장 즉시 자동 생성
             salesService.recordSales(payment);
