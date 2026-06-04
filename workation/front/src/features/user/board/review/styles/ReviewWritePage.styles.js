@@ -2,6 +2,21 @@ import styled from 'styled-components';
 
 export const Wrapper = styled.div``;
 
+export const Select = styled.select`
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  color: ${({ theme }) => theme.colors.textDark};
+  font-family: ${({ theme }) => theme.fonts.base};
+  background: transparent;
+  cursor: pointer;
+
+  option[value=''] {
+    color: ${({ theme }) => theme.colors.textLight};
+  }
+`;
+
 export const PageTitle = styled.h2`
   font-size: 20px;
   font-weight: 700;

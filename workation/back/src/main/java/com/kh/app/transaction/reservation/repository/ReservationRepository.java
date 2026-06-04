@@ -74,4 +74,11 @@ public interface ReservationRepository extends JpaRepository<ReservationEntity, 
             @Param("checkoutDate") LocalDate checkoutDate
     );
 
+    // 이용 완료되었으며 아직 리뷰를 작성하지 않은 내 예약 목록
+    @Query("SELECT r FROM ReservationEntity r " +
+           "WHERE r.member.id = :memberId " +
+           "AND r.status = com.kh.app.transaction.reservation.entity.ReservationStatus.COMPLETED " +
+           "AND NOT EXISTS (SELECT rev FROM ReviewEntity rev WHERE rev.reservation.id = r.id AND rev.delYn = 'N') " +
+           "ORDER BY r.id DESC")
+    List<ReservationEntity> findUnreviewedReservations(@Param("memberId") Long memberId);
 }
