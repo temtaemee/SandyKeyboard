@@ -68,14 +68,13 @@ public class ReservationApiController {
     public ResponseEntity<List<ReservationResDto>> getMyReservations(
             @AuthenticationPrincipal(expression = "username") String username
     ) {
-
-        return ResponseEntity.ok(
-                reservationService.getMyReservations(username)
+        List<ReservationResDto> myReservations = reservationService.getMyReservations(username);
+        System.out.println("myReservations = " + myReservations);
+        return ResponseEntity.ok(myReservations
         );
     }
 
 
-    // 일반 유저 예약 완료 후 상세보기 (통합 패키지 버전)
     @GetMapping("/user/reservation/{id}")
     public ResponseEntity<ReservationDetailResDto> getOne(@PathVariable Long id) {
         log.info("유저 예약 통합 상세 페이지 요청 - 예약 ID: {}", id);
