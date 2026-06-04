@@ -3,10 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import useDestination from '../hooks/useDestination';
 import useWishlist from '../../mypage/hooks/useWishlist';
+import useAuth from './../../../member/hooks/useAuth';
 
 function SpaceDetailPage() {
   const { spaceId } = useParams();
   const navigate = useNavigate();
+
+  const { isLoggedIn } = useAuth(); // 💡 로그인 상태 가져오기
 
   // 1. 훅은 항상 컴포넌트 최상단에서 호출
   const {
@@ -96,6 +99,12 @@ function SpaceDetailPage() {
             src={sliderImages[currentImgIdx]}
             alt={`${space.name} 사진 ${currentImgIdx + 1}`}
           />
+
+          {isLoggedIn && (
+            <FloatingWishButton onClick={handleWishToggle}>
+              {isWished ? '❤️' : '🤍'}
+            </FloatingWishButton>
+          )}
           <AreaBadge>
             {typeof space.area === 'object' && space.area !== null
               ? space.area.name
@@ -137,12 +146,7 @@ function SpaceDetailPage() {
         </MainVisual>
 
         <ContentSection>
-          <SpaceName>
-            {space.name}
-            <WishButton onClick={handleWishToggle}>
-              {isWished ? '❤️' : '🤍'}
-            </WishButton>
-          </SpaceName>
+          <SpaceName>{space.name}</SpaceName>
           <SpaceSummary>
             {space.summary ||
               '바다 가까운 아늑하고 몰입도 높은 프리미엄 업무 환경'}
@@ -487,5 +491,27 @@ const WishButton = styled.button`
   transition: transform 0.2s;
   &:hover {
     transform: scale(1.2);
+  }
+`;
+const FloatingWishButton = styled.button`
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+  transition: transform 0.2s;
+
+  &:hover {
+    transform: scale(1.1);
   }
 `;
