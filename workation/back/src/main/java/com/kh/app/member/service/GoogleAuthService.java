@@ -97,12 +97,20 @@ public class GoogleAuthService {
                 memberEntity.getUsername(),
                 List.of("USER")
         );
+        String area = null;
+        if (memberEntity != null && memberEntity.getProfile() != null) {
+            area = (memberEntity.getProfile().getPreferredArea() != null)
+                    ? memberEntity.getProfile().getPreferredArea().name()
+                    : null;
+        }
 
         // 5. 공용 DTO 규격으로 리턴 (@JsonProperty("isNewUser")가 작동합니다)
         return SocialLoginRespDto.builder()
                 .token(appAccessToken)
+                .roles(memberEntity.getRoleSet().stream().toList())
                 .isNewUser(isNewUser)
                 .email(email)
+                .preferredArea(area)
                 .build();
     }
 

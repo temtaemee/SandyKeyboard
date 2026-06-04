@@ -107,12 +107,21 @@ public class NaverAuthService {
                 memberEntity.getUsername(),
                 List.of("USER")
         );
+        String area = null;
+        if (memberEntity != null && memberEntity.getProfile() != null) {
+            area = (memberEntity.getProfile().getPreferredArea() != null)
+                    ? memberEntity.getProfile().getPreferredArea().name()
+                    : null;
+        }
+
 
         // 4. 확장 설계된 공용 DTO 빌더 반환 💯
         return SocialLoginRespDto.builder()
                 .token(appAccessToken)
                 .isNewUser(isNewUser)
+                .roles(memberEntity.getRoleSet().stream().toList())
                 .email(email)
+                .preferredArea(area)
                 .build();
     }
 

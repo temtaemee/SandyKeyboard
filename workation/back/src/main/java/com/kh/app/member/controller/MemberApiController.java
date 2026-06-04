@@ -42,6 +42,7 @@ public class MemberApiController {
 
     @PostMapping("/user/seller")
     public ResponseEntity<Object> registerSeller(@RequestBody SellerApplyReqDto reqDto , @AuthenticationPrincipal CustomUserDetails userDetails ){
+        log.info("들어온 판매자 등록 요청 데이터: {}", reqDto);
         Long memberId = userDetails.getUserVo().getId();
         memberService.registerSeller(reqDto,memberId);
         return ResponseEntity.status(HttpStatus.CREATED).build();

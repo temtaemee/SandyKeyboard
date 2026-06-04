@@ -82,7 +82,7 @@ public class MemberService {
         if (!member.getRoleSet().contains(Role.SELLER)) {
             member.getRoleSet().add(Role.SELLER);
         }
-        SellerEntity sellerEntity = reqDto.toSellerEntity(bank, member);
+        SellerEntity sellerEntity = reqDto.toSellerEntity(bank, member, reqDto.getCompanyName());
         sellerRepository.save(sellerEntity);
     }
 

@@ -22,10 +22,11 @@ public class SellerApplyReqDto {
 
     private Long bankId;
 
-    public SellerEntity toSellerEntity(BankEntity bank, MemberEntity member){
+    public SellerEntity toSellerEntity(BankEntity bank, MemberEntity member,String companyName){
         return SellerEntity.builder()
                 .member(member)
                 .bank(bank)
+                .companyName(companyName)
                 .businessNo(businessNumber)
                 .account(accountNumber)
                 .accountName(accountHolder)
