@@ -121,8 +121,7 @@ public class ReservationService {
             }
 
             coupon = memberCoupon.getCouponId();
-            coupon.decrementQty();
-            memberCoupon.useCoupon();
+
 
             discountAmount = (originalPrice * coupon.getDiscountRate()) / 100;
             if (discountAmount > originalPrice) discountAmount = originalPrice;
