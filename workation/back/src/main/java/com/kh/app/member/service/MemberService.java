@@ -384,4 +384,10 @@ public class MemberService {
         seller.updateSeller(dto, bank);
     }
 
+    @Transactional
+    public void restoreAccount(String username) {
+        MemberEntity member = memberRepository.findMemberByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("회원 없음"));
+        member.unDelete();
+    }
 }

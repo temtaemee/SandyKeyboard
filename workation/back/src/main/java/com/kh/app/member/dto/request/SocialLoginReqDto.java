@@ -10,4 +10,5 @@ import lombok.ToString;
 public class SocialLoginReqDto {
     private String code;  // 인가 코드
     private String state; // 상태 토큰
+    private String username;
 }
