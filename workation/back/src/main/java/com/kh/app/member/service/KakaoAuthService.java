@@ -112,12 +112,20 @@ public class KakaoAuthService {
                 memberEntity.getUsername(),
                 List.of("USER")
         );
+        String area = null;
+        if (memberEntity != null && memberEntity.getProfile() != null) {
+            area = (memberEntity.getProfile().getPreferredArea() != null)
+                    ? memberEntity.getProfile().getPreferredArea().name()
+                    : null;
+        }
 
         // 5. 공용 DTO 규격으로 리턴
         return SocialLoginRespDto.builder()
                 .token(appAccessToken)
                 .isNewUser(isNewUser)
+                .roles(memberEntity.getRoleSet().stream().toList())
                 .email(email)
+                .preferredArea(area)
                 .profileImageUrl(profileImageUrl) // 🚨 [수정 포인트 3] 신규 유저를 위해 리액트 가입 폼으로 사진을 토스! ✨
                 .build();
     }

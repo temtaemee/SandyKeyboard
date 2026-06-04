@@ -1,5 +1,6 @@
 package com.kh.app.security.user;
 
+import com.kh.app.product.space.entity.Area;
 import lombok.*;
 import org.springframework.stereotype.Service;
 
@@ -23,4 +24,6 @@ public class UserVo {
     private List<String> roles;
 
     private String banYn;
+    // 🌟 추가: 선호 지역 정보
+    private Area preferredArea;
 }
