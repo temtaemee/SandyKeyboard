@@ -1,36 +1,46 @@
-import { useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import SpaceCard from './SpaceCard';
-import { RECOMMENDED_SPACES } from '../../data/homeData';
 import useReveal from '../../../hooks/useReveal';
+import axios from 'axios';
+import api from '../../../app/api/axios';
 
 export default function RecommendedSection({ userProfile }) {
   const { ref, visible } = useReveal();
+  const [recommendedList, setRecommendedList] = useState([]);
 
-  // 1. 선호 지역 필터링 및 3개만 추출
-  const recommendedList = useMemo(() => {
-    let list = [...RECOMMENDED_SPACES];
+  useEffect(() => {
+    // API 호출
+    const fetchRecommended = async () => {
+      try {
+        // userProfile이 있을 때만 쿼리 파라미터 추가
+        const params = userProfile?.preferredArea
+          ? { area: userProfile.preferredArea }
+          : {};
 
-    // 선호 지역이 있다면 필터링
-    if (userProfile?.preferredArea) {
-      list = list.filter(
-        (space) => space.location === userProfile.preferredArea
-      );
-    }
+        const response = await api.get('/public/space/list/recommended', {
+          params,
+        });
 
-    // 💡 3개만 잘라서 보여주기 (슬라이스)
-    return list.slice(0, 3);
+        setRecommendedList(response.data);
+      } catch (error) {
+        console.error('추천 데이터 로드 실패', error);
+      }
+    };
+
+    fetchRecommended();
   }, [userProfile]);
 
   return (
     <Section ref={ref} $visible={visible}>
+      {/* ... 기존 JSX 동일 ... */}
       <Header>
         <TitleGroup>
           <Label>당신을 위한 추천 워케이션</Label>
           <Desc>
             {userProfile?.preferredArea
-              ? `${userProfile.preferredArea} 지역에서 업무 집중도를 극대화할 수 있는 곳을 엄선했습니다.`
-              : '업무 집중도를 극대화할 수 있도록 엄선된 워케이션 장소입니다.'}
+              ? `${userProfile.preferredArea} 지역에서 평점이 높고 리뷰가 활발한 장소를 엄선했습니다.`
+              : '평점 4.0 이상, 가장 활발한 워케이션 장소입니다.'}
           </Desc>
         </TitleGroup>
       </Header>
@@ -41,7 +51,7 @@ export default function RecommendedSection({ userProfile }) {
             <SpaceCard key={space.id} space={space} />
           ))
         ) : (
-          <EmptyMsg>해당 지역에 등록된 워케이션 장소가 없습니다.</EmptyMsg>
+          <EmptyMsg>조건에 맞는 추천 장소가 없습니다.</EmptyMsg>
         )}
       </Grid>
     </Section>
