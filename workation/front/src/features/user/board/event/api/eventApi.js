@@ -1,25 +1,28 @@
 import api from '../../../../../app/api/axios';
 
-// ================================
-// 이벤트 API 주소
-// ================================
-
 const PUBLIC_EVENT = '/public/events';
+const PUBLIC_COUPON = '/public/coupon';
+const USER_COUPON = '/user/coupon';
 
 // ─────────────────────────────────────────
-// Event API (이벤트 API)
+// Event API
 // ─────────────────────────────────────────
 
-/**
- * 이벤트 목록 조회
- */
-export const getEventList = () =>
-  api.get(PUBLIC_EVENT).then((res) => res.data);
+export const getEventList = () => api.get(PUBLIC_EVENT).then((res) => res.data);
 
-/**
- * 이벤트 상세 조회
- *
- * id : 이벤트 번호
- */
 export const getEventDetail = (id) =>
   api.get(`${PUBLIC_EVENT}/${id}`).then((res) => res.data);
+
+// ─────────────────────────────────────────
+// Coupon API
+// ─────────────────────────────────────────
+
+// 쿠폰 단건 조회 (이벤트 페이지에서 쿠폰 정보 표시용)
+// GET /api/public/coupon/{couponId}
+export const getCouponDetail = (couponId) =>
+  api.get(`${PUBLIC_COUPON}/${couponId}`).then((res) => res.data);
+
+// 쿠폰 발급 (로그인한 사용자)
+// POST /api/user/coupon/{couponId}
+export const receiveCoupon = (couponId) =>
+  api.post(`${USER_COUPON}/${couponId}`).then((res) => res.data);
