@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import useDestination from '../hooks/useDestination'; // 💡 고도화된 훅 연동
+import { useSearchParams } from 'react-router-dom';
 
 const AREA_LIST = [
   { label: '전체', value: '' },
@@ -19,15 +20,24 @@ const AREA_LIST = [
 ];
 
 function DestinationPage() {
-  // 💡 spaces가 혹시라도 undefiend로 깨지는 현상을 완벽하게 막아내는 디폴트 가드 지정
+  const [searchParams] = useSearchParams();
   const { spaces = [], loadSpaces, loading } = useDestination();
-  const [selectedArea, setSelectedArea] = useState('');
+
+  // URL에서 값을 가져옴 (없으면 '')
+  const areaFromUrl = searchParams.get('area') || '';
+
+  const [selectedArea, setSelectedArea] = useState(areaFromUrl);
   const [searchKeyword, setSearchKeyword] = useState('');
 
-  // 💡 [수정] 컴포넌트가 처음 마운트되거나 지역 필터가 바뀔 때 무조건 백엔드 조회 실행
+  // 1. URL 파라미터(area)가 바뀔 때마다 selectedArea를 동기화
+  useEffect(() => {
+    setSelectedArea(areaFromUrl);
+  }, [areaFromUrl]);
+
+  // 2. selectedArea 혹은 searchKeyword가 변경될 때마다 API 호출
   useEffect(() => {
     loadSpaces(searchKeyword, selectedArea);
-  }, [selectedArea]);
+  }, [selectedArea, searchKeyword]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -61,6 +71,7 @@ function DestinationPage() {
             <AreaButton
               key={area.value}
               active={selectedArea === area.value}
+              // 클릭 시 selectedArea 업데이트 (API 호출은 useEffect가 처리)
               onClick={() => setSelectedArea(area.value)}
             >
               {area.label}
