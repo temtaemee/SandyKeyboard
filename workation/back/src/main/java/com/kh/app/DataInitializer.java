@@ -721,9 +721,13 @@ public class DataInitializer implements CommandLineRunner {
                 .toList();
 
         for (int i = 0; i < completed.size(); i++) {
+            ReservationEntity resv = completed.get(i);
+
+            // 💡 핵심 수정: 예약(resv)을 통해 공간(SpaceEntity) 정보를 가져와서 Review에 매핑
             reviewRepository.save(ReviewEntity.builder()
-                    .member(completed.get(i).getMember())
-                    .reservation(completed.get(i))
+                    .member(resv.getMember())
+                    .reservation(resv)
+                    .space(resv.getSpace()) // 💡 이 코드가 누락되어 null 오류가 발생했던 것입니다.
                     .title(titles[i % titles.length])
                     .content(body)
                     .tag(tags[i % tags.length])

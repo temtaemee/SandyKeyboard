@@ -58,4 +58,9 @@ public class SpacePublicApiController {
     public ResponseEntity<SpaceResDto> selectOne(@PathVariable Long id) {
         return ResponseEntity.ok(spaceService.selectOneForPublic(id));
     }
+
+    @GetMapping("/list/recommended")
+    public ResponseEntity<List<SpaceResDto>> getRecommendedSpaces(@RequestParam(required = false) Area area) {
+        return ResponseEntity.ok(spaceService.getRecommendedSpaces(area));
+    }
 }

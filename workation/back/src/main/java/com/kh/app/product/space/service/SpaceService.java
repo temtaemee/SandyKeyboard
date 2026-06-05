@@ -1,5 +1,6 @@
 package com.kh.app.product.space.service;
 
+import com.kh.app.board.review.repository.ReviewRepository;
 import com.kh.app.member.entity.MemberEntity;
 import com.kh.app.member.repository.MemberRepository;
 import com.kh.app.notification.dto.request.NotificationCreateReqDto;
@@ -36,6 +37,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -53,6 +55,7 @@ public class SpaceService {
     private final StayOptionRepository stayOptionRepository;
     private final StayPictureRepository stayPictureRepository;
     private final NotificationService notificationService;
+    private final ReviewRepository reviewRepository;
 
     // ========== 기존 메서드 (하위 호환) ==========
 
@@ -560,5 +563,26 @@ public class SpaceService {
                         .toList();
 
         spaceArcadeRepository.saveAll(entityList);
+    }
+
+    public List<SpaceResDto> getRecommendedSpaces(Area area) {
+        List<SpaceEntity> spaces = spaceRepository.findRecommendedSpaces(area);
+
+        return spaces.stream().map(space -> {
+            // 1. 리스트로 결과를 받습니다.
+            List<Double> result = reviewRepository.findAverageRatingBySpaceId(space.getId());
+
+            // 2. 리스트가 비어있지 않으면 첫 번째 값을 가져오고, 없으면 0.0을 사용합니다.
+            Double avgRating = (result != null && !result.isEmpty()) ? result.get(0) : 0.0;
+
+            // 3. 썸네일 URL 가져오기
+            String thumbnailUrl = spacePictureRepository
+                    .findBySpaceIdAndMainYn(space.getId(), "Y")
+                    .map(p -> resolveImageUrl(p.getFilePath()))
+                    .orElse(null);
+
+            // 4. DTO 생성 (아까 만든 5개짜리 from 메서드 호출)
+            return SpaceResDto.from(space, null, thumbnailUrl, null, avgRating);
+        }).collect(Collectors.toList());
     }
 }

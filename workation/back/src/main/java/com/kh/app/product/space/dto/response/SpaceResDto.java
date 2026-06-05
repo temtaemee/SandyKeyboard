@@ -99,6 +99,9 @@ public class SpaceResDto {
     @Schema(description = "편의시설 목록 {id, name} (상세 조회 시에만 포함)")
     private List<Map<String, Object>> arcades;
 
+    @Schema(description = "평균 별점")
+    private Double averageRating; // 💡 추가
+
     @Getter
     @Builder
     public static class PictureInfo {
@@ -227,4 +230,39 @@ public class SpaceResDto {
                         .toList())
                 .build();
     }
+
+    public static SpaceResDto from(SpaceEntity entity, List<StayResDto> stays, String thumbnailUrl,
+                                   List<PictureInfo> prebuiltPictures, Double averageRating) {
+        return SpaceResDto.builder()
+                .id(entity.getId())
+                .name(entity.getName())
+                .phone(entity.getPhone())
+                .email(entity.getEmail())
+                .summary(entity.getSummary())
+                .description(entity.getDescription())
+                .address1(entity.getAddress1())
+                .address2(entity.getAddress2())
+                .latitude(entity.getLatitude())
+                .longitude(entity.getLongitude())
+                .visibleYn(entity.getVisibleYn())
+                .delYn(entity.getDelYn())
+                .area(entity.getArea())
+                .approvalStatus(entity.getApprovalStatus())
+                .rejectionReason(entity.getRejectionReason())
+                .approvedAt(entity.getApprovedAt())
+                .adminHidden(entity.getAdminHidden())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .sellerId(entity.getSeller() != null ? entity.getSeller().getId() : null)
+                .sellerUsername(entity.getSeller() != null ? entity.getSeller().getUsername() : null)
+                .sellerName(entity.getSeller() != null && entity.getSeller().getSeller() != null
+                        ? entity.getSeller().getSeller().getAccountName() : null)
+                .thumbnailUrl(thumbnailUrl)
+                .stays(stays)
+                .pictures(prebuiltPictures)
+                .averageRating(averageRating != null ? averageRating : 0.0)
+                .build();
+    }
+
+
 }

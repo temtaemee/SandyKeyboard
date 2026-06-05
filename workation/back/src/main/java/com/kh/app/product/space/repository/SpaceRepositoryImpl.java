@@ -1,7 +1,9 @@
 package com.kh.app.product.space.repository;
 
+import com.kh.app.board.review.entity.QReviewEntity;
 import com.kh.app.member.entity.QMemberEntity;
 import com.kh.app.product.space.dto.request.SpaceSearchReqDto;
+import com.kh.app.product.space.entity.Area;
 import com.kh.app.product.space.entity.QSpaceEntity;
 import com.kh.app.product.space.entity.SpaceEntity;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -84,6 +86,27 @@ public class SpaceRepositoryImpl implements SpaceRepositoryCustom {
                         delYnEq(space, dto.getDelYn())
                 )
                 .orderBy(space.createdAt.desc())
+                .fetch();
+    }
+    @Override
+    public List<SpaceEntity> findRecommendedSpaces(Area area) {
+        QSpaceEntity space = QSpaceEntity.spaceEntity;
+        QReviewEntity review = QReviewEntity.reviewEntity;
+
+        return queryFactory
+                .selectFrom(space)
+                // 💡 review.space를 직접 조인 (가장 안전한 방식)
+                .innerJoin(review).on(review.space.eq(space))
+                .where(
+                        space.visibleYn.eq("Y"),
+                        area != null ? space.area.eq(area) : null
+                )
+                .groupBy(space.id)
+                .having(review.rating.avg().goe(4.0))
+                // 💡 여기서 에러가 난다면 review.createdAt 대신에 review.id.max()를 사용해보세요.
+                // 최신 리뷰일수록 ID값이 클 확률이 높기 때문입니다.
+                .orderBy(review.id.max().desc())
+                .limit(3)
                 .fetch();
     }
 
