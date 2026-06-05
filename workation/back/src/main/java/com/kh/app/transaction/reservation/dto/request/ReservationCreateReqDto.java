@@ -6,6 +6,7 @@ import com.kh.app.middle.coupon.entity.CouponEntity;
 import com.kh.app.product.stay.entity.StayEntity; // 💡 추가
 import com.kh.app.transaction.reservation.entity.ReservationEntity;
 import com.kh.app.transaction.reservation.entity.ReservationStatus;
+import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -30,6 +31,7 @@ public class ReservationCreateReqDto {
     private String primaryGuestEmail;
 
     private String refundBankName;
+    @Pattern(regexp = "^[0-9]{8,20}$", message = "계좌번호는 숫자만 입력 가능합니다.")
     private String refundAccountNumber;
     private String refundAccountHolder;
 
