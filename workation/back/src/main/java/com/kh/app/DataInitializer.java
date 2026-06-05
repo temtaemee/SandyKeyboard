@@ -219,6 +219,17 @@ public class DataInitializer implements CommandLineRunner {
                     .couponCode("BIRTHDAY-20").couponName("생일 축하 특별 쿠폰")
                     .discountRate(20).remainQty(9999).couponStatus(CouponStatus.A).validDays(30).build());
         }
+        // 아래 2개 추가
+        if (couponRepository.findByCouponCode("BEST_REVIEW_20").isEmpty()) {
+            couponRepository.save(CouponEntity.builder()
+                    .couponCode("BEST_REVIEW_20").couponName("베스트리뷰자 쿠폰")
+                    .discountRate(20).remainQty(1000).couponStatus(CouponStatus.A).validDays(30).build());
+        }
+        if (couponRepository.findByCouponCode("INVITE_10").isEmpty()) {
+            couponRepository.save(CouponEntity.builder()
+                    .couponCode("INVITE_10").couponName("지인초대 쿠폰")
+                    .discountRate(10).remainQty(1000).couponStatus(CouponStatus.A).validDays(30).build());
+        }
     }
 
     // ───────────────────────────────────────────────
