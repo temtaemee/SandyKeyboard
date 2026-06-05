@@ -242,7 +242,7 @@ function ReservationInsertPage() {
 
           {/* 지원금 수령 계좌 */}
           <Section>
-            <SectionTitle>지원금 수령 계좌</SectionTitle>
+            <SectionTitle>지원금 수령 계좌(선택 사항)</SectionTitle>
             <InputGroup>
               <Label>은행명</Label>
               <Input

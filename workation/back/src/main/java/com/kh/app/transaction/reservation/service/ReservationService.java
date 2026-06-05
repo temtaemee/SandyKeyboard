@@ -317,31 +317,5 @@ public class ReservationService {
         payoutService.createPayoutTarget(salesService.findByPaymentId(payment.getId()));
     }
 
-    @Transactional
-    public void cancelReservationByUser(Long id, String username) {
-        ReservationEntity reservation = reservationRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("예약 내역을 찾을 수 없습니다."));
 
-        if (!reservation.getMember().getUsername().equals(username)) {
-            throw new IllegalArgumentException("본인의 예약만 취소할 수 있습니다.");
-        }
-        if (reservation.getStatus() == ReservationStatus.USER_CANCELLED ||
-                reservation.getStatus() == ReservationStatus.COMPLETED ||
-                reservation.getStatus() == ReservationStatus.REFUND_COMPLETED) {
-            throw new IllegalStateException("취소 가능한 상태의 예약이 아닙니다.");
-        }
-
-        int refundRate = refundService.calculateRefundRate(reservation);
-        if (refundRate == 0) throw new IllegalStateException("취소가 불가능한 기간입니다.");
-
-        long finalRefundAmount = (reservation.getTotalPrice() * refundRate) / 100;
-        reservation.updateStatus(ReservationStatus.USER_CANCELLED);
-        refundService.processTossCancelByRate(reservation, finalRefundAmount, "구매자 변동 패널티 취소");
-
-        PaymentEntity payment = paymentRepository.findByReservation(reservation)
-                .orElseThrow(() -> new EntityNotFoundException("결제 내역을 찾을 수 없습니다."));
-        salesService.handleCancel(payment.getId(), finalRefundAmount);
-
-        log.info("▶️ [취소 완료] 구매자 취소 완료: 환불율 {}% / 총 환불금액: {}원", refundRate, finalRefundAmount);
-    }
 }
