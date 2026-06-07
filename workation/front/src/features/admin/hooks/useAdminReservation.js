@@ -92,7 +92,7 @@ export default function useAdminReservation() {
     dashboardSummary,
   } = useSelector((state) => state.admin.reservation);
 
-  // ─── 이번 달 예약 건수 계산 ───
+  // ─── 이번 달 예약 건수 계산, 취소금액 ───
   const fetchDashboardSummary = useCallback(async () => {
     dispatch(setLoading(true));
     try {
@@ -147,11 +147,14 @@ export default function useAdminReservation() {
       let page = 0;
       let hasNext = true;
 
-      while (hasNext && page < 20) { // 최대 20페이지(200개) 안전 제한
+      while (hasNext && page < 20) {
+        // 최대 20페이지(200개) 안전 제한
         const resp = await getAdminReservations({ pno: page });
         const data = resp.data;
         const content = Array.isArray(data) ? data : (data.content ?? []);
-        console.log(`[useAdminReservation] page=${page} fetched ${content.length} raw items`);
+        console.log(
+          `[useAdminReservation] page=${page} fetched ${content.length} raw items`
+        );
         if (content.length === 0) {
           hasNext = false;
         } else {
@@ -161,7 +164,9 @@ export default function useAdminReservation() {
           allList = [...allList, ...mapped];
 
           const totalPages = data.totalPages ?? data.totalPage ?? 1;
-          console.log(`[useAdminReservation] page=${page} content mapped. totalPages=${totalPages}`);
+          console.log(
+            `[useAdminReservation] page=${page} content mapped. totalPages=${totalPages}`
+          );
           if (page >= totalPages - 1) {
             hasNext = false;
           } else {
@@ -169,7 +174,9 @@ export default function useAdminReservation() {
           }
         }
       }
-      console.log(`[useAdminReservation] Final allReservations loaded count: ${allList.length}`);
+      console.log(
+        `[useAdminReservation] Final allReservations loaded count: ${allList.length}`
+      );
       dispatch(setAllReservations(allList));
     } catch (err) {
       console.error('전체 예약 fetch 에러:', err);

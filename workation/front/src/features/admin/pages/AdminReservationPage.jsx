@@ -109,44 +109,9 @@ export default function AdminReservationPage() {
   const activePercent =
     totalPartners > 0 ? Math.round((activePartners / totalPartners) * 100) : 0;
 
-  // ─── [실시간 통계] 이번 달 예약 및 결제 취소(환불) 금액 로컬 실시간 계산 ───
-  const getThisMonthCancelAmount = () => {
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
-
-    return allReservations
-      .filter((row) => {
-        const isCancelled = CANCELLED_STATUSES.includes(row.status);
-        if (!isCancelled) return false;
-
-        if (!row.createdAt) return false;
-        const createDate = new Date(row.createdAt);
-        return (
-          createDate.getFullYear() === currentYear &&
-          createDate.getMonth() === currentMonth
-        );
-      })
-      .reduce((sum, row) => sum + (row.rawTotalPrice ?? 0), 0);
-  };
-
-  const getThisMonthReservationCount = () => {
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
-
-    return allReservations.filter((row) => {
-      if (!row.createdAt) return false;
-      const createDate = new Date(row.createdAt);
-      return (
-        createDate.getFullYear() === currentYear &&
-        createDate.getMonth() === currentMonth
-      );
-    }).length;
-  };
-
-  const thisMonthCancelAmount = getThisMonthCancelAmount();
-  const thisMonthReservationCount = getThisMonthReservationCount();
+  // ─── [실시간 통계] 백엔드 API (DashboardSummaryResDto) 데이터 사용 ───
+  const thisMonthCancelAmount = dashboardSummary?.thisMonthCancelAmount ?? 0;
+  const thisMonthReservationCount = dashboardSummary?.thisMonthReservationCount ?? 0;
 
   // ─── [버그 해결] 카테고리 탭 클릭 시 전체 데이터(allReservations) 기준 필터링 및 로컬 페이징 처리 ───
   const getFilteredAllReservations = () => {

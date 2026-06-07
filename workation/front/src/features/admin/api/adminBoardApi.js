@@ -144,9 +144,9 @@ export async function getMemberCouponList(pno, username) {
 }
 // 멤버에게 쿠폰 발급
 export async function adminRegister(data) {
-  return api.post('/admin/coupon', data);
+  return api.post('/admin/memberCoupon', data);
 }
 // 멤버 쿠폰 삭제
 export async function deleteMemberCoupon(data) {
-  return api.delete(`/admin/coupon/`, data);
+  return api.delete(`/admin/memberCoupon/`, data);
 }

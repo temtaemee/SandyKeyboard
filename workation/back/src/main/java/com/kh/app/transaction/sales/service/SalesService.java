@@ -144,12 +144,13 @@ public class SalesService {
     @Transactional(readOnly = true)
     public MonthlySalesStatsResDto getMonthlySalesStatistics(int year, int month) {
         // 1. 전체 매출 통계 조회
-        Object[] totalRow = salesRepository.sumSalesByYearMonth(year, month);
+        List<Object[]> results = salesRepository.sumSalesByYearMonth(year, month);
+        Object[] totalRow = (results != null && !results.isEmpty()) ? results.get(0) : new Object[]{0L, 0L, 0L};
 
         SalesSummaryResDto totalSalesInfo = SalesSummaryResDto.builder()
-                .totalSales(totalRow != null && totalRow[0] != null ? (Long) totalRow[0] : 0L)
-                .totalCancel(totalRow != null && totalRow[1] != null ? (Long) totalRow[1] : 0L)
-                .totalNetSales(totalRow != null && totalRow[2] != null ? (Long) totalRow[2] : 0L)
+                .totalSales(totalRow != null && totalRow.length > 0 && totalRow[0] != null ? (Long) totalRow[0] : 0L)
+                .totalCancel(totalRow != null && totalRow.length > 1 && totalRow[1] != null ? (Long) totalRow[1] : 0L)
+                .totalNetSales(totalRow != null && totalRow.length > 2 && totalRow[2] != null ? (Long) totalRow[2] : 0L)
                 .build();
 
         // 2. 지역별 매출 조회 및 팩토리 메서드 사용

@@ -224,7 +224,7 @@ export default function AdminBoardPage() {
                     <TD>
                       <TitleCell>
                         <TitleText style={{ textDecoration: post.delYn === 'Y' ? 'line-through' : 'none', color: post.delYn === 'Y' ? '#cbd5e1' : 'inherit' }}>
-                          {activeTab === '쿠폰' ? post.couponName : post.title}
+                          {activeTab === '쿠폰' ? post.couponName : (activeTab === 'FAQ' ? post.question : post.title)}
                         </TitleText>
                         {(post.pinYn === 'Y' || post.isFixed) && <FixedBadge>고정</FixedBadge>}
                         {post.delYn === 'Y' && (
@@ -302,7 +302,7 @@ export default function AdminBoardPage() {
                   <ModalTitle>
                     {activeTab === '쿠폰'
                       ? detailPost.couponName
-                      : detailPost.title}
+                      : (activeTab === 'FAQ' ? detailPost.question : detailPost.title)}
                   </ModalTitle>
                   {activeTab === '쿠폰' && detailPost.couponCode && (
                     <CouponCodeBadge>{detailPost.couponCode}</CouponCodeBadge>
@@ -364,7 +364,7 @@ export default function AdminBoardPage() {
                 <>
                   {/* 아래는 다 내용으로 채워짐 */}
                   <DetailContentArea style={{ paddingTop: '0px' }}>
-                    {detailPost.content || '등록된 내용이 없습니다.'}
+                    {activeTab === 'FAQ' ? detailPost.answer : (detailPost.content || '등록된 내용이 없습니다.')}
                   </DetailContentArea>
 
                   {detailPost.files && detailPost.files.length > 0 && (
@@ -475,9 +475,9 @@ export default function AdminBoardPage() {
               ) : (
                 <>
                   <FieldGroup>
-                    <FieldLabel>제목</FieldLabel>
+                    <FieldLabel>{registerModal === 'FAQ' ? '질문' : '제목'}</FieldLabel>
                     <FieldInput
-                      placeholder="제목을 입력하세요"
+                      placeholder={registerModal === 'FAQ' ? '질문을 입력하세요' : '제목을 입력하세요'}
                       value={formData.title || ''}
                       onChange={(e) =>
                         handleFormChange('title', e.target.value)
@@ -485,72 +485,72 @@ export default function AdminBoardPage() {
                     />
                   </FieldGroup>
                   <FieldGroup>
-                    <FieldLabel>내용</FieldLabel>
+                    <FieldLabel>{registerModal === 'FAQ' ? '답변' : '내용'}</FieldLabel>
                     <FieldTextarea
-                      placeholder="내용을 입력하세요"
+                      placeholder={registerModal === 'FAQ' ? '답변을 입력하세요' : '내용을 입력하세요'}
                       value={formData.content || ''}
                       onChange={(e) =>
                         handleFormChange('content', e.target.value)
                       }
                     />
                   </FieldGroup>
-                  {activeTab === '공지사항' && (
-                    <>
-                      <CheckboxGroup>
-                        <CheckboxInput
-                          type="checkbox"
-                          id="isFixed"
-                          checked={formData.isFixed || false}
-                          onChange={(e) =>
-                            handleFormChange('isFixed', e.target.checked)
-                          }
-                        />
-                        <CheckboxLabel htmlFor="isFixed">이 글을 상단에 고정합니다 (필독)</CheckboxLabel>
-                      </CheckboxGroup>
-                      <FieldGroup>
-                        <FieldLabel>첨부파일</FieldLabel>
-                        {editingPost && editingPost.files && editingPost.files.length > 0 && (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '8px', padding: '10px', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                            <p style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '4px' }}>기존 첨부파일 ({editingPost.files.length}개)</p>
-                            {editingPost.files.map((file) => {
-                              const isRemoved = removedFileIds.includes(file.id);
-                              return (
-                                <div key={file.id} style={{ display: 'flex', alignItems: 'center', fontSize: '12px', color: '#334155', justifyContent: 'space-between', width: '100%', minHeight: '22px' }}>
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '280px', textDecoration: isRemoved ? 'line-through' : 'none', color: isRemoved ? '#cbd5e1' : '#334155' }}>
-                                    <Paperclip size={11} color={isRemoved ? '#cbd5e1' : '#94a3b8'} /> {file.originalFileName}
+                  {registerModal === '공지사항' && (
+                    <CheckboxGroup>
+                      <CheckboxInput
+                        type="checkbox"
+                        id="isFixed"
+                        checked={formData.isFixed || false}
+                        onChange={(e) =>
+                          handleFormChange('isFixed', e.target.checked)
+                        }
+                      />
+                      <CheckboxLabel htmlFor="isFixed">이 글을 상단에 고정합니다 (필독)</CheckboxLabel>
+                    </CheckboxGroup>
+                  )}
+                  {(registerModal === '공지사항' || registerModal === '이벤트') && (
+                    <FieldGroup>
+                      <FieldLabel>첨부파일</FieldLabel>
+                      {editingPost && editingPost.files && editingPost.files.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '8px', padding: '10px', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                          <p style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '4px' }}>기존 첨부파일 ({editingPost.files.length}개)</p>
+                          {editingPost.files.map((file) => {
+                            const isRemoved = removedFileIds.includes(file.id);
+                            return (
+                              <div key={file.id} style={{ display: 'flex', alignItems: 'center', fontSize: '12px', color: '#334155', justifyContent: 'space-between', width: '100%', minHeight: '22px' }}>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '280px', textDecoration: isRemoved ? 'line-through' : 'none', color: isRemoved ? '#cbd5e1' : '#334155' }}>
+                                  <Paperclip size={11} color={isRemoved ? '#cbd5e1' : '#94a3b8'} /> {file.originalFileName}
+                                </span>
+                                {isRemoved ? (
+                                  <span style={{ fontSize: '10px', color: '#ef4444', fontWeight: 600, background: '#fee2e2', padding: '1px 6px', borderRadius: '3px', marginLeft: 'auto' }}>
+                                    삭제 대기
                                   </span>
-                                  {isRemoved ? (
-                                    <span style={{ fontSize: '10px', color: '#ef4444', fontWeight: 600, background: '#fee2e2', padding: '1px 6px', borderRadius: '3px', marginLeft: 'auto' }}>
-                                      삭제 대기
-                                    </span>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleRemoveExistingFile(file.id)}
-                                      style={{ fontSize: '10px', color: '#ef4444', background: '#fff5f5', border: '1px solid #fecaca', padding: '2px 8px', borderRadius: '4px', marginLeft: 'auto', cursor: 'pointer', fontWeight: 500 }}
-                                    >
-                                      삭제
-                                    </button>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                        <FileInput
-                          type="file"
-                          multiple
-                          onChange={(e) =>
-                            handleFormChange('files', Array.from(e.target.files))
-                          }
-                        />
-                        {editingPost && (
-                          <span style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
-                            * 새 파일을 선택하면 기존 첨부파일에 추가하거나 교체 가능하도록 대기합니다. (백엔드 보강 필요)
-                          </span>
-                        )}
-                      </FieldGroup>
-                    </>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveExistingFile(file.id)}
+                                    style={{ fontSize: '10px', color: '#ef4444', background: '#fff5f5', border: '1px solid #fecaca', padding: '2px 8px', borderRadius: '4px', marginLeft: 'auto', cursor: 'pointer', fontWeight: 500 }}
+                                  >
+                                    삭제
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      <FileInput
+                        type="file"
+                        multiple
+                        onChange={(e) =>
+                          handleFormChange('files', Array.from(e.target.files))
+                        }
+                      />
+                      {editingPost && (
+                        <span style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
+                          * 새 파일을 선택하면 기존 첨부파일에 추가하거나 교체 가능하도록 대기합니다. (백엔드 보강 필요)
+                        </span>
+                      )}
+                    </FieldGroup>
                   )}
                 </>
               )}
