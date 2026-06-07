@@ -1,7 +1,7 @@
 // src/features/admin/pages/AdminSalesPage.jsx
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { Wallet, Percent, TrendingUp, ClipboardList } from 'lucide-react';
+import { Wallet, Percent, TrendingUp, ClipboardList, X } from 'lucide-react';
 import AdminSearchInput from '../components/common/AdminSearchInput';
 import AdminChartPanel from '../components/dashboard/AdminChartPanel';
 import YearMonthPicker from '../components/common/YearMonthPicker';
@@ -12,19 +12,43 @@ import {
 } from '../api/adminSalesApi'; // 💡 백엔드 API 연동
 import { SETTLEMENT_STATUS_MAP } from '../data/adminSalesConstants';
 import StatusBadge from '../components/common/StatusBadge';
+import {
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseBtn,
+} from '../components/common/AdminModal.styles'; // 모달 공통 스타일
 
-const NOW = new Date();
+const getTargetDate = () => {
+  const today = new Date();
+  const currentDate = today.getDate();
+  let targetYear = today.getFullYear();
+  let targetMonth = today.getMonth() + 1;
+
+  if (currentDate <= 10) {
+    targetMonth -= 2;
+  } else {
+    targetMonth -= 1;
+  }
+
+  if (targetMonth <= 0) {
+    targetYear -= 1;
+    targetMonth += 12;
+  }
+  return { year: targetYear, month: targetMonth };
+};
+
+const DEFAULT_TARGET = getTargetDate();
 
 export default function AdminSalesPage() {
   const [pendingSearch, setPendingSearch] = useState('');
-  const [completedDate, setCompletedDate] = useState({
-    year: NOW.getFullYear(),
-    month: NOW.getMonth() + 1,
-  });
-  const [feeDate, setFeeDate] = useState({
-    year: NOW.getFullYear(),
-    month: NOW.getMonth() + 1,
-  });
+  const [completedDate, setCompletedDate] = useState(DEFAULT_TARGET);
+  const [feeDate, setFeeDate] = useState(DEFAULT_TARGET);
+
+  // 모달 제어 State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalSearch, setModalSearch] = useState('');
+  const [modalStatusFilter, setModalStatusFilter] = useState('ALL'); // 'ALL' | 'READY' | 'COMPLETED'
 
   // 💡 백엔드 정산 연동용 State (가짜 데이터 원복 적용)
   const [rawPayouts, setRawPayouts] = useState([]);
@@ -90,6 +114,21 @@ export default function AdminSalesPage() {
   };
 
   const filteredPending = getFilteredPending();
+
+  // 4-2. 모달 내 정산 목록 필터링 및 검색
+  const getFilteredModalPayouts = () => {
+    return rawPayouts.filter((row) => {
+      const matchStatus =
+        modalStatusFilter === 'ALL' || row.statusLabel === modalStatusFilter;
+      const matchSearch =
+        !modalSearch ||
+        row.sellerUsername.toLowerCase().includes(modalSearch.toLowerCase()) ||
+        String(row.payoutId).toLowerCase().includes(modalSearch.toLowerCase());
+      return matchStatus && matchSearch;
+    });
+  };
+
+  const filteredModalPayouts = getFilteredModalPayouts();
 
   // 5. 💡 [요구사항] 스케줄러 매달 10일 기준 Top 5 데이터 동적 연산 (실제 DB 데이터만 활용)
   const getTop5Settlements = () => {
@@ -273,7 +312,7 @@ export default function AdminSalesPage() {
               </PendingTable>
 
               <ViewAllRow>
-                <ViewAllBtn>전체 목록 보기</ViewAllBtn>
+                <ViewAllBtn onClick={() => setIsModalOpen(true)}>전체 목록 보기</ViewAllBtn>
               </ViewAllRow>
             </PendingSection>
           </LeftColumn>
@@ -312,6 +351,128 @@ export default function AdminSalesPage() {
           </Top5Card>
         </SettlementBottom>
       </SectionBlock>
+
+      {/* ── 전체 정산 목록 모달 ── */}
+      {isModalOpen && (
+        <ModalOverlay onClick={() => setIsModalOpen(false)}>
+          <ModalContent $width="840px" $maxHeight="85vh" onClick={(e) => e.stopPropagation()}>
+            <ModalHeader>
+              <ModalTitleGroup>
+                <ModalTitle>전체 정산 내역</ModalTitle>
+                <ModalSub>총 {rawPayouts.length}건의 정산 신청/처리 내역이 있습니다.</ModalSub>
+              </ModalTitleGroup>
+              <ModalCloseBtn onClick={() => setIsModalOpen(false)}>
+                <X size={18} />
+              </ModalCloseBtn>
+            </ModalHeader>
+
+            {/* 모달 상단 컨트롤: 상태 탭 + 검색창 */}
+            <ModalControlBar>
+              <ModalTabGroup>
+                <ModalTab 
+                  $active={modalStatusFilter === 'ALL'} 
+                  onClick={() => setModalStatusFilter('ALL')}
+                >
+                  전체 ({rawPayouts.length})
+                </ModalTab>
+                <ModalTab 
+                  $active={modalStatusFilter === 'READY'} 
+                  onClick={() => setModalStatusFilter('READY')}
+                >
+                  정산 대기 ({rawPayouts.filter(r => r.statusLabel === 'READY').length})
+                </ModalTab>
+                <ModalTab 
+                  $active={modalStatusFilter === 'COMPLETED'} 
+                  onClick={() => setModalStatusFilter('COMPLETED')}
+                >
+                  정산 완료 ({rawPayouts.filter(r => r.statusLabel === 'COMPLETED').length})
+                </ModalTab>
+              </ModalTabGroup>
+              
+              <AdminSearchInput
+                value={modalSearch}
+                onChange={setModalSearch}
+                placeholder="거래처명 / ID 검색..."
+                width="220px"
+              />
+            </ModalControlBar>
+
+            {/* 모달 본문: 테이블 */}
+            <ModalBody>
+              <ModalTable>
+                <ModalThead>
+                  <ModalTr>
+                    <ModalTh style={{ width: '80px' }}>ID</ModalTh>
+                    <ModalTh>거래처명</ModalTh>
+                    <ModalTh style={{ textAlign: 'right' }}>매출 금액</ModalTh>
+                    <ModalTh style={{ textAlign: 'right' }}>수수료</ModalTh>
+                    <ModalTh style={{ textAlign: 'right' }}>정산 대상액</ModalTh>
+                    <ModalTh>정산 요청일</ModalTh>
+                    <ModalTh style={{ width: '120px' }}>상태</ModalTh>
+                  </ModalTr>
+                </ModalThead>
+                <ModalTbody>
+                  {filteredModalPayouts.length === 0 ? (
+                    <ModalTr>
+                      <ModalTd colSpan={7}>
+                        <ModalEmptyPending>조회된 정산 내역이 없습니다.</ModalEmptyPending>
+                      </ModalTd>
+                    </ModalTr>
+                  ) : (
+                    filteredModalPayouts.map((row) => {
+                      const statusInfo = SETTLEMENT_STATUS_MAP[row.statusLabel] || { 
+                        label: row.statusLabel, 
+                        bg: '#f1f5f9', 
+                        color: '#475569' 
+                      };
+                      return (
+                        <ModalTr key={row.payoutId}>
+                          <ModalTd><ModalIdText>{row.payoutId}</ModalIdText></ModalTd>
+                          <ModalTd><ModalSellerText>{row.sellerUsername}</ModalSellerText></ModalTd>
+                          <ModalTd style={{ textAlign: 'right' }}>
+                            <ModalAmountText>
+                              {row.originalAmount ? `₩${row.originalAmount.toLocaleString()}` : '₩0'}
+                            </ModalAmountText>
+                          </ModalTd>
+                          <ModalTd style={{ textAlign: 'right' }}>
+                            <ModalAmountText $isFee>
+                              {row.feeAmount ? `₩${row.feeAmount.toLocaleString()}` : '₩0'}
+                            </ModalAmountText>
+                          </ModalTd>
+                          <ModalTd style={{ textAlign: 'right' }}>
+                            <ModalAmountText $isPayout>
+                              {row.payoutAmount ? `₩${row.payoutAmount.toLocaleString()}` : '—'}
+                            </ModalAmountText>
+                          </ModalTd>
+                          <ModalTd>
+                            <ModalDateText>
+                              {row.payoutDate ? row.payoutDate.split('T')[0] : '—'}
+                            </ModalDateText>
+                          </ModalTd>
+                          <ModalTd>
+                            <StatusBadge $bg={statusInfo.bg} $color={statusInfo.color}>
+                              {statusInfo.label}
+                            </StatusBadge>
+                          </ModalTd>
+                        </ModalTr>
+                      );
+                    })
+                  )}
+                </ModalTbody>
+              </ModalTable>
+            </ModalBody>
+
+            <ModalFooter>
+              <ModalFooterInfo>
+                검색 결과: 총 {filteredModalPayouts.length}건
+              </ModalFooterInfo>
+              <ModalCloseFooterBtn onClick={() => setIsModalOpen(false)}>
+                닫기
+              </ModalCloseFooterBtn>
+            </ModalFooter>
+          </ModalContent>
+        </ModalOverlay>
+      )}
     </PageWrapper>
   );
 }
@@ -665,4 +826,169 @@ const Top5Amount = styled.span`
   color: ${({ theme }) => theme.colors.adminTextDark};
   font-family: ${({ theme }) => theme.fonts.number};
   white-space: nowrap;
+`;
+
+/* ── 모달 관련 Styled Components ── */
+const ModalTitleGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
+
+const ModalTitle = styled.h2`
+  font-size: 18px;
+  font-weight: 700;
+  color: ${({ theme }) => theme.colors.adminTextDark};
+`;
+
+const ModalSub = styled.p`
+  font-size: 12px;
+  color: ${({ theme }) => theme.colors.textMuted};
+`;
+
+const ModalControlBar = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background: #f8fafc;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
+`;
+
+const ModalTabGroup = styled.div`
+  display: flex;
+  gap: 4px;
+`;
+
+const ModalTab = styled.button`
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 6px;
+  font-family: inherit;
+  transition: all 0.15s;
+  background: ${({ $active }) => ($active ? '#244c54' : 'transparent')};
+  color: ${({ $active }) => ($active ? 'white' : '#64748b')};
+  border: 1px solid ${({ $active }) => ($active ? '#244c54' : 'transparent')};
+  
+  &:hover {
+    background: ${({ $active }) => ($active ? '#244c54' : '#f1f5f9')};
+    color: ${({ $active }) => ($active ? 'white' : '#334155')};
+  }
+`;
+
+const ModalBody = styled.div`
+  padding: 0;
+  overflow-y: auto;
+  flex: 1;
+  max-height: 50vh;
+`;
+
+const ModalTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+`;
+
+const ModalThead = styled.thead`
+  background: #f8fafc;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
+`;
+
+const ModalTbody = styled.tbody``;
+
+const ModalTr = styled.tr`
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.15s;
+  &:hover {
+    background: #fafbfc;
+  }
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+const ModalTh = styled.th`
+  padding: 12px 20px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.textMuted};
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+`;
+
+const ModalTd = styled.td`
+  padding: 12px 20px;
+  vertical-align: middle;
+  font-size: 13px;
+`;
+
+const ModalIdText = styled.span`
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  font-family: ${({ theme }) => theme.fonts.number};
+`;
+
+const ModalSellerText = styled.span`
+  font-weight: 500;
+  color: #1e293b;
+`;
+
+const ModalAmountText = styled.span`
+  font-family: ${({ theme }) => theme.fonts.number};
+  font-weight: 600;
+  color: ${({ $isPayout, $isFee, theme }) => 
+    $isPayout 
+      ? theme.colors.adminTextDark 
+      : $isFee 
+        ? '#ea580c' 
+        : '#475569'};
+`;
+
+const ModalDateText = styled.span`
+  font-size: 12px;
+  color: ${({ theme }) => theme.colors.textMuted};
+  font-family: ${({ theme }) => theme.fonts.number};
+`;
+
+const ModalEmptyPending = styled.div`
+  padding: 60px 0;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 14px;
+`;
+
+const ModalFooter = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+`;
+
+const ModalFooterInfo = styled.span`
+  font-size: 12px;
+  font-weight: 500;
+  color: #94a3b8;
+`;
+
+const ModalCloseFooterBtn = styled.button`
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #475569;
+  transition: all 0.15s;
+  &:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+  }
 `;

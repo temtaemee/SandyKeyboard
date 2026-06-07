@@ -56,7 +56,7 @@ public interface SalesRepository extends JpaRepository<SalesEntity, Long> {
     @Query("SELECT SUM(s.salesAmount), SUM(s.cancelAmount), SUM(s.netSalesAmount) FROM SalesEntity s " +
             "WHERE YEAR(s.salesDate) = :year " +
             "AND MONTH(s.salesDate) = :month")
-    Object[] sumSalesByYearMonth(@Param("year") int year, @Param("month") int month);
+    List<Object[]> sumSalesByYearMonth(@Param("year") int year, @Param("month") int month);
 
     // 최근 6개월 12개월 매출
     @Query("SELECT YEAR(s.salesDate) as y, MONTH(s.salesDate) as m, SUM(s.netSalesAmount) " +

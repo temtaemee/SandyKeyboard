@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { getAdminBoardPost } from '../api/adminBoardApi';
+import { getAdminBoardPost, getCouponById } from '../api/adminBoardApi';
 
 /**
  * AdminBoardPage의 UI 로직(검색, 필터링, 다양한 모달 창 제어, 폼 입력)을 전담하는 커스텀 훅입니다.
@@ -56,7 +56,8 @@ export default function useAdminBoardUI({
 
       return matchSearch;
     } else {
-      const matchSearch = (p.title || '')
+      const searchTarget = activeTab === 'FAQ' ? p.question : p.title;
+      const matchSearch = (searchTarget || '')
         .toLowerCase()
         .includes(searchQuery.toLowerCase());
       return matchSearch;
@@ -107,8 +108,8 @@ export default function useAdminBoardUI({
       });
     } else {
       setFormData({
-        title: post.title,
-        content: post.content || '',
+        title: activeTab === 'FAQ' ? post.question : post.title,
+        content: activeTab === 'FAQ' ? post.answer : (post.content || ''),
         isFixed: post.pinYn === 'Y' || post.isFixed || false,
       });
     }
@@ -178,16 +179,18 @@ export default function useAdminBoardUI({
           setDetailPost(resp.data);
         } catch (err) {
           console.error('수정 완료 후 공지 상세 재조회 에러:', err);
-          setDetailPost({
-            ...editingPost,
-            ...updatedData,
-          });
+          setDetailPost({ ...editingPost, ...updatedData });
+        }
+      } else if (activeTab === '쿠폰') {
+        try {
+          const resp = await getCouponById(postId);
+          setDetailPost(resp.data);
+        } catch (err) {
+          console.error('수정 완료 후 쿠폰 상세 재조회 에러:', err);
+          setDetailPost({ ...editingPost, ...updatedData });
         }
       } else {
-        setDetailPost({
-          ...editingPost,
-          ...updatedData,
-        });
+        setDetailPost({ ...editingPost, ...updatedData });
       }
     } else {
       if (activeTab === '쿠폰') {

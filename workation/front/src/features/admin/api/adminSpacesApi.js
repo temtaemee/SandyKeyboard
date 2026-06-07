@@ -26,8 +26,3 @@ export async function changeSpaceVisible(spaceId, visibleYn) {
 export async function deleteAdminSpace(spaceId) {
   return await api.delete(`/admin/space/${spaceId}`);
 }
-
-/** 등록 공간 전체 통계 정보 조회 */
-export async function getAdminSpaceStats() {
-  return await api.get('/admin/spaces/stats');
-}

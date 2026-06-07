@@ -42,6 +42,7 @@ public class TransactionAdminController {
     @Operation(summary = "관리자 대시보드 통계 조회", description = "이번 달 유효 예약 수 및 당월 누적 결제 취소 금액을 실시간 조회합니다.")
     public ResponseEntity<DashboardSummaryResDto> getDashboardSummary() {
         DashboardSummaryResDto summary = salesService.getThisMonthDashboardSummary();
+        System.out.println("summary = " + summary);
         return ResponseEntity.ok(summary);
     }
 
