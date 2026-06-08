@@ -674,7 +674,7 @@ const StatusBadge = styled.span`
   white-space: nowrap;
 `;
 
-const ActionRow = styled.div`display: flex; gap: 5px;`;
+const ActionRow = styled.div`display: flex; gap: 5px; flex-wrap: nowrap; align-items: center;`;
 
 const ApproveBtn = styled.button`
   display: inline-flex;
