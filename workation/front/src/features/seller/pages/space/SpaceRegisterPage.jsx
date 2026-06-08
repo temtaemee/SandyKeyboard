@@ -26,10 +26,10 @@ function validateStep1(data) {
     errs.phone = '전화번호를 입력하세요';
   } else {
     const digits = data.phone.replace(/\D/g, '');
-    if (!/^\d[\d\-]{6,11}$/.test(data.phone.trim())) {
+    if (!/^\d[\d\-]{6,12}$/.test(data.phone.trim())) {
       errs.phone = '올바른 전화번호를 입력하세요 (예: 02-1234-5678, 010-1234-5678)';
-    } else if (digits.length < 9 || digits.length > 12) {
-      errs.phone = '전화번호는 9~12자리 숫자여야 합니다';
+    } else if (digits.length < 9 || digits.length > 11) {
+      errs.phone = '전화번호는 9~11자리 숫자여야 합니다';
     }
   }
 

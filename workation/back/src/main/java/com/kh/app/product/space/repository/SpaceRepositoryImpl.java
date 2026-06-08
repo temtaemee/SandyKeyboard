@@ -4,14 +4,22 @@ import com.kh.app.board.review.entity.QReviewEntity;
 import com.kh.app.member.entity.QMemberEntity;
 import com.kh.app.product.space.dto.request.SpaceSearchReqDto;
 import com.kh.app.product.space.entity.Area;
+import com.kh.app.product.space.entity.QSpaceArcadeEntity;
 import com.kh.app.product.space.entity.QSpaceEntity;
 import com.kh.app.product.space.entity.SpaceEntity;
+import com.kh.app.product.stay.entity.QStayEntity;
+import com.kh.app.transaction.reservation.entity.QReservationEntity;
+import com.kh.app.transaction.reservation.entity.ReservationStatus;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -43,17 +51,61 @@ public class SpaceRepositoryImpl implements SpaceRepositoryCustom {
         QSpaceEntity space = QSpaceEntity.spaceEntity;
         QMemberEntity member = QMemberEntity.memberEntity;
 
+        List<BooleanExpression> conditions = new ArrayList<>();
+        conditions.add(space.delYn.eq("N"));
+        conditions.add(space.visibleYn.eq("Y"));
+
+        BooleanExpression keyword = keywordContains(space, dto.getKeyword());
+        if (keyword != null) conditions.add(keyword);
+
+        BooleanExpression area = areaEq(space, dto);
+        if (area != null) conditions.add(area);
+
+        // 편의시설 AND 필터
+        BooleanExpression arcades = hasAllArcades(space, dto.getArcadeIds());
+        if (arcades != null) conditions.add(arcades);
+
+        // 날짜/인원 기준 이용 가능한 스테이 보유 여부
+        BooleanExpression available = hasAvailableStay(space, dto.getStartDate(), dto.getEndDate(), dto.getCapacity());
+        if (available != null) conditions.add(available);
+
         return queryFactory
                 .selectFrom(space)
                 .leftJoin(space.seller, member).fetchJoin()
-                .where(
-                        space.delYn.eq("N"),
-                        space.visibleYn.eq("Y"),
-                        keywordContains(space, dto.getKeyword()),
-                        areaEq(space, dto)
-                )
+                .where(conditions.toArray(new BooleanExpression[0]))
                 .orderBy(space.createdAt.desc())
                 .fetch();
+    }
+
+    // 편의시설을 모두 보유한 공간 (AND 조건)
+    private BooleanExpression hasAllArcades(QSpaceEntity space, List<Long> arcadeIds) {
+        if (CollectionUtils.isEmpty(arcadeIds)) return null;
+        QSpaceArcadeEntity sa = QSpaceArcadeEntity.spaceArcadeEntity;
+        return space.id.in(
+                JPAExpressions.select(sa.space.id).from(sa)
+                        .where(sa.arcade.id.in(arcadeIds))
+                        .groupBy(sa.space.id)
+                        .having(sa.arcade.id.count().goe((long) arcadeIds.size()))
+        );
+    }
+
+    // 날짜/인원 조건에 맞는 예약 가능한 스테이를 보유한 공간
+    private BooleanExpression hasAvailableStay(QSpaceEntity space, LocalDate startDate, LocalDate endDate, Integer capacity) {
+        if (startDate == null && endDate == null && capacity == null) return null;
+        QStayEntity stay = QStayEntity.stayEntity;
+        BooleanExpression cond = stay.delYn.eq("N").and(stay.visibleYn.eq("Y"));
+        if (capacity != null) cond = cond.and(stay.capacity.goe(capacity));
+        if (startDate != null && endDate != null) {
+            QReservationEntity rsv = QReservationEntity.reservationEntity;
+            cond = cond.and(stay.id.notIn(
+                    JPAExpressions.select(rsv.stay.id).from(rsv)
+                            .where(rsv.checkinDate.lt(endDate), rsv.checkoutDate.gt(startDate),
+                                    rsv.status.notIn(ReservationStatus.USER_CANCELLED,
+                                            ReservationStatus.SELLER_CANCELLED,
+                                            ReservationStatus.REFUND_COMPLETED))
+            ));
+        }
+        return space.id.in(JPAExpressions.select(stay.space.id).from(stay).where(cond));
     }
 
     @Override

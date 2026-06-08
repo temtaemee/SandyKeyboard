@@ -31,15 +31,24 @@ export default function SpaceFormStep1({ data, onChange, errors = {} }) {
   useEffect(() => {
     if (!window.kakao?.maps || !mapRef.current) return;
 
-    const center = new window.kakao.maps.LatLng(36.5, 127.5); // 대한민국 중심
-    const map = new window.kakao.maps.Map(mapRef.current, { center, level: 13 });
-    mapObjRef.current = map;
-    markerRef.current = new window.kakao.maps.Marker({ map });
-    markerRef.current.setVisible(false);
+    const initMap = () => {
+      const center = new window.kakao.maps.LatLng(36.5, 127.5); // 대한민국 중심
+      const map = new window.kakao.maps.Map(mapRef.current, { center, level: 13 });
+      mapObjRef.current = map;
+      markerRef.current = new window.kakao.maps.Marker({ map });
+      markerRef.current.setVisible(false);
 
-    // 이미 좌표가 있으면 핀 표시
-    if (data.latitude && data.longitude) {
-      movePin(map, markerRef.current, Number(data.latitude), Number(data.longitude));
+      // 이미 좌표가 있으면 핀 표시
+      if (data.latitude && data.longitude) {
+        movePin(map, markerRef.current, Number(data.latitude), Number(data.longitude));
+      }
+    };
+
+    // SDK가 완전히 로드된 경우 즉시 실행, 아직 로딩 중이면 load() 콜백으로 대기
+    if (window.kakao.maps.LatLng) {
+      initMap();
+    } else {
+      window.kakao.maps.load(initMap);
     }
   }, []); // 마운트 한 번만
 

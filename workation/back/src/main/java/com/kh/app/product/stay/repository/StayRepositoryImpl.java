@@ -1,10 +1,14 @@
 package com.kh.app.product.stay.repository;
 
 import com.kh.app.product.stay.dto.request.StaySearchReqDto;
+import com.kh.app.product.stay.dto.response.BookedPeriodResDto;
 import com.kh.app.product.stay.entity.QStayEntity;
 import com.kh.app.product.stay.entity.QStayOptionEntity;
 import com.kh.app.product.stay.entity.StayEntity;
 import com.kh.app.product.stay.entity.StayOption;
+import com.kh.app.transaction.reservation.entity.QReservationEntity;
+import com.kh.app.transaction.reservation.entity.ReservationStatus;
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
@@ -14,7 +18,10 @@ import org.springframework.stereotype.Repository;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @RequiredArgsConstructor
 @Repository
@@ -172,5 +179,35 @@ public class StayRepositoryImpl implements StayRepositoryCustom {
                         .groupBy(stayOption.stay.id)
                         .having(stayOption.stay.id.count().goe(options.size()))
         );
+    }
+
+    @Override
+    public Set<Long> findBookedStayIds(LocalDate startDate, LocalDate endDate) {
+        QReservationEntity rsv = QReservationEntity.reservationEntity;
+        return new HashSet<>(queryFactory
+                .select(rsv.stay.id).from(rsv)
+                .where(rsv.checkinDate.lt(endDate), rsv.checkoutDate.gt(startDate),
+                        rsv.status.notIn(ReservationStatus.USER_CANCELLED,
+                                ReservationStatus.SELLER_CANCELLED,
+                                ReservationStatus.REFUND_COMPLETED))
+                .fetch());
+    }
+
+    @Override
+    public List<BookedPeriodResDto> findBookedPeriods(Long stayId) {
+        QReservationEntity rsv = QReservationEntity.reservationEntity;
+        List<Tuple> tuples = queryFactory
+                .select(rsv.checkinDate, rsv.checkoutDate).from(rsv)
+                .where(rsv.stay.id.eq(stayId),
+                        rsv.status.notIn(ReservationStatus.USER_CANCELLED,
+                                ReservationStatus.SELLER_CANCELLED,
+                                ReservationStatus.REFUND_COMPLETED))
+                .orderBy(rsv.checkinDate.asc()).fetch();
+        return tuples.stream()
+                .map(t -> BookedPeriodResDto.builder()
+                        .checkinDate(t.get(rsv.checkinDate))
+                        .checkoutDate(t.get(rsv.checkoutDate))
+                        .build())
+                .toList();
     }
 }

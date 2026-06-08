@@ -177,8 +177,8 @@ export default function StayForm({
     const errs = validate({ ...data, mode });
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
-      // 첫 번째 에러로 스크롤
-      const firstErrEl = document.querySelector('[data-error-field]');
+      const firstErrKey = Object.keys(errs)[0];
+      const firstErrEl = document.querySelector(`[data-error-field="${firstErrKey}"]`);
       firstErrEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
@@ -375,7 +375,7 @@ export default function StayForm({
       </Section>
 
       {/* Section 3: 요일별 단가 */}
-      <Section>
+      <Section data-error-field="monPrice">
         <SectionTitle>요일별 단가 <Req>*</Req></SectionTitle>
         {hasPriceError && (
           <ErrorMsg>모든 요일 단가를 입력하세요</ErrorMsg>

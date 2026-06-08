@@ -57,8 +57,8 @@ export default function SpaceDetailPage() {
 
   // 지도 렌더링 — kakao.maps.load() 콜백으로 SDK 준비 보장
   useEffect(() => {
-    if (!space?.latitude || !space?.longitude || !mapRef.current) return;
-    if (!window.kakao) return;
+    if (!space?.latitude || !space?.longitude) return;
+    if (!window.kakao?.maps) return;
 
     const initMap = () => {
       if (!mapRef.current) return;

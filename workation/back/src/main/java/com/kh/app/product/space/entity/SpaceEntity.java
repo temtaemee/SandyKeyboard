@@ -26,7 +26,7 @@ public class SpaceEntity extends BaseEntity {
     @Column(length = 100 , nullable = false , unique = true)
     private String name;
 
-    @Column(length = 12 , nullable = false)
+    @Column(length = 13 , nullable = false)
     private String phone;
 
     @Column(nullable = false)
