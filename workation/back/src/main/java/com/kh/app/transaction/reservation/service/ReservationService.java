@@ -301,6 +301,16 @@ public class ReservationService {
         }
         reservation.cancelBySeller();
         refundService.processFullRefundBySystem(reservation);
+
+        // 쿠폰원복
+        // 해당 예약에 연결된 쿠폰이 맞는지 확인하고 MemberCouponEntity를 가져옵니다.
+        // (ReservationEntity에 member와 coupon이 있으므로 가능)
+        MemberCouponEntity memberCoupon = memberCouponRepository
+                .findByMemberAndCouponId(reservation.getMember(), reservation.getCoupon())
+                .orElseThrow(() -> new EntityNotFoundException("사용자의 쿠폰 내역을 찾을 수 없습니다."));
+        reservation.getCoupon().restoreQty(); // 쿠폰 수량 복구
+        memberCoupon.restoreCoupon(); // 쿠폰 원복
+
     }
 
     @Transactional

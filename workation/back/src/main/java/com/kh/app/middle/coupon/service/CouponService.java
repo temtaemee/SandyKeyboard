@@ -158,4 +158,6 @@ public class CouponService {
         CouponEntity entity = couponRepository.findByIdAndDelYn(couponId, "N").orElseThrow(() -> new MiddleException(ErrorCode.NOT_EXIST_COUPON));
         return CouponRespDto.from(entity);
     }
+
+
 }
