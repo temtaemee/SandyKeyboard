@@ -97,3 +97,4 @@ export const COLLECTIONS = [
     size: 'small',
   },
 ];
+export const CONTACT_EMAIL = 'admin@sandkeyboard.com';

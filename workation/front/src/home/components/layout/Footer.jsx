@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import { FOOTER_LINKS, PATH_MAP } from '../../data/homeData';
+import { FOOTER_LINKS, PATH_MAP, CONTACT_EMAIL } from '../../data/homeData';
 
 export default function Footer() {
   return (
@@ -13,14 +13,14 @@ export default function Footer() {
               일하는 장소가 일하는 방식만큼이나 중요하다고 믿는 현대 전문가들을
               위해 디자인되었습니다.
             </Tagline>
-            <SocialRow>
-              <SocialBtn aria-label="트위터">
-                <TwitterIcon />
-              </SocialBtn>
-              <SocialBtn aria-label="인스타그램">
-                <InstagramIcon />
-              </SocialBtn>
-            </SocialRow>
+
+            {/* 기존 SocialRow를 삭제하고 아래 코드 삽입 */}
+            <ContactRow>
+              <ContactLabel>문의하기</ContactLabel>
+              <ContactEmail href={`mailto:${CONTACT_EMAIL}`}>
+                {CONTACT_EMAIL}
+              </ContactEmail>
+            </ContactRow>
           </Brand>
 
           {/* 링크 그룹 */}
@@ -40,7 +40,7 @@ export default function Footer() {
         </Top>
 
         <Bottom>
-          <CopyText>© 2024 모래묻은 키보드. Effortlessly Productive.</CopyText>
+          <CopyText>© 2026 모래묻은 키보드. Effortlessly Productive.</CopyText>
         </Bottom>
       </Inner>
     </FooterWrapper>
@@ -179,4 +179,30 @@ const CopyText = styled.p`
   font-size: 14px;
   color: ${({ theme }) => theme.colors.textLight};
   font-family: ${({ theme }) => theme.fonts.number};
+`;
+const ContactRow = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 8px;
+`;
+
+const ContactLabel = styled.span`
+  font-size: 12px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.textMuted};
+  text-transform: uppercase;
+`;
+
+const ContactEmail = styled.a`
+  font-size: 16px;
+  font-weight: 500;
+  color: ${({ theme }) => theme.colors.primary};
+  text-decoration: none;
+  transition: opacity 0.2s;
+
+  &:hover {
+    text-decoration: underline;
+    opacity: 0.8;
+  }
 `;
