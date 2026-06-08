@@ -29,6 +29,20 @@ import {
   ModalDelete,
 } from '../styles/NoticeDetailPage.styles';
 
+function getRole() {
+  const token = localStorage.getItem('accessToken');
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const roles = payload.roles ?? [];
+    return roles.includes('ADMIN') ? 'ADMIN' : 'USER';
+  } catch {
+    return null;
+  }
+}
+
+const isAdmin = getRole() === 'ADMIN';
+
 export default function NoticeDetailPage() {
   const { noticeId } = useParams();
   const navigate = useNavigate();
@@ -98,19 +112,21 @@ export default function NoticeDetailPage() {
       )}
 
       <ActionRow>
-        <BackButton onClick={() => navigate('/notice')}>
-          ← 목록으로
-        </BackButton>
-        <RightButtons>
-          <EditButton
-            onClick={() =>
-              navigate(`/notice/write?id=${noticeId}`)
-            }
-          >
-            수정
-          </EditButton>
-          <DeleteButton onClick={() => setShowConfirm(true)}>삭제</DeleteButton>
-        </RightButtons>
+        <BackButton onClick={() => navigate('/notice')}>← 목록으로</BackButton>
+
+        {/* 수정/삭제 버튼 — admin만 표시 */}
+        {isAdmin && (
+          <RightButtons>
+            <EditButton
+              onClick={() => navigate(`/notice/write?id=${noticeId}`)}
+            >
+              수정
+            </EditButton>
+            <DeleteButton onClick={() => setShowConfirm(true)}>
+              삭제
+            </DeleteButton>
+          </RightButtons>
+        )}
       </ActionRow>
 
       {showConfirm && (
