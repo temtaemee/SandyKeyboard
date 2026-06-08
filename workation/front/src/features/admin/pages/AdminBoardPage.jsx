@@ -29,9 +29,6 @@ import {
   ModalCloseBtn,
 } from '../components/common/AdminModal.styles'; // 모달 공통 스타일
 
-const TOTAL = 124;
-const TOTAL_PAGES = 3;
-
 const STATUS_LABEL = {
   published: '게시 중',
   ended: '종료',
@@ -57,14 +54,16 @@ const COUPON_FILTERS = ['전체', '활성', '소진', '삭제'];
 
 export default function AdminBoardPage() {
   const [activeTab, setActiveTab] = useState('공지사항');
+  const { currentPage, goToPage, reset: resetPage } = usePagination();
+
   const {
     posts: tabPosts,
+    totalPages: boardTotalPages,
+    totalElements: boardTotalElements,
     updatePost,
     deletePost,
     createPost,
-  } = useAdminBoard(activeTab);
-
-  const { currentPage, goToPage, reset: resetPage } = usePagination();
+  } = useAdminBoard(activeTab, currentPage);
 
   // 통합 UI 훅 도입으로 복잡한 useState 제거 및 비즈니스 로직 격리
   const {
@@ -73,6 +72,7 @@ export default function AdminBoardPage() {
     couponFilter,
     setCouponFilter,
     posts,
+    totalCount,
     resetFilters,
     registerModal,
     editingPost,
@@ -93,10 +93,14 @@ export default function AdminBoardPage() {
   } = useAdminBoardUI({
     tabPosts,
     activeTab,
+    currentPage,
     updatePost,
     deletePost,
     createPost,
   });
+
+  const displayTotalElements = activeTab === 'FAQ' ? totalCount : boardTotalElements;
+  const displayTotalPages = activeTab === 'FAQ' ? Math.ceil(totalCount / 10) || 1 : boardTotalPages;
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -281,10 +285,10 @@ export default function AdminBoardPage() {
 
         {/* footer: 페이지네이션 */}
         <TableFooter>
-          <FooterInfo>총 {TOTAL}개</FooterInfo>
+          <FooterInfo>총 {displayTotalElements}개</FooterInfo>
           <AdminPagination
             currentPage={currentPage}
-            totalPages={TOTAL_PAGES}
+            totalPages={displayTotalPages}
             onPageChange={goToPage}
           />
           <div style={{ width: '120px' }} />

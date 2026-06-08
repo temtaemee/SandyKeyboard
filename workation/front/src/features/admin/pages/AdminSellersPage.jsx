@@ -21,7 +21,6 @@ import {
   Plus,
   TicketPercent,
 } from 'lucide-react';
-import { COUPON_TEMPLATES } from '../data/adminSellersData';
 import useAdminSellers from '../hooks/useAdminSellers';
 import useAdminSellersUI from '../hooks/useAdminSellersUI';
 import {
@@ -71,6 +70,9 @@ export default function AdminSellersPage() {
     fetchSellers,
     fetchSellersStats,
     fetchCustomersStats,
+    fetchMemberCoupons,
+    fetchIssuableCoupons,
+    issuableCoupons,
   } = useAdminSellers();
 
   console.log('=== [AdminSellersPage] ===');
@@ -102,6 +104,7 @@ export default function AdminSellersPage() {
     handleConfirm,
     selectedCustomer,
     setSelectedCustomer,
+    handleOpenCustomerDetail,
     showIssuePanel,
     setShowIssuePanel,
     selectedTemplate,
@@ -119,6 +122,9 @@ export default function AdminSellersPage() {
     addCoupon,
     deleteCoupon,
     resetPage,
+    fetchMemberCoupons,
+    fetchIssuableCoupons,
+    issuableCoupons,
   });
 
   // 1. 한국어 필터명을 백엔드 상태(ACTIVE, BANNED 등)로 변환하는 함수
@@ -240,7 +246,7 @@ export default function AdminSellersPage() {
             customers={filteredCustomers}
             isSuspended={isCustomerSuspended}
             onToggleClick={handleToggleClick}
-            onRowClick={setSelectedCustomer}
+            onRowClick={handleOpenCustomerDetail}
           />
         )}
 
@@ -307,7 +313,7 @@ export default function AdminSellersPage() {
                       </CouponInfo>
                       <CouponDeleteBtn
                         title="쿠폰 삭제"
-                        onClick={() => handleDeleteCoupon(selectedCustomer.id, coupon.id)}
+                        onClick={() => handleDeleteCoupon(selectedCustomer.id, coupon.couponId)}
                       >
                         <Trash2 size={14} />
                       </CouponDeleteBtn>
@@ -321,14 +327,18 @@ export default function AdminSellersPage() {
                   <IssuePanelTitle>쿠폰 발급</IssuePanelTitle>
                   <IssueRow>
                     <CouponSelect
-                      value={selectedTemplate}
+                      value={selectedTemplate ?? ''}
                       onChange={(e) => setSelectedTemplate(e.target.value)}
                     >
-                      {COUPON_TEMPLATES.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.title} ({t.discount}, {t.validDays}일)
-                        </option>
-                      ))}
+                      {issuableCoupons.length === 0 ? (
+                        <option value="">발급 가능한 쿠폰이 없습니다</option>
+                      ) : (
+                        issuableCoupons.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.couponName} ({c.discountRate != null ? `${c.discountRate}%` : '-'}, {c.validDays != null ? `${c.validDays}일` : '-'})
+                          </option>
+                        ))
+                      )}
                     </CouponSelect>
                     <IssueConfirmBtn onClick={handleIssueCoupon}>발급</IssueConfirmBtn>
                     <IssueCancelBtn onClick={() => setShowIssuePanel(false)}>취소</IssueCancelBtn>

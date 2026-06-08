@@ -15,6 +15,7 @@ import { getAdminBoardPost, getCouponById } from '../api/adminBoardApi';
 export default function useAdminBoardUI({
   tabPosts,
   activeTab,
+  currentPage = 1,
   updatePost,
   deletePost,
   createPost,
@@ -73,6 +74,10 @@ export default function useAdminBoardUI({
     }
     return 0;
   });
+
+  const displayPosts = activeTab === 'FAQ'
+    ? sortedPosts.slice((currentPage - 1) * 10, currentPage * 10)
+    : sortedPosts;
 
   // 검색 및 쿠폰 필터 상태 초기화
   const resetFilters = () => {
@@ -160,6 +165,11 @@ export default function useAdminBoardUI({
           removedFileIds: removedFileIds, // 삭제 대기 중인 기존 첨부파일 ID 배열
           files: formData.files || [], // 새로 업로드할 파일들 추가
         };
+      } else if (activeTab === 'FAQ') {
+        updatedData = {
+          question: formData.title ?? editingPost.question,
+          answer: formData.content ?? editingPost.answer,
+        };
       } else {
         updatedData = {
           title: formData.title || editingPost.title,
@@ -189,6 +199,8 @@ export default function useAdminBoardUI({
           console.error('수정 완료 후 쿠폰 상세 재조회 에러:', err);
           setDetailPost({ ...editingPost, ...updatedData });
         }
+      } else if (activeTab === 'FAQ') {
+        setDetailPost({ ...editingPost, ...updatedData });
       } else {
         setDetailPost({ ...editingPost, ...updatedData });
       }
@@ -219,6 +231,12 @@ export default function useAdminBoardUI({
           });
         }
         await createPost(fd);
+      } else if (activeTab === 'FAQ') {
+        await createPost({
+          memberId: 1,
+          question: formData.title || '',
+          answer: formData.content || '',
+        });
       }
       closeRegisterModal();
     }
@@ -266,7 +284,8 @@ export default function useAdminBoardUI({
     setSearchQuery,
     couponFilter,
     setCouponFilter,
-    posts: sortedPosts,
+    posts: displayPosts,
+    totalCount: sortedPosts.length,
     resetFilters,
 
     // 2. 신규 등록 및 수정

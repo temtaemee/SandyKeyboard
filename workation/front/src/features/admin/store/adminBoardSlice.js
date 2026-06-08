@@ -1,21 +1,16 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { BOARD_POSTS } from '../data/adminBoardData';
-
-const initPinnedIds = () => {
-  const ids = [];
-  Object.values(BOARD_POSTS).forEach((posts) =>
-    posts.forEach((p) => {
-      if (p.isFixed) ids.push(p.id);
-    })
-  );
-  return ids;
-};
 
 const adminBoardSlice = createSlice({
   name: 'adminBoard',
   initialState: {
-    posts: BOARD_POSTS,
-    pinnedIds: initPinnedIds(),
+    posts: {
+      공지사항: [],
+      FAQ: [],
+      리뷰: [],
+      이벤트: [],
+      쿠폰: [],
+    },
+    pinnedIds: [],
     loading: false,
     error: null,
   },
