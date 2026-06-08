@@ -10,7 +10,6 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import useAdminDashboard from '../hooks/useAdminDashboard';
-import { ADMIN_STAT_CARDS } from '../data/adminDashboardData';
 
 const NAV_CARD_CONFIG = [
   {
@@ -100,8 +99,8 @@ export default function AdminDashboardPage() {
         : '—';
     }
     if (card.statKey === 'totalRevenue') {
-      // 총 매출액 API 미지원 — mock 데이터 유지
-      return ADMIN_STAT_CARDS[0]?.value ?? '—';
+      // 총 매출액 API 미지원 — fallback mock값 적용
+      return '₩142,500,000';
     }
     return '—';
   };

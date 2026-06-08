@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { COUPON_TEMPLATES } from '../data/adminSellersData';
 
 /**
  * AdminSellersPage의 UI 로직(고객/판매자 뷰 전환, 검색 및 카테고리 필터링, 계정 정지 모달, 상세 쿠폰 발급 패널)을 전담하는 커스텀 훅입니다.
@@ -26,6 +25,9 @@ export default function useAdminSellersUI({
   addCoupon,
   deleteCoupon,
   resetPage,
+  fetchMemberCoupons,
+  fetchIssuableCoupons,
+  issuableCoupons,
 }) {
   // ─── 1. 기본 뷰/필터/검색어 상태 ───
   const [view, setView] = useState('customer'); // 'customer' | 'seller'
@@ -73,40 +75,48 @@ export default function useAdminSellersUI({
   // ─── 3. 고객 상세 모달 및 쿠폰 발급/삭제 상태 ───
   const [selectedCustomer, setSelectedCustomer] = useState(null); // null | customer 객체
   const [showIssuePanel, setShowIssuePanel] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState(COUPON_TEMPLATES[0].id);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+
+  // 고객 상세 모달 열기 (API 조회 포함)
+  const handleOpenCustomerDetail = async (customer) => {
+    setSelectedCustomer(customer);
+    setShowIssuePanel(false);
+    setSelectedTemplate(null);
+    const [, coupons] = await Promise.all([
+      fetchMemberCoupons(customer.id, customer.username || customer.name),
+      fetchIssuableCoupons(),
+    ]);
+    if (coupons && coupons.length > 0) {
+      setSelectedTemplate(String(coupons[0].id));
+    }
+  };
 
   // 고객 상세 모달 닫기
   const handleCloseCustomerModal = () => {
     setSelectedCustomer(null);
     setShowIssuePanel(false);
-    setSelectedTemplate(COUPON_TEMPLATES[0].id);
+    setSelectedTemplate(null);
   };
 
   // 쿠폰 삭제 핸들러
-  const handleDeleteCoupon = (customerId, couponId) => {
-    deleteCoupon(customerId, couponId);
+  const handleDeleteCoupon = async (customerId, couponId) => {
+    try {
+      await deleteCoupon(customerId, selectedCustomer.username || selectedCustomer.name, couponId);
+    } catch (err) {
+      alert('쿠폰 삭제에 실패했습니다.');
+    }
   };
 
   // 신규 쿠폰 직접 발급 핸들러
-  const handleIssueCoupon = () => {
-    if (!selectedCustomer) return;
-    const tpl = COUPON_TEMPLATES.find((t) => t.id === selectedTemplate);
-    if (!tpl) return;
-    const today = new Date();
-    const expire = new Date(today);
-    expire.setDate(expire.getDate() + tpl.validDays);
-    const fmt = (d) =>
-      `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
-    const newCoupon = {
-      id: `CPN-${Date.now()}`,
-      title: tpl.title,
-      discount: tpl.discount,
-      issuedAt: fmt(today),
-      expireAt: fmt(expire),
-    };
-    addCoupon(selectedCustomer.id, newCoupon);
-    setShowIssuePanel(false);
-    setSelectedTemplate(COUPON_TEMPLATES[0].id);
+  const handleIssueCoupon = async () => {
+    if (!selectedCustomer || !selectedTemplate) return;
+    try {
+      await addCoupon(selectedCustomer.id, selectedCustomer.username || selectedCustomer.name, selectedTemplate);
+      setShowIssuePanel(false);
+      setSelectedTemplate(null);
+    } catch (err) {
+      alert('쿠폰 발급에 실패했습니다.');
+    }
   };
 
   return {
@@ -130,6 +140,7 @@ export default function useAdminSellersUI({
     // 고객 모달 및 쿠폰 발급
     selectedCustomer,
     setSelectedCustomer,
+    handleOpenCustomerDetail,
     showIssuePanel,
     setShowIssuePanel,
     selectedTemplate,

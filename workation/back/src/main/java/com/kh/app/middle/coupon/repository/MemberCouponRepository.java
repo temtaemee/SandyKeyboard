@@ -13,7 +13,7 @@ import java.util.Optional;
 
 
 public interface MemberCouponRepository extends JpaRepository<MemberCouponEntity, Long>, MemberCouponRepositoryCustom {
-    Optional<MemberCouponEntity> findByMemberUsernameAndCouponId(String username, Long couponId);
+    Optional<MemberCouponEntity> findByMemberUsernameAndCouponIdId(String username, Long couponId);
 
     boolean existsByMemberIdAndCouponIdId(Long memberId, Long couponId);
 

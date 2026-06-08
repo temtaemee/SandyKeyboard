@@ -6,6 +6,12 @@ import {
   banMember,
   unbanMember,
 } from '../api/adminSellersApi';
+import {
+  getMemberCouponList,
+  adminRegister,
+  deleteMemberCoupon,
+  getCouponList,
+} from '../api/adminBoardApi';
 import { isNewMember } from '../data/adminSellersConstants';
 import {
   setSellers,
@@ -22,12 +28,15 @@ import {
   setCustomerSuspended,
   addCoupon as addCouponAction,
   deleteCoupon as deleteCouponAction,
+  setCustomerCoupons,
+  setIssuableCoupons,
   setLoading,
 } from '../store/adminSellersSlice';
 
 // 백엔드 MemberListRespDto 필드를 프론트엔드 테이블이 기대하는 필드명으로 변환하는 매핑 함수
 const mapBackendCustomerToFrontend = (item) => ({
   id: String(item.memberId || ''),
+  username: item.username || '',
   name: item.name || item.username || '알 수 없음',
   email: item.email || '',
   phone: item.phone || '등록 없음', // 👈 백엔드 실제 연락처(phone) 매핑
@@ -51,11 +60,28 @@ const mapBackendSellerToFrontend = (item) => ({
   status: item.banYn === 'Y' ? 'stopped' : 'active',
 });
 
+// 백엔드 MemberCouponRespDto 필드를 프론트엔드 UI가 기대하는 필드명으로 변환하는 매핑 함수
+const mapBackendCouponToFrontend = (item) => {
+  const fmt = (dateTimeStr) => {
+    if (!dateTimeStr) return '—';
+    return dateTimeStr.split('T')[0].replace(/-/g, '.');
+  };
+  return {
+    id: item.id,
+    couponId: item.couponId,
+    title: item.couponName || '쿠폰',
+    discount: item.discountRate ? `${item.discountRate}%` : '0%',
+    issuedAt: fmt(item.createdAt),
+    expireAt: fmt(item.expiredDate),
+  };
+};
+
 export default function useAdminSellers() {
   const dispatch = useDispatch();
   const {
     sellers,
     customers,
+    issuableCoupons,
     sellersTotalPage,
     sellersTotalCount,
     sellersUnfilteredTotal,
@@ -80,9 +106,9 @@ export default function useAdminSellers() {
       dispatch(setLoading(true));
       try {
         const data = await searchMembers(params);
-        const mappedContent = (data.content || []).map(
-          mapBackendCustomerToFrontend
-        );
+        const mappedContent = (data.content || [])
+          .map(mapBackendCustomerToFrontend)
+          .filter((item) => item.id !== '1');
         dispatch(setCustomers(mappedContent));
         dispatch(
           setCustomersMetadata({
@@ -217,14 +243,69 @@ export default function useAdminSellers() {
     [dispatch]
   );
 
-  const addCoupon = useCallback(
-    (customerId, coupon) => dispatch(addCouponAction({ customerId, coupon })),
+  const fetchMemberCoupons = useCallback(
+    async (customerId, username) => {
+      dispatch(setLoading(true));
+      try {
+        const resp = await getMemberCouponList(0, username);
+        const list = Array.isArray(resp.data) ? resp.data : (resp.data.content || []);
+        const mappedList = list.map(mapBackendCouponToFrontend);
+        dispatch(setCustomerCoupons({ customerId, coupons: mappedList }));
+      } catch (err) {
+        console.error('회원 쿠폰 목록 fetch 에러:', err);
+      } finally {
+        dispatch(setLoading(false));
+      }
+    },
     [dispatch]
   );
 
+  const fetchIssuableCoupons = useCallback(async () => {
+    try {
+      const resp = await getCouponList();
+      const list = Array.isArray(resp.data) ? resp.data : (resp.data.content || []);
+      dispatch(setIssuableCoupons(list));
+      return list;
+    } catch (err) {
+      console.error('발급 가능 쿠폰 목록 fetch 에러:', err);
+      return [];
+    }
+  }, [dispatch]);
+
+  const addCoupon = useCallback(
+    async (customerId, username, couponId) => {
+      dispatch(setLoading(true));
+      try {
+        const payload = {
+          username: username,
+          couponId: Number(couponId) || couponId,
+        };
+        await adminRegister(payload);
+        await fetchMemberCoupons(customerId, username);
+      } catch (err) {
+        console.error('쿠폰 발급 에러:', err);
+        throw err;
+      } finally {
+        dispatch(setLoading(false));
+      }
+    },
+    [dispatch, fetchMemberCoupons]
+  );
+
   const deleteCoupon = useCallback(
-    (customerId, couponId) => dispatch(deleteCouponAction({ customerId, couponId })),
-    [dispatch]
+    async (customerId, username, couponId) => {
+      dispatch(setLoading(true));
+      try {
+        await deleteMemberCoupon({ data: { username, couponId: Number(couponId) || couponId } });
+        await fetchMemberCoupons(customerId, username);
+      } catch (err) {
+        console.error('쿠폰 삭제 에러:', err);
+        throw err;
+      } finally {
+        dispatch(setLoading(false));
+      }
+    },
+    [dispatch, fetchMemberCoupons]
   );
 
   return {
@@ -255,5 +336,8 @@ export default function useAdminSellers() {
     suspendCustomer,
     addCoupon,
     deleteCoupon,
+    fetchMemberCoupons,
+    fetchIssuableCoupons,
+    issuableCoupons,
   };
 }

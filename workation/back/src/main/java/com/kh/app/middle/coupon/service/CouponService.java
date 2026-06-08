@@ -119,7 +119,7 @@ public class CouponService {
     // 멤버 쿠폰 삭제 (어드민)
     @Transactional
     public void deleteMemberCoupon(MemberCouponReqDto reqDto) {
-        MemberCouponEntity memberCouponEntity = memberCouponRepository.findByMemberUsernameAndCouponId(reqDto.getUsername(), reqDto.getCouponId())
+        MemberCouponEntity memberCouponEntity = memberCouponRepository.findByMemberUsernameAndCouponIdId(reqDto.getUsername(), reqDto.getCouponId())
                 .orElseThrow(() -> new MiddleException(ErrorCode.NOT_EXIST_COUPON));
         memberCouponRepository.delete(memberCouponEntity);
     }

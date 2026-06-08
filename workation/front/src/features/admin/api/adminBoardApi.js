@@ -1,6 +1,6 @@
 /** 관리자 페이지의 게시판(공지사항/문의사항 등) 게시글 관리 및 통계 조회 API */
 import api from '../../../app/api/axios';
-import { BOARD_POSTS } from '../data/adminBoardData'; // 💡 임시 Mock 데이터 가져오기
+
 
 /** 게시글 상단 고정 상태 변경 */
 export async function updatePostPinStatus(postId, pinned) {
@@ -148,5 +148,5 @@ export async function adminRegister(data) {
 }
 // 멤버 쿠폰 삭제
 export async function deleteMemberCoupon(data) {
-  return api.delete(`/admin/memberCoupon/`, data);
+  return api.delete(`/admin/memberCoupon`, data);
 }
