@@ -1,9 +1,8 @@
-// src/features/user/destination/pages/DestinationPage.jsx
-
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import useDestination from '../hooks/useDestination'; // 💡 고도화된 훅 연동
+import useDestination from '../hooks/useDestination';
 import { useSearchParams } from 'react-router-dom';
+import api from '../../../../app/api/axios';
 
 const AREA_LIST = [
   { label: '전체', value: '' },
@@ -22,31 +21,64 @@ const AREA_LIST = [
 function DestinationPage() {
   const [searchParams] = useSearchParams();
   const { spaces = [], loadSpaces, loading } = useDestination();
+  const [allArcades, setAllArcades] = useState([]);
 
-  // URL에서 값을 가져옴 (없으면 '')
-  const areaFromUrl = searchParams.get('area') || '';
-
-  const [selectedArea, setSelectedArea] = useState(areaFromUrl);
-  const [searchKeyword, setSearchKeyword] = useState('');
-
-  // 1. URL 파라미터(area)가 바뀔 때마다 selectedArea를 동기화
   useEffect(() => {
-    setSelectedArea(areaFromUrl);
-  }, [areaFromUrl]);
+    api
+      .get('/public/arcade') // 👈 실제 백엔드 ArcadePublicApiController 경로로 수정하세요
+      .then((res) => {
+        setAllArcades(res.data);
+      })
+      .catch((err) => {
+        console.error('편의시설 목록 로드 실패:', err);
+      });
+  }, []);
 
-  // 2. selectedArea 혹은 searchKeyword가 변경될 때마다 API 호출
+  // 필터 상태 통합 관리
+  const [filters, setFilters] = useState({
+    keyword: '',
+    area: searchParams.get('area') || '',
+    startDate: '',
+    endDate: '',
+    arcadeIds: [], // 💡 편의시설 ID 배열 상태 추가
+  });
+
+  // 2. 토글 함수
+  const toggleArcade = (id) => {
+    setFilters((prev) => {
+      const isSelected = prev.arcadeIds.includes(id);
+      return {
+        ...prev,
+        arcadeIds: isSelected
+          ? prev.arcadeIds.filter((item) => item !== id)
+          : [...prev.arcadeIds, id],
+      };
+    });
+  };
+
+  // URL area 파라미터 변경 시 동기화
   useEffect(() => {
-    loadSpaces(searchKeyword, selectedArea);
-  }, [selectedArea, searchKeyword]);
+    setFilters((prev) => ({ ...prev, area: searchParams.get('area') || '' }));
+  }, [searchParams]);
+
+  // 필터 변경 시마다 자동 검색 (혹은 필요시 검색 버튼 클릭 시에만 호출하도록 변경 가능)
+  useEffect(() => {
+    loadSpaces({
+      keyword: filters.keyword,
+      area: filters.area,
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+      arcadeIds: filters.arcadeIds, // 💡 배열 전달
+    });
+  }, [filters.area, filters.keyword, filters.arcadeIds]); // 💡 arcadeIds 감시 추가
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    loadSpaces(searchKeyword, selectedArea);
+    loadSpaces(filters); // 💡 filters 객체 전체 전달
   };
 
   return (
     <Wrapper>
-      {/* 1. 상단 타이틀 배너 */}
       <HeaderBanner>
         <BannerTitle>원하는 워케이션 목적지를 찾아보세요</BannerTitle>
         <BannerDesc>
@@ -54,25 +86,54 @@ function DestinationPage() {
         </BannerDesc>
       </HeaderBanner>
 
-      {/* 2. 필터 및 검색창 섹션 */}
       <FilterContainer>
         <SearchForm onSubmit={handleSearchSubmit}>
           <SearchInput
             type="text"
             placeholder="공간 명칭이나 키워드를 검색하세요..."
-            value={searchKeyword}
-            onChange={(e) => setSearchKeyword(e.target.value)}
+            value={filters.keyword}
+            onChange={(e) =>
+              setFilters((prev) => ({ ...prev, keyword: e.target.value }))
+            }
           />
+          <DateInput
+            type="date"
+            value={filters.startDate}
+            onChange={(e) =>
+              setFilters((prev) => ({ ...prev, startDate: e.target.value }))
+            }
+          />
+          <DateInput
+            type="date"
+            value={filters.endDate}
+            onChange={(e) =>
+              setFilters((prev) => ({ ...prev, endDate: e.target.value }))
+            }
+          />
+
           <SearchButton type="submit">검색</SearchButton>
         </SearchForm>
 
+        <ArcadeButtonGroup>
+          {/* 예시: API로 전체 편의시설 목록을 받아와서 렌더링하세요 */}
+          {allArcades.map((arcade) => (
+            <ArcadeButton
+              key={arcade.id}
+              $active={filters.arcadeIds.includes(arcade.id)}
+              onClick={() => toggleArcade(arcade.id)}
+            >
+              {arcade.name}
+            </ArcadeButton>
+          ))}
+        </ArcadeButtonGroup>
         <AreaButtonGroup>
           {AREA_LIST.map((area) => (
             <AreaButton
               key={area.value}
-              active={selectedArea === area.value}
-              // 클릭 시 selectedArea 업데이트 (API 호출은 useEffect가 처리)
-              onClick={() => setSelectedArea(area.value)}
+              active={filters.area === area.value}
+              onClick={() =>
+                setFilters((prev) => ({ ...prev, area: area.value }))
+              }
             >
               {area.label}
             </AreaButton>
@@ -80,7 +141,6 @@ function DestinationPage() {
         </AreaButtonGroup>
       </FilterContainer>
 
-      {/* 3. 메인 전체화면 그리드 리스트 영역 */}
       <MainContentSection>
         <ResultHeader>
           총 <CountText>{spaces.length}</CountText>개의 워케이션 공간이
@@ -100,12 +160,11 @@ function DestinationPage() {
         ) : (
           <GridContainer>
             {spaces.map((space) => {
-              // 이미지 파일 파싱 호스트 결합
               const SERVER_HOST = 'http://localhost:80';
               const finalThumb = space.thumbnailUrl
                 ? space.thumbnailUrl.startsWith('http')
                   ? space.thumbnailUrl
-                  : `${SERVER_HOST}${space.thumbnailUrl.startsWith('/') ? '' : '/'}${space.thumbnailUrl}`
+                  : `${SERVER_HOST}${space.thumbnailUrl}`
                 : 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=600&q=80';
 
               return (
@@ -221,12 +280,12 @@ const AreaButtonGroup = styled.div`
   gap: 10px;
   flex-wrap: wrap;
 `;
-const AreaButton = styled.button`
+const AreaButton = styled.button.withConfig({
+  shouldForwardProp: (prop) => !['active'].includes(prop),
+})`
   padding: 10px 24px;
   border-radius: ${({ theme }) => theme.radius.full};
-  font-family: ${({ theme }) => theme.fonts.base};
-  font-size: 14px;
-  font-weight: 600;
+  /* ... 기존 스타일 ... */
   border: 1px solid
     ${(props) =>
       props.active ? props.theme.colors.primary : props.theme.colors.border};
@@ -378,4 +437,42 @@ const LoadingText = styled.div`
   font-size: 16px;
   color: #64748b;
   font-weight: 600;
+`;
+const DateInput = styled.input`
+  height: 52px;
+  padding: 0 15px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.radius.sm};
+  font-family: ${({ theme }) => theme.fonts.base};
+  color: ${({ theme }) => theme.colors.textMid};
+  outline: none;
+  &:focus {
+    border-color: ${({ theme }) => theme.colors.primary};
+  }
+`;
+const ArcadeButtonGroup = styled.div`
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+`;
+
+const ArcadeButton = styled.button.withConfig({
+  shouldForwardProp: (prop) => !['active'].includes(prop),
+})`
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid
+    ${(props) =>
+      props.$active ? props.theme.colors.primary : props.theme.colors.border};
+  background: ${(props) =>
+    props.$active ? props.theme.colors.primary : 'white'};
+  color: ${(props) => (props.$active ? 'white' : props.theme.colors.textMid)};
+  cursor: pointer;
+  font-family: ${({ theme }) => theme.fonts.base};
+  font-size: 14px;
+  transition: all 0.2s ease;
+  &:hover {
+    border-color: ${({ theme }) => theme.colors.primary};
+  }
 `;

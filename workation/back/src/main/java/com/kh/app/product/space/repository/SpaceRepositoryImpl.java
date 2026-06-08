@@ -94,15 +94,22 @@ public class SpaceRepositoryImpl implements SpaceRepositoryCustom {
         if (startDate == null && endDate == null && capacity == null) return null;
         QStayEntity stay = QStayEntity.stayEntity;
         BooleanExpression cond = stay.delYn.eq("N").and(stay.visibleYn.eq("Y"));
+
         if (capacity != null) cond = cond.and(stay.capacity.goe(capacity));
+
         if (startDate != null && endDate != null) {
             QReservationEntity rsv = QReservationEntity.reservationEntity;
+
+            // 💡 수정: 예약 불가능으로 간주할 상태를 명시적으로 지정
+            // PENDING은 여기에 포함되지 않으므로 예약이 있어도 검색 결과에 나옵니다.
             cond = cond.and(stay.id.notIn(
                     JPAExpressions.select(rsv.stay.id).from(rsv)
                             .where(rsv.checkinDate.lt(endDate), rsv.checkoutDate.gt(startDate),
-                                    rsv.status.notIn(ReservationStatus.USER_CANCELLED,
-                                            ReservationStatus.SELLER_CANCELLED,
-                                            ReservationStatus.REFUND_COMPLETED))
+                                    rsv.status.in(
+                                            ReservationStatus.PAYMENT_COMPLETED,
+                                            ReservationStatus.RESERVED,
+                                            ReservationStatus.COMPLETED
+                                    ))
             ));
         }
         return space.id.in(JPAExpressions.select(stay.space.id).from(stay).where(cond));
