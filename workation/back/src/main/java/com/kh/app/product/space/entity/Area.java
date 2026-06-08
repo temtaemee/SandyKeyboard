@@ -1,5 +1,6 @@
 package com.kh.app.product.space.entity;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -18,6 +19,7 @@ public enum Area {
     JEONBUK("전북"),
     JEJU("제주");
 
+    @JsonValue
     private final String description;
 
 }
