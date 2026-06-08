@@ -1,7 +1,7 @@
 // src/features/admin/pages/AdminSalesPage.jsx
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { Wallet, Percent, TrendingUp, ClipboardList, X } from 'lucide-react';
+import { Wallet, Percent, TrendingUp, ClipboardList, X, Printer, Download, FileText, ArrowRight } from 'lucide-react';
 import AdminSearchInput from '../components/common/AdminSearchInput';
 import AdminChartPanel from '../components/dashboard/AdminChartPanel';
 import YearMonthPicker from '../components/common/YearMonthPicker';
@@ -49,6 +49,7 @@ export default function AdminSalesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalSearch, setModalSearch] = useState('');
   const [modalStatusFilter, setModalStatusFilter] = useState('ALL'); // 'ALL' | 'READY' | 'COMPLETED'
+  const [activePayoutForDrawer, setActivePayoutForDrawer] = useState(null);
 
   // 💡 백엔드 정산 연동용 State (가짜 데이터 원복 적용)
   const [rawPayouts, setRawPayouts] = useState([]);
@@ -354,14 +355,14 @@ export default function AdminSalesPage() {
 
       {/* ── 전체 정산 목록 모달 ── */}
       {isModalOpen && (
-        <ModalOverlay onClick={() => setIsModalOpen(false)}>
-          <ModalContent $width="840px" $maxHeight="85vh" onClick={(e) => e.stopPropagation()}>
+        <ModalOverlay onClick={() => { setIsModalOpen(false); setActivePayoutForDrawer(null); }}>
+          <ModalContentWithDrawer $width="840px" $maxHeight="85vh" onClick={(e) => e.stopPropagation()}>
             <ModalHeader>
               <ModalTitleGroup>
                 <ModalTitle>전체 정산 내역</ModalTitle>
                 <ModalSub>총 {rawPayouts.length}건의 정산 신청/처리 내역이 있습니다.</ModalSub>
               </ModalTitleGroup>
-              <ModalCloseBtn onClick={() => setIsModalOpen(false)}>
+              <ModalCloseBtn onClick={() => { setIsModalOpen(false); setActivePayoutForDrawer(null); }}>
                 <X size={18} />
               </ModalCloseBtn>
             </ModalHeader>
@@ -371,19 +372,19 @@ export default function AdminSalesPage() {
               <ModalTabGroup>
                 <ModalTab 
                   $active={modalStatusFilter === 'ALL'} 
-                  onClick={() => setModalStatusFilter('ALL')}
+                  onClick={() => { setModalStatusFilter('ALL'); setActivePayoutForDrawer(null); }}
                 >
                   전체 ({rawPayouts.length})
                 </ModalTab>
                 <ModalTab 
                   $active={modalStatusFilter === 'READY'} 
-                  onClick={() => setModalStatusFilter('READY')}
+                  onClick={() => { setModalStatusFilter('READY'); setActivePayoutForDrawer(null); }}
                 >
                   정산 대기 ({rawPayouts.filter(r => r.statusLabel === 'READY').length})
                 </ModalTab>
                 <ModalTab 
                   $active={modalStatusFilter === 'COMPLETED'} 
-                  onClick={() => setModalStatusFilter('COMPLETED')}
+                  onClick={() => { setModalStatusFilter('COMPLETED'); setActivePayoutForDrawer(null); }}
                 >
                   정산 완료 ({rawPayouts.filter(r => r.statusLabel === 'COMPLETED').length})
                 </ModalTab>
@@ -391,7 +392,7 @@ export default function AdminSalesPage() {
               
               <AdminSearchInput
                 value={modalSearch}
-                onChange={setModalSearch}
+                onChange={(val) => { setModalSearch(val); setActivePayoutForDrawer(null); }}
                 placeholder="거래처명 / ID 검색..."
                 width="220px"
               />
@@ -425,8 +426,19 @@ export default function AdminSalesPage() {
                         bg: '#f1f5f9', 
                         color: '#475569' 
                       };
+                      const isCompleted = row.statusLabel === 'COMPLETED';
+                      const isSelected = activePayoutForDrawer?.payoutId === row.payoutId;
                       return (
-                        <ModalTr key={row.payoutId}>
+                        <ModalTr 
+                          key={row.payoutId}
+                          $clickable={isCompleted}
+                          $selected={isSelected}
+                          onClick={() => {
+                            if (isCompleted) {
+                              setActivePayoutForDrawer(isSelected ? null : row);
+                            }
+                          }}
+                        >
                           <ModalTd><ModalIdText>{row.payoutId}</ModalIdText></ModalTd>
                           <ModalTd><ModalSellerText>{row.sellerUsername}</ModalSellerText></ModalTd>
                           <ModalTd style={{ textAlign: 'right' }}>
@@ -466,11 +478,146 @@ export default function AdminSalesPage() {
               <ModalFooterInfo>
                 검색 결과: 총 {filteredModalPayouts.length}건
               </ModalFooterInfo>
-              <ModalCloseFooterBtn onClick={() => setIsModalOpen(false)}>
+              <ModalCloseFooterBtn onClick={() => { setIsModalOpen(false); setActivePayoutForDrawer(null); }}>
                 닫기
               </ModalCloseFooterBtn>
             </ModalFooter>
-          </ModalContent>
+
+            {/* ── 우측 슬라이드 드로어 (세금계산서 상세) ── */}
+            <SlideDrawer $isOpen={!!activePayoutForDrawer}>
+              {activePayoutForDrawer && (
+                <>
+                  <DrawerHeader>
+                    <DrawerTitle>
+                      <FileText size={16} color="#244c54" /> 세금계산서 상세
+                    </DrawerTitle>
+                    <DrawerCloseBtn onClick={() => setActivePayoutForDrawer(null)}>
+                      <X size={16} />
+                    </DrawerCloseBtn>
+                  </DrawerHeader>
+                  <DrawerBody>
+                    <InvoiceWrapper>
+                      <InvoiceHeader>
+                        <InvoiceTitle>전자세금계산서</InvoiceTitle>
+                        <InvoiceSubHeader>
+                          <InvoiceBadge>공급받는자 보관용</InvoiceBadge>
+                          <InvoiceDocNo>승인번호: {`2026${(activePayoutForDrawer.payoutDate ? activePayoutForDrawer.payoutDate.split('T')[0] : '0608').replace(/-/g, '')}-${(activePayoutForDrawer.payoutId * 7 + 10000000).toString()}`}</InvoiceDocNo>
+                        </InvoiceSubHeader>
+                      </InvoiceHeader>
+                      
+                      <InvoiceGrid>
+                        {/* 공급자 정보 */}
+                        <InvoiceSection>
+                          <InvoiceSectionTitle>공 급 자</InvoiceSectionTitle>
+                          <InvoiceTable>
+                            <InvoiceRow>
+                              <InvoiceLabel>등록번호</InvoiceLabel>
+                              <InvoiceValue $mono>104-86-12345</InvoiceValue>
+                            </InvoiceRow>
+                            <InvoiceRow>
+                              <InvoiceLabel>상호(법인)</InvoiceLabel>
+                              <InvoiceValue>(주)워크에이션</InvoiceValue>
+                            </InvoiceRow>
+                            <InvoiceRow>
+                              <InvoiceLabel>성명(대표)</InvoiceLabel>
+                              <InvoiceValue>김원호</InvoiceValue>
+                            </InvoiceRow>
+                            <InvoiceRow>
+                              <InvoiceLabel>사업장주소</InvoiceLabel>
+                              <InvoiceValue>서울시 강남구 테헤란로 108</InvoiceValue>
+                            </InvoiceRow>
+                          </InvoiceTable>
+                        </InvoiceSection>
+
+                        {/* 공급받는자 정보 */}
+                        <InvoiceSection>
+                          <InvoiceSectionTitle>공급받는자</InvoiceSectionTitle>
+                          <InvoiceTable>
+                            <InvoiceRow>
+                              <InvoiceLabel>등록번호</InvoiceLabel>
+                              <InvoiceValue $mono>{`220-13-${(activePayoutForDrawer.payoutId * 13 + 54321).toString().substring(0, 5)}`}</InvoiceValue>
+                            </InvoiceRow>
+                            <InvoiceRow>
+                              <InvoiceLabel>상호(법인)</InvoiceLabel>
+                              <InvoiceValue>{activePayoutForDrawer.sellerUsername}</InvoiceValue>
+                            </InvoiceRow>
+                            <InvoiceRow>
+                              <InvoiceLabel>성명(대표)</InvoiceLabel>
+                              <InvoiceValue>{activePayoutForDrawer.sellerUsername} 대표</InvoiceValue>
+                            </InvoiceRow>
+                            <InvoiceRow>
+                              <InvoiceLabel>사업장주소</InvoiceLabel>
+                              <InvoiceValue>서울시 마포구 독막로 320</InvoiceValue>
+                            </InvoiceRow>
+                          </InvoiceTable>
+                        </InvoiceSection>
+                      </InvoiceGrid>
+
+                      <InvoiceSummaryGrid>
+                        <InvoiceSummaryCol>
+                          <InvoiceSummaryLabel>작성일자</InvoiceSummaryLabel>
+                          <InvoiceSummaryValue style={{ fontSize: '10px' }}>
+                            {activePayoutForDrawer.payoutDate ? activePayoutForDrawer.payoutDate.split('T')[0] : '—'}
+                          </InvoiceSummaryValue>
+                        </InvoiceSummaryCol>
+                        <InvoiceSummaryCol>
+                          <InvoiceSummaryLabel>공급가액</InvoiceSummaryLabel>
+                          <InvoiceSummaryValue>
+                            ₩{Math.round(activePayoutForDrawer.payoutAmount / 1.1).toLocaleString()}
+                          </InvoiceSummaryValue>
+                        </InvoiceSummaryCol>
+                        <InvoiceSummaryCol>
+                          <InvoiceSummaryLabel>세액(VAT)</InvoiceSummaryLabel>
+                          <InvoiceSummaryValue>
+                            ₩{(activePayoutForDrawer.payoutAmount - Math.round(activePayoutForDrawer.payoutAmount / 1.1)).toLocaleString()}
+                          </InvoiceSummaryValue>
+                        </InvoiceSummaryCol>
+                      </InvoiceSummaryGrid>
+
+                      <InvoiceItemsTable>
+                        <thead>
+                          <tr>
+                            <InvoiceItemTh style={{ width: '40px' }}>일자</InvoiceItemTh>
+                            <InvoiceItemTh>품목</InvoiceItemTh>
+                            <InvoiceItemTh style={{ width: '30px' }}>수량</InvoiceItemTh>
+                            <InvoiceItemTh style={{ width: '70px' }}>공급가액</InvoiceItemTh>
+                            <InvoiceItemTh style={{ width: '50px' }}>세액</InvoiceItemTh>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <InvoiceItemTd $mono>
+                              {activePayoutForDrawer.payoutDate ? activePayoutForDrawer.payoutDate.split('T')[0].split('-').slice(1).join('/') : '—'}
+                            </InvoiceItemTd>
+                            <InvoiceItemTd style={{ textAlign: 'left', paddingLeft: '6px' }}>
+                              정산 대금 정산 ({activePayoutForDrawer.sellerUsername})
+                            </InvoiceItemTd>
+                            <InvoiceItemTd $mono>1</InvoiceItemTd>
+                            <InvoiceItemTd $mono $align="right" style={{ paddingRight: '4px' }}>
+                              ₩{Math.round(activePayoutForDrawer.payoutAmount / 1.1).toLocaleString()}
+                            </InvoiceItemTd>
+                            <InvoiceItemTd $mono $align="right" style={{ paddingRight: '4px' }}>
+                              ₩{(activePayoutForDrawer.payoutAmount - Math.round(activePayoutForDrawer.payoutAmount / 1.1)).toLocaleString()}
+                            </InvoiceItemTd>
+                          </tr>
+                        </tbody>
+                      </InvoiceItemsTable>
+
+                      <InvoiceFooterText>이 금액을 영수함</InvoiceFooterText>
+                    </InvoiceWrapper>
+                  </DrawerBody>
+                  <DrawerActionRow>
+                    <DrawerBtn onClick={() => alert('세금계산서 인쇄 창을 호출합니다. (가상)')}>
+                      <Printer size={14} /> 인쇄
+                    </DrawerBtn>
+                    <DrawerBtn $primary onClick={() => alert('세금계산서 PDF 다운로드를 시작합니다. (가상)')}>
+                      <Download size={14} /> PDF 다운로드
+                    </DrawerBtn>
+                  </DrawerActionRow>
+                </>
+              )}
+            </SlideDrawer>
+          </ModalContentWithDrawer>
         </ModalOverlay>
       )}
     </PageWrapper>
@@ -902,8 +1049,16 @@ const ModalTbody = styled.tbody``;
 const ModalTr = styled.tr`
   border-bottom: 1px solid #f1f5f9;
   transition: background 0.15s;
+  cursor: ${({ $clickable }) => ($clickable ? 'pointer' : 'default')};
+  background: ${({ $selected }) => ($selected ? '#f0fdf4' : 'transparent')};
+
   &:hover {
-    background: #fafbfc;
+    background: ${({ $selected, $clickable }) => 
+      $selected 
+        ? '#f0fdf4' 
+        : $clickable 
+          ? '#f8fafc' 
+          : '#fafbfc'};
   }
   &:last-child {
     border-bottom: none;
@@ -990,5 +1145,289 @@ const ModalCloseFooterBtn = styled.button`
   &:hover {
     background: #f1f5f9;
     border-color: #cbd5e1;
+  }
+`;
+
+const ModalContentWithDrawer = styled(ModalContent)`
+  position: relative;
+  overflow: hidden;
+`;
+
+const SlideDrawer = styled.div`
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 420px;
+  background: white;
+  border-left: 1px solid #e2e8f0;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.06);
+  z-index: 100;
+  transform: translateX(${({ $isOpen }) => ($isOpen ? '0' : '100%')});
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+`;
+
+const DrawerHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid #f1f5f9;
+`;
+
+const DrawerTitle = styled.h3`
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+`;
+
+const DrawerCloseBtn = styled.button`
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  padding: 4px;
+  &:hover {
+    color: #475569;
+  }
+`;
+
+const DrawerBody = styled.div`
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: #f8fafc;
+`;
+
+/* ── 세금계산서 디자인 ── */
+const InvoiceWrapper = styled.div`
+  background: white;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+`;
+
+const InvoiceHeader = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-bottom: 2px double #94a3b8;
+  padding-bottom: 12px;
+  gap: 6px;
+`;
+
+const InvoiceTitle = styled.h4`
+  font-size: 18px;
+  font-weight: 800;
+  color: #1d4ed8; /* Deep Blue typical of Recipient's Copy */
+  letter-spacing: 2px;
+  text-decoration: underline;
+  margin: 0;
+`;
+
+const InvoiceSubHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 11px;
+  color: #64748b;
+`;
+
+const InvoiceBadge = styled.span`
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: bold;
+`;
+
+const InvoiceDocNo = styled.span`
+  font-family: ${({ theme }) => theme.fonts.number};
+`;
+
+const InvoiceGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid #94a3b8;
+  border-radius: 2px;
+  overflow: hidden;
+`;
+
+const InvoiceSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  &:first-child {
+    border-right: 1px solid #94a3b8;
+  }
+`;
+
+const InvoiceSectionTitle = styled.div`
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  padding: 6px;
+  border-bottom: 1px solid #94a3b8;
+  letter-spacing: 1px;
+`;
+
+const InvoiceTable = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const InvoiceRow = styled.div`
+  display: flex;
+  border-bottom: 1px solid #e2e8f0;
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+const InvoiceLabel = styled.div`
+  width: 65px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 8px 6px;
+  border-right: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  flex-shrink: 0;
+`;
+
+const InvoiceValue = styled.div`
+  flex: 1;
+  padding: 8px;
+  font-size: 11px;
+  color: #1e293b;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  word-break: break-all;
+  font-family: ${({ $mono, theme }) => ($mono ? theme.fonts.number : 'inherit')};
+`;
+
+const InvoiceSummaryGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1px solid #94a3b8;
+  text-align: center;
+  border-radius: 2px;
+  overflow: hidden;
+`;
+
+const InvoiceSummaryCol = styled.div`
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #cbd5e1;
+  &:last-child {
+    border-right: none;
+  }
+`;
+
+const InvoiceSummaryLabel = styled.div`
+  background: #f1f5f9;
+  font-size: 10px;
+  font-weight: 600;
+  color: #475569;
+  padding: 6px;
+  border-bottom: 1px solid #cbd5e1;
+`;
+
+const InvoiceSummaryValue = styled.div`
+  padding: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: ${({ $isTotal }) => ($isTotal ? '#1d4ed8' : '#1e293b')};
+  font-family: ${({ theme }) => theme.fonts.number};
+`;
+
+const InvoiceItemsTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #94a3b8;
+  font-size: 10px;
+  text-align: center;
+`;
+
+const InvoiceItemTh = styled.th`
+  background: #f1f5f9;
+  color: #475569;
+  font-weight: 600;
+  padding: 6px 4px;
+  border: 1px solid #cbd5e1;
+`;
+
+const InvoiceItemTd = styled.td`
+  padding: 8px 4px;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  font-family: ${({ $mono, theme }) => ($mono ? theme.fonts.number : 'inherit')};
+  text-align: ${({ $align }) => $align ?? 'center'};
+`;
+
+const InvoiceFooterText = styled.div`
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1d4ed8;
+  letter-spacing: 4px;
+  padding: 10px 0;
+  border-top: 1px solid #cbd5e1;
+  margin-top: 4px;
+`;
+
+const DrawerActionRow = styled.div`
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+  padding: 16px 20px;
+  border-top: 1px solid #f1f5f9;
+  background: white;
+`;
+
+const DrawerBtn = styled.button`
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid ${({ $primary }) => ($primary ? '#244c54' : '#e2e8f0')};
+  background: ${({ $primary }) => ($primary ? '#244c54' : 'white')};
+  color: ${({ $primary }) => ($primary ? 'white' : '#475569')};
+  transition: all 0.15s;
+  
+  &:hover {
+    background: ${({ $primary }) => ($primary ? '#1b3a40' : '#f8fafc')};
+    border-color: ${({ $primary }) => ($primary ? '#1b3a40' : '#cbd5e1')};
   }
 `;
