@@ -20,11 +20,22 @@ export const NAV_LINKS = [
     path: `/board/event`,
   },
 ];
-
 export const FOOTER_LINKS = {
-  제품: ['여행지', '업무 공간', '커뮤니티'],
-  회사: ['회사 소개', '인재 채용', '문의하기'],
+  여행: ['여행지', '참여후기', '고객지원', '이벤트'],
   '법적 고지': ['개인정보 처리방침', '이용 약관'],
+  커뮤니티: ['공지사항', '자주 묻는 질문'],
+};
+
+// 💡 여기에 추가
+export const PATH_MAP = {
+  여행지: '/resv/destination',
+  참여후기: '/board/review',
+  고객지원: '/board/support',
+  이벤트: '/board/event',
+  '개인정보 처리방침': '/privacy',
+  '이용 약관': '/terms',
+  공지사항: '/board/support/notice',
+  '자주 묻는 질문': '/faq',
 };
 
 /* ==========================================
@@ -51,8 +62,6 @@ export const FEATURES = [
     icon: 'users',
   },
 ];
-
-
 
 export const COLLECTIONS = [
   {
