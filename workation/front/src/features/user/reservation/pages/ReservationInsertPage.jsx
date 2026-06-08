@@ -8,6 +8,7 @@ import { ko } from 'date-fns/locale';
 
 import useReservationInsert from '../hooks/useReservationInsert';
 import { getAvailableCoupons, getBookedDates } from '../api/reservationApi';
+import { BANK_LIST } from '../bankData';
 
 function ReservationInsertPage() {
   const clientKey = 'test_ck_5OWRapdA8djRAOLzPxRYVo1zEqZK';
@@ -78,7 +79,23 @@ function ReservationInsertPage() {
   };
 
   function handleChange(e) {
-    setVo({ ...vo, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    if (name === 'refundAccountNumber') {
+      // 1. 숫자만 남기고 모두 제거
+      let rawValue = value.replace(/[^0-9]/g, '');
+
+      // 2. 입력된 숫자에 하이픈 추가 (간단한 규칙: 3-4-4 형태 등 은행마다 다르므로 일반화)
+      // 여기서는 4자리마다 하이픈을 넣는 방식을 사용합니다 (예: 1234-5678-9012)
+      let formattedValue = rawValue
+        .replace(/(\d{4})(\d{4})(\d{0,4})/, '$1-$2-$3')
+        .replace(/-+$/, ''); // 마지막 하이픈 제거
+
+      setVo({ ...vo, [name]: formattedValue });
+    } else {
+      // 다른 입력값은 그대로 처리
+      setVo({ ...vo, [name]: value });
+    }
   }
 
   const handleDateChange = (date, fieldName) => {
@@ -101,18 +118,31 @@ function ReservationInsertPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+
+    // 1. 필수 입력값 체크
     if (!vo.checkinDate || !vo.checkoutDate) {
       alert('날짜를 선택해 주세요.');
       return;
     }
+
+    // 2. 서버 전송용 데이터 준비 (하이픈 제거)
+    const submitVo = {
+      ...vo,
+      refundAccountNumber: vo.refundAccountNumber.replace(/-/g, ''), // 하이픈 제거
+    };
+
     try {
+      // 3. 서버로 데이터 전달
       const { reservationId, totalPrice } = await insertReservation(
         stayId,
-        vo,
+        submitVo, // 💡 정제된 데이터를 전달
         fileList
       );
+
+      // 4. 결제 요청
       await requestPayment(reservationId, totalPrice);
     } catch (err) {
+      console.error('예약 에러:', err);
       alert(err.response?.data?.message || '예약 처리 중 오류가 발생했습니다.');
     }
   }
@@ -243,24 +273,38 @@ function ReservationInsertPage() {
           {/* 지원금 수령 계좌 */}
           <Section>
             <SectionTitle>지원금 수령 계좌(선택 사항)</SectionTitle>
+
+            <NoticeBox>
+              ※ 계좌번호 및 제출 서류를 잘못 기입하여 발생하는 송금 오류에
+              대해서는 당사가 책임지지 않습니다. 정확한 정보를 다시 한번 확인해
+              주세요.
+            </NoticeBox>
+
             <InputGroup>
               <Label>은행명</Label>
-              <Input
-                type="text"
+              <Select
                 name="refundBankName"
-                placeholder="은행명 입력"
                 value={vo.refundBankName}
                 onChange={handleChange}
-              />
+                required
+              >
+                <option value="">=== 은행을 선택하세요 ===</option>
+                {BANK_LIST.map((bank) => (
+                  <option key={bank} value={bank}>
+                    {bank}
+                  </option>
+                ))}
+              </Select>
             </InputGroup>
             <InputGroup>
               <Label>계좌번호</Label>
               <Input
-                type="text"
+                type="text" // 💡 숫자와 하이픈이 포함되므로 text 유지
                 name="refundAccountNumber"
-                placeholder="계좌번호 입력"
+                placeholder="0000-0000-0000" // 💡 사용자가 형식을 알 수 있게 안내
                 value={vo.refundAccountNumber}
                 onChange={handleChange}
+                maxLength="20" // 💡 계좌번호 최대 길이에 맞춰 제한
               />
             </InputGroup>
             <InputGroup>
@@ -292,6 +336,25 @@ function ReservationInsertPage() {
                   : '선택된 파일 없음'}
               </FileText>
             </FileBox>
+          </Section>
+
+          <Section>
+            <SectionTitle>환불 규정</SectionTitle>
+            <NoticeBox>
+              <strong>[환불 정책]</strong>
+              <br />
+              - 체크인 기준 14일 전: 100% 환불
+              <br />
+              - 체크인 기준 7일 전: 50% 환불
+              <br />- 체크인 기준 7일 이내: 환불 불가
+            </NoticeBox>
+
+            <CheckboxGroup>
+              <input type="checkbox" id="refund-check" required />
+              <label htmlFor="refund-check">
+                위 환불 규정을 확인하였으며, 이에 동의합니다.
+              </label>
+            </CheckboxGroup>
           </Section>
           <SubmitButton type="submit">결제하기</SubmitButton>
         </StyledForm>
@@ -397,6 +460,12 @@ const Select = styled.select`
   border-radius: 8px;
   background: #fff;
   font-size: 15px;
+  color: #1a202c;
+
+  &:focus {
+    outline: none;
+    border-color: #2c6480;
+  }
 `;
 const Input = styled.input`
   width: 100%;
@@ -455,5 +524,32 @@ const SubmitButton = styled.button`
   &:hover {
     transform: translateY(-2px);
     background: #1e4559;
+  }
+`;
+const NoticeBox = styled.div`
+  font-size: 13px;
+  color: #a0aec0;
+  background: #f7fafc;
+  padding: 12px;
+  border-radius: 8px;
+  line-height: 1.5;
+  margin-bottom: 8px;
+`;
+const CheckboxGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #4a5568;
+  cursor: pointer;
+
+  input {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+  }
+
+  label {
+    cursor: pointer;
   }
 `;
