@@ -208,6 +208,7 @@ export default function useAdminReservation() {
           businessNo: partner.businessNumber,
         });
         await fetchPartners(); // 목록 실시간 갱신
+        alert('파트너사가 등록되었습니다.');
       } catch (err) {
         console.error(err);
         alert('파트너사 등록에 실패했습니다.');

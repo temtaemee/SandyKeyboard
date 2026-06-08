@@ -24,6 +24,10 @@ public enum NotificationType {
     SPACE_REJECTED("상품 반려"),
     SPACE_HIDDEN_BY_ADMIN("관리자 비노출 처리"),
     SPACE_VISIBLE_BY_ADMIN("관리자 노출 복구"),
+
+    COMPANY_ENROLL("파트너사 등록"),
+    COMPANY_ACTIVE("파트너사 활성화"),
+    COMPANY_DEACTIVATE("파트너사 비활성화")
     ;
 
     private final String description;

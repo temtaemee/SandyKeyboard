@@ -37,24 +37,30 @@ export default function useAdminReservationUI({
 
   // 파트너 신규 빠른 등록 처리
   const handleRegisterCompany = () => {
-    if (companyName.trim()) {
-      const today = new Date().toISOString().slice(0, 10);
-      const newCompany = {
-        id: Date.now(),
-        name: companyName,
-        businessNumber: companyBizNum.trim(),
-        reservationCount: 0,
-        status: 'active',
-        iconBg: '#e2e8f0',
-        iconColor: '#475569',
-        partnerSince: today,
-        updatedAt: today,
-        created_at: new Date().toISOString(),
-      };
-      addPartner(newCompany);
-      setCompanyName('');
-      setCompanyBizNum('');
+    if (!companyName.trim()) return;
+
+    const bizNum = companyBizNum.trim();
+    if (bizNum && !/^\d{10}$/.test(bizNum)) {
+      alert('사업자번호는 숫자 10자리로 입력해주세요.');
+      return;
     }
+
+    const today = new Date().toISOString().slice(0, 10);
+    const newCompany = {
+      id: Date.now(),
+      name: companyName,
+      businessNumber: bizNum,
+      reservationCount: 0,
+      status: 'active',
+      iconBg: '#e2e8f0',
+      iconColor: '#475569',
+      partnerSince: today,
+      updatedAt: today,
+      created_at: new Date().toISOString(),
+    };
+    addPartner(newCompany);
+    setCompanyName('');
+    setCompanyBizNum('');
   };
 
   // 파트너 정보 수정 모달 진입
