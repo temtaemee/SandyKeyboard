@@ -2,33 +2,17 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import {
-  Home,
-  Building2,
-  Coffee,
-  Tent,
-  Store,
-  Users,
   CheckCircle,
   XCircle,
-  UserPlus,
   Briefcase,
   User,
-  ChevronLeft as LucideChevronLeft,
-  ChevronRight as LucideChevronRight,
   X,
-  Tag,
   Trash2,
   Plus,
   TicketPercent,
 } from 'lucide-react';
 import useAdminSellers from '../hooks/useAdminSellers';
 import useAdminSellersUI from '../hooks/useAdminSellersUI';
-import {
-  SELLER_STATUS_MAP,
-  TOTAL_PAGES,
-  AVATAR_COLORS,
-  isNewMember,
-} from '../data/adminSellersConstants';
 import usePagination from '../hooks/usePagination';
 import AdminPagination from '../components/common/AdminPagination';
 import ConfirmModal from '../components/common/ConfirmModal';
@@ -74,12 +58,6 @@ export default function AdminSellersPage() {
     fetchIssuableCoupons,
     issuableCoupons,
   } = useAdminSellers();
-
-  console.log('=== [AdminSellersPage] ===');
-  console.log('customers:', customers);
-  console.log('sellers:', sellers);
-  console.log('sellersTotalCount:', sellersTotalCount, 'customersTotalCount:', customersTotalCount);
-  console.log('==========================');
 
   const {
     currentPage,
@@ -400,13 +378,6 @@ function SellerSvg({ active }) {
 }
 function CustomerSvg({ active }) {
   return <User size={14} color={active ? '#244c54' : '#94a3b8'} />;
-}
-
-function ChevronLeft() {
-  return <LucideChevronLeft size={14} color="#475569" strokeWidth={1.5} />;
-}
-function ChevronRight() {
-  return <LucideChevronRight size={14} color="#475569" strokeWidth={1.5} />;
 }
 
 /* ── Styled Components ── */

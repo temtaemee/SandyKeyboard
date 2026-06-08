@@ -2,18 +2,14 @@
 import { useState } from 'react';
 import styled from 'styled-components';
 import {
-  MessageSquare,
-  Calendar,
   PlusCircle,
   HelpCircle,
   Star,
   Tag,
   Paperclip,
-  MapPin,
   Pencil,
   Trash2,
   X,
-  Eye,
 } from 'lucide-react';
 import { BOARD_TABS } from '../data/adminBoardConstants';
 import useAdminBoard from '../hooks/useAdminBoard';
@@ -28,27 +24,6 @@ import {
   ModalHeader,
   ModalCloseBtn,
 } from '../components/common/AdminModal.styles'; // 모달 공통 스타일
-
-const STATUS_LABEL = {
-  published: '게시 중',
-  ended: '종료',
-  active: '활성',
-  deleted: '삭제',
-  exhausted: '소진',
-  ACTIVE: '활성',
-  EXPIRED: '만료',
-  EXHAUSTED: '소진',
-};
-const STATUS_COLORS = {
-  published: { bg: '#dcfce7', color: '#16a34a' },
-  ended: { bg: '#f1f5f9', color: '#64748b' },
-  active: { bg: '#dcfce7', color: '#16a34a' },
-  deleted: { bg: '#fee2e2', color: '#dc2626' },
-  exhausted: { bg: '#fff7ed', color: '#ea580c' },
-  ACTIVE: { bg: '#dcfce7', color: '#16a34a' },
-  EXPIRED: { bg: '#f1f5f9', color: '#64748b' },
-  EXHAUSTED: { bg: '#fff7ed', color: '#ea580c' },
-};
 
 const COUPON_FILTERS = ['전체', '활성', '소진', '삭제'];
 
@@ -198,22 +173,15 @@ export default function AdminBoardPage() {
                   <TH $width="120px">남은 수량</TH>
                   <TH $width="120px">유효기간</TH>
                 </>
-              ) : activeTab === '리뷰' ? (
-                <>
-                  <TH $width="160px">작성자</TH>
-                  <TH $width="150px">등록일</TH>
-                </>
               ) : (
-                <>
-                  <TH $width="150px">등록일</TH>
-                </>
+                <TH $width="150px">등록일</TH>
               )}
             </TR>
           </THead>
           <TBody>
             {posts.length === 0 ? (
               <TR>
-                <TD colSpan={activeTab === '쿠폰' || activeTab === '리뷰' ? 5 : 4}>
+                <TD colSpan={activeTab === '쿠폰' ? 5 : 4}>
                   <EmptyState>검색 결과가 없습니다.</EmptyState>
                 </TD>
               </TR>
@@ -231,9 +199,14 @@ export default function AdminBoardPage() {
                     </TD>
                     <TD style={{ paddingLeft: 6 }}>
                       <TitleCell>
-                        <TitleText style={{ textDecoration: post.delYn === 'Y' ? 'line-through' : 'none', color: post.delYn === 'Y' ? '#cbd5e1' : 'inherit' }}>
-                          {activeTab === '쿠폰' ? post.couponName : (activeTab === 'FAQ' ? post.question : post.title)}
-                        </TitleText>
+                        <TitleCellInner>
+                          <TitleText style={{ textDecoration: post.delYn === 'Y' ? 'line-through' : 'none', color: post.delYn === 'Y' ? '#cbd5e1' : 'inherit' }}>
+                            {activeTab === '쿠폰' ? post.couponName : (activeTab === 'FAQ' ? post.question : post.title)}
+                          </TitleText>
+                          {activeTab === '리뷰' && post.author && (
+                            <AuthorSubText>{post.author}</AuthorSubText>
+                          )}
+                        </TitleCellInner>
                         {(post.pinYn === 'Y' || post.isFixed) && <FixedBadge>고정</FixedBadge>}
                         {post.delYn === 'Y' && (
                           <span style={{ fontSize: '10px', color: '#ef4444', fontWeight: 600, background: '#fee2e2', padding: '1px 6px', borderRadius: '3px', marginLeft: '4px', display: 'inline-block' }}>
@@ -256,29 +229,14 @@ export default function AdminBoardPage() {
                           </ValidDaysText>
                         </TD>
                       </>
-                    ) : activeTab === '리뷰' ? (
-                      <>
-                        <TD>
-                          <AuthorText>{post.author}</AuthorText>
-                        </TD>
-                        <TD>
-                          <DateText>
-                            {post.createdAt
-                              ? post.createdAt.split('T')[0]
-                              : post.date || '—'}
-                          </DateText>
-                        </TD>
-                      </>
                     ) : (
-                      <>
-                        <TD>
-                          <DateText>
-                            {post.createdAt
-                              ? post.createdAt.split('T')[0]
-                              : post.date || '—'}
-                          </DateText>
-                        </TD>
-                      </>
+                      <TD>
+                        <DateText>
+                          {post.createdAt
+                            ? post.createdAt.split('T')[0]
+                            : post.date || '—'}
+                        </DateText>
+                      </TD>
                     )}
                   </TR>
                 );
@@ -603,12 +561,6 @@ export default function AdminBoardPage() {
 }
 
 /* ── Icon Components ── */
-function ReviewIcon() {
-  return <MessageSquare size={20} />;
-}
-function CalendarIcon() {
-  return <Calendar size={20} />;
-}
 function PlusCircleIcon() {
   return <PlusCircle size={14} strokeWidth={2.5} />;
 }
@@ -623,15 +575,6 @@ function CouponIcon() {
 }
 function AttachIcon() {
   return <Paperclip size={12} color="#94a3b8" style={{ flexShrink: 0 }} />;
-}
-function PinSvg({ $pinned }) {
-  return (
-    <MapPin
-      size={14}
-      fill={$pinned ? '#244c54' : 'none'}
-      color={$pinned ? '#244c54' : '#94a3b8'}
-    />
-  );
 }
 
 /* ── Styled Components ── */
@@ -666,57 +609,6 @@ const TopSection = styled.div`
   grid-template-columns: 1fr;
   gap: 16px;
   align-items: stretch;
-`;
-
-const StatCard = styled.div`
-  background: ${({ theme }) => theme.colors.white};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 8px;
-  padding: 24px;
-  box-shadow: ${({ theme }) => theme.shadows.card};
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-`;
-
-const StatCardTopRow = styled.div`
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-`;
-
-const StatIconWrap = styled.div`
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  background: ${({ $bg }) => $bg};
-  color: ${({ $color }) => $color};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 4px;
-`;
-
-const StatLabel = styled.p`
-  font-size: 12px;
-  color: ${({ theme }) => theme.colors.textMuted};
-  margin-top: 4px;
-`;
-const StatValue = styled.p`
-  font-size: 32px;
-  font-weight: 700;
-  color: ${({ theme }) => theme.colors.adminTextDark};
-  font-family: ${({ theme }) => theme.fonts.number};
-  letter-spacing: -0.5px;
-  line-height: 1.2;
-`;
-const MonthBadge = styled.span`
-  font-size: 10px;
-  font-weight: 600;
-  color: #ea580c;
-  background: #fff7ed;
-  padding: 3px 8px;
-  border-radius: 999px;
 `;
 
 /* 콘텐츠 신규 등록 카드 */
@@ -876,6 +768,18 @@ const TitleCell = styled.div`
   align-items: center;
   gap: 8px;
 `;
+
+const TitleCellInner = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+`;
+
+const AuthorSubText = styled.span`
+  font-size: 11px;
+  color: ${({ theme }) => theme.colors.textLight};
+`;
 const FixedBadge = styled.span`
   flex-shrink: 0;
   font-size: 10px;
@@ -897,10 +801,6 @@ const TitleText = styled.span`
   font-weight: 500;
   line-height: 1.4;
 `;
-const AuthorText = styled.span`
-  font-size: 13px;
-  color: ${({ theme }) => theme.colors.textMid};
-`;
 const DateText = styled.span`
   font-size: 12px;
   color: ${({ theme }) => theme.colors.textLight};
@@ -919,23 +819,6 @@ const ValidDaysText = styled.span`
   color: ${({ theme }) => theme.colors.adminTextDark};
 `;
 
-/* 핀 버튼 */
-const PinBtn = styled.button`
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s;
-  background: ${({ $pinned }) =>
-    $pinned ? 'rgba(36,76,84,0.08)' : 'transparent'};
-  &:hover {
-    background: ${({ $pinned, theme }) =>
-      $pinned ? 'rgba(36,76,84,0.14)' : theme.colors.borderLight};
-  }
-`;
-
 /* 페이지네이션 푸터 */
 const TableFooter = styled.div`
   display: flex;
@@ -950,12 +833,6 @@ const FooterInfo = styled.p`
   font-size: 12px;
   color: ${({ theme }) => theme.colors.textMuted};
   font-family: ${({ theme }) => theme.fonts.number};
-`;
-
-const RowActions = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 4px;
 `;
 
 /* ── 모달: ModalOverlay / ModalContent / ModalHeader / ModalCloseBtn 은
@@ -1013,20 +890,6 @@ const ModalBody = styled.div`
   gap: 16px;
 `;
 
-/* 상세보기 전용 */
-const DetailMetaRow = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  flex-wrap: wrap;
-`;
-
-const DetailMeta = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-`;
-
 /* 쿠폰 상세용 그리드 */
 const DetailMetaGrid = styled.div`
   display: grid;
@@ -1064,27 +927,6 @@ const StatusChip = styled.span`
   font-weight: 600;
   background: ${({ $bg }) => $bg};
   color: ${({ $color }) => $color};
-`;
-
-const DetailDivider = styled.hr`
-  border: none;
-  border-top: 1px solid #f1f5f9;
-  margin: 0;
-`;
-
-const DetailContentPlaceholder = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 80px;
-  color: #cbd5e1;
-`;
-
-const DetailContentNote = styled.p`
-  font-size: 12px;
-  color: #cbd5e1;
 `;
 
 const DetailContentArea = styled.div`
