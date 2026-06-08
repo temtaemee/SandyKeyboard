@@ -239,6 +239,9 @@ public class SpaceService {
         SpaceEntity space = spaceRepository.findByIdAndDelYn(spaceId, "N")
                 .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
         verifySpaceOwnership(space, memberId);
+        if (space.getApprovalStatus() == SpaceApprovalStatus.PENDING) {
+            throw new ProductException(ErrorCode.SPACE_PENDING_APPROVAL);
+        }
 
         List<Long> keepIds = dto.getKeepPictureIds();
         if (keepIds == null || keepIds.isEmpty()) {
@@ -267,6 +270,9 @@ public class SpaceService {
         SpaceEntity space = spaceRepository.findByIdAndDelYn(id, "N")
                 .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
         verifySpaceOwnership(space, memberId);
+        if (space.getApprovalStatus() == SpaceApprovalStatus.PENDING) {
+            throw new ProductException(ErrorCode.SPACE_PENDING_APPROVAL);
+        }
         space.update(
                 dto.getName(), dto.getPhone(), dto.getEmail(),
                 dto.getSummary(), dto.getDescription(),

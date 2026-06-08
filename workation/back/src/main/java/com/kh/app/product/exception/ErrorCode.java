@@ -16,6 +16,7 @@ public enum ErrorCode {
     UNIT_NOT_FOUND(4002, "SPACE-4002", "존재하지 않는 유닛입니다.", HttpStatus.NOT_FOUND),
     PRODUCT_NOT_FOUND(4003, "SPACE-4003", "존재하지 않는 상품입니다.", HttpStatus.NOT_FOUND),
     SPACE_ACCESS_DENIED(4004, "SPACE-4004", "본인 소유의 공간만 수정 가능합니다.", HttpStatus.FORBIDDEN),
+    SPACE_PENDING_APPROVAL(4011, "SPACE-4011", "승인 대기 중인 공간은 수정할 수 없습니다.", HttpStatus.CONFLICT),
     SPACE_HIDDEN(4005, "SPACE-4005", "비공개 처리된 공간입니다.", HttpStatus.BAD_REQUEST),
     PRODUCT_HIDDEN(4006, "SPACE-4006", "비공개 처리된 상품입니다.", HttpStatus.BAD_REQUEST),
     CAPACITY_EXCEEDED(4007, "SPACE-4007", "허용 인원을 초과했습니다.", HttpStatus.BAD_REQUEST),
