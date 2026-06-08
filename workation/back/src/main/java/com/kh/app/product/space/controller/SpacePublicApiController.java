@@ -5,6 +5,7 @@ import com.kh.app.product.space.dto.request.SpaceSearchReqDto;
 import com.kh.app.product.space.dto.response.SpaceResDto;
 import com.kh.app.product.space.entity.Area;
 import com.kh.app.product.space.service.SpaceService;
+import com.kh.app.security.user.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -14,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import org.springframework.format.annotation.DateTimeFormat;
@@ -71,7 +73,11 @@ public class SpacePublicApiController {
     }
 
     @GetMapping("/list/recommended")
-    public ResponseEntity<List<SpaceResDto>> getRecommendedSpaces(@RequestParam(required = false) Area area) {
-        return ResponseEntity.ok(spaceService.getRecommendedSpaces(area));
+    public ResponseEntity<List<SpaceResDto>> getRecommendedSpaces(
+            @RequestParam(required = false) Area area,
+            @AuthenticationPrincipal CustomUserDetails userDetails // 💡 로그인 유저 정보 추가
+    ) {
+        Long memberId = (userDetails != null) ? userDetails.getMemberId() : null;
+        return ResponseEntity.ok(spaceService.getRecommendedSpaces(area, memberId));
     }
 }
