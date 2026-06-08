@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import { FOOTER_LINKS } from '../../data/homeData';
+import { FOOTER_LINKS, PATH_MAP } from '../../data/homeData';
 
 export default function Footer() {
   return (
@@ -10,8 +10,8 @@ export default function Footer() {
           <Brand>
             <LogoText>모래묻은 키보드</LogoText>
             <Tagline>
-              일하는 장소가 일하는 방식만큼이나 중요하다고 믿는
-              현대 전문가들을 위해 디자인되었습니다.
+              일하는 장소가 일하는 방식만큼이나 중요하다고 믿는 현대 전문가들을
+              위해 디자인되었습니다.
             </Tagline>
             <SocialRow>
               <SocialBtn aria-label="트위터">
@@ -29,7 +29,10 @@ export default function Footer() {
               <LinkCol key={category}>
                 <ColTitle>{category}</ColTitle>
                 {items.map((item) => (
-                  <ColLink key={item} href="#">{item}</ColLink>
+                  // 💡 이제 PATH_MAP을 바로 사용할 수 있습니다
+                  <ColLink key={item} href={PATH_MAP[item] || '#'}>
+                    {item}
+                  </ColLink>
                 ))}
               </LinkCol>
             ))}
@@ -55,7 +58,16 @@ function TwitterIcon() {
 
 function InstagramIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#475569"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
       <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
       <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
@@ -116,7 +128,9 @@ const SocialBtn = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s, transform 0.2s;
+  transition:
+    background 0.2s,
+    transform 0.2s;
   line-height: 0;
 
   &:hover {
