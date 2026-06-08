@@ -33,6 +33,22 @@ import {
   ModalDelete,
 } from '../styles/FaqPage.styles';
 
+// 토큰에서 role 확인
+function getRole() {
+  const token = localStorage.getItem('accessToken');
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const roles = payload.roles ?? [];
+    if (roles.includes('ADMIN')) return 'ADMIN';
+    return 'USER';
+  } catch {
+    return null;
+  }
+}
+
+const isAdmin = getRole() === 'ADMIN';
+
 export default function FaqPage() {
   const {
     pagedList,
@@ -59,9 +75,12 @@ export default function FaqPage() {
 
   return (
     <Wrapper>
-      <TopRow>
-        <WriteButton onClick={openWrite}>✏️ 글쓰기</WriteButton>
-      </TopRow>
+      {/* 글쓰기 버튼 — admin만 표시 */}
+      {isAdmin && (
+        <TopRow>
+          <WriteButton onClick={openWrite}>✏️ 글쓰기</WriteButton>
+        </TopRow>
+      )}
 
       <Board>
         {pagedList.map((faq) => (
@@ -74,13 +93,18 @@ export default function FaqPage() {
                 {faq.question}
                 <Arrow $open={openId === faq.id}>▾</Arrow>
               </QuestionText>
-              <ItemButtons>
-                <ItemEditBtn onClick={() => openEdit(faq)}>수정</ItemEditBtn>
-                <ItemDeleteBtn onClick={() => setDeleteId(faq.id)}>
-                  삭제
-                </ItemDeleteBtn>
-              </ItemButtons>
+
+              {/* 수정/삭제 버튼 — admin만 표시 */}
+              {isAdmin && (
+                <ItemButtons>
+                  <ItemEditBtn onClick={() => openEdit(faq)}>수정</ItemEditBtn>
+                  <ItemDeleteBtn onClick={() => setDeleteId(faq.id)}>
+                    삭제
+                  </ItemDeleteBtn>
+                </ItemButtons>
+              )}
             </QuestionRow>
+
             {openId === faq.id && (
               <Answer>
                 <ABadge>A</ABadge>
