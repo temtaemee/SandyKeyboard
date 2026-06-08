@@ -191,7 +191,8 @@ export default function AdminBoardPage() {
         <Table>
           <THead>
             <TR>
-              <TH $width="280px">제목</TH>
+              <TH style={{ width: 45, minWidth: 45, maxWidth: 45, paddingLeft: 20, paddingRight: 0, textAlign: 'left' }}>번호</TH>
+              <TH $width="280px" style={{ paddingLeft: 6 }}>제목</TH>
               {activeTab === '쿠폰' ? (
                 <>
                   <TH $width="120px">남은 수량</TH>
@@ -212,7 +213,7 @@ export default function AdminBoardPage() {
           <TBody>
             {posts.length === 0 ? (
               <TR>
-                <TD colSpan={4}>
+                <TD colSpan={activeTab === '쿠폰' || activeTab === '리뷰' ? 5 : 4}>
                   <EmptyState>검색 결과가 없습니다.</EmptyState>
                 </TD>
               </TR>
@@ -225,7 +226,10 @@ export default function AdminBoardPage() {
                     $clickable
                     onClick={() => handleShowDetail(post)}
                   >
-                    <TD>
+                    <TD style={{ width: 45, minWidth: 45, maxWidth: 45, paddingLeft: 20, paddingRight: 0, textAlign: 'left' }}>
+                      <IdText>{post.id}</IdText>
+                    </TD>
+                    <TD style={{ paddingLeft: 6 }}>
                       <TitleCell>
                         <TitleText style={{ textDecoration: post.delYn === 'Y' ? 'line-through' : 'none', color: post.delYn === 'Y' ? '#cbd5e1' : 'inherit' }}>
                           {activeTab === '쿠폰' ? post.couponName : (activeTab === 'FAQ' ? post.question : post.title)}
@@ -259,8 +263,8 @@ export default function AdminBoardPage() {
                         </TD>
                         <TD>
                           <DateText>
-                            {post.createdAt 
-                              ? post.createdAt.split('T')[0] 
+                            {post.createdAt
+                              ? post.createdAt.split('T')[0]
                               : post.date || '—'}
                           </DateText>
                         </TD>
@@ -269,8 +273,8 @@ export default function AdminBoardPage() {
                       <>
                         <TD>
                           <DateText>
-                            {post.createdAt 
-                              ? post.createdAt.split('T')[0] 
+                            {post.createdAt
+                              ? post.createdAt.split('T')[0]
                               : post.date || '—'}
                           </DateText>
                         </TD>
@@ -880,6 +884,12 @@ const FixedBadge = styled.span`
   background: #fff7ed;
   padding: 2px 7px;
   border-radius: 4px;
+`;
+const IdText = styled.span`
+  font-size: 13px;
+  font-weight: 500;
+  color: ${({ theme }) => theme.colors.adminTextDark};
+  font-family: ${({ theme }) => theme.fonts.number};
 `;
 const TitleText = styled.span`
   font-size: 13px;

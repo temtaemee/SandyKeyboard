@@ -314,9 +314,7 @@ export default function AdminReservationPage() {
         </Table>
 
         <TableFooter>
-          <FooterInfo>
-            총 {totalCount.toLocaleString()}건
-          </FooterInfo>
+          <FooterInfo />
           <AdminPagination
             currentPage={currentPage}
             totalPages={totalPages}
