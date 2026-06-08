@@ -68,7 +68,7 @@ export default function ReservationPage() {
       if (filterResvId) params.reservationId = Number(filterResvId);
       if (filterGuest.trim()) params.guestName = filterGuest.trim();
       if (filterDate) params.checkinDate = filterDate;
-      // status는 백엔드 미지원 → client-side 처리
+      if (filterStatus) params.status = filterStatus;
 
       const res = await reservationApi.getList(params);
       const data = res.data;
@@ -81,7 +81,7 @@ export default function ReservationPage() {
     } finally {
       setLoading(false);
     }
-  }, [filterResvId, filterGuest, filterDate]);
+  }, [filterResvId, filterGuest, filterDate, filterStatus]);
 
   useEffect(() => { fetchList(0); }, []);
 
@@ -251,7 +251,7 @@ export default function ReservationPage() {
                 <col width="50" />
                 <col width="120" />
                 <col width="100" />
-                <col width="130" />
+                <col width="160" />
               </colgroup>
               <thead>
                 <tr>
@@ -272,7 +272,6 @@ export default function ReservationPage() {
                   </tr>
                 ) : (
                   list
-                  .filter((r) => !filterStatus || r.status === filterStatus)
                   .map((r) => (
                     <ClickRow key={r.id} onClick={() => setDetailOpen(r)}>
                       <Td>
@@ -674,7 +673,7 @@ const StatusBadge = styled.span`
   white-space: nowrap;
 `;
 
-const ActionRow = styled.div`display: flex; gap: 5px;`;
+const ActionRow = styled.div`display: flex; gap: 5px; flex-wrap: nowrap; align-items: center;`;
 
 const ApproveBtn = styled.button`
   display: inline-flex;
