@@ -10,7 +10,9 @@ import java.util.Optional;
 @Repository
 public interface MemberRepository extends JpaRepository<MemberEntity, Long>,MemberRepositoryCustom {
 
+    // 일반 조회용 (활성 회원만)
     Optional<MemberEntity> findByUsernameAndDeletedAtIsNull(String username);
+
 
     @Query("""
     select m
@@ -21,5 +23,6 @@ public interface MemberRepository extends JpaRepository<MemberEntity, Long>,Memb
 """)
     Optional<MemberEntity> findByUsername(String username);
 
+    // 로그인용 (탈퇴회원 포함)
     Optional<MemberEntity> findMemberByUsername(String username);
 }
