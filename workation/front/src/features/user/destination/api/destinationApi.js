@@ -5,13 +5,23 @@ import api from '../../../../app/api/axios';
 /**
  * 1. 공개된 공간(Space) 목록 조건별 검색 조회
  */
-export async function getPublicSpaceList(keyword, area) {
+export async function getPublicSpaceList(params) {
+  // params 객체: { keyword, area, startDate, endDate, capacity, arcadeIds }
   const queryParams = new URLSearchParams();
-  if (keyword) queryParams.append('keyword', keyword);
-  if (area) queryParams.append('area', area);
+
+  Object.keys(params).forEach((key) => {
+    if (params[key]) {
+      // 배열(arcadeIds) 처리
+      if (Array.isArray(params[key])) {
+        params[key].forEach((val) => queryParams.append(key, val));
+      } else {
+        queryParams.append(key, params[key]);
+      }
+    }
+  });
 
   const response = await api.get(`/public/space?${queryParams.toString()}`);
-  return response.data; // List<SpaceResDto> 반환
+  return response.data;
 }
 
 /**
