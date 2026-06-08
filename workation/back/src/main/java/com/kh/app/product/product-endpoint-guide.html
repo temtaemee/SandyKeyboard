@@ -1,0 +1,837 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workation Product API Guide</title>
+  <style>
+    :root {
+      --primary: #2c6480;
+      --primary-dark: #1a2e31;
+      --accent: #3ec9a7;
+      --bg: #f7f9fb;
+      --surface: #ffffff;
+      --line: #d8e2ea;
+      --text: #17212b;
+      --muted: #68778a;
+      --code: #102a43;
+      --danger: #b42318;
+      --warning: #9a6700;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      background: var(--bg);
+      font-family: Arial, "Malgun Gothic", sans-serif;
+      line-height: 1.55;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    aside {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 28px 20px;
+      color: white;
+      background: var(--primary-dark);
+      overflow-y: auto;
+    }
+
+    aside h1 {
+      margin: 0 0 6px;
+      font-size: 20px;
+      line-height: 1.2;
+    }
+
+    aside p {
+      margin: 0 0 22px;
+      color: #b8c8d4;
+      font-size: 13px;
+    }
+
+    nav {
+      display: grid;
+      gap: 6px;
+    }
+
+    nav a {
+      padding: 9px 10px;
+      border-radius: 6px;
+      color: #dbe8ef;
+      font-size: 14px;
+    }
+
+    nav a:hover {
+      background: rgba(255, 255, 255, 0.09);
+    }
+
+    main {
+      padding: 42px 48px 64px;
+    }
+
+    .hero {
+      padding-bottom: 26px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 13px;
+      text-transform: uppercase;
+    }
+
+    h2 {
+      margin: 34px 0 14px;
+      color: var(--primary-dark);
+      font-size: 24px;
+    }
+
+    h3 {
+      margin: 26px 0 10px;
+      color: var(--primary-dark);
+      font-size: 18px;
+    }
+
+    .hero h2 {
+      margin: 0;
+      font-size: 34px;
+    }
+
+    .hero p {
+      max-width: 860px;
+      margin: 12px 0 0;
+      color: var(--muted);
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .meta {
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+    }
+
+    .meta strong {
+      display: block;
+      color: var(--primary-dark);
+      font-size: 13px;
+    }
+
+    .meta span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    section {
+      max-width: 1120px;
+    }
+
+    .note {
+      padding: 14px 16px;
+      border-left: 4px solid var(--accent);
+      border-radius: 6px;
+      background: #eefbf7;
+      color: #17453a;
+      font-size: 14px;
+    }
+
+    .warn {
+      border-left-color: #f2b84b;
+      background: #fff8e8;
+      color: var(--warning);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 26px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--primary-dark);
+      background: #eef3f7;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 4px;
+      color: var(--code);
+      background: #edf4fa;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 13px;
+    }
+
+    pre {
+      margin: 10px 0 22px;
+      padding: 16px;
+      border-radius: 8px;
+      color: #dbeafe;
+      background: #102a43;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    pre code {
+      padding: 0;
+      color: inherit;
+      background: transparent;
+    }
+
+    .method {
+      display: inline-block;
+      min-width: 58px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .get { background: #2563eb; }
+    .post { background: #059669; }
+    .put { background: #7c3aed; }
+    .delete { background: #dc2626; }
+
+    .role {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 999px;
+      color: #17453a;
+      background: #d8f7ed;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .role.admin {
+      color: #3b2f00;
+      background: #fff0b8;
+    }
+
+    .role.public {
+      color: #12385f;
+      background: #dbeafe;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      aside {
+        position: static;
+        height: auto;
+      }
+
+      main {
+        padding: 28px 18px 48px;
+      }
+
+      .meta-grid,
+      .split {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        display: block;
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside>
+      <h1>Product API</h1>
+      <p>Space / Stay / Arcade 엔드포인트 가이드</p>
+      <nav>
+        <a href="#overview">개요</a>
+        <a href="#rules">공통 규칙</a>
+        <a href="#public-space">Public Space</a>
+        <a href="#seller-space">Seller Space</a>
+        <a href="#admin-space">Admin Space</a>
+        <a href="#public-stay">Public Stay</a>
+        <a href="#seller-stay">Seller Stay</a>
+        <a href="#admin-stay">Admin Stay</a>
+        <a href="#arcade">Arcade</a>
+        <a href="#payloads">Payload 예시</a>
+        <a href="#enums">Enum 값</a>
+      </nav>
+    </aside>
+
+    <main>
+      <section id="overview" class="hero">
+        <p class="eyebrow">Workation Backend</p>
+        <h2>Product 엔드포인트 가이드</h2>
+        <p>
+          이 문서는 현재 <code>com.kh.app.product</code> 패키지의 컨트롤러 기준으로 정리한 API 목록입니다.
+          프론트 Axios 설정은 <code>baseURL = http://localhost:80/api</code>이므로 프론트에서는
+          <code>/seller/space</code>처럼 <code>/api</code>를 제외하고 호출합니다.
+        </p>
+
+        <div class="meta-grid">
+          <div class="meta">
+            <strong>서버 기준 URL</strong>
+            <span><code>http://localhost:80/api</code></span>
+          </div>
+          <div class="meta">
+            <strong>인증 방식</strong>
+            <span><code>Authorization: Bearer {accessToken}</code></span>
+          </div>
+          <div class="meta">
+            <strong>작성 기준</strong>
+            <span>2026-05-29 현재 product 컨트롤러</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="rules">
+        <h2>공통 규칙</h2>
+        <div class="note">
+          <strong>권한 prefix:</strong>
+          <code>/api/public/**</code>는 비로그인 허용,
+          <code>/api/seller/**</code>는 SELLER 또는 ADMIN,
+          <code>/api/admin/**</code>은 ADMIN 권한이 필요합니다.
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>구분</th>
+              <th>규칙</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>소프트 삭제</td>
+              <td><code>DELETE</code>는 hard delete가 아니라 엔티티의 <code>delYn</code>을 변경합니다.</td>
+            </tr>
+            <tr>
+              <td>노출 상태</td>
+              <td><code>visibleYn</code>은 <code>Y</code> 또는 <code>N</code>입니다. Public 조회는 기본적으로 <code>visibleYn=Y</code>, <code>delYn=N</code>만 조회합니다.</td>
+            </tr>
+            <tr>
+              <td>셀러 소유권</td>
+              <td>Seller API는 JWT의 <code>memberId</code>로 본인 소유 <code>Space</code>, <code>Stay</code>만 접근합니다.</td>
+            </tr>
+            <tr>
+              <td>Multipart 등록</td>
+              <td>공간/스테이 등록은 <code>multipart/form-data</code>이며 JSON DTO는 <code>dto</code>, 이미지 파일은 <code>files</code> 파트로 보냅니다.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="public-space">
+        <h2>Public Space</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Endpoint</th>
+              <th>권한</th>
+              <th>Query / Body</th>
+              <th>설명</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td><code>/api/public/space</code></td>
+              <td><span class="role public">PUBLIC</span></td>
+              <td><code>keyword?</code>, <code>area?</code></td>
+              <td>공개 공간 목록 조회. <code>visibleYn=Y</code>, <code>delYn=N</code> 강제.</td>
+            </tr>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td><code>/api/public/space/{id}</code></td>
+              <td><span class="role public">PUBLIC</span></td>
+              <td><code>id</code></td>
+              <td>공개 공간 상세 조회. 공개되지 않았거나 삭제된 공간은 404.</td>
+            </tr>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td><code>/api/public/product/dummy-images/**</code></td>
+              <td><span class="role public">PUBLIC</span></td>
+              <td>이미지 상대 경로</td>
+              <td>개발 더미 이미지 파일 응답. 예: <code>/api/public/product/dummy-images/gangwon/hotel1/강원1외관.png</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="seller-space">
+        <h2>Seller Space</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Endpoint</th>
+              <th>권한</th>
+              <th>Query / Body</th>
+              <th>설명</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="method post">POST</span></td>
+              <td><code>/api/seller/space</code></td>
+              <td><span class="role">SELLER</span></td>
+              <td><code>multipart: dto, files?</code></td>
+              <td>공간 등록. 등록 셀러는 JWT에서 가져오며 DTO에 <code>sellerId</code>를 넣지 않습니다.</td>
+            </tr>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td><code>/api/seller/space</code></td>
+              <td><span class="role">SELLER</span></td>
+              <td>없음</td>
+              <td>본인 소유 공간 목록 조회. 삭제/비노출 포함.</td>
+            </tr>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td><code>/api/seller/space/{id}</code></td>
+              <td><span class="role">SELLER</span></td>
+              <td><code>id</code></td>
+              <td>본인 소유 공간 상세 조회. 타 셀러 공간은 403.</td>
+            </tr>
+            <tr>
+              <td><span class="method put">PUT</span></td>
+              <td><code>/api/seller/space/{id}</code></td>
+              <td><span class="role">SELLER</span></td>
+              <td><code>SpaceUpdateReqDto</code></td>
+              <td>본인 소유 공간 기본 정보 수정.</td>
+            </tr>
+            <tr>
+              <td><span class="method delete">DELETE</span></td>
+              <td><code>/api/seller/space/{id}</code></td>
+              <td><span class="role">SELLER</span></td>
+              <td><code>id</code></td>
+              <td>본인 소유 공간 삭제 처리.</td>
+            </tr>
+            <tr>
+              <td><span class="method put">PUT</span></td>
+              <td><code>/api/seller/space/{id}/visible</code></td>
+              <td><span class="role">SELLER</span></td>
+              <td><code>visibleYn=Y|N</code></td>
+              <td>본인 소유 공간 노출 여부 변경.</td>
+            </tr>
+            <tr>
+              <td><span class="method put">PUT</span></td>
+              <td><code>/api/seller/space/{id}/pictures</code></td>
+              <td><span class="role">SELLER</span></td>
+              <td><code>multipart: dto, files?</code></td>
+              <td>공간 사진 수정. <code>keepPictureIds</code>에 없는 기존 사진은 삭제하고 새 파일을 추가합니다.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="admin-space">
+        <h2>Admin Space</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Endpoint</th>
+              <th>권한</th>
+              <th>Query / Body</th>
+              <th>설명</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td><code>/api/admin/space</code></td>
+              <td><span class="role admin">ADMIN</span></td>
+              <td><code>keyword?</code>, <code>area?</code>, <code>visibleYn?</code>, <code>delYn?</code></td>
+              <td>전체 공간 목록 조회. 삭제/비노출 필터 선택 가능.</td>
+            </tr>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td><code>/api/admin/space/{id}</code></td>
+              <td><span class="role admin">ADMIN</span></td>
+              <td><code>id</code></td>
+              <td>공간 상세 조회. 삭제된 공간 포함.</td>
+            </tr>
+            <tr>
+              <td><span class="method put">PUT</span></td>
+              <td><code>/api/admin/space/{id}</code></td>
+              <td><span class="role admin">ADMIN</span></td>
+              <td><code>SpaceUpdateReqDto</code></td>
+              <td>소유권 검증 없이 공간 수정.</td>
+            </tr>
+            <tr>
+              <td><span class="method delete">DELETE</span></td>
+              <td><code>/api/admin/space/{id}</code></td>
+              <td><span class="role admin">ADMIN</span></td>
+              <td><code>id</code></td>
+              <td>공간 삭제 처리.</td>
+            </tr>
+            <tr>
+              <td><span class="method put">PUT</span></td>
+              <td><code>/api/admin/space/{id}/visible</code></td>
+              <td><span class="role admin">ADMIN</span></td>
+              <td><code>visibleYn=Y|N</code></td>
+              <td>공간 노출 여부 변경.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="public-stay">
+        <h2>Public Stay</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Endpoint</th>
+              <th>권한</th>
+              <th>Query / Body</th>
+              <th>설명</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td><code>/api/public/stay</code></td>
+              <td><span class="role public">PUBLIC</span></td>
+              <td><code>keyword?</code>, <code>spaceId?</code>, <code>workationYn?</code>, <code>area?</code>, <code>minPrice?</code>, <code>maxPrice?</code>, <code>capacity?</code>, <code>options?</code></td>
+              <td>공개 스테이 목록 조회. <code>visibleYn=Y</code>, <code>delYn=N</code> 강제.</td>
+            </tr>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td><code>/api/public/stay/{id}</code></td>
+              <td><span class="role public">PUBLIC</span></td>
+              <td><code>id</code></td>
+              <td>공개 스테이 상세 조회. 공개되지 않았거나 삭제된 스테이는 404.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="seller-stay">
+        <h2>Seller Stay</h2>
+        <div class="note warn">
+          셀러 스테이 목록은 반드시 <code>/api/seller/stay</code>를 사용해야 합니다.
+          <code>/api/public/stay</code>를 호출하면 모든 공개 스테이가 조회됩니다.
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Endpoint</th>
+              <th>권한</th>
+              <th>Query / Body</th>
+              <th>설명</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="method post">POST</span></td>
+              <td><code>/api/seller/stay</code></td>
+              <td><span class="role">SELLER</span></td>
+              <td><code>multipart: dto, files?</code></td>
+              <td>스테이 등록. <code>spaceId</code>가 본인 소유 공간이어야 합니다.</td>
+            </tr>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td><code>/api/seller/stay</code></td>
+              <td><span class="role">SELLER</span></td>
+              <td>없음</td>
+              <td>본인 소유 공간에 속한 전체 스테이 조회. 삭제/비노출 포함.</td>
+            </tr>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td><code>/api/seller/stay/{id}</code></td>
+              <td><span class="role">SELLER</span></td>
+              <td><code>id</code></td>
+              <td>본인 소유 스테이 상세 조회. 타 셀러 스테이는 403.</td>
+            </tr>
+            <tr>
+              <td><span class="method put">PUT</span></td>
+              <td><code>/api/seller/stay/{id}</code></td>
+              <td><span class="role">SELLER</span></td>
+              <td><code>StayUpdateReqDto</code></td>
+              <td>본인 소유 스테이 정보 수정.</td>
+            </tr>
+            <tr>
+              <td><span class="method put">PUT</span></td>
+              <td><code>/api/seller/stay/{id}/visible</code></td>
+              <td><span class="role">SELLER</span></td>
+              <td><code>visibleYn=Y|N</code></td>
+              <td>본인 소유 스테이 노출 여부 변경.</td>
+            </tr>
+            <tr>
+              <td><span class="method delete">DELETE</span></td>
+              <td><code>/api/seller/stay/{id}</code></td>
+              <td><span class="role">SELLER</span></td>
+              <td><code>id</code></td>
+              <td>본인 소유 스테이 삭제 처리.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="admin-stay">
+        <h2>Admin Stay</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Endpoint</th>
+              <th>권한</th>
+              <th>Query / Body</th>
+              <th>설명</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td><code>/api/admin/stay</code></td>
+              <td><span class="role admin">ADMIN</span></td>
+              <td><code>keyword?</code>, <code>spaceId?</code>, <code>workationYn?</code>, <code>area?</code>, <code>minPrice?</code>, <code>maxPrice?</code>, <code>capacity?</code>, <code>options?</code>, <code>visibleYn?</code>, <code>delYn?</code></td>
+              <td>전체 스테이 목록 조회. 삭제/비노출 필터 선택 가능.</td>
+            </tr>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td><code>/api/admin/stay/{id}</code></td>
+              <td><span class="role admin">ADMIN</span></td>
+              <td><code>id</code></td>
+              <td>스테이 상세 조회. 삭제된 스테이 포함.</td>
+            </tr>
+            <tr>
+              <td><span class="method post">POST</span></td>
+              <td><code>/api/admin/stay</code></td>
+              <td><span class="role admin">ADMIN</span></td>
+              <td><code>multipart: dto, files?</code></td>
+              <td>소유권 검증 없이 스테이 등록.</td>
+            </tr>
+            <tr>
+              <td><span class="method put">PUT</span></td>
+              <td><code>/api/admin/stay/{id}</code></td>
+              <td><span class="role admin">ADMIN</span></td>
+              <td><code>StayUpdateReqDto</code></td>
+              <td>소유권 검증 없이 스테이 수정.</td>
+            </tr>
+            <tr>
+              <td><span class="method delete">DELETE</span></td>
+              <td><code>/api/admin/stay/{id}</code></td>
+              <td><span class="role admin">ADMIN</span></td>
+              <td><code>id</code></td>
+              <td>스테이 삭제 처리.</td>
+            </tr>
+            <tr>
+              <td><span class="method put">PUT</span></td>
+              <td><code>/api/admin/stay/{id}/visible</code></td>
+              <td><span class="role admin">ADMIN</span></td>
+              <td><code>visibleYn=Y|N</code></td>
+              <td>스테이 노출 여부 변경.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="arcade">
+        <h2>Arcade</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Endpoint</th>
+              <th>권한</th>
+              <th>Query / Body</th>
+              <th>설명</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td><code>/api/seller/arcade</code></td>
+              <td><span class="role">SELLER</span></td>
+              <td>없음</td>
+              <td>편의시설 전체 목록 조회.</td>
+            </tr>
+            <tr>
+              <td><span class="method post">POST</span></td>
+              <td><code>/api/seller/arcade</code></td>
+              <td><span class="role">SELLER</span></td>
+              <td><code>{ "name": "공용 라운지" }</code></td>
+              <td>셀러가 편의시설 항목을 직접 추가.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="payloads">
+        <h2>Payload 예시</h2>
+
+        <h3>공간 등록 Multipart</h3>
+        <pre><code>POST /api/seller/space
+Content-Type: multipart/form-data
+
+dto = {
+  "name": "강원 포레스트 워케이션 호텔",
+  "phone": "0331231001",
+  "email": "gangwon01@workation.com",
+  "summary": "숲과 산 전망이 있는 워케이션 호텔",
+  "description": "상세 설명",
+  "address1": "강원특별자치도 속초시 설악산로",
+  "address2": "101",
+  "latitude": 38.2070000,
+  "longitude": 128.5910000,
+  "area": "GANGWON",
+  "arcadeIdList": [1, 2],
+  "pictureList": [
+    { "mainYn": "Y", "sortOrder": 1, "category": "EXTERIOR" },
+    { "mainYn": "N", "sortOrder": 2, "category": "OFFICE" }
+  ]
+}
+
+files = [image1, image2]</code></pre>
+
+        <h3>스테이 등록 Multipart</h3>
+        <pre><code>POST /api/seller/stay
+Content-Type: multipart/form-data
+
+dto = {
+  "spaceId": 1,
+  "name": "강원 포레스트 디럭스룸",
+  "summary": "업무 데스크와 숲 전망을 갖춘 디럭스룸",
+  "description": "상세 설명",
+  "capacity": 2,
+  "maxCapa": 3,
+  "checkInTime": "15:00:00",
+  "checkOutTime": "11:00:00",
+  "monPrice": 145000,
+  "tuePrice": 145000,
+  "wedPrice": 145000,
+  "thuPrice": 145000,
+  "friPrice": 185000,
+  "satPrice": 215000,
+  "sunPrice": 185000,
+  "holidayPrice": 215000,
+  "workationYn": "Y",
+  "optionList": ["DESK", "MOUNTAIN_VIEW", "PRIVATE_BATHROOM"]
+}
+
+files = [room1, room2]</code></pre>
+
+        <h3>노출 여부 변경</h3>
+        <pre><code>PUT /api/seller/stay/1/visible?visibleYn=N
+Authorization: Bearer {accessToken}</code></pre>
+      </section>
+
+      <section id="enums">
+        <h2>Enum 값</h2>
+        <div class="split">
+          <div>
+            <h3>Area</h3>
+            <table>
+              <tbody>
+                <tr><td><code>SEOUL</code></td><td>서울</td></tr>
+                <tr><td><code>GYEONGGI</code></td><td>경기</td></tr>
+                <tr><td><code>GANGWON</code></td><td>강원</td></tr>
+                <tr><td><code>CHUNGNAM</code></td><td>충남</td></tr>
+                <tr><td><code>CHUNGBUK</code></td><td>충북</td></tr>
+                <tr><td><code>GYEONGNAM</code></td><td>경남</td></tr>
+                <tr><td><code>GYEONGBUK</code></td><td>경북</td></tr>
+                <tr><td><code>JEONNAM</code></td><td>전남</td></tr>
+                <tr><td><code>JEONBUK</code></td><td>전북</td></tr>
+                <tr><td><code>JEJU</code></td><td>제주</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <h3>SpacePictureCategory</h3>
+            <table>
+              <tbody>
+                <tr><td><code>EXTERIOR</code></td><td>외관/전경</td></tr>
+                <tr><td><code>ROOM</code></td><td>객실</td></tr>
+                <tr><td><code>BATHROOM</code></td><td>욕실</td></tr>
+                <tr><td><code>FACILITY</code></td><td>공용시설</td></tr>
+                <tr><td><code>AMENITY</code></td><td>부대시설</td></tr>
+                <tr><td><code>DINING</code></td><td>식음료</td></tr>
+                <tr><td><code>OFFICE</code></td><td>오피스</td></tr>
+                <tr><td><code>OTHERS</code></td><td>기타</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <h3>StayOption</h3>
+        <table>
+          <tbody>
+            <tr>
+              <td>
+                <code>DESK</code>, <code>PRIVATE_BATHROOM</code>, <code>BATHTUB</code>,
+                <code>SHOWER_BOOTH</code>, <code>BIDET</code>, <code>AMENITY</code>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>KITCHEN</code>, <code>COOKING_AVAILABLE</code>, <code>MICROWAVE</code>,
+                <code>INDUCTION</code>, <code>REFRIGERATOR</code>, <code>TABLEWARE</code>,
+                <code>COFFEE_MACHINE</code>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>OCEAN_VIEW</code>, <code>CITY_VIEW</code>, <code>MOUNTAIN_VIEW</code>,
+                <code>GARDEN_VIEW</code>, <code>RIVER_VIEW</code>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

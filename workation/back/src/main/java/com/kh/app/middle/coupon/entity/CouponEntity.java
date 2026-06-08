@@ -51,4 +51,15 @@ public class CouponEntity extends BaseEntity {
             this.couponStatus = CouponStatus.X;
         }
     }
+
+    public void restoreQty() {
+        if (this.remainQty < 0) {
+            throw new IllegalStateException("[COUPON-7005] 쿠폰 수량이 음수입니다.");
+        }
+        this.remainQty++;
+        if(this.couponStatus == CouponStatus.X) {
+            this.couponStatus = CouponStatus.A;
+        }
+    }
+
 }

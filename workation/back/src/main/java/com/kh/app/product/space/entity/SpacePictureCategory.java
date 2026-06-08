@@ -13,7 +13,8 @@ public enum SpacePictureCategory {
     FACILITY("공용시설"),
     AMENITY("부대시설"),
     DINING("식음료"),
-    OTHERS("기타");
+    OTHERS("기타"),
+    OFFICE("오피스");
 
     private final String description;
 

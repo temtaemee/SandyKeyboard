@@ -1,51 +1,94 @@
-import styled from "styled-components";
-import SpaceCard from "./SpaceCard";
-import { RECOMMENDED_SPACES } from "../../data/homeData";
-import useReveal from "../../../hooks/useReveal";
+import { useState, useEffect } from 'react';
+import styled from 'styled-components';
+import SpaceCard from './SpaceCard';
+import useReveal from '../../../hooks/useReveal';
+import axios from 'axios';
+import api from '../../../app/api/axios';
 
-export default function RecommendedSection() {
+export default function RecommendedSection({ userProfile }) {
   const { ref, visible } = useReveal();
+  const [recommendedList, setRecommendedList] = useState([]);
+
+  useEffect(() => {
+    // API 호출
+    const fetchRecommended = async () => {
+      try {
+        // userProfile이 있을 때만 쿼리 파라미터 추가
+        const params = userProfile?.preferredArea
+          ? { area: userProfile.preferredArea }
+          : {};
+
+        const response = await api.get('/public/space/list/recommended', {
+          params,
+        });
+
+        setRecommendedList(response.data);
+      } catch (error) {
+        console.error('추천 데이터 로드 실패', error);
+      }
+    };
+
+    fetchRecommended();
+  }, [userProfile]);
 
   return (
     <Section ref={ref} $visible={visible}>
+      {/* ... 기존 JSX 동일 ... */}
       <Header>
         <TitleGroup>
           <Label>당신을 위한 추천 워케이션</Label>
           <Desc>
-            업무 집중도를 극대화할 수 있도록 엄선된 워케이션 장소입니다.
+            {userProfile?.preferredArea
+              ? `${userProfile.preferredArea} 지역에서 평점이 높고 리뷰가 활발한 장소를 엄선했습니다.`
+              : '평점 4.0 이상, 가장 활발한 워케이션 장소입니다.'}
           </Desc>
         </TitleGroup>
-        <ViewAllLink href="#">
-          전체 보기 <ChevronIcon />
-        </ViewAllLink>
       </Header>
 
       <Grid>
-        {RECOMMENDED_SPACES.map((space) => (
-          <SpaceCard key={space.id} space={space} />
-        ))}
+        {recommendedList.length > 0 ? (
+          recommendedList.map((space) => (
+            <SpaceCard key={space.id} space={space} />
+          ))
+        ) : (
+          <EmptyMsg>조건에 맞는 추천 장소가 없습니다.</EmptyMsg>
+        )}
       </Grid>
     </Section>
   );
 }
 
-function ChevronIcon() {
-  return (
-    <svg
-      width="13"
-      height="13"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polyline points="9 18 15 12 9 6" />
-    </svg>
-  );
-}
+const EmptyMsg = styled.div`
+  grid-column: span 3;
+  text-align: center;
+  padding: 40px;
+  color: ${({ theme }) => theme.colors.textMuted};
+`;
 
+// ... 나머지 Styled Components는 이전과 동일
+const SortTabs = styled.div`
+  display: flex;
+  gap: 16px;
+  background: #f4f7f6;
+  padding: 4px;
+  border-radius: 8px;
+`;
+
+const Tab = styled.button`
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: ${({ $active }) => ($active ? 600 : 400)};
+  background: ${({ $active }) => ($active ? '#ffffff' : 'transparent')};
+  color: ${({ $active }) => ($active ? '#3d646c' : '#888')};
+  cursor: pointer;
+  box-shadow: ${({ $active }) =>
+    $active ? '0 2px 4px rgba(0,0,0,0.1)' : 'none'};
+  transition: all 0.2s;
+`;
+
+// ... 나머지 기존 Styled Components 동일
 /* ── Styled Components ── */
 
 const Section = styled.div`
@@ -54,7 +97,7 @@ const Section = styled.div`
   padding: 80px 32px;
   opacity: ${({ $visible }) => ($visible ? 1 : 0)};
   transform: ${({ $visible }) =>
-    $visible ? "translateY(0)" : "translateY(20px)"};
+    $visible ? 'translateY(0)' : 'translateY(20px)'};
   transition:
     opacity 0.6s ease,
     transform 0.6s ease;

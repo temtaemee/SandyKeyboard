@@ -9,7 +9,7 @@ import lombok.*;
 @Table(name = "MEMBER_PROFILE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@AllArgsConstructor
 @Builder
 public class MemberProfileEntity {
 
@@ -49,6 +49,9 @@ public class MemberProfileEntity {
     @Column(name = "ADDRESS_DETAIL", length = 500)
     private String addressDetail;
 
+    @Column(name = "PROFILE_IMAGE_URL", length = 500)
+    private String profileImageUrl;
+
     public void updateProfile(
             String name,
             String phone,
@@ -67,4 +70,11 @@ public class MemberProfileEntity {
         this.addressDetail = addressDetail;
     }
 
+    public void assignCompany(CompanyEntity company){
+        this.company = company;
+    }
+
+    public void updateProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+    }
 }

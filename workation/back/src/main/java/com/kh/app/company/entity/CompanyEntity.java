@@ -2,11 +2,9 @@ package com.kh.app.company.entity;
 
 import com.kh.app.common.entity.BaseEntity;
 import com.kh.app.company.dto.req.CompanyCreateReqDto;
-import com.kh.app.middle.coupon.dto.request.CouponCreateDto;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "COMPANY")
@@ -26,7 +24,7 @@ public class CompanyEntity extends BaseEntity {
     @Column(name = "BUSINESS_NO", length = 50)
     private String businessNo;
 
-    public void update(CompanyCreateReqDto dto){
+    public void update(CompanyCreateReqDto dto) {
         this.companyName = dto.getCompanyName();
         this.businessNo = dto.getBusinessNo();
     }

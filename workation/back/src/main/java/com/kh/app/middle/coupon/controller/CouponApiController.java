@@ -55,6 +55,7 @@ public class CouponApiController {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
+    //이벤트페이지 게시
     @Operation(summary = "쿠폰 단건 조회 (공개)", description = "이벤트 페이지에서 특정 쿠폰 정보를 조회합니다.")
     @GetMapping("/public/coupon/{couponId}")
     public ResponseEntity<CouponRespDto> listOne(@PathVariable Long couponId){
@@ -62,6 +63,7 @@ public class CouponApiController {
         return ResponseEntity.ok(coupon);
     }
 
+    //이벤트페이지에서
     @Operation(summary = "쿠폰 발급 (사용자)", description = "사용자가 이벤트 페이지에서 쿠폰을 발급받습니다.")
     @PostMapping("/user/coupon/{couponId}")
     public ResponseEntity<Void> register(@PathVariable Long couponId){

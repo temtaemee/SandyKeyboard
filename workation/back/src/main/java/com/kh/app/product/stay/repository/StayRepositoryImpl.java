@@ -1,10 +1,14 @@
 package com.kh.app.product.stay.repository;
 
 import com.kh.app.product.stay.dto.request.StaySearchReqDto;
+import com.kh.app.product.stay.dto.response.BookedPeriodResDto;
 import com.kh.app.product.stay.entity.QStayEntity;
 import com.kh.app.product.stay.entity.QStayOptionEntity;
 import com.kh.app.product.stay.entity.StayEntity;
 import com.kh.app.product.stay.entity.StayOption;
+import com.kh.app.transaction.reservation.entity.QReservationEntity;
+import com.kh.app.transaction.reservation.entity.ReservationStatus;
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
@@ -14,7 +18,10 @@ import org.springframework.stereotype.Repository;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @RequiredArgsConstructor
 @Repository
@@ -44,6 +51,68 @@ public class StayRepositoryImpl implements StayRepositoryCustom {
                 .fetch();
     }
 
+    @Override
+    public List<StayEntity> searchListForPublic(StaySearchReqDto dto) {
+        QStayEntity stay = QStayEntity.stayEntity;
+
+        return queryFactory
+                .selectFrom(stay)
+                .join(stay.space).fetchJoin()
+                .where(
+                        stay.delYn.eq("N"),
+                        stay.visibleYn.eq("Y"),
+                        stay.space.visibleYn.eq("Y"),
+                        stay.space.delYn.eq("N"),
+                        keywordContains(stay, dto.getKeyword()),
+                        spaceIdEq(stay, dto.getSpaceId()),
+                        workationYnEq(stay, dto.getWorkationYn()),
+                        areaEq(stay, dto),
+                        minPriceLoe(stay, dto.getMinPrice()),
+                        maxPriceGoe(stay, dto.getMaxPrice()),
+                        capacityGoe(stay, dto.getCapacity()),
+                        optionsIn(stay, dto.getOptions())
+                )
+                .orderBy(stay.createdAt.desc())
+                .fetch();
+    }
+
+    @Override
+    public List<StayEntity> searchMyStays(Long memberId) {
+        QStayEntity stay = QStayEntity.stayEntity;
+
+        return queryFactory
+                .selectFrom(stay)
+                .join(stay.space).fetchJoin()
+                .where(
+                        stay.space.seller.id.eq(memberId)
+                )
+                .orderBy(stay.createdAt.desc())
+                .fetch();
+    }
+
+    @Override
+    public List<StayEntity> searchListForAdmin(StaySearchReqDto dto) {
+        QStayEntity stay = QStayEntity.stayEntity;
+
+        return queryFactory
+                .selectFrom(stay)
+                .join(stay.space).fetchJoin()
+                .where(
+                        keywordContains(stay, dto.getKeyword()),
+                        spaceIdEq(stay, dto.getSpaceId()),
+                        workationYnEq(stay, dto.getWorkationYn()),
+                        areaEq(stay, dto),
+                        minPriceLoe(stay, dto.getMinPrice()),
+                        maxPriceGoe(stay, dto.getMaxPrice()),
+                        capacityGoe(stay, dto.getCapacity()),
+                        optionsIn(stay, dto.getOptions()),
+                        visibleYnEq(stay, dto.getVisibleYn()),
+                        delYnEq(stay, dto.getDelYn())
+                )
+                .orderBy(stay.createdAt.desc())
+                .fetch();
+    }
+
     private BooleanExpression keywordContains(QStayEntity stay, String keyword) {
         if (!StringUtils.hasText(keyword)) return null;
         return stay.name.containsIgnoreCase(keyword);
@@ -62,6 +131,16 @@ public class StayRepositoryImpl implements StayRepositoryCustom {
     private BooleanExpression areaEq(QStayEntity stay, StaySearchReqDto dto) {
         if (dto.getArea() == null) return null;
         return stay.space.area.eq(dto.getArea());
+    }
+
+    private BooleanExpression visibleYnEq(QStayEntity stay, String visibleYn) {
+        if (!StringUtils.hasText(visibleYn)) return null;
+        return stay.visibleYn.eq(visibleYn);
+    }
+
+    private BooleanExpression delYnEq(QStayEntity stay, String delYn) {
+        if (!StringUtils.hasText(delYn)) return null;
+        return stay.delYn.eq(delYn);
     }
 
     // monPrice ~ sunPrice 중 최솟값 >= minPrice
@@ -100,5 +179,35 @@ public class StayRepositoryImpl implements StayRepositoryCustom {
                         .groupBy(stayOption.stay.id)
                         .having(stayOption.stay.id.count().goe(options.size()))
         );
+    }
+
+    @Override
+    public Set<Long> findBookedStayIds(LocalDate startDate, LocalDate endDate) {
+        QReservationEntity rsv = QReservationEntity.reservationEntity;
+        return new HashSet<>(queryFactory
+                .select(rsv.stay.id).from(rsv)
+                .where(rsv.checkinDate.lt(endDate), rsv.checkoutDate.gt(startDate),
+                        rsv.status.notIn(ReservationStatus.USER_CANCELLED,
+                                ReservationStatus.SELLER_CANCELLED,
+                                ReservationStatus.REFUND_COMPLETED))
+                .fetch());
+    }
+
+    @Override
+    public List<BookedPeriodResDto> findBookedPeriods(Long stayId) {
+        QReservationEntity rsv = QReservationEntity.reservationEntity;
+        List<Tuple> tuples = queryFactory
+                .select(rsv.checkinDate, rsv.checkoutDate).from(rsv)
+                .where(rsv.stay.id.eq(stayId),
+                        rsv.status.notIn(ReservationStatus.USER_CANCELLED,
+                                ReservationStatus.SELLER_CANCELLED,
+                                ReservationStatus.REFUND_COMPLETED))
+                .orderBy(rsv.checkinDate.asc()).fetch();
+        return tuples.stream()
+                .map(t -> BookedPeriodResDto.builder()
+                        .checkinDate(t.get(rsv.checkinDate))
+                        .checkoutDate(t.get(rsv.checkoutDate))
+                        .build())
+                .toList();
     }
 }

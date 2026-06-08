@@ -1,33 +1,42 @@
-import { useState } from "react";
-import styled from "styled-components";
+import { useState } from 'react';
+import styled from 'styled-components';
+import { useNavigate } from 'react-router-dom'; // 💡 1. useNavigate import
 
 export default function SpaceCard({ space }) {
   const [wished, setWished] = useState(false);
+  const navigate = useNavigate(); // 💡 2. 훅을 컴포넌트 최상단에서 호출
+
+  const title = space?.name || '이름 없음';
+  const location = space?.area || '지역 미정';
+  const summary = space?.summary || '';
+  const rating = space?.averageRating || 0.0;
+
+  // 💡 3. 함수 안에서는 navigate()를 사용
+  const handleCardClick = () => {
+    navigate(`/resv/space/${space.id}`);
+  };
 
   return (
-    <Card>
+    <Card onClick={handleCardClick}>
+      {/* ... 나머지 코드 동일 */}
       <ImgWrap>
-        <CardImg src={space.image} alt={space.title} />
-        <LocationBadge>{space.location}</LocationBadge>
+        <CardImg
+          src={space?.thumbnailUrl || '/default-image.jpg'}
+          alt={title}
+        />
+        <LocationBadge>{location}</LocationBadge>
       </ImgWrap>
-
       <CardBody>
-        <CardTitle>{space.title}</CardTitle>
-        <TagRow>
-          {space.tags.map((tag) => (
-            <Tag key={tag.label} $type={tag.type}>
-              {tag.label}
-            </Tag>
-          ))}
-        </TagRow>
+        <CardTitle>{title}</CardTitle>
+        <RatingRow>★ {rating.toFixed(1)}</RatingRow>
+        <CardSummary>{summary}</CardSummary>
         <CardFooter>
-          <PriceBox>
-            <PriceAmount>{space.price}</PriceAmount>
-            <PriceUnit>/ 1박</PriceUnit>
-          </PriceBox>
           <WishBtn
-            onClick={() => setWished((prev) => !prev)}
-            $wished={wished}
+            // 💡 4. WishBtn 클릭 시 페이지 이동이 발생하지 않도록 stopPropagation 추가
+            onClick={(e) => {
+              e.stopPropagation();
+              setWished((prev) => !prev);
+            }}
             aria-label="찜하기"
           >
             <HeartIcon filled={wished} />
@@ -38,14 +47,15 @@ export default function SpaceCard({ space }) {
   );
 }
 
+/* ── Styled Components ── */
 function HeartIcon({ filled }) {
   return (
     <svg
       width="20"
       height="19"
       viewBox="0 0 24 24"
-      fill={filled ? "#f9a825" : "none"}
-      stroke={filled ? "#f9a825" : "#f9e2af"}
+      fill={filled ? '#f9a825' : 'none'}
+      stroke={filled ? '#f9a825' : '#f9e2af'}
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -54,8 +64,6 @@ function HeartIcon({ filled }) {
     </svg>
   );
 }
-
-/* ── Styled Components ── */
 
 const Card = styled.div`
   background: white;
@@ -128,8 +136,8 @@ const TagRow = styled.div`
 `;
 
 const TAG_COLORS = {
-  blue: { bg: "#c3edf6", color: "#456d74" },
-  yellow: { bg: "#f6e5ba", color: "#726643" },
+  blue: { bg: '#c3edf6', color: '#456d74' },
+  yellow: { bg: '#f6e5ba', color: '#726643' },
 };
 
 const Tag = styled.span`
@@ -178,4 +186,19 @@ const WishBtn = styled.button`
   &:hover {
     transform: scale(1.2);
   }
+`;
+const RatingRow = styled.div`
+  font-size: 14px;
+  color: #f9a825;
+  font-weight: 600;
+  margin-bottom: 4px;
+`;
+const CardSummary = styled.p`
+  font-size: 14px;
+  color: ${({ theme }) => theme.colors.textMuted};
+  margin: 8px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* 2줄까지만 표시 */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 `;

@@ -4,12 +4,14 @@ import com.kh.app.middle.apply.dto.req.SpaceApplyPermitReqDto;
 import com.kh.app.middle.apply.dto.req.SpaceApplyReqDto;
 import com.kh.app.middle.apply.dto.resp.SpaceApplyRespDto;
 import com.kh.app.middle.apply.service.SpaceApplyService;
+import com.kh.app.security.user.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,8 +33,12 @@ public class SpaceApplyAPiController {
 
     @Operation(summary = "심사 신청 목록 조회", description = "심사 신청 목록을 페이지 단위로 조회합니다.")
     @GetMapping("/seller/spaces/list")
-    public ResponseEntity<Page<SpaceApplyRespDto>> getApplyList(@RequestParam(defaultValue = "0") int pno) {
-        Page<SpaceApplyRespDto> list = spaceApplyService.getApplyList(pno);
+    public ResponseEntity<Page<SpaceApplyRespDto>> getApplyList(@RequestParam(defaultValue = "0") int pno,  @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long memberId = userDetails.getUserVo().getId();
+        boolean isAdmin = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ADMIN"));
+
+        Page<SpaceApplyRespDto> list = spaceApplyService.getApplyList(pno, memberId, isAdmin);
         return ResponseEntity.ok(list);
     }
 

@@ -24,8 +24,8 @@ public class NotificationApiController {
     public String  testCreate() {
 
         NotificationCreateReqDto dto = NotificationCreateReqDto.builder()
-                .memberId(1L) //알림 받을 멤버id 번호 Long타입 변수로 처리하면 L안붙여도 됩니다!
-                .type(NotificationType.RESERVATION_COMPLETE) // 알림타입
+                .memberId(42L) //알림 받을 멤버id 번호 Long타입 변수로 처리하면 L안붙여도 됩니다!
+                .type(NotificationType.RESERVATION_COMPLETE) //<- 알림타입 컨트롤+클릭 하면 알림타입종류 확인가능
                 .content("테스트 알림입니다.") // 알림 내용
                 .redirectUrl("/mypage") // 알림 클릭햇을시 보내고 싶은 url
                 .referenceId(1L) // 알림관련 식별번호 예약번호 or 상품번호 or 쿠폰번호 or 결제번호

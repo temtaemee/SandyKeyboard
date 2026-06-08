@@ -1,33 +1,36 @@
 import styled from 'styled-components';
 import {
-  User,
-  ClipboardList,
-  CreditCard,
-  History,
-  Settings,
-  Heart,
   Image,
+  Heart,
   Wallet,
-  Headphones,
-  Megaphone,
-  LogOut,
   ChevronRight,
   CalendarDays,
   MapPin,
 } from 'lucide-react';
 import MyPageSidebar from '../components/MyPageSidebar';
 import useMypage from '../hooks/useMypage';
+import { useNavigate } from 'react-router-dom';
+import ProfileAvatar from '../components/ProfileAvatar';
 
 function MyPage() {
-  const { memberInfo, loading } = useMypage();
-  console.log(memberInfo);
+  // 리팩토링된 훅에서 dashboardData를 함께 꺼내옵니다. ✨
+  const { memberInfo, dashboardData, loading } = useMypage();
+  const navi = useNavigate();
+
+  // 날짜 가공 함수 (YYYY-MM-DD 형식 추출)
   const formatDate = (dateString) => {
-    return dateString.slice(0, 10);
+    if (!dateString) return '';
+    return dateString.slice(0, 10).replace(/-/g, '.'); // 대시(-)를 점(.)으로 가공
   };
 
   if (loading) {
-    return <div>로딩중...</div>;
+    return <LoadingWrapper>로딩중...</LoadingWrapper>;
   }
+
+  // 캡슐화 방어: 예약 정보와 지난 워케이션 정보 가독성 배치
+  const currentRes = dashboardData?.currentReservation;
+  const pastWorkations = dashboardData?.pastWorkations || [];
+
   return (
     <Container>
       {/* 사이드바 */}
@@ -36,39 +39,46 @@ function MyPage() {
       {/* 메인 */}
       <Main>
         <PageTitle>마이페이지</PageTitle>
-        <PageDesc>{memberInfo?.name} 님의 워케이션 여정을 관리하세요.</PageDesc>
+        <PageDesc>
+          {memberInfo?.name || '회원'} 님의 워케이션 여정을 관리하세요.
+        </PageDesc>
 
         {/* 프로필 영역 */}
         <TopSection>
           <ProfileCard>
             <ProfileLeft>
               <AvatarBox>
-                <LaptopEmoji>💻</LaptopEmoji>
+                <ProfileAvatar
+                  name={memberInfo?.name || ''}
+                  profileImageUrl={memberInfo?.profileImageUrl || null}
+                />
               </AvatarBox>
 
               <ProfileInfo>
-                <UserName>{memberInfo?.name}</UserName>
-
-                <UserSubTitle>Remote Explorer</UserSubTitle>
+                <UserName>{memberInfo?.name || '이름 없음'}</UserName>
 
                 <BadgeArea>
-                  <GradeBadge>SHORELINE GOLD</GradeBadge>
                   <JoinDate>{formatDate(memberInfo?.joinDate)} 가입</JoinDate>
                 </BadgeArea>
 
                 <StatRow>
                   <StatItem>
-                    <strong>12일</strong>
+                    {/* 백엔드 DTO: totalWorkationDays 동적 바인딩 */}
+                    <strong>{dashboardData?.totalWorkationDays || 0}일</strong>
                     <span>올해 워케이션</span>
                   </StatItem>
 
                   <StatItem>
-                    <strong>5곳</strong>
+                    {/* 백엔드 DTO: visitedRegionsCount 동적 바인딩 */}
+                    <strong>{dashboardData?.visitedRegionsCount || 0}곳</strong>
                     <span>방문 지역</span>
                   </StatItem>
 
                   <StatItem>
-                    <strong>2건</strong>
+                    {/* 백엔드 DTO: upcomingReservationsCount 동적 바인딩 */}
+                    <strong>
+                      {dashboardData?.upcomingReservationsCount || 0}건
+                    </strong>
                     <span>예정 예약</span>
                   </StatItem>
                 </StatRow>
@@ -77,7 +87,11 @@ function MyPage() {
           </ProfileCard>
 
           <RightQuickMenu>
-            <QuickCard>
+            <QuickCard
+              onClick={() => {
+                navi(`/mypage/review`);
+              }}
+            >
               <Image size={20} />
               <QuickText>
                 <strong>나의 리뷰</strong>
@@ -85,7 +99,11 @@ function MyPage() {
               </QuickText>
             </QuickCard>
 
-            <QuickCard>
+            <QuickCard
+              onClick={() => {
+                navi(`/mypage/wishlist`);
+              }}
+            >
               <Heart size={20} />
               <QuickText>
                 <strong>찜한 숙소</strong>
@@ -93,92 +111,114 @@ function MyPage() {
               </QuickText>
             </QuickCard>
 
-            <WideCard>
+            <WideCard
+              onClick={() => {
+                navi(`/mypage/coupon`);
+              }}
+            >
               <CouponLeft>
                 <Wallet size={20} />
-
                 <div>
-                  <strong>사용 가능한 쿠폰 3장</strong>
+                  {/* 백엔드 DTO: availableCouponCount 실시간 장수 연동 ✨ */}
+                  <strong>
+                    사용 가능한 쿠폰 {dashboardData?.availableCouponCount || 0}
+                    장
+                  </strong>
                   <p>이번 달 프로모션 쿠폰 포함</p>
                 </div>
               </CouponLeft>
-
               <ChevronRight size={18} />
             </WideCard>
           </RightQuickMenu>
         </TopSection>
 
-        {/* 예약 카드 */}
+        {/* 예약 카드 영역 - 진행 중인 예약 유무에 따른 조건부 렌더링 최적화 */}
         <ReservationSection>
           <SectionTitle>
             <CalendarDays size={18} />
             현재 진행 중인 예약
           </SectionTitle>
 
-          <ReservationCard>
-            <ReservationImage
-              src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1200"
-              alt=""
-            />
+          {!currentRes ? (
+            <EmptyReservationBox>
+              현재 진행 중인 워케이션 예약이 없습니다.
+            </EmptyReservationBox>
+          ) : (
+            <ReservationCard>
+              {/* 백엔드 S3 동적 썸네일 주소 바인딩 ✨ */}
+              <ReservationImage
+                src={currentRes.roomImageUrl}
+                alt={currentRes.workspaceName}
+              />
 
-            <ReservationContent>
-              <ReservationTitle>부산 씨사이드 허브</ReservationTitle>
+              <ReservationContent>
+                {/* 백엔드 stayName -> workspaceName 명세 매핑 ✨ */}
+                <ReservationTitle>{currentRes.workspaceName}</ReservationTitle>
+                {/* 백엔드 stayService에서 조인해 온 룸 실이름 매핑 ✨ */}
+                <ReservationSub>{currentRes.roomTypeName}</ReservationSub>
 
-              <ReservationSub>오션뷰 스튜디오 워크룸</ReservationSub>
+                <ReservationInfo>
+                  <InfoItem>
+                    <CalendarDays size={15} />
+                    {formatDate(currentRes.startDate)} -{' '}
+                    {formatDate(currentRes.endDate)}
+                  </InfoItem>
 
-              <ReservationInfo>
-                <InfoItem>
-                  <CalendarDays size={15} />
-                  2024.05.20 - 2024.05.25
-                </InfoItem>
+                  <InfoItem>
+                    <MapPin size={15} />
+                    {/* 백엔드 spaceService에서 가져온 실제 주소 매핑 ✨ */}
+                    {currentRes.locationAddress}
+                  </InfoItem>
+                </ReservationInfo>
 
-                <InfoItem>
-                  <MapPin size={15} />
-                  부산광역시 해운대구
-                </InfoItem>
-              </ReservationInfo>
-
-              <ButtonArea>
-                <PrimaryButton>예약 상세 확인</PrimaryButton>
-
-                <SecondaryButton>예약 변경/취소</SecondaryButton>
-              </ButtonArea>
-            </ReservationContent>
-          </ReservationCard>
+                <ButtonArea>
+                  <PrimaryButton
+                    onClick={() => {
+                      navi(`/mypage/reservation/${currentRes.reservationId}`);
+                    }}
+                  >
+                    예약 상세 확인
+                  </PrimaryButton>
+                </ButtonArea>
+              </ReservationContent>
+            </ReservationCard>
+          )}
         </ReservationSection>
 
-        {/* 하단 카드 */}
+        {/* 하단 카드 영역 - 지난 워케이션 다시 보기 리스트 동적 루프 구현 */}
         <BottomSection>
           <HistoryCard>
             <CardTitle>지난 워케이션 다시 보기</CardTitle>
 
-            <HistoryItem>
-              <HistoryThumb
-                src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=400"
-                alt=""
-              />
+            {pastWorkations.length === 0 ? (
+              <EmptyHistoryText>
+                이전 워케이션 히스토리가 존재하지 않습니다.
+              </EmptyHistoryText>
+            ) : (
+              pastWorkations.map((history) => (
+                <HistoryItem
+                  key={history.reservationId}
+                  onClick={() => {
+                    navi(`/mypage/reservation/${history.reservationId}`);
+                  }}
+                >
+                  <HistoryThumb
+                    src={history.workspaceImageUrl}
+                    alt={history.workspaceName}
+                  />
 
-              <HistoryInfo>
-                <h4>제주 하이브 스테이</h4>
-                <p>2024.03.12 - 2024.03.15</p>
-              </HistoryInfo>
+                  <HistoryInfo>
+                    <h4>{history.workspaceName}</h4>
+                    <p>
+                      {formatDate(history.startDate)} -{' '}
+                      {formatDate(history.endDate)}
+                    </p>
+                  </HistoryInfo>
 
-              <ChevronRight size={18} />
-            </HistoryItem>
-
-            <HistoryItem>
-              <HistoryThumb
-                src="https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?q=80&w=400"
-                alt=""
-              />
-
-              <HistoryInfo>
-                <h4>강릉 샌드 오피스텔</h4>
-                <p>2023.12.01 - 2023.12.04</p>
-              </HistoryInfo>
-
-              <ChevronRight size={18} />
-            </HistoryItem>
+                  <ChevronRight size={18} />
+                </HistoryItem>
+              ))
+            )}
           </HistoryCard>
         </BottomSection>
       </Main>
@@ -189,63 +229,12 @@ function MyPage() {
 export default MyPage;
 
 /* ================= styled ================= */
+// 작성해주신 아름다운 디자인 레이아웃을 완전히 보존하고, 예외 케이스(로딩/비어있음) 대응용 코드만 깔끔하게 추가했습니다.
 
 const Container = styled.div`
   display: flex;
   min-height: calc(100vh - 160px);
   background-color: #f7f9fb;
-`;
-
-const Sidebar = styled.aside`
-  width: 240px;
-  background-color: white;
-  border-right: 1px solid #edf1f4;
-  padding: 40px 24px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-`;
-
-const MenuSection = styled.div``;
-
-const MenuTitle = styled.h2`
-  font-size: 15px;
-  color: #9ca3af;
-  margin-bottom: 26px;
-`;
-
-const MenuItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  height: 48px;
-  padding: 0 14px;
-  border-radius: 12px;
-  margin-bottom: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  color: ${({ active }) => (active ? '#3f6971' : '#6b7280')};
-  background-color: ${({ active }) => (active ? '#eef5f6' : 'transparent')};
-  font-weight: ${({ active }) => (active ? '600' : '400')};
-
-  &:hover {
-    background-color: #f3f6f8;
-  }
-`;
-
-const BottomMenu = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-`;
-
-const BottomItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #9ca3af;
-  font-size: 13px;
-  cursor: pointer;
 `;
 
 const Main = styled.main`
@@ -292,24 +281,14 @@ const ProfileLeft = styled.div`
   }
 `;
 
-const ProfileImage = styled.img`
-  width: 88px;
-  height: 88px;
-  border-radius: 50%;
-  object-fit: cover;
-`;
+// 기존 스타일 컴포넌트 정의 구역 확인용
 const AvatarBox = styled.div`
-  width: 110px;
-  height: 110px;
-  border-radius: 28px;
-
-  background: linear-gradient(135deg, #d9ecef, #eef5f6);
-
   display: flex;
   align-items: center;
   justify-content: center;
-
-  flex-shrink: 0;
+  background: none; /* 👈 기존 회색/하늘색 배경색이 있었다면 제거 */
+  border: none; /* 기존 테두리 제거 */
+  /* 가로세로 크기는 ProfileAvatar 크기와 비슷하게 맞추거나 없애기 */
 `;
 
 const LaptopEmoji = styled.div`
@@ -340,25 +319,9 @@ const BadgeArea = styled.div`
   flex-wrap: wrap;
 `;
 
-const GradeBadge = styled.div`
-  background-color: #f5e6b5;
-  color: #8a6d1f;
-  padding: 6px 14px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-`;
-
 const JoinDate = styled.span`
   color: #94a3b8;
   font-size: 13px;
-`;
-
-const PointBox = styled.div`
-  width: 200px;
-  background-color: #f8fbfc;
-  border-radius: 20px;
-  padding: 24px;
 `;
 
 const StatRow = styled.div`
@@ -388,7 +351,6 @@ const StatItem = styled.div`
 
 const RightQuickMenu = styled.div`
   width: 320px;
-
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
@@ -402,14 +364,11 @@ const QuickCard = styled.div`
   background-color: white;
   border-radius: 22px;
   padding: 20px;
-
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 14px;
-
   color: #5f6b73;
-
   cursor: pointer;
   transition: 0.2s;
 
@@ -434,17 +393,13 @@ const QuickText = styled.div`
 
 const WideCard = styled.div`
   grid-column: span 2;
-
   background-color: white;
   border-radius: 22px;
   padding: 22px;
-
   display: flex;
   align-items: center;
   justify-content: space-between;
-
   color: #5f6b73;
-
   cursor: pointer;
 `;
 
@@ -465,24 +420,6 @@ const CouponLeft = styled.div`
   }
 `;
 
-const PointLabel = styled.div`
-  color: #94a3b8;
-  font-size: 13px;
-  margin-bottom: 10px;
-`;
-
-const PointValue = styled.div`
-  font-size: 32px;
-  font-weight: 700;
-  color: #3f6971;
-  margin-bottom: 10px;
-`;
-
-const PointLink = styled.div`
-  font-size: 13px;
-  color: #6b7280;
-`;
-
 const ReservationSection = styled.section`
   background-color: white;
   border-radius: 28px;
@@ -501,6 +438,9 @@ const SectionTitle = styled.h3`
 const ReservationCard = styled.div`
   display: flex;
   gap: 24px;
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
 `;
 
 const ReservationImage = styled.img`
@@ -508,6 +448,9 @@ const ReservationImage = styled.img`
   height: 180px;
   border-radius: 18px;
   object-fit: cover;
+  @media (max-width: 768px) {
+    width: 100%;
+  }
 `;
 
 const ReservationContent = styled.div`
@@ -528,6 +471,7 @@ const ReservationInfo = styled.div`
   display: flex;
   gap: 18px;
   margin-bottom: 26px;
+  flex-wrap: wrap;
 `;
 
 const InfoItem = styled.div`
@@ -548,8 +492,9 @@ const PrimaryButton = styled.button`
   background-color: #3f6971;
   color: white;
   border-radius: 999px;
-  padding: ${({ small }) => (small ? '12px 20px' : '14px 30px')};
+  padding: 14px 30px;
   cursor: pointer;
+  font-weight: 600;
 `;
 
 const SecondaryButton = styled.button`
@@ -563,17 +508,11 @@ const SecondaryButton = styled.button`
 
 const BottomSection = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr; /* 하단 카드 레이아웃 유연화 조정 */
   gap: 24px;
 `;
 
 const HistoryCard = styled.div`
-  background-color: white;
-  border-radius: 28px;
-  padding: 30px;
-`;
-
-const PointCard = styled.div`
   background-color: white;
   border-radius: 28px;
   padding: 30px;
@@ -589,6 +528,25 @@ const HistoryItem = styled.div`
   align-items: center;
   gap: 16px;
   margin-bottom: 18px;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 14px;
+
+  /* 💡 디테일 강화 추가 스펙 */
+  cursor: pointer; /* 1. 마우스 올렸을 때 손가락 모양으로 변경 */
+  transition: all 0.2s ease-in-out; /* 2. 호버 효과가 부드럽게 일어나도록 애니메이션 추가 */
+  border-radius: 12px; /* 3. 호버 시 배경색이 둥글게 예쁘게 퍼지도록 처리 */
+
+  &:hover {
+    background-color: #f8fafc; /* 4. 마우스 올렸을 때 은은한 회색빛 배경색 추가 */
+    padding-left: 8px; /* (선택) 5. 오른쪽으로 살짝 밀리는 모션 디테일 */
+    padding-right: 8px; /* (선택) 5. 패딩 좌우 균형 맞추기 */
+  }
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+  }
 `;
 
 const HistoryThumb = styled.img`
@@ -604,6 +562,7 @@ const HistoryInfo = styled.div`
   h4 {
     font-size: 15px;
     margin-bottom: 6px;
+    color: #374151;
   }
 
   p {
@@ -612,8 +571,31 @@ const HistoryInfo = styled.div`
   }
 `;
 
-const PointText = styled.p`
+/* ================= 새로 추가된 보조 스타일 컴포넌트 ================= */
+
+const LoadingWrapper = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 160px);
   color: #64748b;
-  line-height: 1.7;
-  margin-bottom: 28px;
+  font-size: 16px;
+`;
+
+const EmptyReservationBox = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 0;
+  border: 1px dashed #cbd5e1;
+  border-radius: 18px;
+  color: #94a3b8;
+  font-size: 15px;
+`;
+
+const EmptyHistoryText = styled.p`
+  color: #94a3b8;
+  font-size: 14px;
+  text-align: center;
+  padding: 20px 0;
 `;

@@ -5,8 +5,11 @@ import com.kh.app.member.dto.request.SellerSearchCondDto;
 import com.kh.app.member.dto.response.MemberListRespDto;
 import com.kh.app.member.entity.QMemberEntity;
 import com.kh.app.member.entity.QMemberProfileEntity;
+import com.kh.app.transaction.reservation.entity.QReservationEntity;
+import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -20,25 +23,29 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
     private final JPAQueryFactory queryFactory;
     private static final QMemberProfileEntity profile = QMemberProfileEntity.memberProfileEntity;
 
+    private static final QReservationEntity reservation = QReservationEntity.reservationEntity;
+
     @Override
     public List<MemberListRespDto> searchMembers(MemberSearchCondDto dto) {
 
         return queryFactory
                 .select(
-                        Projections.constructor(
+                        Projections.fields(
                                 MemberListRespDto.class,
-                                member.id,
+                                member.id.as("memberId"),
                                 member.username,
                                 profile.email,
                                 profile.name,
+                                profile.phone,
                                 member.banYn,
                                 member.deletedAt,
-                                member.seller.isNotNull(),
+                                member.seller.isNotNull().as("sellerYn"),
                                 member.createdAt
                         )
                 )
                 .from(member)
                 .leftJoin(member.profile, profile)
+                .leftJoin(member.seller)
                 .where(
                         keywordLike(dto.getKeyword()),
                         statusEq(dto.getStatus())
@@ -67,20 +74,23 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
     public List<MemberListRespDto> searchSellers(SellerSearchCondDto dto) {
         return queryFactory
                 .select(
-                        Projections.constructor(
+                        Projections.fields(
                                 MemberListRespDto.class,
-                                member.id,
+                                member.id.as("memberId"),
                                 member.username,
                                 profile.email,
                                 profile.name,
+                                profile.phone,
+                                member.seller.businessNo.as("businessNo"),
                                 member.banYn,
                                 member.deletedAt,
-                                member.seller.isNotNull(),
+                                member.seller.isNotNull().as("sellerYn"),
                                 member.createdAt
                         )
                 )
                 .from(member)
                 .leftJoin(member.profile, profile)
+                .leftJoin(member.seller)
                 .where(
                         member.seller.isNotNull(),
                         keywordLike(dto.getKeyword()),

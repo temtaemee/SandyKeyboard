@@ -8,6 +8,7 @@ import MyReservationPage from '../features/user/mypage/pages/MyReservationPage';
 import MyReviewPage from '../features/user/mypage/pages/MyReviewPage';
 import MySettingPage from '../features/user/mypage/pages/MySettingPage';
 import MyWishlistPage from '../features/user/mypage/pages/MyWishlistPage';
+import MyReservationDetailPage from '../features/user/mypage/pages/MyReservationDetailPage';
 
 /**
  * User 도메인 라우터
@@ -24,6 +25,7 @@ export default function MypageRouter() {
       <Route path="seller-apply" element={<SellerApplyPage />} />
       {/* <Route path="mypage/reservation" element={<MyReservationListPage />} /> */}
       <Route path="reservation" element={<MyReservationPage />} />
+      <Route path="reservation/:id" element={<MyReservationDetailPage />} />
       {/* ↓ 여기에 추가적인 유저 관련 라우트를 작성하세요 */}
       <Route path="coupon" element={<MyCouponPage />} />
       <Route path="review" element={<MyReviewPage />} />

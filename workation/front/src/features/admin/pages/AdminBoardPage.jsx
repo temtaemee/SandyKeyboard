@@ -14,13 +14,10 @@ import {
   Trash2,
   X,
   Eye,
-  ChevronLeft as LucideChevronLeft,
-  ChevronRight as LucideChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
 } from 'lucide-react';
-import { BOARD_STAT_CARDS, BOARD_POSTS } from '../data/adminBoardData';
 import { BOARD_TABS } from '../data/adminBoardConstants';
+import useAdminBoard from '../hooks/useAdminBoard';
+import useAdminBoardUI from '../hooks/useAdminBoardUI';
 import usePagination from '../hooks/usePagination';
 import AdminPagination from '../components/common/AdminPagination';
 import AdminSearchInput from '../components/common/AdminSearchInput';
@@ -35,118 +32,75 @@ import {
 const TOTAL = 124;
 const TOTAL_PAGES = 3;
 
-const STATUS_LABEL = { published: '게시 중', ended: '종료', active: '활성', expired: '만료', exhausted: '소진' };
+const STATUS_LABEL = {
+  published: '게시 중',
+  ended: '종료',
+  active: '활성',
+  deleted: '삭제',
+  exhausted: '소진',
+  ACTIVE: '활성',
+  EXPIRED: '만료',
+  EXHAUSTED: '소진',
+};
 const STATUS_COLORS = {
   published: { bg: '#dcfce7', color: '#16a34a' },
-  ended:     { bg: '#f1f5f9', color: '#64748b' },
-  active:    { bg: '#dcfce7', color: '#16a34a' },
-  expired:   { bg: '#f1f5f9', color: '#64748b' },
+  ended: { bg: '#f1f5f9', color: '#64748b' },
+  active: { bg: '#dcfce7', color: '#16a34a' },
+  deleted: { bg: '#fee2e2', color: '#dc2626' },
   exhausted: { bg: '#fff7ed', color: '#ea580c' },
+  ACTIVE: { bg: '#dcfce7', color: '#16a34a' },
+  EXPIRED: { bg: '#f1f5f9', color: '#64748b' },
+  EXHAUSTED: { bg: '#fff7ed', color: '#ea580c' },
 };
 
-const COUPON_FILTERS = ['전체', '활성', '만료', '소진'];
-const COUPON_STATUS_MAP = { 활성: 'active', 만료: 'expired', 소진: 'exhausted' };
-
+const COUPON_FILTERS = ['전체', '활성', '소진', '삭제'];
 
 export default function AdminBoardPage() {
   const [activeTab, setActiveTab] = useState('공지사항');
-  const [pinnedIds, setPinnedIds] = useState(() => {
-    const ids = [];
-    Object.values(BOARD_POSTS).forEach((posts) =>
-      posts.forEach((p) => {
-        if (p.isFixed) ids.push(p.id);
-      })
-    );
-    return ids;
-  });
-
-  // 게시글 목록 (삭제 지원을 위해 state로 관리)
-  const [boardPosts, setBoardPosts] = useState(BOARD_POSTS);
+  const {
+    posts: tabPosts,
+    updatePost,
+    deletePost,
+    createPost,
+  } = useAdminBoard(activeTab);
 
   const { currentPage, goToPage, reset: resetPage } = usePagination();
 
-  // 검색
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // 쿠폰 필터
-  const [couponFilter, setCouponFilter] = useState('전체');
-
-  const rawPosts = boardPosts[activeTab] || [];
-  const posts = rawPosts.filter((p) => {
-    const matchSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase());
-    if (activeTab !== '쿠폰' || couponFilter === '전체') return matchSearch;
-    return matchSearch && p.status === COUPON_STATUS_MAP[couponFilter];
+  // 통합 UI 훅 도입으로 복잡한 useState 제거 및 비즈니스 로직 격리
+  const {
+    searchQuery,
+    setSearchQuery,
+    couponFilter,
+    setCouponFilter,
+    posts,
+    resetFilters,
+    registerModal,
+    editingPost,
+    formData,
+    removedFileIds,
+    handleRemoveExistingFile,
+    openRegisterModal,
+    openEditModal,
+    closeRegisterModal,
+    handleFormChange,
+    handleRegisterSubmit,
+    detailPost,
+    setDetailPost,
+    handleShowDetail,
+    deleteTarget,
+    setDeleteTarget,
+    handleDeleteConfirm,
+  } = useAdminBoardUI({
+    tabPosts,
+    activeTab,
+    updatePost,
+    deletePost,
+    createPost,
   });
-
-  // 신규 등록 / 수정 모달
-  const [registerModal, setRegisterModal] = useState(null); // null | type string
-  const [editingPost, setEditingPost] = useState(null); // 수정 중인 post
-  const [formData, setFormData] = useState({});
-
-  const openRegisterModal = (type) => {
-    setRegisterModal(type);
-    setEditingPost(null);
-    setFormData({});
-  };
-
-  const openEditModal = (post) => {
-    setDetailPost(null);
-    setRegisterModal(activeTab);
-    setEditingPost(post);
-    setFormData({ title: post.title, content: post.content || '' });
-  };
-
-  const closeRegisterModal = () => {
-    setRegisterModal(null);
-    setEditingPost(null);
-    setFormData({});
-  };
-
-  const handleFormChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleRegisterSubmit = () => {
-    if (editingPost) {
-      setBoardPosts((prev) => ({
-        ...prev,
-        [activeTab]: prev[activeTab].map((p) =>
-          p.id === editingPost.id
-            ? { ...p, title: formData.title || p.title }
-            : p
-        ),
-      }));
-    }
-    closeRegisterModal();
-  };
-
-  // 상세보기 모달
-  const [detailPost, setDetailPost] = useState(null);
-
-  // 삭제 확인 모달
-  const [deleteTarget, setDeleteTarget] = useState(null);
-
-  const handleDeleteConfirm = () => {
-    if (!deleteTarget) return;
-    setBoardPosts((prev) => ({
-      ...prev,
-      [activeTab]: prev[activeTab].filter((p) => p.id !== deleteTarget.id),
-    }));
-    setPinnedIds((prev) => prev.filter((id) => id !== deleteTarget.id));
-    setDeleteTarget(null);
-    setDetailPost(null);
-  };
-
-  const handlePin = (id) => {
-    setPinnedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    );
-  };
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    setSearchQuery('');
-    setCouponFilter('전체');
+    resetFilters();
     resetPage();
   };
 
@@ -160,29 +114,8 @@ export default function AdminBoardPage() {
         </PageTitleGroup>
       </PageHeader>
 
-      {/* ── 상단 3열: 통계 카드 2개 + 콘텐츠 신규 등록 ── */}
+      {/* ── 상단: 콘텐츠 신규 등록 ── */}
       <TopSection>
-        {/* 카드 1: 전체 리뷰 수 */}
-        <StatCard>
-          <StatIconWrap $color="#6366f1" $bg="rgba(99,102,241,0.1)">
-            <ReviewIcon />
-          </StatIconWrap>
-          <StatLabel>전체 리뷰 수</StatLabel>
-          <StatValue>1,284</StatValue>
-        </StatCard>
-
-        {/* 카드 2: 이번 달 리뷰 수 */}
-        <StatCard>
-          <StatCardTopRow>
-            <StatIconWrap $color="#f97316" $bg="rgba(249,115,22,0.1)">
-              <CalendarIcon />
-            </StatIconWrap>
-          </StatCardTopRow>
-          <StatLabel>이번 달 리뷰 수</StatLabel>
-          <StatValue>342</StatValue>
-        </StatCard>
-
-        {/* 카드 3: 콘텐츠 신규 등록 */}
         <QuickRegisterCard>
           <QuickRegisterTitle>콘텐츠 신규 등록</QuickRegisterTitle>
           <QuickRegisterGrid>
@@ -264,12 +197,10 @@ export default function AdminBoardPage() {
                 <>
                   <TH $width="160px">작성자</TH>
                   <TH $width="150px">등록일</TH>
-                  <TH $width="80px">상단 고정</TH>
                 </>
               ) : (
                 <>
                   <TH $width="150px">등록일</TH>
-                  <TH $width="80px">상단 고정</TH>
                 </>
               )}
             </TR>
@@ -283,54 +214,61 @@ export default function AdminBoardPage() {
               </TR>
             ) : (
               posts.map((post) => {
-                const pinned = pinnedIds.includes(post.id);
-
                 return (
                   <TR
                     key={post.id}
                     $hoverable
                     $clickable
-                    onClick={() => setDetailPost(post)}
+                    onClick={() => handleShowDetail(post)}
                   >
                     <TD>
                       <TitleCell>
-                        {post.isFixed && <FixedBadge>필독</FixedBadge>}
-                        <TitleText>{post.title}</TitleText>
+                        <TitleText style={{ textDecoration: post.delYn === 'Y' ? 'line-through' : 'none', color: post.delYn === 'Y' ? '#cbd5e1' : 'inherit' }}>
+                          {activeTab === '쿠폰' ? post.couponName : (activeTab === 'FAQ' ? post.question : post.title)}
+                        </TitleText>
+                        {(post.pinYn === 'Y' || post.isFixed) && <FixedBadge>고정</FixedBadge>}
+                        {post.delYn === 'Y' && (
+                          <span style={{ fontSize: '10px', color: '#ef4444', fontWeight: 600, background: '#fee2e2', padding: '1px 6px', borderRadius: '3px', marginLeft: '4px', display: 'inline-block' }}>
+                            삭제됨
+                          </span>
+                        )}
                         {post.hasAttachment && <AttachIcon />}
                       </TitleCell>
                     </TD>
                     {activeTab === '쿠폰' ? (
                       <>
                         <TD>
-                          <QtyText>{post.remainingQty ?? '-'} 매</QtyText>
+                          <QtyText>{post.remainQty ?? '-'} 매</QtyText>
                         </TD>
                         <TD>
                           <ValidDaysText>
-                            {post.validDays != null ? `${post.validDays}일` : '-'}
+                            {post.validDays != null
+                              ? `${post.validDays}일`
+                              : '-'}
                           </ValidDaysText>
                         </TD>
                       </>
                     ) : activeTab === '리뷰' ? (
                       <>
-                        <TD><AuthorText>{post.author}</AuthorText></TD>
-                        <TD><DateText>{post.date}</DateText></TD>
                         <TD>
-                          <RowActions onClick={(e) => e.stopPropagation()}>
-                            <PinBtn $pinned={pinned} onClick={() => handlePin(post.id)} title={pinned ? '고정 해제' : '고정'}>
-                              <PinSvg $pinned={pinned} />
-                            </PinBtn>
-                          </RowActions>
+                          <AuthorText>{post.author}</AuthorText>
+                        </TD>
+                        <TD>
+                          <DateText>
+                            {post.createdAt 
+                              ? post.createdAt.split('T')[0] 
+                              : post.date || '—'}
+                          </DateText>
                         </TD>
                       </>
                     ) : (
                       <>
-                        <TD><DateText>{post.date}</DateText></TD>
                         <TD>
-                          <RowActions onClick={(e) => e.stopPropagation()}>
-                            <PinBtn $pinned={pinned} onClick={() => handlePin(post.id)} title={pinned ? '고정 해제' : '고정'}>
-                              <PinSvg $pinned={pinned} />
-                            </PinBtn>
-                          </RowActions>
+                          <DateText>
+                            {post.createdAt 
+                              ? post.createdAt.split('T')[0] 
+                              : post.date || '—'}
+                          </DateText>
                         </TD>
                       </>
                     )}
@@ -343,7 +281,7 @@ export default function AdminBoardPage() {
 
         {/* footer: 페이지네이션 */}
         <TableFooter>
-          <FooterInfo>‖ {TOTAL}개 &nbsp;‖&nbsp; 1-10 &nbsp;‖</FooterInfo>
+          <FooterInfo>총 {TOTAL}개</FooterInfo>
           <AdminPagination
             currentPage={currentPage}
             totalPages={TOTAL_PAGES}
@@ -357,54 +295,95 @@ export default function AdminBoardPage() {
       {detailPost && (
         <ModalOverlay onClick={() => setDetailPost(null)}>
           <ModalContent $width="520px" onClick={(e) => e.stopPropagation()}>
-            {/* $align="flex-start": 제목이 배지+텍스트 두 줄 구조라 상단 정렬 */}
-            <ModalHeader $align="flex-start" $gap="12px">
-              <ModalTitleGroup>
+            <ModalHeader $align="center" $gap="12px">
+              <ModalTitleGroup style={{ flex: 1 }}>
                 <ModalTabBadge>{activeTab}</ModalTabBadge>
-                <ModalTitle>{detailPost.title}</ModalTitle>
+                <ModalTitleRow style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <ModalTitle>
+                    {activeTab === '쿠폰'
+                      ? detailPost.couponName
+                      : (activeTab === 'FAQ' ? detailPost.question : detailPost.title)}
+                  </ModalTitle>
+                  {activeTab === '쿠폰' && detailPost.couponCode && (
+                    <CouponCodeBadge>{detailPost.couponCode}</CouponCodeBadge>
+                  )}
+                  {activeTab !== '쿠폰' && (
+                    <StatusChip
+                      $bg={detailPost.delYn === 'Y' ? '#fee2e2' : '#dcfce7'}
+                      $color={detailPost.delYn === 'Y' ? '#dc2626' : '#16a34a'}
+                      style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}
+                    >
+                      {detailPost.delYn === 'Y' ? '삭제됨' : '정상'}
+                    </StatusChip>
+                  )}
+                </ModalTitleRow>
               </ModalTitleGroup>
-              <ModalCloseBtn onClick={() => setDetailPost(null)}>
+
+              {/* 제목 오른쪽에 등록일, 수정일 두 줄로 표기 */}
+              {activeTab !== '쿠폰' && (
+                <DetailHeaderDates>
+                  <DateRow>등록일: {detailPost.createdAt ? new Date(detailPost.createdAt).toLocaleString() : detailPost.date || '—'}</DateRow>
+                  <DateRow>수정일: {detailPost.updatedAt ? new Date(detailPost.updatedAt).toLocaleString() : '—'}</DateRow>
+                </DetailHeaderDates>
+              )}
+
+              <ModalCloseBtn onClick={() => setDetailPost(null)} style={{ alignSelf: 'center' }}>
                 <X size={18} />
               </ModalCloseBtn>
             </ModalHeader>
 
             <ModalBody>
-              <DetailMetaRow>
-                <DetailMeta>
-                  <DetailMetaLabel>작성자</DetailMetaLabel>
-                  <DetailMetaValue>{detailPost.author}</DetailMetaValue>
-                </DetailMeta>
-                <DetailMeta>
-                  <DetailMetaLabel>등록일</DetailMetaLabel>
-                  <DetailMetaValue>{detailPost.date}</DetailMetaValue>
-                </DetailMeta>
-                <DetailMeta>
-                  <DetailMetaLabel>조회수</DetailMetaLabel>
-                  <DetailMetaValue>
-                    {detailPost.views?.toLocaleString() ?? 0}
-                  </DetailMetaValue>
-                </DetailMeta>
-                <DetailMeta>
-                  <DetailMetaLabel>상태</DetailMetaLabel>
-                  <StatusChip
-                    $bg={STATUS_COLORS[detailPost.status]?.bg ?? '#f1f5f9'}
-                    $color={
-                      STATUS_COLORS[detailPost.status]?.color ?? '#64748b'
-                    }
-                  >
-                    {STATUS_LABEL[detailPost.status] ?? detailPost.status}
-                  </StatusChip>
-                </DetailMeta>
-              </DetailMetaRow>
+              {activeTab === '쿠폰' ? (
+                <DetailMetaGrid>
+                  <DetailMetaItem>
+                    <DetailMetaLabel>쿠폰이름</DetailMetaLabel>
+                    <DetailMetaValue>{detailPost.couponName}</DetailMetaValue>
+                  </DetailMetaItem>
+                  <DetailMetaItem>
+                    <DetailMetaLabel>할인율</DetailMetaLabel>
+                    <DetailMetaValue>
+                      {detailPost.discountRate != null
+                        ? `${detailPost.discountRate}%`
+                        : '-'}
+                    </DetailMetaValue>
+                  </DetailMetaItem>
+                  <DetailMetaItem>
+                    <DetailMetaLabel>생성일자</DetailMetaLabel>
+                    <DetailMetaValue $mono>
+                      {detailPost.createdAt ?? detailPost.date ?? '-'}
+                    </DetailMetaValue>
+                  </DetailMetaItem>
+                  <DetailMetaItem>
+                    <DetailMetaLabel>수정일자</DetailMetaLabel>
+                    <DetailMetaValue $mono>
+                      {detailPost.updatedAt ?? '-'}
+                    </DetailMetaValue>
+                  </DetailMetaItem>
+                </DetailMetaGrid>
+              ) : (
+                <>
+                  {/* 아래는 다 내용으로 채워짐 */}
+                  <DetailContentArea style={{ paddingTop: '0px' }}>
+                    {activeTab === 'FAQ' ? detailPost.answer : (detailPost.content || '등록된 내용이 없습니다.')}
+                  </DetailContentArea>
 
-              <DetailDivider />
-
-              <DetailContentPlaceholder>
-                <Eye size={20} color="#cbd5e1" />
-                <DetailContentNote>
-                  실제 내용은 서버 연동 후 표시됩니다.
-                </DetailContentNote>
-              </DetailContentPlaceholder>
+                  {detailPost.files && detailPost.files.length > 0 && (
+                    <DetailFilesArea>
+                      <DetailFilesLabel>첨부파일 ({detailPost.files.length})</DetailFilesLabel>
+                      {detailPost.files.map((file) => (
+                        <DetailFileLink
+                          key={file.id}
+                          href={file.fileUrl || `http://localhost/api/public/files/${file.s3Key}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Paperclip size={12} /> {file.originalFileName}
+                        </DetailFileLink>
+                      ))}
+                    </DetailFilesArea>
+                  )}
+                </>
+              )}
             </ModalBody>
 
             <ModalFooter>
@@ -496,9 +475,9 @@ export default function AdminBoardPage() {
               ) : (
                 <>
                   <FieldGroup>
-                    <FieldLabel>제목</FieldLabel>
+                    <FieldLabel>{registerModal === 'FAQ' ? '질문' : '제목'}</FieldLabel>
                     <FieldInput
-                      placeholder="제목을 입력하세요"
+                      placeholder={registerModal === 'FAQ' ? '질문을 입력하세요' : '제목을 입력하세요'}
                       value={formData.title || ''}
                       onChange={(e) =>
                         handleFormChange('title', e.target.value)
@@ -506,15 +485,73 @@ export default function AdminBoardPage() {
                     />
                   </FieldGroup>
                   <FieldGroup>
-                    <FieldLabel>내용</FieldLabel>
+                    <FieldLabel>{registerModal === 'FAQ' ? '답변' : '내용'}</FieldLabel>
                     <FieldTextarea
-                      placeholder="내용을 입력하세요"
+                      placeholder={registerModal === 'FAQ' ? '답변을 입력하세요' : '내용을 입력하세요'}
                       value={formData.content || ''}
                       onChange={(e) =>
                         handleFormChange('content', e.target.value)
                       }
                     />
                   </FieldGroup>
+                  {registerModal === '공지사항' && (
+                    <CheckboxGroup>
+                      <CheckboxInput
+                        type="checkbox"
+                        id="isFixed"
+                        checked={formData.isFixed || false}
+                        onChange={(e) =>
+                          handleFormChange('isFixed', e.target.checked)
+                        }
+                      />
+                      <CheckboxLabel htmlFor="isFixed">이 글을 상단에 고정합니다 (필독)</CheckboxLabel>
+                    </CheckboxGroup>
+                  )}
+                  {(registerModal === '공지사항' || registerModal === '이벤트') && (
+                    <FieldGroup>
+                      <FieldLabel>첨부파일</FieldLabel>
+                      {editingPost && editingPost.files && editingPost.files.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '8px', padding: '10px', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                          <p style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '4px' }}>기존 첨부파일 ({editingPost.files.length}개)</p>
+                          {editingPost.files.map((file) => {
+                            const isRemoved = removedFileIds.includes(file.id);
+                            return (
+                              <div key={file.id} style={{ display: 'flex', alignItems: 'center', fontSize: '12px', color: '#334155', justifyContent: 'space-between', width: '100%', minHeight: '22px' }}>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '280px', textDecoration: isRemoved ? 'line-through' : 'none', color: isRemoved ? '#cbd5e1' : '#334155' }}>
+                                  <Paperclip size={11} color={isRemoved ? '#cbd5e1' : '#94a3b8'} /> {file.originalFileName}
+                                </span>
+                                {isRemoved ? (
+                                  <span style={{ fontSize: '10px', color: '#ef4444', fontWeight: 600, background: '#fee2e2', padding: '1px 6px', borderRadius: '3px', marginLeft: 'auto' }}>
+                                    삭제 대기
+                                  </span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveExistingFile(file.id)}
+                                    style={{ fontSize: '10px', color: '#ef4444', background: '#fff5f5', border: '1px solid #fecaca', padding: '2px 8px', borderRadius: '4px', marginLeft: 'auto', cursor: 'pointer', fontWeight: 500 }}
+                                  >
+                                    삭제
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      <FileInput
+                        type="file"
+                        multiple
+                        onChange={(e) =>
+                          handleFormChange('files', Array.from(e.target.files))
+                        }
+                      />
+                      {editingPost && (
+                        <span style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
+                          * 새 파일을 선택하면 기존 첨부파일에 추가하거나 교체 가능하도록 대기합니다. (백엔드 보강 필요)
+                        </span>
+                      )}
+                    </FieldGroup>
+                  )}
                 </>
               )}
             </ModalBody>
@@ -537,10 +574,16 @@ export default function AdminBoardPage() {
         isOpen={deleteTarget !== null}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDeleteConfirm}
-        title="게시글을 삭제하시겠습니까?"
+        title={
+          activeTab === '쿠폰'
+            ? '쿠폰을 삭제하시겠습니까?'
+            : '게시글을 삭제하시겠습니까?'
+        }
         description={
           deleteTarget
-            ? `"${deleteTarget.title}" 게시글이 영구적으로 삭제됩니다.`
+            ? activeTab === '쿠폰'
+              ? `"${deleteTarget.couponName ?? deleteTarget.title}" 쿠폰이 삭제됩니다.`
+              : `"${deleteTarget.title}" 게시글이 영구적으로 삭제됩니다.`
             : ''
         }
         isDanger
@@ -609,10 +652,10 @@ const PageSub = styled.p`
   color: ${({ theme }) => theme.colors.textMuted};
 `;
 
-/* 상단 3열 */
+/* 상단 영역 */
 const TopSection = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr 1.4fr;
+  grid-template-columns: 1fr;
   gap: 16px;
   align-items: stretch;
 `;
@@ -686,8 +729,8 @@ const QuickRegisterTitle = styled.p`
 `;
 const QuickRegisterGrid = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 16px;
 `;
 const QuickBtn = styled.button`
   width: 100%;
@@ -731,11 +774,16 @@ const CouponFilterBtn = styled.button`
   font-family: inherit;
   cursor: pointer;
   transition: all 0.15s;
-  background: ${({ $active, theme }) => $active ? theme.colors.adminPrimary : theme.colors.white};
-  color: ${({ $active, theme }) => $active ? theme.colors.white : theme.colors.textMuted};
-  border: 1px solid ${({ $active, theme }) => $active ? theme.colors.adminPrimary : theme.colors.border};
+  background: ${({ $active, theme }) =>
+    $active ? theme.colors.adminPrimary : theme.colors.white};
+  color: ${({ $active, theme }) =>
+    $active ? theme.colors.white : theme.colors.textMuted};
+  border: 1px solid
+    ${({ $active, theme }) =>
+      $active ? theme.colors.adminPrimary : theme.colors.border};
   &:hover {
-    background: ${({ $active, theme }) => $active ? theme.colors.adminPrimary : theme.colors.bgSection};
+    background: ${({ $active, theme }) =>
+      $active ? theme.colors.adminPrimary : theme.colors.bgSection};
   }
 `;
 
@@ -917,6 +965,25 @@ const ModalTabBadge = styled.span`
   width: fit-content;
 `;
 
+const ModalTitleRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+`;
+
+const CouponCodeBadge = styled.span`
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0369a1;
+  background: #e0f2fe;
+  padding: 3px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+  font-family: ${({ theme }) => theme.fonts.number};
+`;
+
 const ModalTitle = styled.h2`
   font-size: 15px;
   font-weight: 600;
@@ -924,7 +991,6 @@ const ModalTitle = styled.h2`
   line-height: 1.4;
   word-break: break-word;
 `;
-
 
 const ModalBody = styled.div`
   padding: 24px;
@@ -947,6 +1013,19 @@ const DetailMeta = styled.div`
   gap: 4px;
 `;
 
+/* 쿠폰 상세용 그리드 */
+const DetailMetaGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 24px;
+`;
+
+const DetailMetaItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+`;
+
 const DetailMetaLabel = styled.span`
   font-size: 11px;
   color: #94a3b8;
@@ -959,6 +1038,8 @@ const DetailMetaValue = styled.span`
   font-size: 13px;
   color: #334155;
   font-weight: 500;
+  font-family: ${({ $mono, theme }) =>
+    $mono ? theme.fonts.number : 'inherit'};
 `;
 
 const StatusChip = styled.span`
@@ -992,6 +1073,101 @@ const DetailContentNote = styled.p`
   color: #cbd5e1;
 `;
 
+const DetailContentArea = styled.div`
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  padding: 16px 0;
+`;
+
+const DetailHeaderDates = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: 11px;
+  color: #64748b;
+  white-space: nowrap;
+  margin-right: 8px;
+  align-self: center;
+`;
+
+const DateRow = styled.div`
+  line-height: 1.4;
+`;
+
+const DetailFilesArea = styled.div`
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+`;
+
+const DetailFilesLabel = styled.p`
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+`;
+
+const DetailFileLink = styled.a`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #2563eb;
+  text-decoration: none;
+  &:hover {
+    text-decoration: underline;
+  }
+`;
+
+const CheckboxGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  margin-bottom: 16px;
+`;
+
+const CheckboxInput = styled.input`
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+`;
+
+const CheckboxLabel = styled.label`
+  font-size: 13px;
+  color: #475569;
+  cursor: pointer;
+  user-select: none;
+`;
+
+const FileInput = styled.input`
+  display: block;
+  width: 100%;
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 4px;
+  
+  &::file-selector-button {
+    font-weight: 500;
+    padding: 6px 12px;
+    margin-right: 12px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    cursor: pointer;
+    &:hover {
+      background: #f8fafc;
+    }
+  }
+`;
+
 const ModalFooter = styled.div`
   display: flex;
   justify-content: space-between;
@@ -1012,7 +1188,7 @@ const DeleteBtn = styled.button`
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
   font-family: inherit;
@@ -1027,7 +1203,7 @@ const DeleteBtn = styled.button`
 
 const CancelBtn = styled.button`
   padding: 8px 18px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
   font-family: inherit;
@@ -1045,7 +1221,7 @@ const SubmitBtn = styled.button`
   align-items: center;
   gap: 6px;
   padding: 8px 18px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
   font-family: inherit;
@@ -1097,7 +1273,7 @@ const FieldUnit = styled.span`
 const FieldInput = styled.input`
   padding: 9px 12px;
   border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 13px;
   font-family: inherit;
   color: #0d1c2e;
@@ -1117,7 +1293,7 @@ const FieldInput = styled.input`
 const FieldTextarea = styled.textarea`
   padding: 9px 12px;
   border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 13px;
   font-family: inherit;
   color: #0d1c2e;

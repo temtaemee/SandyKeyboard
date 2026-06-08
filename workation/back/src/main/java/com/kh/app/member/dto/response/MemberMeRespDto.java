@@ -22,4 +22,5 @@ public class MemberMeRespDto {
     private String zonecode;
     private String address;
     private String addressDetail;
+    private String profileImageUrl;
 }

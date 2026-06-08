@@ -61,14 +61,7 @@ public class SpaceApplyService {
 
 
     // 신청 건 목록조회
-    public Page<SpaceApplyRespDto> getApplyList(int pno) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-
-        Long memberId = userDetails.getUserVo().getId();
-        boolean isAdmin = userDetails.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ADMIN"));
-
+    public Page<SpaceApplyRespDto> getApplyList(int pno, Long memberId, boolean isAdmin) {
         Pageable pageable = PageRequest.of(pno, 10);
         return spaceApplyRepository
                 .getList(pageable, memberId, isAdmin)

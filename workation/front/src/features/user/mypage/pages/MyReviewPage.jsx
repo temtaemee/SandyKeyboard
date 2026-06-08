@@ -1,51 +1,69 @@
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Pencil, Trash2, Search, Star } from 'lucide-react';
+import { deleteReview, getMyReviewList } from '../../board/review/api/reviewApi';
 import MyPageSidebar from '../components/MyPageSidebar';
+import { useNavigate } from 'react-router-dom';
 
 function MyReviewPage() {
-  const reviewList = [
-    {
-      id: 1,
-      title: '제주 바다워크 워크스페이스',
-      date: '2024.05.12',
-      rating: 5,
-      content:
-        '조용한 분위기와 오션뷰가 정말 만족스러웠어요. 업무 집중이 잘 됐습니다.',
-      tags: ['오션뷰', '조용함'],
-      image:
-        'https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200',
-    },
-    {
-      id: 2,
-      title: '강릉 커넥트 워크룸',
-      date: '2024.04.28',
-      rating: 4,
-      content: '카페 분위기 느낌이라 편하게 쉬면서 작업하기 좋았어요.',
-      tags: ['와이파이', '카페감성'],
-      image:
-        'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?q=80&w=1200',
-    },
-    {
-      id: 3,
-      title: '부산 스테이 빌리지',
-      date: '2024.03.15',
-      rating: 5,
-      content: '룸 컨디션이 정말 좋았고 야경이 예술이었습니다.',
-      tags: ['야경맛집', '프라이빗'],
-      image:
-        'https://images.unsplash.com/photo-1494526585095-c41746248156?q=80&w=1200',
-    },
-    {
-      id: 4,
-      title: '평창 숲속 워크숍',
-      date: '2024.02.20',
-      rating: 4,
-      content: '자연 속에서 힐링하면서 일할 수 있어 만족스러웠어요.',
-      tags: ['자연뷰', '힐링'],
-      image:
-        'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1200',
-    },
-  ];
+  // 1. 상태(State) 관리
+  const [reviewList, setReviewList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const navi = useNavigate();
+
+  // 2. API 호출 및 데이터 로드
+  useEffect(() => {
+    getMyReviewList(0) // 내 리뷰 목록 API 호출
+      .then((data) => {
+        // Spring Boot Pageable 응답 구조일 경우 보통 data.content에 리스트가 들어있습니다.
+        // 만약 컨트롤러에서 List<ReviewListRespDto> 자체를 반환한다면 그냥 'data'를 넣으시면 됩니다.
+        const actualList = data.content || data;
+        setReviewList(actualList);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error('리뷰 목록을 가져오는데 실패했습니다:', err);
+        setLoading(false);
+      });
+  }, []);
+
+  const handleDeleteReview = async (reviewId) => {
+    if (!window.confirm('정말 이 리뷰를 삭제하시겠습니까?')) return;
+
+    try {
+      // 1. 백엔드 DB에서 삭제
+      await deleteReview(reviewId);
+
+      // 2. 프론트엔드 State에서 삭제된 리뷰만 제외하고 필터링 (화면 실시간 갱신)
+      setReviewList((prevList) =>
+        prevList.filter((review) => review.id !== reviewId)
+      );
+
+      alert('리뷰가 정상적으로 삭제되었습니다.');
+    } catch (err) {
+      console.error('리뷰 삭제 실패:', err);
+      alert('리뷰 삭제에 실패했습니다.');
+    }
+  };
+
+  // 3. 유틸리티 함수: 날짜 포맷팅 (LocalDateTime -> YYYY.MM.DD)
+  const formatDate = (isoString) => {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}.${month}.${day}`;
+  };
+
+  // 4. 유틸리티 함수: 태그 문자열 파싱 (백엔드의 단일 tag 칼럼을 배열로)
+  const parseTags = (tagString) => {
+    if (!tagString) return [];
+    return tagString
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
+  };
 
   return (
     <Wrapper>
@@ -53,69 +71,95 @@ function MyReviewPage() {
 
       <Main>
         <PageTitle>나의 리뷰</PageTitle>
-
         <PageDesc>작성했던 소중한 워케이션 리뷰들입니다.</PageDesc>
 
         <TopArea>
-          <WriteButton>리뷰 작성하기</WriteButton>
+          <WriteButton
+            onClick={() => {
+              navi(`/board/review/write`);
+            }}
+          >
+            리뷰 작성하기
+          </WriteButton>
         </TopArea>
 
-        <ReviewList>
-          {reviewList.map((review) => (
-            <ReviewCard key={review.id}>
-              <Thumbnail src={review.image} alt="" />
+        {loading ? (
+          <EmptyState>리뷰를 불러오는 중입니다...</EmptyState>
+        ) : reviewList.length === 0 ? (
+          <EmptyState>작성한 리뷰가 없습니다.</EmptyState>
+        ) : (
+          <ReviewList>
+            {reviewList.map((review) => {
+              // S3 Key나 이미지 리스트를 기반으로 썸네일 URL 조합 (없으면 기본 이미지)
+              const hasImage = review.images && review.images.length > 0;
+              const thumbnailUrl = hasImage
+                ? `https://your-s3-bucket-url.s3.amazonaws.com/${review.images[0].s3Key}` // 본인 S3 주소에 맞게 수정
+                : 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200'; // 이미지 없을 때 디폴트
 
-              <Content>
-                <TopRow>
-                  <div>
-                    <Title>{review.title}</Title>
+              return (
+                <ReviewCard key={review.id}>
+                  <Thumbnail src={thumbnailUrl} alt={review.title} />
 
-                    <RatingRow>
-                      {Array.from({
-                        length: review.rating,
-                      }).map((_, idx) => (
-                        <Star
-                          key={idx}
-                          size={14}
-                          fill="#facc15"
-                          color="#facc15"
-                        />
+                  <Content>
+                    <TopRow>
+                      <div>
+                        {/* 백엔드 DTO 기준 매핑: review.title */}
+                        <Title>{review.title || '제목 없음'}</Title>
+
+                        <RatingRow>
+                          {/* 백엔드 DTO 기준 매핑: review.rating */}
+                          {Array.from({
+                            length: review.rating || 0,
+                          }).map((_, idx) => (
+                            <Star
+                              key={idx}
+                              size={14}
+                              fill="#facc15"
+                              color="#facc15"
+                            />
+                          ))}
+
+                          {/* 백엔드 DTO 기준 매핑: review.createdAt 포맷팅 */}
+                          <DateText>{formatDate(review.createdAt)}</DateText>
+                          {/* 작성자 정보가 필요하다면 활용 가능 */}
+                          {review.writer && (
+                            <WriterText>| {review.writer}</WriterText>
+                          )}
+                        </RatingRow>
+                      </div>
+
+                      <ActionArea>
+                        <IconButton
+                          onClick={() => {
+                            navi(`/review/edit/${review.id}`);
+                          }}
+                        >
+                          <Pencil size={15} />
+                        </IconButton>
+
+                        <IconButton
+                          onClick={() => handleDeleteReview(review.id)}
+                        >
+                          <Trash2 size={15} />
+                        </IconButton>
+                      </ActionArea>
+                    </TopRow>
+
+                    {/* 백엔드 DTO 기준 매핑: review.content */}
+                    <ReviewText>{review.content}</ReviewText>
+
+                    {/* 백엔드 DTO 기준 매핑: review.tag 분리 */}
+                    <TagArea>
+                      {parseTags(review.tag).map((tag) => (
+                        <Tag key={tag}>#{tag}</Tag>
                       ))}
-
-                      <DateText>{review.date}</DateText>
-                    </RatingRow>
-                  </div>
-
-                  <ActionArea>
-                    <IconButton>
-                      <Pencil size={15} />
-                    </IconButton>
-
-                    <IconButton>
-                      <Trash2 size={15} />
-                    </IconButton>
-                  </ActionArea>
-                </TopRow>
-
-                <ReviewText>{review.content}</ReviewText>
-
-                <TagArea>
-                  {review.tags.map((tag) => (
-                    <Tag key={tag}>#{tag}</Tag>
-                  ))}
-                </TagArea>
-              </Content>
-            </ReviewCard>
-          ))}
-        </ReviewList>
-
-        <SearchArea>
-          <SearchBox>
-            <Search size={18} />
-
-            <SearchInput placeholder="리뷰 내용 검색하기" />
-          </SearchBox>
-        </SearchArea>
+                    </TagArea>
+                  </Content>
+                </ReviewCard>
+              );
+            })}
+          </ReviewList>
+        )}
       </Main>
     </Wrapper>
   );
@@ -124,6 +168,7 @@ function MyReviewPage() {
 export default MyReviewPage;
 
 /* ================= styled ================= */
+// 기존 스타일 코드는 그대로 유지하며, 로딩/비어있음 표시용 스타일만 추가합니다.
 
 const Wrapper = styled.div`
   display: flex;
@@ -237,6 +282,12 @@ const DateText = styled.span`
   font-size: 12px;
 `;
 
+const WriterText = styled.span`
+  margin-left: 6px;
+  color: #64748b;
+  font-size: 12px;
+`;
+
 const ActionArea = styled.div`
   display: flex;
   gap: 10px;
@@ -310,4 +361,14 @@ const SearchInput = styled.input`
   &::placeholder {
     color: #9ca3af;
   }
+`;
+
+const EmptyState = styled.div`
+  text-align: center;
+  padding: 50px 0;
+  color: #94a3b8;
+  font-size: 16px;
+  background-color: white;
+  border-radius: 20px;
+  border: 1px solid #edf1f4;
 `;

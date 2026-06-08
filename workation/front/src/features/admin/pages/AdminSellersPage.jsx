@@ -1,5 +1,5 @@
 // src/features/admin/pages/AdminSellersPage.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import {
   Home,
@@ -21,7 +21,9 @@ import {
   Plus,
   TicketPercent,
 } from 'lucide-react';
-import { SELLERS_LIST, CUSTOMER_LIST, CUSTOMER_COUPONS, COUPON_TEMPLATES } from '../data/adminSellersData';
+import { COUPON_TEMPLATES } from '../data/adminSellersData';
+import useAdminSellers from '../hooks/useAdminSellers';
+import useAdminSellersUI from '../hooks/useAdminSellersUI';
 import {
   SELLER_STATUS_MAP,
   TOTAL_PAGES,
@@ -43,9 +45,40 @@ import {
 } from '../components/common/AdminModal.styles'; // 모달 공통 스타일
 
 export default function AdminSellersPage() {
-  const [view, setView] = useState('customer'); // 'customer' | 'seller'
-  const [filter, setFilter] = useState('전체');
-  const [searchQuery, setSearchQuery] = useState('');
+  const {
+    sellers,
+    customers,
+    sellersTotalPage = 1,
+    sellersTotalCount = 0,
+    sellersUnfilteredTotal = 0,
+    sellersActiveCount = 0,
+    sellersBannedCount = 0,
+    sellersNewCount = 0,
+    customersTotalPage = 1,
+    customersTotalCount = 0,
+    customersUnfilteredTotal = 0,
+    customersActiveCount = 0,
+    customersBannedCount = 0,
+    customersNewCount = 0,
+    customerCoupons,
+    sellerSuspended,
+    customerSuspended,
+    suspendSeller,
+    suspendCustomer,
+    addCoupon,
+    deleteCoupon,
+    fetchCustomers,
+    fetchSellers,
+    fetchSellersStats,
+    fetchCustomersStats,
+  } = useAdminSellers();
+
+  console.log('=== [AdminSellersPage] ===');
+  console.log('customers:', customers);
+  console.log('sellers:', sellers);
+  console.log('sellersTotalCount:', sellersTotalCount, 'customersTotalCount:', customersTotalCount);
+  console.log('==========================');
+
   const {
     currentPage,
     goToPage,
@@ -54,128 +87,93 @@ export default function AdminSellersPage() {
     reset: resetPage,
   } = usePagination();
 
-  /* 판매자 토글 */
-  const [sellerSuspended, setSellerSuspended] = useState(() => {
-    const init = {};
-    SELLERS_LIST.forEach((s) => {
-      if (s.status === 'stopped') init[s.id] = true;
-    });
-    return init;
+  // 통합 UI 훅 도입으로 복잡한 useState 제거 및 모달 제어 격리
+  const {
+    view,
+    filter,
+    setFilter,
+    searchQuery,
+    setSearchQuery,
+    handleViewChange,
+    confirmTarget,
+    isSellerSuspended,
+    isCustomerSuspended,
+    handleToggleClick,
+    handleConfirm,
+    selectedCustomer,
+    setSelectedCustomer,
+    showIssuePanel,
+    setShowIssuePanel,
+    selectedTemplate,
+    setSelectedTemplate,
+    handleCloseCustomerModal,
+    handleDeleteCoupon,
+    handleIssueCoupon,
+  } = useAdminSellersUI({
+    sellers,
+    customers,
+    sellerSuspended,
+    customerSuspended,
+    suspendSeller,
+    suspendCustomer,
+    addCoupon,
+    deleteCoupon,
+    resetPage,
   });
-  /* 고객 토글 */
-  const [customerSuspended, setCustomerSuspended] = useState(() => {
-    const init = {};
-    CUSTOMER_LIST.forEach((c) => {
-      if (c.status === 'stopped') init[c.id] = true;
-    });
-    return init;
-  });
-  /* 확인 모달 */
-  const [confirmTarget, setConfirmTarget] = useState(null);
 
-  /* 고객 상세 모달 */
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [customerCoupons, setCustomerCoupons] = useState(() => {
-    const copy = {};
-    Object.entries(CUSTOMER_COUPONS).forEach(([k, v]) => { copy[k] = [...v]; });
-    return copy;
-  });
-  const [showIssuePanel, setShowIssuePanel] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState(COUPON_TEMPLATES[0].id);
-
-  const isSellerSuspended = (s) =>
-    sellerSuspended[s.id] ?? s.status === 'stopped';
-  const isCustomerSuspended = (c) =>
-    customerSuspended[c.id] ?? c.status === 'stopped';
-
-  const handleToggleClick = (item, isCurrent) => {
-    setConfirmTarget({
-      id: item.id,
-      name: item.name,
-      willSuspend: !isCurrent,
-      view,
-    });
+  // 1. 한국어 필터명을 백엔드 상태(ACTIVE, BANNED 등)로 변환하는 함수
+  const getBackendStatus = (korFilter) => {
+    if (korFilter === '활동 중') return 'ACTIVE';
+    if (korFilter === '정지됨') return 'BANNED';
+    return null; // '전체' 및 '신규'는 null 전송으로 처리하여 전체조회
   };
 
-  const handleConfirm = () => {
-    if (!confirmTarget) return;
-    if (confirmTarget.view === 'seller') {
-      setSellerSuspended((prev) => ({
-        ...prev,
-        [confirmTarget.id]: confirmTarget.willSuspend,
-      }));
-    } else {
-      setCustomerSuspended((prev) => ({
-        ...prev,
-        [confirmTarget.id]: confirmTarget.willSuspend,
-      }));
-    }
-    setConfirmTarget(null);
-  };
-
-  const handleCloseCustomerModal = () => {
-    setSelectedCustomer(null);
-    setShowIssuePanel(false);
-    setSelectedTemplate(COUPON_TEMPLATES[0].id);
-  };
-
-  const handleDeleteCoupon = (customerId, couponId) => {
-    setCustomerCoupons((prev) => ({
-      ...prev,
-      [customerId]: prev[customerId].filter((c) => c.id !== couponId),
-    }));
-  };
-
-  const handleIssueCoupon = () => {
-    if (!selectedCustomer) return;
-    const tpl = COUPON_TEMPLATES.find((t) => t.id === selectedTemplate);
-    if (!tpl) return;
-    const today = new Date();
-    const expire = new Date(today);
-    expire.setDate(expire.getDate() + tpl.validDays);
-    const fmt = (d) =>
-      `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
-    const newCoupon = {
-      id: `CPN-${Date.now()}`,
-      title: tpl.title,
-      discount: tpl.discount,
-      issuedAt: fmt(today),
-      expireAt: fmt(expire),
+  // 2. 검색, 필터, 페이징에 따른 동적 API 데이터 fetching
+  useEffect(() => {
+    const params = {
+      page: currentPage,
+      size: 10,
+      keyword: searchQuery || null,
+      status: getBackendStatus(filter),
     };
-    setCustomerCoupons((prev) => ({
-      ...prev,
-      [selectedCustomer.id]: [newCoupon, ...(prev[selectedCustomer.id] ?? [])],
-    }));
-    setShowIssuePanel(false);
-    setSelectedTemplate(COUPON_TEMPLATES[0].id);
+
+    if (view === 'customer') {
+      fetchCustomers(params);
+    } else {
+      fetchSellers(params);
+    }
+  }, [view, currentPage, filter, searchQuery, fetchCustomers, fetchSellers]);
+
+  // 3. 통계 카드용 카운트 fetch (view 전환 시마다 갱신)
+  useEffect(() => {
+    if (view === 'seller') {
+      fetchSellersStats();
+    } else {
+      fetchCustomersStats();
+    }
+  }, [view, fetchSellersStats, fetchCustomersStats]);
+
+  // unfilteredTotal: 필터/검색과 무관한 전체 수 (fetchStats에서 별도 보관)
+  // totalCount는 필터된 fetch 결과로 덮어씌워지므로 "전체" 카드에 사용하지 않음
+  const sellersStats = {
+    total: sellersUnfilteredTotal,
+    active: sellersActiveCount,
+    stopped: sellersBannedCount,
+    new: sellersNewCount,
+  };
+  const customersStats = {
+    total: customersUnfilteredTotal,
+    active: customersActiveCount,
+    stopped: customersBannedCount,
+    new: customersNewCount,
   };
 
-  const handleViewChange = (v) => {
-    setView(v);
-    setFilter('전체');
-    setSearchQuery('');
-    resetPage();
-  };
+  /* 필터링 - 백엔드에서 페이징과 필터링 처리가 이미 된 데이터이므로 그대로 주입합니다. */
+  const filteredSellers = sellers;
+  const filteredCustomers = customers;
 
-  /* 필터링 */
-  const filteredSellers = SELLERS_LIST.filter((s) => {
-    if (filter === '활동 중') return !isSellerSuspended(s);
-    if (filter === '정지됨') return isSellerSuspended(s);
-    if (filter === '신규') return isNewMember(s.joinedAt);
-    return true;
-  }).filter((s) =>
-    !searchQuery || s.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-  const filteredCustomers = CUSTOMER_LIST.filter((c) => {
-    if (filter === '활동 중') return !isCustomerSuspended(c);
-    if (filter === '정지됨') return isCustomerSuspended(c);
-    if (filter === '신규') return isNewMember(c.joinDate);
-    return true;
-  }).filter((c) =>
-    !searchQuery || c.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const TOTAL = view === 'seller' ? 1284 : 8420;
+  const TOTAL = view === 'seller' ? sellersTotalCount : customersTotalCount;
+  const totalPages = view === 'seller' ? sellersTotalPage : customersTotalPage;
 
   return (
     <PageWrapper>
@@ -214,6 +212,7 @@ export default function AdminSellersPage() {
         view={view}
         filter={filter}
         onFilterChange={setFilter}
+        stats={view === 'seller' ? sellersStats : customersStats}
       />
 
       {/* ── 목록 테이블 ── */}
@@ -246,16 +245,10 @@ export default function AdminSellersPage() {
         )}
 
         <TableFooter>
-          <FooterInfo>
-            SHOWING 1-
-            {view === 'seller'
-              ? filteredSellers.length
-              : filteredCustomers.length}{' '}
-            OF {TOTAL.toLocaleString()} ENTRIES
-          </FooterInfo>
+          <FooterInfo>총 {TOTAL.toLocaleString()}명</FooterInfo>
           <AdminPagination
             currentPage={currentPage}
-            totalPages={TOTAL_PAGES}
+            totalPages={totalPages}
             onPageChange={goToPage}
           />
           <div style={{ width: '200px' }} />{' '}

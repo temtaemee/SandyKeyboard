@@ -8,6 +8,9 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum ErrorCode {
 
+    // MEMBER
+    SELLER_NOT_FOUND(3001, "MEMBER-3001", "존재하지 않는 판매자입니다.", HttpStatus.NOT_FOUND),
+
     // SPACE
     SPACE_NOT_FOUND(4001, "SPACE-4001", "존재하지 않는 공간입니다.", HttpStatus.NOT_FOUND),
     UNIT_NOT_FOUND(4002, "SPACE-4002", "존재하지 않는 유닛입니다.", HttpStatus.NOT_FOUND),
@@ -22,6 +25,8 @@ public enum ErrorCode {
 
     // STAY
     STAY_NOT_FOUND(5001, "STAY-5001", "존재하지 않는 숙소입니다.", HttpStatus.NOT_FOUND),
+    STAY_ACCESS_DENIED(5002, "STAY-5002", "본인 소유의 숙소만 수정/삭제 가능합니다.", HttpStatus.FORBIDDEN),
+    SPACE_NOT_APPROVED(5003, "STAY-5003", "승인되지 않은 공간에는 스테이를 등록할 수 없습니다.", HttpStatus.BAD_REQUEST),
 
     // OFFICE
     OFFICE_NOT_FOUND(6001, "OFFICE-6001", "존재하지 않는 오피스입니다.", HttpStatus.NOT_FOUND),
