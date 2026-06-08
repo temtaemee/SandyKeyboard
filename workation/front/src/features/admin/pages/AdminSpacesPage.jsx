@@ -322,10 +322,10 @@ export default function AdminSpacesPage() {
                         checked={selectedIds.includes(space.id)}
                         onChange={() => toggleSelect(space.id)}
                       />
-                      <SpaceThumbnail src={space.thumbnail} alt={space.name} $blinded={false} />
+                      <SpaceThumbnail src={space.thumbnailUrl} alt={space.name} $blinded={false} />
                       <SpaceInfo>
                         <SpaceName $blinded={false}>{space.name}</SpaceName>
-                        <SpaceLocation>{space.location} · {space.seller}</SpaceLocation>
+                        <SpaceLocation>{space.address1} · {space.sellerName ?? space.sellerUsername ?? '-'}</SpaceLocation>
                       </SpaceInfo>
                     </ApprovalItem>
                   ))}

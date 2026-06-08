@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { getAdminSpaces } from '../api/adminSpacesApi';
+import { getAdminSpaces, approveAdminSpace, rejectAdminSpace } from '../api/adminSpacesApi';
 import {
   setSpaces,
   setLoading,
@@ -33,12 +33,26 @@ export default function useAdminSpaces() {
   const refetch = fetchSpaces;
 
   const approveSpaces = useCallback(
-    (ids, fromTab) => dispatch(approveSpacesAction({ ids, fromTab })),
+    async (ids, fromTab) => {
+      try {
+        await Promise.all(ids.map(id => approveAdminSpace(id)));
+        dispatch(approveSpacesAction({ ids, fromTab }));
+      } catch (err) {
+        console.error('공간 승인 처리 중 오류 발생:', err);
+      }
+    },
     [dispatch]
   );
 
   const rejectSpaces = useCallback(
-    (ids) => dispatch(rejectSpacesAction(ids)),
+    async (ids) => {
+      try {
+        await Promise.all(ids.map(id => rejectAdminSpace(id, '심사 기준 승인 미달')));
+        dispatch(rejectSpacesAction(ids));
+      } catch (err) {
+        console.error('공간 반려 처리 중 오류 발생:', err);
+      }
+    },
     [dispatch]
   );
 

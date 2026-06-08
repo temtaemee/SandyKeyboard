@@ -26,3 +26,15 @@ export async function changeSpaceVisible(spaceId, visibleYn) {
 export async function deleteAdminSpace(spaceId) {
   return await api.delete(`/admin/space/${spaceId}`);
 }
+
+/** 공간 등록 승인 - admin 전용 */
+export async function approveAdminSpace(spaceId) {
+  return await api.put(`/admin/space/${spaceId}/approve`);
+}
+
+/** 공간 등록 반려 - admin 전용 */
+export async function rejectAdminSpace(spaceId, reason = '') {
+  return await api.put(`/admin/space/${spaceId}/reject`, null, {
+    params: { reason },
+  });
+}
