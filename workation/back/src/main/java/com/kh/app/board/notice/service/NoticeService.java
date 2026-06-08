@@ -39,7 +39,7 @@ public class NoticeService {
     public Page<NoticeListRespDto> findAll(int page) {
         Pageable pageable = PageRequest.of(page, 10);
         return noticeRepository
-                .findAllByDelYnOrderByCreatedAtDesc("N", pageable)
+                .findAllByDelYnOrderByPinYnDescCreatedAtDesc("N", pageable)
                 .map(NoticeListRespDto::from);
     }
 
@@ -57,7 +57,7 @@ public class NoticeService {
     public Page<NoticeListRespDto> findAllForAdmin(int page) {
         Pageable pageable = PageRequest.of(page, 10);
         return noticeRepository
-                .findAllByOrderByCreatedAtDesc(pageable)
+                .findAllByOrderByPinYnDescCreatedAtDesc(pageable)
                 .map(NoticeListRespDto::from);
     }
 
