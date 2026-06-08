@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { TicketPercent, ChevronRight, Download } from 'lucide-react';
 import MyPageSidebar from '../components/MyPageSidebar';
@@ -9,7 +9,13 @@ function MyCouponPage() {
   // 1. 상태(State) 관리
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
+  const historyRef = useRef(null);
   const navi = useNavigate();
+
+  //스크롤 함수 정의
+  const handleScrollToHistory = () => {
+    historyRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   // 2. API 데이터 로드
   useEffect(() => {
@@ -89,7 +95,7 @@ function MyCouponPage() {
               <CouponSection>
                 <CouponHeader>
                   <h3>사용 가능한 쿠폰</h3>
-                  <MoreText>
+                  <MoreText onClick={handleScrollToHistory}>
                     전체보기
                     <ChevronRight size={16} />
                   </MoreText>
@@ -117,10 +123,6 @@ function MyCouponPage() {
                             {formatDate(item.expiredDate)} 까지
                           </ExpireText>
                         </CouponContent>
-
-                        <DownloadButton title="쿠폰 정보 확인">
-                          <Download size={16} />
-                        </DownloadButton>
                       </CouponCard>
                     ))
                   )}
@@ -129,7 +131,7 @@ function MyCouponPage() {
             </TopSection>
 
             {/* 하단 쿠폰 사용 및 발급 히스토리 내역 Area */}
-            <HistorySection>
+            <HistorySection ref={historyRef}>
               <HistoryHeader>
                 <SectionTitle>쿠폰 내역 히스토리</SectionTitle>
                 <FilterArea>
@@ -183,7 +185,13 @@ function MyCouponPage() {
                 </tbody>
               </HistoryTable>
 
-              <MoreHistoryButton>내역 새로고침</MoreHistoryButton>
+              <MoreHistoryButton
+                onClick={() => {
+                  navi(0);
+                }}
+              >
+                내역 새로고침
+              </MoreHistoryButton>
             </HistorySection>
           </>
         )}
@@ -393,6 +401,7 @@ const HistorySection = styled.section`
   background-color: white;
   border-radius: 24px;
   padding: 28px;
+  scroll-margin-top: 20px;
 `;
 
 const HistoryHeader = styled.div`
