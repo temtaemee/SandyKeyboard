@@ -10,7 +10,7 @@ export default function RefundRequestPage() {
 
   return (
     <Container>
-      <h2>🛡️ 취소 및 환불 신청 요청</h2>
+      <h2> 취소 및 환불 신청 요청</h2>
       <p className="desc-text">
         선택하신 예약 번호 [{reservationId}]번에 대한 환불 사유를 선택해 주세요.
       </p>
