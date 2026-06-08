@@ -66,4 +66,11 @@ public class MemberCouponEntity extends BaseEntity {
         return "Y".equals(expiredYn);
     }
 
+    // 쿠폰 원복
+    public void restoreCoupon() {
+        usedYn = "N";
+        usedAt = null;
+    }
+
+
 }
