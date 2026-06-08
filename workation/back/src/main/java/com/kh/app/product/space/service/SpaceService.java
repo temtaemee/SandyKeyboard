@@ -2,7 +2,9 @@ package com.kh.app.product.space.service;
 
 import com.kh.app.board.review.repository.ReviewRepository;
 import com.kh.app.member.entity.MemberEntity;
+import com.kh.app.member.entity.MemberProfileEntity;
 import com.kh.app.member.repository.MemberRepository;
+import com.kh.app.member.repository.ProfileRepository;
 import com.kh.app.notification.dto.request.NotificationCreateReqDto;
 import com.kh.app.notification.entity.NotificationType;
 import com.kh.app.notification.service.NotificationService;
@@ -56,6 +58,7 @@ public class SpaceService {
     private final StayPictureRepository stayPictureRepository;
     private final NotificationService notificationService;
     private final ReviewRepository reviewRepository;
+    private final ProfileRepository profileRepository;
 
     // ========== 기존 메서드 (하위 호환) ==========
 
@@ -565,23 +568,26 @@ public class SpaceService {
         spaceArcadeRepository.saveAll(entityList);
     }
 
-    public List<SpaceResDto> getRecommendedSpaces(Area area) {
-        List<SpaceEntity> spaces = spaceRepository.findRecommendedSpaces(area);
+    public List<SpaceResDto> getRecommendedSpaces(Area area, Long memberId) {
+        // 1. 유저 ID가 있다면 유저의 선호 지역 조회
+        Area targetArea = area;
+        if (memberId != null) {
+            targetArea = profileRepository.findByMemberId(memberId)
+                    .map(MemberProfileEntity::getPreferredArea)
+                    .orElse(area); // 선호지역이 없으면 파라미터로 받은 area 사용
+        }
+
+        // 2. 추천 공간 조회
+        List<SpaceEntity> spaces = spaceRepository.findRecommendedSpaces(targetArea);
 
         return spaces.stream().map(space -> {
-            // 1. 리스트로 결과를 받습니다.
             List<Double> result = reviewRepository.findAverageRatingBySpaceId(space.getId());
-
-            // 2. 리스트가 비어있지 않으면 첫 번째 값을 가져오고, 없으면 0.0을 사용합니다.
             Double avgRating = (result != null && !result.isEmpty()) ? result.get(0) : 0.0;
-
-            // 3. 썸네일 URL 가져오기
             String thumbnailUrl = spacePictureRepository
                     .findBySpaceIdAndMainYn(space.getId(), "Y")
                     .map(p -> resolveImageUrl(p.getFilePath()))
                     .orElse(null);
 
-            // 4. DTO 생성 (아까 만든 5개짜리 from 메서드 호출)
             return SpaceResDto.from(space, null, thumbnailUrl, null, avgRating);
         }).collect(Collectors.toList());
     }

@@ -75,6 +75,11 @@ function DestinationPage() {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     loadSpaces(filters); // 💡 filters 객체 전체 전달
+    setFilters((prev) => ({
+      ...prev,
+      startDate: '',
+      endDate: '',
+    }));
   };
 
   return (
