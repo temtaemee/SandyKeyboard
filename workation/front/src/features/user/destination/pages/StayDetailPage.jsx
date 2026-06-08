@@ -406,9 +406,9 @@ const DescriptionBox = styled.div`
 // =========================================================================
 
 const OPTION_LABELS = {
-  DESK: '💻 집중 워크 데스크',
+  DESK: ' 집중 워크 데스크',
 
-  PRIVATE_BATHROOM: '🚿 개인 욕실',
+  PRIVATE_BATHROOM: ' 개인 욕실',
 
   // ... 기타 옵션
 };
@@ -517,7 +517,7 @@ function StayDetailPage() {
 
         <InfoSection>
           <MetaHeader>
-            <SpaceNameTag>🏡 {stay.spaceName || '연동 공간'}</SpaceNameTag>
+            <SpaceNameTag> {stay.spaceName || '연동 공간'}</SpaceNameTag>
 
             <HeaderRow>
               <StayTitle>{stay.name}</StayTitle>
@@ -527,14 +527,14 @@ function StayDetailPage() {
               </PriceTag>
             </HeaderRow>
 
-            {stay.summary && <StaySummary>✨ {stay.summary}</StaySummary>}
+            {stay.summary && <StaySummary> {stay.summary}</StaySummary>}
           </MetaHeader>
 
           <Divider />
 
           {/* 1. 기본 이용 안내 */}
 
-          <SectionTitle>📋 기본 이용 안내</SectionTitle>
+          <SectionTitle> 기본 이용 안내</SectionTitle>
 
           <InfoCardGrid>
             <CardItem>
@@ -560,7 +560,7 @@ function StayDetailPage() {
 
           {/* 2. 요일별 가격 정책 */}
 
-          <SectionTitle>💰 요일별 정가 운용 안내</SectionTitle>
+          <SectionTitle> 요일별 정가 운용 안내</SectionTitle>
 
           <PriceTable>
             <PriceRow>
@@ -590,7 +590,7 @@ function StayDetailPage() {
 
           {stay.options && stay.options.length > 0 && (
             <>
-              <SectionTitle>🛠️ 제공 옵션 및 인프라</SectionTitle>
+              <SectionTitle> 제공 옵션 및 인프라</SectionTitle>
 
               <OptionContainer>
                 {stay.options.map((opt, idx) => (
@@ -606,13 +606,13 @@ function StayDetailPage() {
 
           {stay.description && (
             <>
-              <SectionTitle>📝 객실 상세 소개</SectionTitle>
+              <SectionTitle>객실 상세 소개</SectionTitle>
 
               <DescriptionBox>{stay.description}</DescriptionBox>
             </>
           )}
 
-          <SectionTitle>📅 예약 가능 일정 확인</SectionTitle>
+          <SectionTitle> 예약 가능 일정 확인</SectionTitle>
 
           <CalendarContainer>
             <DatePicker
@@ -630,7 +630,7 @@ function StayDetailPage() {
             </BackButton>
 
             <BookButton onClick={handleBookingClick}>
-              ⚡ 즉시 예약 및 결제하기
+              즉시 예약 및 결제하기
             </BookButton>
           </ButtonRow>
         </InfoSection>
