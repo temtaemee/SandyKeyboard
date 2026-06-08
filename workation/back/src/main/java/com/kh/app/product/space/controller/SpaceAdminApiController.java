@@ -114,4 +114,23 @@ public class SpaceAdminApiController {
         spaceService.changeVisibleYnByAdmin(id, visibleYn, userDetails.getMemberId());
         return ResponseEntity.ok().build();
     }
+
+    @Operation(summary = "공간 등록 승인 (관리자)",
+            description = "관리자가 특정 대기 중인 공간을 승인합니다.")
+    @PutMapping("/{id}/approve")
+    public ResponseEntity<Void> approveSpace(@PathVariable Long id) {
+        spaceService.approveByAdmin(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "공간 등록 거절 (관리자)",
+            description = "관리자가 특정 대기 중인 공간을 거절합니다.")
+    @PutMapping("/{id}/reject")
+    public ResponseEntity<Void> rejectSpace(
+            @PathVariable Long id,
+            @RequestParam(required = false, defaultValue = "심사 승인 기준 미달로 거절되었습니다.") String reason
+    ) {
+        spaceService.rejectByAdmin(id, reason);
+        return ResponseEntity.ok().build();
+    }
 }

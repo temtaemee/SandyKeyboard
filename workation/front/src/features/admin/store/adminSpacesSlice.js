@@ -12,7 +12,10 @@ const adminSpacesSlice = createSlice({
   },
   reducers: {
     setSpaces(state, action) {
-      state.spaces = action.payload;
+      const allSpaces = action.payload || [];
+      state.spaces = allSpaces.filter((s) => s.approvalStatus === 'APPROVED');
+      state.pendingSpaces = allSpaces.filter((s) => s.approvalStatus === 'PENDING');
+      state.rejectedSpaces = allSpaces.filter((s) => s.approvalStatus === 'REJECTED');
     },
     setPendingSpaces(state, action) {
       state.pendingSpaces = action.payload;
@@ -26,7 +29,7 @@ const adminSpacesSlice = createSlice({
       const source = fromTab === 'pending' ? state.pendingSpaces : state.rejectedSpaces;
       const toApprove = source
         .filter((s) => ids.includes(s.id))
-        .map((s) => ({ ...s, status: 'active' }));
+        .map((s) => ({ ...s, approvalStatus: 'APPROVED', visibleYn: 'Y' }));
       state.spaces = [...toApprove, ...state.spaces];
       if (fromTab === 'pending') {
         state.pendingSpaces = state.pendingSpaces.filter((s) => !ids.includes(s.id));
@@ -36,7 +39,9 @@ const adminSpacesSlice = createSlice({
     },
     rejectSpaces(state, action) {
       const ids = action.payload;
-      const toReject = state.pendingSpaces.filter((s) => ids.includes(s.id));
+      const toReject = state.pendingSpaces
+        .filter((s) => ids.includes(s.id))
+        .map((s) => ({ ...s, approvalStatus: 'REJECTED', visibleYn: 'N' }));
       state.rejectedSpaces = [...toReject, ...state.rejectedSpaces];
       state.pendingSpaces = state.pendingSpaces.filter((s) => !ids.includes(s.id));
     },
