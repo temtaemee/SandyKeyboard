@@ -20,6 +20,7 @@ public class ReviewCreateReqDto {
         return ReviewEntity.builder()
                 .member(member)
                 .reservation(reservation)
+                .space(reservation.getSpace()) // 💡 예약(reservation)에서 공간(space) 정보를 가져와 설정
                 .title(title)
                 .content(content)
                 .tag(tag)
