@@ -162,10 +162,8 @@ public class SpaceRepositoryImpl implements SpaceRepositoryCustom {
                 )
                 .groupBy(space.id)
                 .having(review.rating.avg().goe(4.0))
-                // 💡 여기서 에러가 난다면 review.createdAt 대신에 review.id.max()를 사용해보세요.
-                // 최신 리뷰일수록 ID값이 클 확률이 높기 때문입니다.
                 .orderBy(review.id.max().desc())
-                .limit(3)
+                .limit(6)
                 .fetch();
     }
 

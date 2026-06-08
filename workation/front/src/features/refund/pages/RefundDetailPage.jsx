@@ -47,7 +47,7 @@ export default function RefundDetailPage() {
   return (
     <DetailContainer>
       <TitleZone>
-        <h2>📄 환불 상세 영수증 / 내역</h2>
+        <h2> 환불 상세 영수증 / 내역</h2>
         <span className="badge">환불완료</span>
       </TitleZone>
 
