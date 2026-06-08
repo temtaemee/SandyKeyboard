@@ -19,7 +19,6 @@ import {
   updatePostsForTab,
   updatePostInTab,
   deletePostFromTab,
-  togglePin,
   setLoading,
   setError,
 } from '../store/adminBoardSlice';
@@ -35,7 +34,6 @@ export default function useAdminBoard(activeTab, currentPage = 1) {
   const dispatch = useDispatch();
   const {
     posts: allPosts,
-    pinnedIds,
     loading,
     error,
   } = useSelector((state) => state.admin.board);
@@ -177,11 +175,9 @@ export default function useAdminBoard(activeTab, currentPage = 1) {
   };
 
   const posts = allPosts[activeTab] || [];
-  const togglePin = (postId) => dispatch(togglePin(postId));
 
   return {
     posts,
-    pinnedIds,
     loading,
     error,
     totalPages,
@@ -189,6 +185,5 @@ export default function useAdminBoard(activeTab, currentPage = 1) {
     updatePost,
     deletePost,
     createPost,
-    togglePin,
   };
 }

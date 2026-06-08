@@ -1098,12 +1098,6 @@ const ViewAllRow = styled.div`
   margin-top: auto;
 `;
 
-const MoreCount = styled.span`
-  font-size: 12px;
-  color: ${({ theme }) => theme.colors.textMuted};
-  margin-right: 10px;
-`;
-
 const ViewAllBtn = styled.button`
   font-size: 13px;
   font-weight: 500;

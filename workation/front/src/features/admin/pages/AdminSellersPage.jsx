@@ -62,8 +62,6 @@ export default function AdminSellersPage() {
   const {
     currentPage,
     goToPage,
-    goToPrev,
-    goToNext,
     reset: resetPage,
   } = usePagination();
 

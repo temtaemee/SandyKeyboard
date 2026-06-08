@@ -106,11 +106,6 @@ export default function useAdminReservation() {
     }
   }, [dispatch]);
 
-  // ─── 환불 완료 목록 ───
-  const refundedList = allReservations.filter(
-    (r) => r.status === 'REFUND_COMPLETED'
-  );
-
   // ─── 예약 목록 조회 ───
   const fetchReservations = useCallback(
     async (params = {}) => {
@@ -263,7 +258,6 @@ export default function useAdminReservation() {
     reservationsTotalCount,
     allReservations,
     dashboardSummary,
-    refundedList,
     loading,
     error,
     fetchReservations,
