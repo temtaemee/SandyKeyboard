@@ -19,25 +19,40 @@ import {
   PageBtn,
 } from '../styles/NoticePage.styles';
 
+function getRole() {
+  const token = localStorage.getItem('accessToken');
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const roles = payload.roles ?? [];
+    return roles.includes('ADMIN') ? 'ADMIN' : 'USER';
+  } catch {
+    return null;
+  }
+}
+
+const isAdmin = getRole() === 'ADMIN';
+
 export default function NoticePage() {
   const navigate = useNavigate();
   const { notices, loading, currentPage, setCurrentPage, totalPages } =
     useNoticeList();
 
-  // pinYn === 'Y' 인 것만 상단 고정
   const fixedNotices = notices.filter((n) => n.pinYn === 'Y');
-  // 나머지는 일반 게시글
   const normalNotices = notices.filter((n) => n.pinYn !== 'Y');
 
   if (loading) return <Empty>불러오는 중...</Empty>;
 
   return (
     <Wrapper>
-      <TopRow>
-        <WriteButton onClick={() => navigate('/notice/write')}>
-          ✏️ 글쓰기
-        </WriteButton>
-      </TopRow>
+      {/* 글쓰기 버튼 — admin만 표시 */}
+      {isAdmin && (
+        <TopRow>
+          <WriteButton onClick={() => navigate('/notice/write')}>
+            ✏️ 글쓰기
+          </WriteButton>
+        </TopRow>
+      )}
 
       <Board>
         <HeaderRow>
@@ -46,7 +61,6 @@ export default function NoticePage() {
           <ColDate>날짜</ColDate>
         </HeaderRow>
 
-        {/* 상단 고정 공지 */}
         {fixedNotices.map((item) => (
           <PinnedRow
             key={item.id}
@@ -67,12 +81,8 @@ export default function NoticePage() {
           </PinnedRow>
         ))}
 
-        {/* 일반 게시글 */}
         {normalNotices.map((item, idx) => (
-          <Row
-            key={item.id}
-            onClick={() => navigate(`/notice/${item.id}`)}
-          >
+          <Row key={item.id} onClick={() => navigate(`/notice/${item.id}`)}>
             <ColNum>{currentPage * 10 + idx + 1}</ColNum>
             <ColTitle>{item.title}</ColTitle>
             <ColDate>
