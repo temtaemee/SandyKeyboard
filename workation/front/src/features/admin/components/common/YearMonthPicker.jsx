@@ -5,14 +5,59 @@ const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 5 }, (_, i) => CURRENT_YEAR - i);
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 
-export default function YearMonthPicker({ year, month, onChange }) {
+export default function YearMonthPicker({ year, month, onChange, availableDates }) {
+  let displayYears = YEARS;
+  let displayMonths = MONTHS;
+
+  const hasAvailableData = availableDates && availableDates.length > 0;
+
+  if (hasAvailableData) {
+    // Extract unique years from availableDates, sorted descending
+    displayYears = Array.from(new Set(availableDates.map(d => d.year))).sort((a, b) => b - a);
+
+    // Extract months for the current selected year, sorted ascending
+    const filteredMonths = Array.from(
+      new Set(
+        availableDates
+          .filter(d => d.year === year)
+          .map(d => d.month)
+      )
+    ).sort((a, b) => a - b);
+
+    if (filteredMonths.length > 0) {
+      displayMonths = filteredMonths;
+    }
+  }
+
+  const handleYearChange = (e) => {
+    const nextYear = Number(e.target.value);
+    let nextMonth = month;
+
+    if (hasAvailableData) {
+      const nextYearMonths = Array.from(
+        new Set(
+          availableDates
+            .filter(d => d.year === nextYear)
+            .map(d => d.month)
+        )
+      ).sort((a, b) => a - b);
+
+      if (nextYearMonths.length > 0 && !nextYearMonths.includes(month)) {
+        // Fallback to the first available month of that year
+        nextMonth = nextYearMonths[0];
+      }
+    }
+
+    onChange(nextYear, nextMonth);
+  };
+
   return (
     <Wrap>
       <Select
         value={year}
-        onChange={(e) => onChange(Number(e.target.value), month)}
+        onChange={handleYearChange}
       >
-        {YEARS.map((y) => (
+        {displayYears.map((y) => (
           <option key={y} value={y}>{y}년</option>
         ))}
       </Select>
@@ -20,7 +65,7 @@ export default function YearMonthPicker({ year, month, onChange }) {
         value={month}
         onChange={(e) => onChange(year, Number(e.target.value))}
       >
-        {MONTHS.map((m) => (
+        {displayMonths.map((m) => (
           <option key={m} value={m}>{String(m).padStart(2, '0')}월</option>
         ))}
       </Select>

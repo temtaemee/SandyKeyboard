@@ -6,8 +6,8 @@ export async function getAdminSalesSummary() {
 }
 
 // 정산내역 리스트
-export async function getAdminPayoutList() {
-  return await api.get(`/admin/payout/list`);
+export async function getAdminPayoutList(pno = 0) {
+  return await api.get(`/admin/payout/list`, { params: { pno } });
 }
 
 // 월별 정산, 수수료

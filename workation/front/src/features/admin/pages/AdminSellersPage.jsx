@@ -251,7 +251,7 @@ export default function AdminSellersPage() {
         )}
 
         <TableFooter>
-          <FooterInfo>총 {TOTAL.toLocaleString()}명</FooterInfo>
+          <FooterInfo />
           <AdminPagination
             currentPage={currentPage}
             totalPages={totalPages}

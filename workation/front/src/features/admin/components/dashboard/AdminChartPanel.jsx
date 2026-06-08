@@ -125,15 +125,49 @@ export default function AdminChartPanel() {
     fetchStats();
   }, []);
 
+  // 매출 데이터가 존재하는 모든 연월 목록 추출 및 기본값 설정
+  const getSalesAvailableDates = () => {
+    const dates = [];
+    const list = graphData.twelveMonths || [];
+    list.forEach((item) => {
+      if (item.yearMonth) {
+        const [yStr, mStr] = item.yearMonth.split('-');
+        const year = parseInt(yStr, 10);
+        const month = parseInt(mStr, 10);
+        if (!isNaN(year) && !isNaN(month)) {
+          if (!dates.some((d) => d.year === year && d.month === month)) {
+            dates.push({ year, month });
+          }
+        }
+      }
+    });
+    return dates.sort((a, b) => b.year - a.year || b.month - a.month);
+  };
+
+  const salesAvailableDates = getSalesAvailableDates();
+
+  useEffect(() => {
+    if (salesAvailableDates.length > 0) {
+      const latest = salesAvailableDates[0];
+      const target = { year: latest.year, month: latest.month };
+      setRevenueDate(target);
+      setRegionDate(target);
+      setModalDate(target);
+    }
+  }, [graphData]);
+
   // Recharts 가공 데이터 바인딩
   const getChartData = () => {
     const rawList = period === '6m' ? graphData.sixMonths : graphData.twelveMonths;
     if (!rawList || rawList.length === 0) return [];
 
-    return rawList.map((item, idx) => {
+    // yearMonth 오름차순 정렬 (오래된 달 왼쪽 → 최신 달 오른쪽)
+    const sorted = [...rawList].sort((a, b) => a.yearMonth.localeCompare(b.yearMonth));
+
+    return sorted.map((item, idx) => {
       const monthPart = item.yearMonth.split('-')[1];
       const monthLabel = monthPart ? `${parseInt(monthPart, 10)}월` : item.yearMonth;
-      const isLatest = idx === rawList.length - 1;
+      const isLatest = idx === sorted.length - 1;
 
       return {
         month: monthLabel,
@@ -181,6 +215,7 @@ export default function AdminChartPanel() {
             year={revenueDate.year}
             month={revenueDate.month}
             onChange={(y, m) => setRevenueDate({ year: y, month: m })}
+            availableDates={salesAvailableDates}
           />
         </RevenueCard>
       </RevenueRow>
@@ -257,6 +292,7 @@ export default function AdminChartPanel() {
               year={regionDate.year}
               month={regionDate.month}
               onChange={(y, m) => setRegionDate({ year: y, month: m })}
+              availableDates={salesAvailableDates}
             />
           </RegionTitleRow>
         </RegionCardHeader>
@@ -296,6 +332,7 @@ export default function AdminChartPanel() {
                 year={modalDate.year}
                 month={modalDate.month}
                 onChange={(y, m) => setModalDate({ year: y, month: m })}
+                availableDates={salesAvailableDates}
               />
               <ModalCloseBtn onClick={() => setRegionModalOpen(false)}>
                 <X size={18} />
@@ -370,9 +407,10 @@ const RevenueCard = styled.div`
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   padding: 20px 24px;
+  min-height: 120px;
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
 `;
 
