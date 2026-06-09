@@ -1,7 +1,6 @@
 /** 관리자 페이지의 게시판(공지사항/문의사항 등) 게시글 관리 및 통계 조회 API */
 import api from '../../../app/api/axios';
 
-
 /** 게시글 상단 고정 상태 변경 */
 export async function updatePostPinStatus(postId, pinned) {
   return { data: { success: true } };
@@ -105,7 +104,24 @@ export async function faqDelete(id) {
   return api.delete(`/admin/faqs/${id}`);
 }
 
-// 리뷰
+//// 리뷰
+// 전체 목록 조회
+export async function reviewFindAll(page = 0) {
+  return api.get(`/public/reviews`, { params: { page } });
+}
+// 상세조회
+export async function reviewDetail(id) {
+  return api.get(`/public/reviews/${id}`);
+}
+// 수정 admin
+export async function reviewUpdate(id, data) {
+  return api.put(`/admin/reviews/${id}`, data);
+}
+// 삭제 admin
+export async function reviewDelete(id) {
+  return api.delete(`/admin/reviews/${id}`);
+}
+//// 댓글
 
 // 이벤트
 

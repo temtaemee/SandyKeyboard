@@ -173,6 +173,13 @@ export default function AdminBoardPage() {
                   <TH $width="120px">남은 수량</TH>
                   <TH $width="120px">유효기간</TH>
                 </>
+              ) : activeTab === '리뷰' ? (
+                <>
+                  <TH $width="110px">작성자</TH>
+                  <TH $width="80px">별점</TH>
+                  <TH $width="160px">숙소명</TH>
+                  <TH $width="120px">등록일</TH>
+                </>
               ) : (
                 <TH $width="150px">등록일</TH>
               )}
@@ -181,7 +188,7 @@ export default function AdminBoardPage() {
           <TBody>
             {posts.length === 0 ? (
               <TR>
-                <TD colSpan={activeTab === '쿠폰' ? 5 : 4}>
+                <TD colSpan={activeTab === '쿠폰' ? 5 : activeTab === '리뷰' ? 6 : 4}>
                   <EmptyState>검색 결과가 없습니다.</EmptyState>
                 </TD>
               </TR>
@@ -227,6 +234,17 @@ export default function AdminBoardPage() {
                               ? `${post.validDays}일`
                               : '-'}
                           </ValidDaysText>
+                        </TD>
+                      </>
+                    ) : activeTab === '리뷰' ? (
+                      <>
+                        <TD><ReviewWriterText>{post.writer ?? '—'}</ReviewWriterText></TD>
+                        <TD><ReviewRatingText>{'★'.repeat(post.rating ?? 0)}</ReviewRatingText></TD>
+                        <TD><ReviewStayText>{post.stayName ?? '—'}</ReviewStayText></TD>
+                        <TD>
+                          <DateText>
+                            {post.createdAt ? post.createdAt.split('T')[0] : '—'}
+                          </DateText>
                         </TD>
                       </>
                     ) : (
@@ -289,7 +307,11 @@ export default function AdminBoardPage() {
               {activeTab !== '쿠폰' && (
                 <DetailHeaderDates>
                   <DateRow>등록일: {detailPost.createdAt ? new Date(detailPost.createdAt).toLocaleString() : detailPost.date || '—'}</DateRow>
-                  <DateRow>수정일: {detailPost.updatedAt ? new Date(detailPost.updatedAt).toLocaleString() : '—'}</DateRow>
+                  {activeTab === '리뷰' ? (
+                    <DateRow>{detailPost.checkinDate ?? '—'} ~ {detailPost.checkoutDate ?? '—'}</DateRow>
+                  ) : (
+                    <DateRow>수정일: {detailPost.updatedAt ? new Date(detailPost.updatedAt).toLocaleString() : '—'}</DateRow>
+                  )}
                 </DetailHeaderDates>
               )}
 
@@ -326,6 +348,24 @@ export default function AdminBoardPage() {
                     </DetailMetaValue>
                   </DetailMetaItem>
                 </DetailMetaGrid>
+              ) : activeTab === '리뷰' ? (
+                <>
+                  <DetailContentArea style={{ paddingTop: '0px' }}>
+                    {detailPost.content || '등록된 내용이 없습니다.'}
+                  </DetailContentArea>
+
+                  {detailPost.images && detailPost.images.length > 0 && (
+                    <ReviewImageGrid>
+                      {detailPost.images.map((img) => (
+                        <ReviewImageItem
+                          key={img.id}
+                          src={`https://finalproject-s3-bucket-243050855199-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/${img.s3Key}`}
+                          alt={img.originalFileName}
+                        />
+                      ))}
+                    </ReviewImageGrid>
+                  )}
+                </>
               ) : (
                 <>
                   {/* 아래는 다 내용으로 채워짐 */}
@@ -359,10 +399,12 @@ export default function AdminBoardPage() {
               </DeleteBtn>
               <RightBtns>
                 <CancelBtn onClick={() => setDetailPost(null)}>닫기</CancelBtn>
-                <SubmitBtn onClick={() => openEditModal(detailPost)}>
-                  <Pencil size={13} />
-                  수정
-                </SubmitBtn>
+                {activeTab !== '리뷰' && (
+                  <SubmitBtn onClick={() => openEditModal(detailPost)}>
+                    <Pencil size={13} />
+                    수정
+                  </SubmitBtn>
+                )}
               </RightBtns>
             </ModalFooter>
           </ModalContent>
@@ -811,6 +853,65 @@ const QtyText = styled.span`
   font-weight: 500;
   color: ${({ theme }) => theme.colors.adminTextDark};
   font-family: ${({ theme }) => theme.fonts.number};
+`;
+const ReviewCheckInOutText = styled.p`
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.textMuted};
+  font-family: ${({ theme }) => theme.fonts.number};
+`;
+const ReviewDetailMeta = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 24px;
+  padding: 14px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+`;
+const ReviewDetailMetaItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
+const ReviewDetailMetaLabel = styled.span`
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+`;
+const ReviewDetailMetaValue = styled.span`
+  font-size: 13px;
+  color: #334155;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+`;
+const ReviewImageGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 4px;
+`;
+const ReviewImageItem = styled.img`
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+`;
+const ReviewWriterText = styled.span`
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.adminTextDark};
+`;
+const ReviewRatingText = styled.span`
+  font-size: 12px;
+  color: #f59e0b;
+  letter-spacing: -1px;
+`;
+const ReviewStayText = styled.span`
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.textMuted};
 `;
 const ValidDaysText = styled.span`
   font-size: 13px;
