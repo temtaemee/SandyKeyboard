@@ -5,6 +5,7 @@ import com.kh.app.member.dto.response.SocialLoginRespDto;
 import com.kh.app.member.entity.MemberEntity;
 import com.kh.app.member.entity.MemberProfileEntity;
 import com.kh.app.member.entity.SocialAccountEntity;
+import com.kh.app.member.exception.SocialLinkRequiredException;
 import com.kh.app.member.exception.SocialWithdrawnUserException;
 import com.kh.app.member.repository.MemberRepository;
 import com.kh.app.member.repository.ProfileRepository;
@@ -52,51 +53,56 @@ public class NaverAuthService {
         // 2. DB 검증 및 신규 유저 판단 플래그 세팅 🔍
         // NaverAuthService.java 의 회원 검증 로직 최종 교체 🛠️
 
-// 1. 소셜 매핑 테이블이 아니라, 우리 서비스의 'MEMBER' 테이블 자체에 이 이메일(username)로 가입한 사람이 있는지 먼저 찾습니다.
-        Optional<MemberEntity> memberOpt = memberRepository.findMemberByUsername(email);
-        MemberEntity memberEntity;
+        Optional<SocialAccountEntity> socialOpt =
+                socialAccountRepository.findBySocialIdAndProvider(
+                        socialId,
+                        "NAVER"
+                );
+        MemberEntity memberEntity = null;
         boolean isNewUser = false;
 
-        if (memberOpt.isEmpty()) {
-            // [Case A] 진짜 우리 서비스에 단 한 번도 온 적 없는 생판 처음인 소셜 유저!
-            memberEntity = new MemberEntity();
-            memberEntity.setUsername(email);
-            memberEntity.setPassword("");
-            memberRepository.save(memberEntity);
+        if (socialOpt.isPresent()) {
 
-            // 소셜 매핑 테이블도 새로 생성
-            SocialAccountEntity newSocialEntity = new SocialAccountEntity();
-            newSocialEntity.setSocialId(socialId);
-            newSocialEntity.setMember(memberEntity);
-            newSocialEntity.setProvider("NAVER");
-            socialAccountRepository.save(newSocialEntity);
+            memberEntity = socialOpt.get().getMember();
 
-            isNewUser = true; // 🌟 당연히 프로필도 없으므로 신규 유저 확정!
-        } else {
-            // [Case B] 이메일(MEMBER 테이블)은 이미 존재함
-            memberEntity = memberOpt.get();
             if (memberEntity.getDeletedAt() != null) {
-                // 🌟 꼼수 문자열 더하기 대신, 예외 객체에 이메일을 다이렉트로 주입!
-                throw new SocialWithdrawnUserException("탈퇴 처리된 계정입니다.", email);
+                throw new SocialWithdrawnUserException(
+                        "탈퇴 처리된 계정입니다.",
+                        email
+                );
             }
+            Optional<MemberProfileEntity> profileOpt =
+                    memberProfileRepository.findById(memberEntity.getId());
+            if (profileOpt.isEmpty()) {
+                isNewUser = true;
+            }
+        }else {
 
-            // 소셜 연동 데이터 누락 방어 코드
-            Optional<SocialAccountEntity> socialOpt = socialAccountRepository.findBySocialIdAndProvider(socialId, "NAVER");
-            if (socialOpt.isEmpty()) {
+            Optional<MemberEntity> memberOpt =
+                    memberRepository.findMemberByUsername(email);
+
+            if(memberOpt.isEmpty()) {
+
+                memberEntity = new MemberEntity();
+                memberEntity.setUsername(email);
+                memberEntity.setPassword("");
+                memberRepository.save(memberEntity);
+
                 SocialAccountEntity newSocialEntity = new SocialAccountEntity();
                 newSocialEntity.setSocialId(socialId);
                 newSocialEntity.setMember(memberEntity);
                 newSocialEntity.setProvider("NAVER");
                 socialAccountRepository.save(newSocialEntity);
-            }
 
-            // 🚨 [핵심 해결 지점] 프록시 껍데기(memberEntity.getProfile())에 속지 않고,
-            // MemberProfileRepository를 주입받아 진짜 프로필 레코드가 DB에 존재하는지 직접 select 해봅니다!
-            // (주의: 서비스 상단에 @RequiredArgsConstructor와 private final MemberProfileRepository memberProfileRepository; 를 선언해주세요!)
-            Optional<MemberProfileEntity> profileOpt = memberProfileRepository.findById(memberEntity.getId());
+                isNewUser = true;
 
-            if (profileOpt.isEmpty()) {
-                isNewUser = true; // 🌟 이메일 계정은 파여있지만, 진짜 프로필 정보가 없으므로 추가 정보 입력 대상으로 확정!
+            } else {
+
+                throw new SocialLinkRequiredException(
+                        email,
+                        socialId,
+                        "NAVER"
+                );
             }
         }
 

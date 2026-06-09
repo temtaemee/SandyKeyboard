@@ -7,10 +7,7 @@ import com.kh.app.company.repository.CompanyRepository;
 import com.kh.app.member.dto.request.*;
 import com.kh.app.member.dto.response.*;
 import com.kh.app.member.entity.*;
-import com.kh.app.member.repository.BankRepository;
-import com.kh.app.member.repository.MemberRepository;
-import com.kh.app.member.repository.ProfileRepository;
-import com.kh.app.member.repository.SellerRepository;
+import com.kh.app.member.repository.*;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +37,7 @@ public class MemberService {
             = new ConcurrentHashMap<>();
     private final Set<String> verifiedEmailSet = new HashSet<>();
     private final CompanyRepository companyRepository;
+    private final SocialAccountRepository socialAccountRepository;
 
     @Transactional
     public void join(MemberJoinReqDto dto) {
@@ -390,4 +388,60 @@ public class MemberService {
                 .orElseThrow(() -> new IllegalArgumentException("회원 없음"));
         member.unDelete();
     }
+
+    public void sendSocialLinkEmailCode(
+            EmailVerifyReqDto dto
+    ) {
+
+        memberRepository.findMemberByUsername(dto.getEmail())
+                .orElseThrow(() ->
+                        new RuntimeException("회원 없음"));
+
+        String code =
+                String.valueOf(
+                        (int)((Math.random() * 900000) + 100000)
+                );
+
+        // 1. MimeMessage 객체 생성
+        MimeMessage message = mailSender.createMimeMessage();
+
+        try {
+            // 2. MimeMessageHelper를 이용해 편리하게 세팅 (true는 멀티파트/첨부파일 사용 여부)
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setTo(dto.getEmail());
+            helper.setSubject("[모래묻은키보드] 소셜 계정연동 인증코드");
+
+            // 3. HTML 문자열 작성
+            String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px;'>"
+                    + "<h2>[모래묻은키보드] 소셜 계정연동</h2>"
+                    + "<p>안녕하세요. 요청하신 소셜 계정연동 인증코드입니다.</p>"
+                    + "<div style='background-color: #f9f9f9; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; color: #4A90E2; letter-spacing: 5px;'>"
+                    +     code
+                    + "</div>"
+                    + "<p style='color: #888; font-size: 12px; margin-top: 20px;'>본 인증코드는 계정연동 페이지에서만 사용 가능합니다.</p>"
+                    + "</div>";
+
+            // 4. 핵심: 두 번째 인자에 true를 넣어야 HTML로 렌더링됩니다!
+            helper.setText(htmlContent, true);
+
+        } catch (Exception e) {
+            log.error("메일 생성 중 에러 발생", e);
+            throw new RuntimeException("메일 발송 실패");
+        }
+
+        authCodeStore.put(dto.getEmail(), code);
+
+        // 5. 메일 발송
+        mailSender.send(message);
+    }
+
+    public boolean isVerifiedEmail(String email) {
+        return verifiedEmailSet.contains(email);
+    }
+
+    public void removeVerifiedEmail(String email) {
+        verifiedEmailSet.remove(email);
+    }
+
 }

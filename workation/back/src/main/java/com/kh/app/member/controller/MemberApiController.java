@@ -3,12 +3,10 @@ package com.kh.app.member.controller;
 import com.kh.app.common.dto.PageRespDto;
 import com.kh.app.member.dto.request.*;
 import com.kh.app.member.dto.response.*;
+import com.kh.app.member.exception.SocialLinkRequiredException;
 import com.kh.app.member.exception.SocialWithdrawnUserException;
 import com.kh.app.member.repository.BankRepository;
-import com.kh.app.member.service.GoogleAuthService;
-import com.kh.app.member.service.KakaoAuthService;
-import com.kh.app.member.service.MemberService;
-import com.kh.app.member.service.NaverAuthService;
+import com.kh.app.member.service.*;
 import com.kh.app.security.user.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +31,7 @@ public class MemberApiController {
     private final KakaoAuthService kakaoAuthService;
     private final NaverAuthService naverAuthService;
     private final GoogleAuthService googleAuthService;
+    private final SocialLinkService socialLinkService;
 
     @PostMapping("/guest/join")
     public ResponseEntity<Object> join(@RequestBody MemberJoinReqDto dto){
@@ -126,6 +125,7 @@ public class MemberApiController {
     public void sendEmailCode(@RequestBody FindPasswordReqDto dto ){
         memberService.sendEmailCode(dto);
     }
+
     @PostMapping("/guest/verify-email-code")
     public ResponseEntity<Object> verifyEmailCode(
             @RequestBody VerifyEmailCodeReqDto dto
@@ -155,7 +155,21 @@ public class MemberApiController {
                             .message(e.getMessage())
                             .email(e.getEmail()) // 🌟 예외 객체에서 이메일 깔끔하게 추출!
                             .build());
-        } catch (Exception e) {
+        }catch (SocialLinkRequiredException e) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(
+                            SocialLoginErrorRespDto.builder()
+                                    .result("LINK_REQUIRED")
+                                    .message(e.getMessage())
+                                    .email(e.getEmail())
+                                    .socialId(e.getSocialId())
+                                    .provider(e.getProvider())
+                                    .build()
+                    );
+        }
+        catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -174,7 +188,19 @@ public class MemberApiController {
                             .message(e.getMessage())
                             .email(e.getEmail())
                             .build());
-        } catch (Exception e) {
+        } catch (SocialLinkRequiredException e) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(
+                            SocialLoginErrorRespDto.builder()
+                                    .result("LINK_REQUIRED")
+                                    .message(e.getMessage())
+                                    .email(e.getEmail())
+                                    .socialId(e.getSocialId())
+                                    .provider(e.getProvider())
+                                    .build()
+                    );
+        }catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -193,7 +219,19 @@ public class MemberApiController {
                             .message(e.getMessage())
                             .email(e.getEmail())
                             .build());
-        } catch (Exception e) {
+        } catch (SocialLinkRequiredException e) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(
+                            SocialLoginErrorRespDto.builder()
+                                    .result("LINK_REQUIRED")
+                                    .message(e.getMessage())
+                                    .email(e.getEmail())
+                                    .socialId(e.getSocialId())
+                                    .provider(e.getProvider())
+                                    .build()
+                    );
+        }catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -223,6 +261,25 @@ public class MemberApiController {
         memberService.restoreAccount(username);
         return ResponseEntity.ok().body("{\"result\": \"success\"}");
     }
+
+
+    @PostMapping("/public/social/send-code")
+    public void sendSocialLinkCode(@RequestBody EmailVerifyReqDto dto){
+        memberService.sendSocialLinkEmailCode(dto);
+    }
+
+    @PostMapping("/public/social/link")
+    public void socialLink(@RequestBody SocialLinkReqDto dto){
+        socialLinkService.socialLink(dto);
+    }
+    @PostMapping("/public/social/verify-code")
+    public void verifySocialLinkCode(
+            @RequestBody VerifyEmailCodeReqDto dto
+    ){
+        memberService.verifyEmailCode(dto);
+    }
+
+
 
 
 
