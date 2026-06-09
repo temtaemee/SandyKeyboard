@@ -8,8 +8,5 @@ import lombok.Getter;
 public class SocialLoginErrorRespDto {
     private final String result;   // "fail" 고정
     private final String message;  // "탈퇴 처리된 계정입니다."
-    private final String email;    // "abc@naver.com" (복구용 이메일)
-    private final String socialId;
-    private final String provider;
-
+    private final String email;    // "wldghs5s@naver.com" (복구용 이메일)
 }
