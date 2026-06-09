@@ -1,5 +1,10 @@
 import { useState } from 'react';
-import { getAdminBoardPost, getCouponById } from '../api/adminBoardApi';
+import {
+  getAdminBoardPost,
+  getCouponById,
+  reviewDetail,
+  faqDetail,
+} from '../api/adminBoardApi';
 
 /**
  * AdminBoardPage의 UI 로직(검색, 필터링, 다양한 모달 창 제어, 폼 입력)을 전담하는 커스텀 훅입니다.
@@ -75,9 +80,10 @@ export default function useAdminBoardUI({
     return 0;
   });
 
-  const displayPosts = activeTab === 'FAQ'
-    ? sortedPosts.slice((currentPage - 1) * 10, currentPage * 10)
-    : sortedPosts;
+  const displayPosts =
+    activeTab === 'FAQ'
+      ? sortedPosts.slice((currentPage - 1) * 10, currentPage * 10)
+      : sortedPosts;
 
   // 검색 및 쿠폰 필터 상태 초기화
   const resetFilters = () => {
@@ -114,7 +120,7 @@ export default function useAdminBoardUI({
     } else {
       setFormData({
         title: activeTab === 'FAQ' ? post.question : post.title,
-        content: activeTab === 'FAQ' ? post.answer : (post.content || ''),
+        content: activeTab === 'FAQ' ? post.answer : post.content || '',
         isFixed: post.pinYn === 'Y' || post.isFixed || false,
       });
     }
@@ -200,7 +206,13 @@ export default function useAdminBoardUI({
           setDetailPost({ ...editingPost, ...updatedData });
         }
       } else if (activeTab === 'FAQ') {
-        setDetailPost({ ...editingPost, ...updatedData });
+        try {
+          const resp = await faqDetail(postId);
+          setDetailPost(resp.data);
+        } catch (err) {
+          console.error('수정 완료 후 FAQ 상세 재조회 에러:', err);
+          setDetailPost({ ...editingPost, ...updatedData });
+        }
       } else {
         setDetailPost({ ...editingPost, ...updatedData });
       }
@@ -252,6 +264,22 @@ export default function useAdminBoardUI({
         setDetailPost(resp.data);
       } catch (err) {
         console.error('공지 상세 조회 실패:', err);
+        setDetailPost(post);
+      }
+    } else if (activeTab === '리뷰') {
+      try {
+        const resp = await reviewDetail(post.id);
+        setDetailPost(resp.data);
+      } catch (err) {
+        console.error('리뷰 상세 조회 실패:', err);
+        setDetailPost(post);
+      }
+    } else if (activeTab === 'FAQ') {
+      try {
+        const resp = await faqDetail(post.id);
+        setDetailPost(resp.data);
+      } catch (err) {
+        console.error('FAQ 상세 조회 실패:', err);
         setDetailPost(post);
       }
     } else {

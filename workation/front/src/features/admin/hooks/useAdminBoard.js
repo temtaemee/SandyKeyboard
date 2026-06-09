@@ -14,6 +14,8 @@ import {
   faqCreate,
   faqUpdate,
   faqDelete,
+  faqDetail,
+  reviewFindAll,
 } from '../api/adminBoardApi';
 import {
   updatePostsForTab,
@@ -59,6 +61,8 @@ export default function useAdminBoard(activeTab, currentPage = 1) {
           resp = await getAdminBoardPosts(apiPage);
         } else if (activeTab === 'FAQ') {
           resp = await faqList();
+        } else if (activeTab === '리뷰') {
+          resp = await reviewFindAll(apiPage);
         } else {
           resp = { data: [] };
         }
@@ -100,6 +104,9 @@ export default function useAdminBoard(activeTab, currentPage = 1) {
         await updateAdminBoardPost(postId, changes);
       } else if (activeTab === 'FAQ') {
         await faqUpdate(postId, changes);
+        const resp = await faqDetail(postId);
+        dispatch(updatePostInTab({ tab: activeTab, postId, changes: resp.data }));
+        return;
       }
       dispatch(updatePostInTab({ tab: activeTab, postId, changes }));
     } catch (err) {
