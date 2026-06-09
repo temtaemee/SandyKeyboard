@@ -281,7 +281,7 @@ public class ReviewService {
     @Transactional(readOnly = true)
     public Page<ReviewListRespDto> findAllForAdmin(int page) {
         Pageable pageable = PageRequest.of(page, 10);
-        return reviewRepository.findAllByDelYnOrderByCreatedAtDesc("N", pageable)
+        return reviewRepository.findAllByDelYnOrderByIdDesc("N", pageable)
                 .map(review -> {
                     List<ReviewImageEntity> images =
                             reviewImageRepository.findAllByReviewIdAndDelYn(review.getId(), "N");

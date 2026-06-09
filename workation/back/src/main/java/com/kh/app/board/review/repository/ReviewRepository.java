@@ -18,8 +18,8 @@ public interface ReviewRepository extends JpaRepository<ReviewEntity, Long> {
     // 전체 목록 - 일반 사용자용 (숨긴 리뷰 제외)
     Page<ReviewEntity> findAllByDelYnAndHideYnOrderByCreatedAtDesc(String delYn, String hideYn, Pageable pageable);
 
-    // 전체 목록 - 관리자용 (숨긴 리뷰 포함)
-    Page<ReviewEntity> findAllByDelYnOrderByCreatedAtDesc(String delYn, Pageable pageable);
+    // 전체 목록 - 관리자용 (숨긴 리뷰 포함, id 내림차순)
+    Page<ReviewEntity> findAllByDelYnOrderByIdDesc(String delYn, Pageable pageable);
 
     // 내 리뷰 목록 (최신순 페이징)
     Page<ReviewEntity> findAllByMemberAndDelYnOrderByCreatedAtDesc(MemberEntity member, String delYn, Pageable pageable);
