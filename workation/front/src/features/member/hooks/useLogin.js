@@ -36,10 +36,7 @@ function useLogin() {
       console.error('로그인 실패', err);
 
       if (err.response && err.response.status === 401) {
-        let serverMessage = err.response.data?.message;
-        if (serverMessage === "자격 증명에 실패하였습니다.") {
-          serverMessage = "아이디 또는 비밀번호가 일치하지 않습니다.";
-        }
+        const serverMessage = err.response.data?.message;
 
         // 🌟 1. 탈퇴 회원인 경우 처리
         if (serverMessage && serverMessage.includes('탈퇴')) {

@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import useMypage from '../hooks/useMypage';
 import { editMyInfo } from '../api/mypageApi';
-import AddressSearchModal from '../../../../home/components/AddressSearchModal';
 
 function MemberEditForm({ setEditMode }) {
   const { memberInfo, loading } = useMypage();
@@ -147,10 +146,6 @@ function MemberEditForm({ setEditMode }) {
           value={vo.preferredArea}
           onChange={handleChange}
         >
-          {/* 💡 유저 정보가 없을 때(빈 문자열일 때) 화면에 띄워줄 기본 껍데기 */}
-          <option value="" disabled>
-            지역을 선택해주세요
-          </option>
           <option value="SEOUL">서울</option>
           <option value="GYEONGGI">경기</option>
           <option value="GANGWON">강원</option>

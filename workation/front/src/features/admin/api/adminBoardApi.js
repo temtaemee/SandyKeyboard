@@ -107,7 +107,7 @@ export async function faqDelete(id) {
 //// 리뷰
 // 전체 목록 조회
 export async function reviewFindAll(page = 0) {
-  return api.get(`/public/reviews`, { params: { page } });
+  return api.get(`/admin/reviews`, { params: { page } });
 }
 // 상세조회
 export async function reviewDetail(id) {
@@ -117,11 +117,28 @@ export async function reviewDetail(id) {
 export async function reviewUpdate(id, data) {
   return api.put(`/admin/reviews/${id}`, data);
 }
-// 삭제 admin
-export async function reviewDelete(id) {
-  return api.delete(`/admin/reviews/${id}`);
+// 숨김 admin
+export async function hideReview(id) {
+  return api.put(`/admin/reviews/${id}/hide`);
 }
+// 숨김해제
+export async function showReview(id) {
+  return api.put(`/admin/reviews/${id}/show`);
+}
+
 //// 댓글
+// 댓글 보기
+export async function findComments(id) {
+  return api.get(`/public/reviews/${id}/comments`);
+}
+// 댓글 숨김
+export async function hideComment(reviewId, commentId) {
+  return api.put(`/admin/reviews/${reviewId}/comments/${commentId}/hide`);
+}
+// 댓글 숨김 해제
+export async function showComment(reviewId, commentId) {
+  return api.put(`/admin/reviews/${reviewId}/comments/${commentId}/show`);
+}
 
 // 이벤트
 

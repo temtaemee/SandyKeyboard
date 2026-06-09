@@ -16,6 +16,8 @@ import {
   faqDelete,
   faqDetail,
   reviewFindAll,
+  hideReview,
+  showReview,
 } from '../api/adminBoardApi';
 import {
   updatePostsForTab,
@@ -181,6 +183,27 @@ export default function useAdminBoard(activeTab, currentPage = 1) {
     }
   };
 
+  // ─── 5. 리뷰 숨김/해제 토글 ───
+  const reviewHideToggle = async (post) => {
+    dispatch(setLoading(true));
+    try {
+      if (post.hideYn === 'Y') {
+        await showReview(post.id);
+        dispatch(updatePostInTab({ tab: '리뷰', postId: post.id, changes: { hideYn: 'N' } }));
+        return 'N';
+      } else {
+        await hideReview(post.id);
+        dispatch(updatePostInTab({ tab: '리뷰', postId: post.id, changes: { hideYn: 'Y' } }));
+        return 'Y';
+      }
+    } catch (err) {
+      dispatch(setError(err.message));
+      return null;
+    } finally {
+      dispatch(setLoading(false));
+    }
+  };
+
   const posts = allPosts[activeTab] || [];
 
   return {
@@ -192,5 +215,6 @@ export default function useAdminBoard(activeTab, currentPage = 1) {
     updatePost,
     deletePost,
     createPost,
+    reviewHideToggle,
   };
 }

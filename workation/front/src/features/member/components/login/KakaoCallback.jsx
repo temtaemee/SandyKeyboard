@@ -1,15 +1,12 @@
 // src/features/member/components/login/KakaoCallback.jsx 생성
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../../app/api/axios';
 import { restoreAccount } from '../../api/memberApi';
-import SocialLinkModal from './SocialLinkModal';
 
 function KakaoCallback() {
   const navigate = useNavigate();
   const isProcessed = useRef(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [linkData, setLinkData] = useState(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -36,9 +33,7 @@ function KakaoCallback() {
             const photoParam = profileImageUrl
               ? `&profileImageUrl=${encodeURIComponent(profileImageUrl)}`
               : '';
-            navigate(
-              `/join?type=social&email=${email}&tempToken=${token}${photoParam}`
-            );
+            navigate(`/join?type=social&email=${email}&tempToken=${token}`);
           } else {
             // 기존 연동 유저라면 즉시 로그인 처리 후 홈으로 프리패스
             localStorage.setItem('accessToken', token);
@@ -90,54 +85,24 @@ function KakaoCallback() {
               }
             }
           }
-          if (error.response?.status === 409) {
-            const data = error.response.data;
-            if (data.result === 'LINK_REQUIRED') {
-              // 💡 윈도우 confirm 대신 모달 띄우기용 데이터 세팅
-              setLinkData({
-                email: data.email,
-                socialId: data.socialId,
-                provider: 'KAKAO', // 구글은 'GOOGLE', 네이버는 'NAVER'
-              });
-              setIsModalOpen(true);
-              return; // 여기서 return해서 페이지가 바로 넘어가지 않게 막음
-            }
-          }
-
-          if (!isModalOpen) {
-            isProcessed.current = false;
-            navigate('/login');
-          }
+          isProcessed.current = false;
+          navigate('/login');
         });
     }
   }, [navigate]);
 
   return (
-    <>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100vh',
-          color: '#3a4a57',
-        }}
-      >
-        <h3>카카오 계정으로 모래묻은 키보드에 연결 중... 🟨</h3>
-      </div>
-      <SocialLinkModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          navigate('/login'); // 취소 시 로그인 화면으로 돌려보냄
-        }}
-        linkData={linkData}
-        onSuccess={() => {
-          setIsModalOpen(false);
-          navigate('/login'); // 연동 완료 후 다시 로그인하도록 안내
-        }}
-      />
-    </>
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        color: '#3a4a57',
+      }}
+    >
+      <h3>카카오 계정으로 모래묻은 키보드에 연결 중... 🟨</h3>
+    </div>
   );
 }
 

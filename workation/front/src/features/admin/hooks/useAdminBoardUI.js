@@ -3,6 +3,9 @@ import {
   getAdminBoardPost,
   getCouponById,
   reviewDetail,
+  findComments,
+  hideComment,
+  showComment,
   faqDetail,
 } from '../api/adminBoardApi';
 
@@ -256,6 +259,7 @@ export default function useAdminBoardUI({
 
   // ─── 3. 상세보기 모달 상태 ───
   const [detailPost, setDetailPost] = useState(null); // null | post 객체
+  const [reviewComments, setReviewComments] = useState([]); // 리뷰 댓글 목록
 
   const handleShowDetail = async (post) => {
     if (activeTab === '공지사항') {
@@ -268,11 +272,16 @@ export default function useAdminBoardUI({
       }
     } else if (activeTab === '리뷰') {
       try {
-        const resp = await reviewDetail(post.id);
-        setDetailPost(resp.data);
+        const [detailResp, commentsResp] = await Promise.all([
+          reviewDetail(post.id),
+          findComments(post.id),
+        ]);
+        setDetailPost(detailResp.data);
+        setReviewComments(Array.isArray(commentsResp.data) ? commentsResp.data : commentsResp.data?.content ?? []);
       } catch (err) {
         console.error('리뷰 상세 조회 실패:', err);
         setDetailPost(post);
+        setReviewComments([]);
       }
     } else if (activeTab === 'FAQ') {
       try {
@@ -284,6 +293,25 @@ export default function useAdminBoardUI({
       }
     } else {
       setDetailPost(post);
+    }
+  };
+
+  // 댓글 숨김/해제 토글 (로컬 상태만 업데이트)
+  const commentHideToggle = async (reviewId, comment) => {
+    try {
+      if (comment.hideYn === 'Y') {
+        await showComment(reviewId, comment.id);
+        setReviewComments((prev) =>
+          prev.map((c) => (c.id === comment.id ? { ...c, hideYn: 'N' } : c))
+        );
+      } else {
+        await hideComment(reviewId, comment.id);
+        setReviewComments((prev) =>
+          prev.map((c) => (c.id === comment.id ? { ...c, hideYn: 'Y' } : c))
+        );
+      }
+    } catch (err) {
+      console.error('댓글 숨김 처리 실패:', err);
     }
   };
 
@@ -332,6 +360,9 @@ export default function useAdminBoardUI({
     detailPost,
     setDetailPost,
     handleShowDetail,
+    reviewComments,
+    setReviewComments,
+    commentHideToggle,
 
     // 4. 삭제 확인
     deleteTarget,

@@ -161,6 +161,7 @@ export const updateComment = (commentId, dto) =>
 export const deleteComment = (reviewId, commentId) =>
   api.delete(`/user/comments/${commentId}`).then((res) => res.data);
 
+
 // ================================
 // 게시글 좋아요 API
 // ================================
