@@ -23,7 +23,6 @@ public class ReviewEntity extends BaseEntity {
     @JoinColumn(nullable = false)
     private MemberEntity member;
 
-    // 예약 FK 추가
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reservation_id", nullable = false)
     private ReservationEntity reservation;
@@ -44,10 +43,25 @@ public class ReviewEntity extends BaseEntity {
     @Column(nullable = false)
     private Integer rating;
 
+    // 관리자 리뷰 숨김 여부 (Y: 숨김, N: 표시)
+    @Column(length = 1, nullable = false)
+    @Builder.Default
+    private String hideYn = "N";
+
     public void update(String title, String content, String tag, Integer rating) {
         this.title   = title;
         this.content = content;
         this.tag     = tag;
         this.rating  = rating;
+    }
+
+    // 리뷰 숨김 처리
+    public void hide() {
+        this.hideYn = "Y";
+    }
+
+    // 리뷰 숨김 해제
+    public void show() {
+        this.hideYn = "N";
     }
 }

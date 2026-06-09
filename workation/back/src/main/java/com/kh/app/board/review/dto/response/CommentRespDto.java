@@ -15,6 +15,7 @@ public class CommentRespDto {
     private String content;
     private Integer rating;
     private String ownerYn;
+    private String hideYn; // 관리자 숨김 여부
     private LocalDateTime createdAt;
 
     public static CommentRespDto from(CommentEntity entity) {
@@ -24,6 +25,7 @@ public class CommentRespDto {
                 .content(entity.getContent())
                 .rating(entity.getRating())
                 .ownerYn(entity.getOwnerYn())
+                .hideYn(entity.getHideYn())
                 .createdAt(entity.getCreatedAt())
                 .build();
     }
