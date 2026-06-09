@@ -5,6 +5,7 @@ import com.kh.app.member.dto.response.SocialLoginRespDto;
 import com.kh.app.member.entity.MemberEntity;
 import com.kh.app.member.entity.SocialAccountEntity;
 import com.kh.app.member.entity.MemberProfileEntity;
+import com.kh.app.member.exception.SocialLinkRequiredException;
 import com.kh.app.member.exception.SocialWithdrawnUserException;
 import com.kh.app.member.repository.MemberRepository;
 import com.kh.app.member.repository.ProfileRepository;
@@ -59,42 +60,21 @@ public class KakaoAuthService {
         }
 
         // 3. DB 회원 검증 및 신규 유저 판단 플래그 세팅
-        Optional<MemberEntity> memberOpt = memberRepository.findMemberByUsername(email);
-        MemberEntity memberEntity;
+        Optional<SocialAccountEntity> socialOpt =
+                socialAccountRepository.findBySocialIdAndProvider(
+                        socialId,
+                        "KAKAO"
+                );
+        MemberEntity memberEntity =null;
         boolean isNewUser = false;
-
-        if (memberOpt.isEmpty()) {
-            // 신규 카카오 유저 가입 처리
-            memberEntity = new MemberEntity();
-            memberEntity.setUsername(email);
-            memberEntity.setPassword("");
-            memberRepository.save(memberEntity);
-
-            SocialAccountEntity newSocialEntity = new SocialAccountEntity();
-            newSocialEntity.setSocialId(socialId);
-            newSocialEntity.setMember(memberEntity);
-            newSocialEntity.setProvider("KAKAO");
-            socialAccountRepository.save(newSocialEntity);
-
-            isNewUser = true;
-        } else {
-            memberEntity = memberOpt.get();
-
-            if (memberEntity.getDeletedAt() != null) {
-                // 🌟 꼼수 문자열 더하기 대신, 예외 객체에 이메일을 다이렉트로 주입!
-                throw new SocialWithdrawnUserException("탈퇴 처리된 계정입니다.", email);
+        if (socialOpt.isPresent()) {
+            memberEntity = socialOpt.get().getMember();
+            if(memberEntity.getDeletedAt() != null){
+                throw new SocialWithdrawnUserException(
+                        "탈퇴 처리된 계정입니다.",
+                        email
+                );
             }
-
-            // 소셜 연동 데이터 누락 방어
-            Optional<SocialAccountEntity> socialOpt = socialAccountRepository.findBySocialIdAndProvider(socialId, "KAKAO");
-            if (socialOpt.isEmpty()) {
-                SocialAccountEntity newSocialEntity = new SocialAccountEntity();
-                newSocialEntity.setSocialId(socialId);
-                newSocialEntity.setMember(memberEntity);
-                newSocialEntity.setProvider("KAKAO");
-                socialAccountRepository.save(newSocialEntity);
-            }
-
             // 🚨 [수정 포인트 2] 기존 로그인 유저일 경우: 매번 로그인할 때마다 카카오 프로필 사진 최신화하기 🚀
             Optional<MemberProfileEntity> profileOpt = memberProfileRepository.findById(memberEntity.getId());
             if (profileOpt.isEmpty()) {
@@ -104,7 +84,35 @@ public class KakaoAuthService {
                 MemberProfileEntity memberProfile = profileOpt.get();
                 memberProfile.updateProfileImageUrl(profileImageUrl);
             }
+        }else {
+
+            Optional<MemberEntity> memberOpt =
+                    memberRepository.findMemberByUsername(email);
+
+            if (memberOpt.isEmpty()) {
+
+                memberEntity = new MemberEntity();
+                memberEntity.setUsername(email);
+                memberEntity.setPassword("");
+                memberRepository.save(memberEntity);
+
+                SocialAccountEntity newSocialEntity = new SocialAccountEntity();
+                newSocialEntity.setSocialId(socialId);
+                newSocialEntity.setMember(memberEntity);
+                newSocialEntity.setProvider("KAKAO");
+                socialAccountRepository.save(newSocialEntity);
+
+                isNewUser = true;
+
+            } else {
+                throw new SocialLinkRequiredException(
+                        email,
+                        socialId,
+                        "KAKAO"
+                );
+            }
         }
+
 
         // 4. 모래묻은 키보드 서비스 전용 JWT 토큰 발행
         String appAccessToken = jwtUtil.createJwt(
