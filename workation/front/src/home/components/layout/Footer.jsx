@@ -14,12 +14,9 @@ export default function Footer() {
               위해 디자인되었습니다.
             </Tagline>
 
-            {/* 기존 SocialRow를 삭제하고 아래 코드 삽입 */}
             <ContactRow>
               <ContactLabel>문의하기</ContactLabel>
-              <ContactEmail href={`mailto:${CONTACT_EMAIL}`}>
-                {CONTACT_EMAIL}
-              </ContactEmail>
+              <ContactEmail>{CONTACT_EMAIL}</ContactEmail>
             </ContactRow>
           </Brand>
 

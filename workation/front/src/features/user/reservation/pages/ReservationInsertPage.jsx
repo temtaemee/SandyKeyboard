@@ -9,6 +9,7 @@ import { ko } from 'date-fns/locale';
 import useReservationInsert from '../hooks/useReservationInsert';
 import { getAvailableCoupons, getBookedDates } from '../api/reservationApi';
 import { BANK_LIST } from '../bankData';
+import { getPublicStayDetail } from '../../destination/api/destinationApi';
 
 function ReservationInsertPage() {
   const clientKey = 'test_ck_5OWRapdA8djRAOLzPxRYVo1zEqZK';
@@ -17,7 +18,8 @@ function ReservationInsertPage() {
 
   const [coupons, setCoupons] = useState([]);
   const [excludeDates, setExcludeDates] = useState([]);
-  const [bookingStartDates, setBookingStartDates] = useState([]); // 예약 시작일들 저장용
+  const [bookingStartDates, setBookingStartDates] = useState([]);
+  const [stayDetail, setStayDetail] = useState(null);
 
   const [vo, setVo] = useState({
     couponId: '',
@@ -42,16 +44,25 @@ function ReservationInsertPage() {
 
         const datesResp = await getBookedDates(stayId);
 
+        // 💡 수정 포인트 1: getPublicStayDetail은 이미 response.data를 리턴하므로 바로 받습니다.
+        const stayData = await getPublicStayDetail(stayId);
+
+        setStayDetail(stayData);
+
+        // 💡 수정 포인트 2: 받아온 숙소의 기본 인원수(capacity)를 초기값으로 세팅합니다.
+        setVo((prev) => ({
+          ...prev,
+          guestCount: stayData.capacity || 1,
+        }));
+
         const parsedDates = [];
         const startDates = [];
 
         datesResp.data.forEach((range) => {
           let current = new Date(range.checkin);
           const end = new Date(range.checkout);
-
           startDates.push(new Date(range.checkin));
 
-          // 기존 예약 기간은 달력에서 막음 (체크아웃 당일은 선택 가능해야 하므로 < 로 유지)
           while (current < end) {
             parsedDates.push(new Date(current));
             current.setDate(current.getDate() + 1);
@@ -61,12 +72,14 @@ function ReservationInsertPage() {
         setBookingStartDates(startDates);
       } catch (err) {
         console.error('데이터 로딩 오류:', err);
+        if (err.response?.status === 404) {
+          alert('존재하지 않거나 비공개 처리된 숙소입니다.');
+        }
       }
     }
     initPageData();
   }, [stayId]);
 
-  // 체크인 날짜 이후의 가장 가까운 예약 시작일을 찾음
   const getNextAvailableLimit = (checkinDateStr) => {
     if (!checkinDateStr) return null;
     const checkin = new Date(checkinDateStr);
@@ -82,18 +95,23 @@ function ReservationInsertPage() {
     const { name, value } = e.target;
 
     if (name === 'refundAccountNumber') {
-      // 1. 숫자만 남기고 모두 제거
       let rawValue = value.replace(/[^0-9]/g, '');
-
-      // 2. 입력된 숫자에 하이픈 추가 (간단한 규칙: 3-4-4 형태 등 은행마다 다르므로 일반화)
-      // 여기서는 4자리마다 하이픈을 넣는 방식을 사용합니다 (예: 1234-5678-9012)
       let formattedValue = rawValue
         .replace(/(\d{4})(\d{4})(\d{0,4})/, '$1-$2-$3')
-        .replace(/-+$/, ''); // 마지막 하이픈 제거
+        .replace(/-+$/, '');
 
       setVo({ ...vo, [name]: formattedValue });
+    } else if (name === 'guestCount') {
+      // 💡 수정 포인트 3: 키보드로 숫자를 직접 크게 입력했을 때 maxCapa를 넘지 못하게 차단합니다.
+      let numValue = parseInt(value, 10);
+      const maxLimit = stayDetail ? stayDetail.maxCapa : 99;
+
+      if (numValue > maxLimit) {
+        alert(`최대 수용 인원은 ${maxLimit}명입니다.`);
+        numValue = maxLimit;
+      }
+      setVo({ ...vo, [name]: isNaN(numValue) ? '' : numValue });
     } else {
-      // 다른 입력값은 그대로 처리
       setVo({ ...vo, [name]: value });
     }
   }
@@ -119,27 +137,23 @@ function ReservationInsertPage() {
   async function handleSubmit(e) {
     e.preventDefault();
 
-    // 1. 필수 입력값 체크
     if (!vo.checkinDate || !vo.checkoutDate) {
       alert('날짜를 선택해 주세요.');
       return;
     }
 
-    // 2. 서버 전송용 데이터 준비 (하이픈 제거)
     const submitVo = {
       ...vo,
-      refundAccountNumber: vo.refundAccountNumber.replace(/-/g, ''), // 하이픈 제거
+      refundAccountNumber: vo.refundAccountNumber.replace(/-/g, ''),
     };
 
     try {
-      // 3. 서버로 데이터 전달
       const { reservationId, totalPrice } = await insertReservation(
         stayId,
-        submitVo, // 💡 정제된 데이터를 전달
+        submitVo,
         fileList
       );
 
-      // 4. 결제 요청
       await requestPayment(reservationId, totalPrice);
     } catch (err) {
       console.error('예약 에러:', err);
@@ -159,6 +173,7 @@ function ReservationInsertPage() {
       failUrl: `${window.location.origin}/payment/fail`,
     });
   }
+
   return (
     <Wrapper>
       <Container>
@@ -181,16 +196,25 @@ function ReservationInsertPage() {
                 ))}
               </Select>
             </InputGroup>
+
+            {/* 💡 수정 포인트 4: 인원 수 UI 안내 레이블 및 max 제한 적용 */}
             <InputGroup>
-              <Label>인원 수</Label>
+              <Label>
+                인원 수{' '}
+                {stayDetail &&
+                  `(기본 ${stayDetail.capacity}명 / 최대 ${stayDetail.maxCapa}명)`}
+              </Label>
               <Input
                 type="number"
                 name="guestCount"
                 min="1"
+                max={stayDetail ? stayDetail.maxCapa : undefined}
                 value={vo.guestCount}
                 onChange={handleChange}
+                required
               />
             </InputGroup>
+
             <InputGroup>
               <Label>대표 예약자 이름</Label>
               <Input
@@ -236,7 +260,6 @@ function ReservationInsertPage() {
                           )
                         : new Date(new Date().setDate(new Date().getDate() + 1))
                     }
-                    // 💡 2. 체크아웃은 다음 예약 시작일까지만 선택 가능
                     maxDate={getNextAvailableLimit(vo.checkinDate)}
                     placeholderText="체크아웃 선택"
                     required
@@ -299,12 +322,12 @@ function ReservationInsertPage() {
             <InputGroup>
               <Label>계좌번호</Label>
               <Input
-                type="text" // 💡 숫자와 하이픈이 포함되므로 text 유지
+                type="text"
                 name="refundAccountNumber"
-                placeholder="0000-0000-0000" // 💡 사용자가 형식을 알 수 있게 안내
+                placeholder="0000-0000-0000"
                 value={vo.refundAccountNumber}
                 onChange={handleChange}
-                maxLength="20" // 💡 계좌번호 최대 길이에 맞춰 제한
+                maxLength="20"
               />
             </InputGroup>
             <InputGroup>
@@ -365,18 +388,13 @@ function ReservationInsertPage() {
 
 export default ReservationInsertPage;
 
-/* ========================================================================= */
-/* Styled Components 확장 (DatePicker 가로 정렬 이슈 방지 랩퍼 추가) */
-/* ========================================================================= */
-
-// react-datepicker가 부모 block 요소를 다 채우지 못해 가로 배치가 찌그러지는 현상 방지용 랩퍼 추가
+/* Styled Components 스타일은 기존과 동일하므로 생략 */
 const DatePickerWrapper = styled.div`
   width: 100%;
   .react-datepicker-wrapper {
     width: 100%;
   }
 `;
-
 const StyledDatePicker = styled(DatePicker)`
   width: 100%;
   height: 54px;
@@ -387,15 +405,12 @@ const StyledDatePicker = styled(DatePicker)`
   font-size: 15px;
   color: #1a202c;
   transition: all 0.2s ease;
-
   &:focus {
     outline: none;
     border-color: #2c6480;
     box-shadow: 0 0 0 4px rgba(44, 100, 128, 0.12);
   }
 `;
-
-/* 기존 UI 스타일 코드 유지 */
 const Wrapper = styled.div`
   width: 100%;
   min-height: 100vh;
@@ -461,7 +476,6 @@ const Select = styled.select`
   background: #fff;
   font-size: 15px;
   color: #1a202c;
-
   &:focus {
     outline: none;
     border-color: #2c6480;
@@ -477,20 +491,17 @@ const Input = styled.input`
   font-size: 15px;
   color: #1a202c;
   transition: all 0.2s ease;
-
   &:focus {
     outline: none;
     border-color: #2c6480;
     box-shadow: 0 0 0 4px rgba(44, 100, 128, 0.12);
   }
-`; // 💡 닫는 백틱과 세미콜론이 누락되지 않도록 결합
-
+`;
 const FileBox = styled.div`
   display: flex;
   flex-direction: column;
   gap: 14px;
 `;
-
 const FileLabel = styled.label`
   width: fit-content;
   padding: 12px 20px;
@@ -500,16 +511,13 @@ const FileLabel = styled.label`
   font-weight: 600;
   cursor: pointer;
 `;
-
 const FileInput = styled.input`
   display: none;
 `;
-
 const FileText = styled.p`
   font-size: 14px;
   color: #718096;
 `;
-
 const SubmitButton = styled.button`
   width: 100%;
   height: 60px;
@@ -520,7 +528,6 @@ const SubmitButton = styled.button`
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
-
   &:hover {
     transform: translateY(-2px);
     background: #1e4559;
@@ -542,13 +549,11 @@ const CheckboxGroup = styled.div`
   font-size: 14px;
   color: #4a5568;
   cursor: pointer;
-
   input {
     width: 18px;
     height: 18px;
     cursor: pointer;
   }
-
   label {
     cursor: pointer;
   }
