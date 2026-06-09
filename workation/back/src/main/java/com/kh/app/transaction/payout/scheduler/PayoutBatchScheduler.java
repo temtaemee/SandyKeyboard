@@ -27,14 +27,9 @@ public class PayoutBatchScheduler {
     private final PayoutRepository payoutRepository;
     private final TaxInvoiceService taxInvoiceService;
 
-    /**
-     * 💡 매월 10일 새벽 2시에 지난달 누적 매출 데이터 배치 처리 가동
-     * 크론탭 표현식 구조: 초 분 시 일 월 요일
-     */
-    //매월10일 작동하는스케쥴러
-//    @Scheduled(cron = "0 0 2 10 * *")
-    //실행후 3초뒤 한번 작성
-    @Scheduled(initialDelay = 3000, fixedDelay = Long.MAX_VALUE)
+
+    @Scheduled(cron = "0 0 2 10 * *")  //매월10일 작동하는스케쥴러
+    @Scheduled(initialDelay = 3000, fixedDelay = Long.MAX_VALUE)   //실행후 3초뒤 한번 작성
     @Transactional
     public void runMonthlyPayoutAndInvoiceBatch() {
         log.info("============== [정기 정산 및 세금계산서 발행 배치 가동 시작] ==============");
