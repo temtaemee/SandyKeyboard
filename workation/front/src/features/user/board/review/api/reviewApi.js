@@ -243,3 +243,15 @@ export const updateReviewRating = (reviewId, rating) =>
 
 export const hideReview = (reviewId) =>
   api.put(`/admin/reviews/${reviewId}/hide`, {}).then((res) => res.data);
+
+// 댓글 숨김 처리 (admin)
+export const hideComment = (reviewId, commentId) =>
+  api
+    .put(`/admin/reviews/${reviewId}/comments/${commentId}/hide`)
+    .then((res) => res.data);
+
+// 댓글 숨김 해제 (admin)
+export const showComment = (reviewId, commentId) =>
+  api
+    .put(`/admin/reviews/${reviewId}/comments/${commentId}/show`)
+    .then((res) => res.data);
