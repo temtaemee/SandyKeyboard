@@ -15,7 +15,7 @@ public class LikeApiController {
     private final LikeService likeService;
 
     // 게시글 좋아요 토글
-    @PostMapping("/api/user/board/review/{reviewId}/like")
+    @PostMapping("/api/user/reviews/{reviewId}/like")
     public ResponseEntity<LikeRespDto> toggleReviewLike(
             @PathVariable Long reviewId,
             @AuthenticationPrincipal CustomUserDetails userDetails
@@ -29,7 +29,7 @@ public class LikeApiController {
     }
 
     // 게시글 좋아요 조회
-    @GetMapping("/api/public/board/review/{reviewId}/like")
+    @GetMapping("/api/public/reviews/{reviewId}/like")
     public ResponseEntity<LikeRespDto> getReviewLike(
             @PathVariable Long reviewId,
             @AuthenticationPrincipal CustomUserDetails userDetails
@@ -45,7 +45,7 @@ public class LikeApiController {
     }
 
     // 댓글 좋아요 토글
-    @PostMapping("/api/user/board/review/{reviewId}/comment/{commentId}/like")
+    @PostMapping("/api/user/reviews/{reviewId}/comments/{commentId}/like")
     public ResponseEntity<LikeRespDto> toggleCommentLike(
             @PathVariable Long commentId,
             @AuthenticationPrincipal CustomUserDetails userDetails
@@ -59,7 +59,7 @@ public class LikeApiController {
     }
 
     // 댓글 좋아요 조회
-    @GetMapping("/api/public/board/review/{reviewId}/comment/{commentId}/like")
+    @GetMapping("/api/public/reviews/{reviewId}/comments/{commentId}/like")
     public ResponseEntity<LikeRespDto> getCommentLike(
             @PathVariable Long commentId,
             @AuthenticationPrincipal CustomUserDetails userDetails

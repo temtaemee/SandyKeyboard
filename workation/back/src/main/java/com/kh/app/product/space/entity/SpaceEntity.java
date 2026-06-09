@@ -1,6 +1,7 @@
 package com.kh.app.product.space.entity;
 
 import com.kh.app.common.entity.BaseEntity;
+import com.kh.app.member.entity.MemberEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,7 +26,7 @@ public class SpaceEntity extends BaseEntity {
     @Column(length = 100 , nullable = false , unique = true)
     private String name;
 
-    @Column(length = 12 , nullable = false)
+    @Column(length = 13 , nullable = false)
     private String phone;
 
     @Column(nullable = false)
@@ -40,7 +41,7 @@ public class SpaceEntity extends BaseEntity {
     @Column(nullable = false)
     private String address1;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = true, length = 100)
     private String address2;
 
     // 위도: -90.0 ~ 90.0 (정수부 최대 2자리 + 소수점 7자리 = 9자리면 충분하지만 보통 10으로 맞춤)
@@ -53,15 +54,62 @@ public class SpaceEntity extends BaseEntity {
 
     @Column(nullable = false, length = 1)
     @Builder.Default
-    private String visibleYn = "N"; //기본 visible = n -> 상품 심사 통과시 Y로 수정해서 해당 space에 대한 권한을 열어줌
+    private String visibleYn = "N";
 
     @Enumerated(EnumType.STRING)
     @Column(name = "area", nullable = false)
     private Area area;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    @Builder.Default
+    private SpaceApprovalStatus approvalStatus = SpaceApprovalStatus.PENDING;
+
+    @Column(columnDefinition = "TEXT")
+    private String rejectionReason;
+
+    @Column
+    private java.time.LocalDateTime approvedAt;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean adminHidden = false;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "MEMBER_ID")
+    private MemberEntity seller;
 
     public void changeVisibleYn(String visibleYn) {
         this.visibleYn = visibleYn;
+    }
+
+    public void requestApproval() {
+        this.approvalStatus = SpaceApprovalStatus.PENDING;
+        this.rejectionReason = null;
+    }
+
+    public void approve() {
+        this.approvalStatus = SpaceApprovalStatus.APPROVED;
+        this.visibleYn = "Y";
+        this.rejectionReason = null;
+        this.approvedAt = java.time.LocalDateTime.now();
+        this.adminHidden = false;
+    }
+
+    public void reject(String reason) {
+        this.approvalStatus = SpaceApprovalStatus.REJECTED;
+        this.visibleYn = "N";
+        this.rejectionReason = reason;
+    }
+
+    public void hideByAdmin() {
+        this.visibleYn = "N";
+        this.adminHidden = true;
+    }
+
+    public void showByAdmin() {
+        this.visibleYn = "Y";
+        this.adminHidden = false;
     }
 
     public void update(String name, String phone, String email, String summary, String description,

@@ -5,7 +5,7 @@
 export const NAV_LINKS = [
   {
     label: '여행지',
-    path: `/resv`,
+    path: `/resv/destination`,
   },
   {
     label: '참여후기',
@@ -20,11 +20,22 @@ export const NAV_LINKS = [
     path: `/board/event`,
   },
 ];
-
 export const FOOTER_LINKS = {
-  제품: ['여행지', '업무 공간', '커뮤니티'],
-  회사: ['회사 소개', '인재 채용', '문의하기'],
+  여행: ['여행지', '참여후기', '고객지원', '이벤트'],
   '법적 고지': ['개인정보 처리방침', '이용 약관'],
+  커뮤니티: ['공지사항', '자주 묻는 질문'],
+};
+
+// 💡 여기에 추가
+export const PATH_MAP = {
+  여행지: '/resv/destination',
+  참여후기: '/board/review',
+  고객지원: '/board/support',
+  이벤트: '/board/event',
+  '개인정보 처리방침': '/privacy',
+  '이용 약관': '/terms',
+  공지사항: '/board/support/notice',
+  '자주 묻는 질문': '/faq',
 };
 
 /* ==========================================
@@ -49,45 +60,6 @@ export const FEATURES = [
     title: '글로벌 네트워킹',
     desc: '커뮤니티 이벤트를 통해 전 세계의 창작자, 개발자, 기업가들과 소통하세요.',
     icon: 'users',
-  },
-];
-
-export const RECOMMENDED_SPACES = [
-  {
-    id: 1,
-    title: '오션뷰 로프트',
-    location: '제주',
-    price: '₩120,000',
-    image:
-      'https://www.figma.com/api/mcp/asset/a304396a-5647-4798-8441-bb07ab29ef20',
-    tags: [
-      { label: '초고속 WIFI', type: 'blue' },
-      { label: '정숙 구역', type: 'yellow' },
-    ],
-  },
-  {
-    id: 2,
-    title: '트로피컬 디지털 노마드 허브',
-    location: '발리',
-    price: '₩85,000',
-    image:
-      'https://www.figma.com/api/mcp/asset/8f983209-cea7-4921-aaa9-0ced5c863812',
-    tags: [
-      { label: '커뮤니티 키친', type: 'blue' },
-      { label: '24/7 이용 가능', type: 'yellow' },
-    ],
-  },
-  {
-    id: 3,
-    title: '서퍼의 작업 공간',
-    location: '양양',
-    price: '₩95,000',
-    image:
-      'https://www.figma.com/api/mcp/asset/19b2ec05-4b2d-4232-8e55-53deef70fd29',
-    tags: [
-      { label: '인체공학 의자', type: 'blue' },
-      { label: '커피 바', type: 'yellow' },
-    ],
   },
 ];
 
@@ -125,3 +97,4 @@ export const COLLECTIONS = [
     size: 'small',
   },
 ];
+export const CONTACT_EMAIL = 'admin@sandkeyboard.com';

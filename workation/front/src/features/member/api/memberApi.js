@@ -45,11 +45,12 @@ export async function resetPassword(vo) {
     return resp.data;
 }
 
-
-
-
-
-
+export async function restoreAccount(vo) {
+    const resp = await api.post(`/guest/restore`, {
+        username: vo.username
+    });
+    return resp.data
+}
 
 
 
@@ -95,6 +96,15 @@ export async function banMember(memberId) {
 export async function unbanMember(memberId) {
     const resp = await api.patch(`/admin/member/${memberId}/unban`);
     return resp;
+}
+//셀러 본인 정보 불러오기
+export async function getSellerInfo() {
+    const resp = await api.get(`/seller/me`)
+    return resp.data;
+}
+export async function updateSellerInfo(vo) {
+    const resp = await api.put(`/seller/me`)
+    return resp.data;
 }
 
 

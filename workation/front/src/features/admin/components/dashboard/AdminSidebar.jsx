@@ -2,25 +2,41 @@
 import { NavLink } from 'react-router-dom';
 import styled from 'styled-components';
 import { ADMIN_NAV_ITEMS } from '../../data/adminDashboardConstants';
-import { BarChart2, Home, Bookmark, Users, FileText, DollarSign, HelpCircle, LogOut, List } from 'lucide-react';
+import {
+  BarChart2,
+  Home,
+  Bookmark,
+  Users,
+  FileText,
+  DollarSign,
+  HelpCircle,
+  LogOut,
+  List,
+} from 'lucide-react';
 
 const ICONS = {
-  chart:    <BarChart2 size={18} />,
-  home:     <Home size={18} />,
+  chart: <BarChart2 size={18} />,
+  home: <Home size={18} />,
   bookmark: <Bookmark size={18} />,
-  users:    <Users size={18} />,
-  file:     <FileText size={18} />,
-  coin:     <DollarSign size={18} />,
-  support:  <HelpCircle size={18} />,
-  logout:   <LogOut size={18} />,
-  board:    <List size={18} />,
+  users: <Users size={18} />,
+  file: <FileText size={18} />,
+  coin: <DollarSign size={18} />,
+  support: <HelpCircle size={18} />,
+  logout: <LogOut size={18} />,
+  board: <List size={18} />,
 };
 
 export default function AdminSidebar() {
+  const handleLogout = () => {
+    localStorage.removeItem('accessToken');
+    // alert(`로그아웃 되었습니다.. !`);
+    window.location.href = '/home';
+  };
+
   return (
     <Aside>
       {/* 로고 */}
-      <LogoArea>
+      <LogoArea to="/admin/dashboard">
         <LogoIcon>
           <svg width="15" height="10.5" viewBox="0 0 20 11" fill="none">
             <rect width="20" height="3" rx="1.5" fill="white" />
@@ -29,7 +45,7 @@ export default function AdminSidebar() {
           </svg>
         </LogoIcon>
         <LogoText>
-          <LogoTitle>모래 덮인 키보드</LogoTitle>
+          <LogoTitle>모래 묻은 키보드</LogoTitle>
           <LogoSub>워케이션 관리자</LogoSub>
         </LogoText>
       </LogoArea>
@@ -47,7 +63,7 @@ export default function AdminSidebar() {
       {/* 하단 메뉴 */}
       <BottomNav>
         <Divider />
-        <BottomItem to="/admin/logout">
+        <BottomItem onClick={handleLogout}>
           <IconWrap>{ICONS.logout}</IconWrap>
           <NavLabel>로그아웃</NavLabel>
         </BottomItem>
@@ -72,11 +88,12 @@ const Aside = styled.aside`
   z-index: 50;
 `;
 
-const LogoArea = styled.div`
+const LogoArea = styled(NavLink)`
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 0 24px 32px;
+  cursor: pointer;
 `;
 
 const LogoIcon = styled.div`

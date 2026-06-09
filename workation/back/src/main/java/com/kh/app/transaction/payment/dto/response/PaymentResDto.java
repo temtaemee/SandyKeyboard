@@ -18,15 +18,15 @@ public class PaymentResDto {
 
     private PaymentMethod paymentMethod;
 
-    private Long paymentAmount;
+    private Long amount;
 
-    private PaymentStatus paymentStatus;
+    private PaymentStatus status;
 
-    private String pgProvider;
+    private String orderId;
 
-    private String pgTid;
+    private String paymentKey;
 
-    private LocalDateTime paidAt;
+    private LocalDateTime approvedAt;
 
     private LocalDateTime createdAt;
 
@@ -38,11 +38,11 @@ public class PaymentResDto {
                 .paymentId(payment.getId())
                 .reservationId(payment.getReservation().getId())
                 .paymentMethod(payment.getPaymentMethod())
-                .paymentAmount(payment.getPaymentAmount())
-                .paymentStatus(payment.getPaymentStatus())
-                .pgProvider(payment.getPgProvider())
-                .pgTid(payment.getPgTid())
-                .paidAt(payment.getPaidAt())
+                .amount(payment.getAmount())
+                .status(payment.getStatus())
+                .orderId(payment.getOrderId())
+                .paymentKey(payment.getPaymentKey())
+                .approvedAt(payment.getApprovedAt())
                 .createdAt(payment.getCreatedAt())
                 .build();
     }

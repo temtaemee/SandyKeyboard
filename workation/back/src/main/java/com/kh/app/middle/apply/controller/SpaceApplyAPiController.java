@@ -4,13 +4,18 @@ import com.kh.app.middle.apply.dto.req.SpaceApplyPermitReqDto;
 import com.kh.app.middle.apply.dto.req.SpaceApplyReqDto;
 import com.kh.app.middle.apply.dto.resp.SpaceApplyRespDto;
 import com.kh.app.middle.apply.service.SpaceApplyService;
+import com.kh.app.security.user.CustomUserDetails;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "SpaceApply", description = "공간 심사 신청 API")
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
@@ -18,7 +23,7 @@ public class SpaceApplyAPiController {
 
     private final SpaceApplyService spaceApplyService;
 
-    // 심사 신청
+    @Operation(summary = "심사 신청", description = "판매자가 공간 심사를 신청합니다.")
     @PostMapping("/seller/spaces/enroll")
     public ResponseEntity<Void> enroll(@RequestBody SpaceApplyReqDto dto) {
         String name = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -26,20 +31,23 @@ public class SpaceApplyAPiController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    // 리스트 불러오기
+    @Operation(summary = "심사 신청 목록 조회", description = "심사 신청 목록을 페이지 단위로 조회합니다.")
     @GetMapping("/seller/spaces/list")
-    public ResponseEntity<Page<SpaceApplyRespDto>> getApplyList(@RequestParam(defaultValue = "0") int pno) {
-        Page<SpaceApplyRespDto> list = spaceApplyService.getApplyList(pno);
+    public ResponseEntity<Page<SpaceApplyRespDto>> getApplyList(@RequestParam(defaultValue = "0") int pno,  @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long memberId = userDetails.getUserVo().getId();
+        boolean isAdmin = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ADMIN"));
+
+        Page<SpaceApplyRespDto> list = spaceApplyService.getApplyList(pno, memberId, isAdmin);
         return ResponseEntity.ok(list);
     }
 
-    // 심사
+    @Operation(summary = "심사 승인/거절 (관리자)", description = "관리자가 공간 심사를 승인하거나 거절합니다.")
     @PostMapping("/admin/spaces/{applyId}")
     public ResponseEntity<Object> permit(
             @PathVariable Long applyId,
-            @RequestBody SpaceApplyPermitReqDto dto  // status만 담겨있음
+            @RequestBody SpaceApplyPermitReqDto dto
     ) {
-//         applyId로 SPACE_APPLY 조회 → spaceId는 서비스에서 꺼냄
         spaceApplyService.update(applyId, dto);
         return ResponseEntity.status(HttpStatus.OK).build();
     }

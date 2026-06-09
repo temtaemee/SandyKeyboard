@@ -1,5 +1,6 @@
 package com.kh.app.product.space.dto.request;
 
+import com.kh.app.member.entity.MemberEntity;
 import com.kh.app.product.space.entity.Area;
 import com.kh.app.product.space.entity.SpaceEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -43,8 +44,7 @@ public class SpaceInsertReqDto {
     @NotBlank
     private String address1;
 
-    @Schema(description = "상세 주소", example = "123-45")
-    @NotBlank
+    @Schema(description = "상세 주소 (선택)", example = "123-45")
     private String address2;
 
     @Schema(description = "위도", example = "33.4996213")
@@ -57,14 +57,13 @@ public class SpaceInsertReqDto {
     @NotNull
     private Area area;
 
-    @Schema(description = "판매자 신청 ID")
-    private Long applyId;
-
     @Schema(description = "편의시설 ID 목록 (arcade 테이블에 존재하는 ID만 허용)", example = "[]")
     private List<Long> arcadeIdList;
 
-    public SpaceEntity toEntity() {
+    @Schema(description = "사진 메타데이터 목록 (files 배열과 인덱스 순서 일치 필수)")
+    private List<PictureMetaReqDto> pictureList;
 
+    public SpaceEntity toEntity(MemberEntity seller) {
         return SpaceEntity.builder()
                 .name(name)
                 .phone(phone)
@@ -77,6 +76,7 @@ public class SpaceInsertReqDto {
                 .longitude(longitude)
                 .area(area)
                 .visibleYn("N")
+                .seller(seller)
                 .build();
     }
 

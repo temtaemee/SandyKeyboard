@@ -9,6 +9,7 @@ import com.kh.app.notification.entity.NotificationEntity;
 import com.kh.app.notification.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +22,7 @@ import java.util.List;
 public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final MemberRepository memberRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Transactional
     public void createNotification(NotificationCreateReqDto createReqDto){
@@ -35,6 +37,14 @@ public class NotificationService {
                 .referenceId(createReqDto.getReferenceId())
                 .build();
         notificationRepository.save(notification);
+        // 2. DB 저장 후, 실시간으로 특정 회원에게 STOMP 메시지 발행
+        // 리액트에 맞게 DTO로 변환하여 보냅니다.
+        NotificationRespDto respDto = NotificationRespDto.from(notification);
+        String destination = "/topic/notifications/" + createReqDto.getMemberId();
+
+        log.info("실시간 알림 전송 대상: {}, 경로: {}", createReqDto.getMemberId(), destination);
+        messagingTemplate.convertAndSend(destination, respDto);
+
     }
 
     public List<NotificationRespDto> getNotificationList(Long memberId) {

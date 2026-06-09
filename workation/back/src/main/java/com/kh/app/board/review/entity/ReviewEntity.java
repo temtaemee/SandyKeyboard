@@ -2,6 +2,8 @@ package com.kh.app.board.review.entity;
 
 import com.kh.app.common.entity.BaseEntity;
 import com.kh.app.member.entity.MemberEntity;
+import com.kh.app.product.space.entity.SpaceEntity;
+import com.kh.app.transaction.reservation.entity.ReservationEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -20,6 +22,15 @@ public class ReviewEntity extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(nullable = false)
     private MemberEntity member;
+
+    // 예약 FK 추가
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reservation_id", nullable = false)
+    private ReservationEntity reservation;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "space_id", nullable = false)
+    private SpaceEntity space;
 
     @Column(length = 200, nullable = false)
     private String title;

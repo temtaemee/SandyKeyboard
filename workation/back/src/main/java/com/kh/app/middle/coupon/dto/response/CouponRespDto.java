@@ -18,6 +18,7 @@ public class CouponRespDto {
     private Integer validDays;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String delYn;
 
     public static CouponRespDto from(CouponEntity entity) {
         return CouponRespDto.builder()
@@ -30,6 +31,7 @@ public class CouponRespDto {
                 .validDays(entity.getValidDays())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
+                .delYn(entity.getDelYn())
                 .build();
     }
 }

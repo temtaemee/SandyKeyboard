@@ -1,9 +1,5 @@
 package com.kh.app.transaction.payment.dto.request;
 
-import com.kh.app.transaction.payment.entity.PaymentEntity;
-import com.kh.app.transaction.payment.enums.PaymentMethod;
-import com.kh.app.transaction.payment.enums.PaymentStatus;
-import com.kh.app.transaction.reservation.entity.ReservationEntity;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,25 +7,12 @@ import lombok.Setter;
 @Setter
 public class PaymentCreateReqDto {
 
-    private Long reservationId;
+    // 예약 번호
+    private Long reservationNo;
 
-    private PaymentMethod paymentMethod;
+    // 주문 번호
+    private String orderId;
 
+    // 결제 금액
     private Long amount;
-
-    private String pgProvider;
-
-
-    public PaymentEntity toEntity(
-            ReservationEntity reservation
-    ) {
-
-        return PaymentEntity.builder()
-                .reservation(reservation)
-                .paymentMethod(paymentMethod)
-                .paymentAmount(amount)
-                .paymentStatus(PaymentStatus.PENDING)
-                .pgProvider(pgProvider)
-                .build();
-    }
 }

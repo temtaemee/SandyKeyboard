@@ -1,63 +1,189 @@
+// src/features/admin/hooks/useAdminBoard.js
 import { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   getAdminBoardPosts,
-  updatePostPinStatus,
+  getCouponList,
+  updateCoupon,
+  deleteCoupon,
+  createCoupon,
+  createAdminBoardPost,
+  updateAdminBoardPost,
   deleteAdminBoardPost,
+  faqList,
+  faqCreate,
+  faqUpdate,
+  faqDelete,
 } from '../api/adminBoardApi';
-import { BOARD_POSTS } from '../data/adminBoardData';
+import {
+  updatePostsForTab,
+  updatePostInTab,
+  deletePostFromTab,
+  setLoading,
+  setError,
+} from '../store/adminBoardSlice';
 
-export default function useAdminBoard(activeTab) {
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+/**
+ * 게시판 관리(공지사항, FAQ, 리뷰, 이벤트, 쿠폰 등)의 전체적인 서버 데이터 조회 및 변경 흐름을 통제하는 전용 훅입니다.
+ *
+ * @param {string} activeTab - 현재 활성화된 탭 이름
+ * @param {number} currentPage - 현재 활성화된 페이지 번호 (1-based)
+ * @returns {Object} 게시글 목록, 고정 상태, API 처리 상태 및 비즈니스 액션 함수들
+ */
+export default function useAdminBoard(activeTab, currentPage = 1) {
+  const dispatch = useDispatch();
+  const {
+    posts: allPosts,
+    loading,
+    error,
+  } = useSelector((state) => state.admin.board);
 
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+
+  // ─── 1. 조회(GET) 비동기 처리 함수 ───
   useEffect(() => {
     if (!activeTab) return;
-    setLoading(true);
+
+    dispatch(setLoading(true));
+    dispatch(setError(null));
 
     const fetchPosts = async () => {
       try {
-        const res = await getAdminBoardPosts(activeTab);
-        setPosts(res.data);
+        let resp;
+        const apiPage = currentPage - 1; // 백엔드 Spring Page는 0-based
+        if (activeTab === '쿠폰') {
+          resp = await getCouponList(apiPage);
+        } else if (activeTab === '공지사항') {
+          // 공지사항인 경우 백엔드 공지조회 API 호출 (page 파라미터 연동 가능)
+          resp = await getAdminBoardPosts(apiPage);
+        } else if (activeTab === 'FAQ') {
+          resp = await faqList();
+        } else {
+          resp = { data: [] };
+        }
+
+        // JPA Page 객체와 Mock 배열 통일성 확보를 위한 방어 로직
+        const postsArray = Array.isArray(resp.data)
+          ? resp.data
+          : resp.data.content || [];
+
+        // 페이징 메타데이터 파싱
+        if (resp.data && !Array.isArray(resp.data)) {
+          setTotalPages(resp.data.totalPages ?? 1);
+          setTotalElements(resp.data.totalElements ?? 0);
+        } else if (Array.isArray(resp.data)) {
+          setTotalElements(resp.data.length);
+          setTotalPages(Math.ceil(resp.data.length / 10) || 1);
+        }
+
+        dispatch(updatePostsForTab({ tab: activeTab, posts: postsArray }));
       } catch (err) {
         console.error(err);
-        setPosts(BOARD_POSTS[activeTab] || []);
+        dispatch(setError(err.message));
       } finally {
-        setLoading(false);
+        dispatch(setLoading(false));
       }
     };
 
     fetchPosts();
-  }, [activeTab]);
+  }, [dispatch, activeTab, currentPage]);
 
-  const togglePin = async (postId, currentlyPinned) => {
-    // API 성공 전에 먼저 UI 반영 (빠른 응답감)
-    setPosts((prev) =>
-      prev.map((p) =>
-        p.id === postId ? { ...p, isFixed: !currentlyPinned } : p
-      )
-    );
+  // ─── 2. 수정(PUT/POST) 비동기 처리 함수 ───
+  const updatePost = async (postId, changes) => {
+    dispatch(setLoading(true));
     try {
-      await updatePostPinStatus(postId, !currentlyPinned);
+      if (activeTab === '쿠폰') {
+        await updateCoupon(postId, changes);
+      } else if (activeTab === '공지사항') {
+        // 백엔드 파일 업로드 API 보강 전까지 기존의 안전한 DTO JSON 전송방식으로 복구
+        await updateAdminBoardPost(postId, changes);
+      } else if (activeTab === 'FAQ') {
+        await faqUpdate(postId, changes);
+      }
+      dispatch(updatePostInTab({ tab: activeTab, postId, changes }));
     } catch (err) {
-      console.error(err);
-      // 실패 시 롤백
-      setPosts((prev) =>
-        prev.map((p) =>
-          p.id === postId ? { ...p, isFixed: currentlyPinned } : p
-        )
-      );
+      dispatch(setError(err.message));
+    } finally {
+      dispatch(setLoading(false));
     }
   };
 
+  // ─── 3. 삭제(DELETE) 비동기 처리 함수 ───
   const deletePost = async (postId) => {
+    dispatch(setLoading(true));
     try {
-      await deleteAdminBoardPost(postId);
-      setPosts((prev) => prev.filter((p) => p.id !== postId));
+      if (activeTab === '쿠폰') {
+        await deleteCoupon(postId);
+        dispatch(deletePostFromTab({ tab: activeTab, postId }));
+      } else if (activeTab === '공지사항') {
+        await deleteAdminBoardPost(postId);
+        // 삭제 성공 후 목록에 유지하기 위해 최신 어드민 목록을 재조회하여 화면 갱신
+        const resp = await getAdminBoardPosts(0);
+        const postsArray = Array.isArray(resp.data)
+          ? resp.data
+          : resp.data.content || [];
+        dispatch(updatePostsForTab({ tab: '공지사항', posts: postsArray }));
+      } else if (activeTab === 'FAQ') {
+        await faqDelete(postId);
+        dispatch(deletePostFromTab({ tab: activeTab, postId }));
+      }
     } catch (err) {
-      console.error(err);
+      dispatch(setError(err.message));
+    } finally {
+      dispatch(setLoading(false));
     }
   };
 
-  return { posts, loading, error, togglePin, deletePost };
+  // ─── 4. 등록(POST) 비동기 처리 함수 ───
+  const createPost = async (data) => {
+    dispatch(setLoading(true));
+    try {
+      if (activeTab === '쿠폰') {
+        await createCoupon(data);
+        // 등록 후 화면 데이터 동기화를 위해 재조회
+        const resp = await getCouponList();
+        const postsArray = Array.isArray(resp.data)
+          ? resp.data
+          : resp.data.content || [];
+
+        dispatch(updatePostsForTab({ tab: '쿠폰', posts: postsArray }));
+      } else if (activeTab === '공지사항') {
+        await createAdminBoardPost(data);
+        // 등록 후 화면 데이터 동기화를 위해 재조회
+        const resp = await getAdminBoardPosts(0);
+        const postsArray = Array.isArray(resp.data)
+          ? resp.data
+          : resp.data.content || [];
+
+        dispatch(updatePostsForTab({ tab: '공지사항', posts: postsArray }));
+      } else if (activeTab === 'FAQ') {
+        await faqCreate(data);
+        // 등록 후 화면 데이터 동기화를 위해 재조회
+        const resp = await faqList();
+        const postsArray = Array.isArray(resp.data)
+          ? resp.data
+          : resp.data.content || [];
+
+        dispatch(updatePostsForTab({ tab: 'FAQ', posts: postsArray }));
+      }
+    } catch (err) {
+      dispatch(setError(err.message));
+    } finally {
+      dispatch(setLoading(false));
+    }
+  };
+
+  const posts = allPosts[activeTab] || [];
+
+  return {
+    posts,
+    loading,
+    error,
+    totalPages,
+    totalElements,
+    updatePost,
+    deletePost,
+    createPost,
+  };
 }

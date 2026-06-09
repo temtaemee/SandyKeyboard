@@ -9,7 +9,7 @@ import lombok.*;
 @Table(name = "MEMBER_PROFILE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@AllArgsConstructor
 @Builder
 public class MemberProfileEntity {
 
@@ -39,16 +39,42 @@ public class MemberProfileEntity {
     @Column(name = "EMAIL", length = 50)
     private String email;
 
+    // MemberProfileEntity.java 예시
+    @Column(name = "ZONECODE")
+    private String zonecode; // 우편번호는 5자리라 기본값으로 충분합니다.
+
+    @Column(name = "ADDRESS", length = 500) // 주소가 길어질 것을 대비해 넉넉하게 늘려줍니다.
+    private String address;
+
+    @Column(name = "ADDRESS_DETAIL", length = 500)
+    private String addressDetail;
+
+    @Column(name = "PROFILE_IMAGE_URL", length = 500)
+    private String profileImageUrl;
+
     public void updateProfile(
             String name,
             String phone,
             String email,
-            Area preferredArea
+            Area preferredArea,
+            String zonecode,
+            String address,
+            String addressDetail
     ) {
         this.name = name;
         this.phone = phone;
         this.email = email;
         this.preferredArea = preferredArea;
+        this.zonecode = zonecode;
+        this.address = address;
+        this.addressDetail = addressDetail;
     }
 
+    public void assignCompany(CompanyEntity company){
+        this.company = company;
+    }
+
+    public void updateProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+    }
 }

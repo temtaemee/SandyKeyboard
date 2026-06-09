@@ -11,8 +11,10 @@ import java.util.Optional;
 @Repository
 public interface NoticeRepository extends JpaRepository<NoticeEntity, Long> {
 
-    // 페이징 목록 조회
-    Page<NoticeEntity> findAllByDelYnOrderByCreatedAtDesc(String delYn, Pageable pageable);
-
+    // 일반 사용자용 - 고정글 상단, 최신순
+    Page<NoticeEntity> findAllByDelYnOrderByPinYnDescCreatedAtDesc(String delYn, Pageable pageable);
     Optional<NoticeEntity> findByIdAndDelYn(Long id, String delYn);
+
+    // admin용 - 고정글 상단, 최신순 (delYn 조건 없이 전체)
+    Page<NoticeEntity> findAllByOrderByPinYnDescCreatedAtDesc(Pageable pageable);
 }

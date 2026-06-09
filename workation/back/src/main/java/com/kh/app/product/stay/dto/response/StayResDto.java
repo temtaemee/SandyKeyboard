@@ -11,11 +11,13 @@ import java.time.LocalTime;
 import java.util.List;
 
 @Getter
-@Builder
+@Builder(toBuilder = true)
 public class StayResDto {
 
     private Long id;
     private Long spaceId;
+    private String spaceName;
+    private String spaceVisibleYn;
     private String name;
     private String summary;
     private String description;
@@ -37,6 +39,8 @@ public class StayResDto {
     private List<PictureInfo> pictures;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    // null: 날짜 미지정, "Y": 예약 가능, "N": 해당 기간 예약 불가
+    private String availableYn;
 
     @Getter
     @Builder
@@ -50,10 +54,42 @@ public class StayResDto {
         private Long fileSize;
     }
 
+    public static StayResDto from(StayEntity entity, List<StayOption> options, List<PictureInfo> prebuiltPictures, boolean dummy) {
+        return StayResDto.builder()
+                .id(entity.getId())
+                .spaceId(entity.getSpace().getId())
+                .spaceName(entity.getSpace().getName())
+                .spaceVisibleYn(entity.getSpace().getVisibleYn())
+                .name(entity.getName())
+                .summary(entity.getSummary())
+                .description(entity.getDescription())
+                .capacity(entity.getCapacity())
+                .maxCapa(entity.getMaxCapa())
+                .visibleYn(entity.getVisibleYn())
+                .workationYn(entity.getWorkationYn())
+                .checkInTime(entity.getCheckInTime())
+                .checkOutTime(entity.getCheckOutTime())
+                .monPrice(entity.getMonPrice())
+                .tuePrice(entity.getTuePrice())
+                .wedPrice(entity.getWedPrice())
+                .thuPrice(entity.getThuPrice())
+                .friPrice(entity.getFriPrice())
+                .satPrice(entity.getSatPrice())
+                .sunPrice(entity.getSunPrice())
+                .holidayPrice(entity.getHolidayPrice())
+                .options(options)
+                .pictures(prebuiltPictures)
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .build();
+    }
+
     public static StayResDto from(StayEntity entity, List<StayOption> options, List<StayPictureEntity> pictures) {
         return StayResDto.builder()
                 .id(entity.getId())
                 .spaceId(entity.getSpace().getId())
+                .spaceName(entity.getSpace().getName())
+                .spaceVisibleYn(entity.getSpace().getVisibleYn())
                 .name(entity.getName())
                 .summary(entity.getSummary())
                 .description(entity.getDescription())

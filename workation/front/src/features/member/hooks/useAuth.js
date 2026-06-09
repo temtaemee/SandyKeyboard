@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import api from '../../../app/api/axios';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 function useAuth() {
+    const navigate = useNavigate();
+    const location = useLocation();
     const [memberInfo, setMemberInfo] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -9,6 +12,10 @@ function useAuth() {
         const fetchMember = async () => {
             const token = localStorage.getItem('accessToken');
 
+            if (location.pathname === '/join' || location.pathname.startsWith('/oauth/callback')) {
+                setLoading(false);
+                return;
+            }
             if (!token) {
                 setLoading(false);
                 return;
@@ -30,7 +37,7 @@ function useAuth() {
         };
 
         fetchMember();
-    }, []);
+    }, [location.pathname]);
 
     return {
         memberInfo,

@@ -1,10 +1,10 @@
 package com.kh.app.company.entity;
 
 import com.kh.app.common.entity.BaseEntity;
+import com.kh.app.company.dto.req.CompanyCreateReqDto;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "COMPANY")
@@ -24,13 +24,14 @@ public class CompanyEntity extends BaseEntity {
     @Column(name = "BUSINESS_NO", length = 50)
     private String businessNo;
 
-    @Column(name = "DEL_YN", length = 1, nullable = false)
-    private String delYn;
-
-
-    @PrePersist
-    public void prePersist() {
-        delYn = "N";
-        createdAt = LocalDateTime.now();
+    public void update(CompanyCreateReqDto dto) {
+        this.companyName = dto.getCompanyName();
+        this.businessNo = dto.getBusinessNo();
     }
+
+    public void toggleStatus() {
+        this.delYn = "Y".equals(this.delYn) ? "N" : "Y";
+    }
+
+
 }

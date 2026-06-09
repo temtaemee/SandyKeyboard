@@ -5,6 +5,7 @@ import com.kh.app.board.review.entity.ReviewImageEntity;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -20,6 +21,11 @@ public class ReviewListRespDto {
     private Integer rating;
     private LocalDateTime createdAt;
     private List<ImageDto> images;
+
+    // 다녀온 곳 정보 추가
+    private String stayName;
+    private LocalDate checkinDate;
+    private LocalDate checkoutDate;
 
     // 이미지 정보
     @Getter
@@ -40,6 +46,15 @@ public class ReviewListRespDto {
 
     // 이미지 없이 목록만 만들 때
     public static ReviewListRespDto from(ReviewEntity entity) {
+        String stayName = null;
+        LocalDate checkin = null;
+        LocalDate checkout = null;
+        if (entity.getReservation() != null && entity.getReservation().getStay() != null) {
+            stayName = entity.getReservation().getStay().getName();
+            checkin = entity.getReservation().getCheckinDate();
+            checkout = entity.getReservation().getCheckoutDate();
+        }
+
         return ReviewListRespDto.builder()
                 .id(entity.getId())
                 .title(entity.getTitle())
@@ -48,12 +63,24 @@ public class ReviewListRespDto {
                 .writer(entity.getMember().getUsername())
                 .rating(entity.getRating())
                 .createdAt(entity.getCreatedAt())
+                .stayName(stayName)
+                .checkinDate(checkin)
+                .checkoutDate(checkout)
                 .images(List.of())
                 .build();
     }
 
     // 이미지 포함 버전
     public static ReviewListRespDto from(ReviewEntity entity, List<ReviewImageEntity> images) {
+        String stayName = null;
+        LocalDate checkin = null;
+        LocalDate checkout = null;
+        if (entity.getReservation() != null && entity.getReservation().getStay() != null) {
+            stayName = entity.getReservation().getStay().getName();
+            checkin = entity.getReservation().getCheckinDate();
+            checkout = entity.getReservation().getCheckoutDate();
+        }
+
         return ReviewListRespDto.builder()
                 .id(entity.getId())
                 .title(entity.getTitle())
@@ -62,6 +89,9 @@ public class ReviewListRespDto {
                 .writer(entity.getMember().getUsername())
                 .rating(entity.getRating())
                 .createdAt(entity.getCreatedAt())
+                .stayName(stayName)
+                .checkinDate(checkin)
+                .checkoutDate(checkout)
                 .images(images.stream().map(ImageDto::from).toList())
                 .build();
     }

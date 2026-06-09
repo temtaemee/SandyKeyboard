@@ -5,6 +5,7 @@ import com.kh.app.product.stay.entity.StayOption;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Getter
@@ -26,4 +27,11 @@ public class StaySearchReqDto {
     private Integer capacity;
 
     private List<StayOption> options;
+
+    private String visibleYn;
+    private String delYn;
+
+    // availableYn 계산용 (필터링 아님)
+    private LocalDate startDate;
+    private LocalDate endDate;
 }

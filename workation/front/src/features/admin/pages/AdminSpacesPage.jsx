@@ -1,98 +1,83 @@
 // src/features/admin/pages/AdminSpacesPage.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Home, CheckCircle, AlertTriangle, EyeOff, X } from 'lucide-react';
 import AdminSearchInput from '../components/common/AdminSearchInput';
-import {
-  SPACES_TOTAL,
-  SPACES_TOTAL_PAGES,
-  SPACES_LIST,
-  PENDING_SPACES,
-} from '../data/adminSpacesData';
 import usePagination from '../hooks/usePagination';
 import AdminPagination from '../components/common/AdminPagination';
 import ConfirmModal from '../components/common/ConfirmModal';
-import Toggle from '../components/common/Toggle'; // 활성/정지 토글 공통 컴포넌트
+import Toggle from '../components/common/Toggle';
 import {
   ModalOverlay,
   ModalContent,
   ModalHeader,
   ModalCloseBtn,
-} from '../components/common/AdminModal.styles'; // 모달 공통 스타일
+} from '../components/common/AdminModal.styles';
+import useAdminSpaces from '../hooks/useAdminSpaces';
+import useAdminSpacesUI from '../hooks/useAdminSpacesUI';
+import { getStaysBySpaceId, changeSpaceVisible, getAdminSpaces } from '../api/adminSpacesApi';
 
 
 export default function AdminSpacesPage() {
   const { currentPage, goToPage } = usePagination();
-  const [spaces, setSpaces] = useState(SPACES_LIST);
-  const [blindedIds, setBlindedIds] = useState({});
-  const [blindConfirmTarget, setBlindConfirmTarget] = useState(null);
 
-  // 승인 대기 / 거절 관련 상태
-  const [pendingSpaces, setPendingSpaces] = useState(PENDING_SPACES);
-  const [rejectedSpaces, setRejectedSpaces] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalTab, setModalTab] = useState('pending'); // 'pending' | 'rejected'
-  const [selectedIds, setSelectedIds] = useState([]);
+  const [deletedSpaces, setDeletedSpaces] = useState([]);
+  const [isDeletedModalOpen, setIsDeletedModalOpen] = useState(false);
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('전체');
+  useEffect(() => {
+    getAdminSpaces({ delYn: 'Y' })
+      .then(res => setDeletedSpaces(Array.isArray(res.data) ? res.data : []))
+      .catch(() => setDeletedSpaces([]));
+  }, []);
 
-  const isBlinded = (space) => blindedIds[space.id] ?? false;
+  const {
+    spaces,
+    pendingSpaces,
+    rejectedSpaces,
+    loading,
+    refetch,
+    approveSpaces,
+    rejectSpaces,
+    optimisticToggleVisible,
+  } = useAdminSpaces();
 
-  const filteredSpaces = spaces.filter((space) => {
-    const matchesSearch = space.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const blinded = isBlinded(space);
-    const matchesStatus =
-      statusFilter === '전체' ? true :
-      statusFilter === '공개' ? !blinded :
-      blinded;
-    return matchesSearch && matchesStatus;
+  // 통합 UI 훅 도입으로 모달, 비동기 Stay 목록, 다중 선택 등의 useState 제거 및 비즈니스 로직 격리
+  const {
+    searchQuery,
+    setSearchQuery,
+    statusFilter,
+    setStatusFilter,
+    spaces: filteredSpaces,
+    visibleConfirmTarget,
+    setVisibleConfirmTarget,
+    handleVisibleClick,
+    handleVisibleConfirm,
+    isModalOpen,
+    setIsModalOpen,
+    modalTab,
+    setModalTab,
+    selectedIds,
+    toggleSelect,
+    handleApproveSelected,
+    handleRejectSelected,
+    currentModalList,
+    selectedSpace,
+    spaceStays,
+    stayLoading,
+    isStayModalOpen,
+    setIsStayModalOpen,
+    handleSpaceClick,
+  } = useAdminSpacesUI({
+    spaces,
+    pendingSpaces,
+    rejectedSpaces,
+    refetch,
+    approveSpaces,
+    rejectSpaces,
+    optimisticToggleVisible,
+    getStaysBySpaceId,
+    changeSpaceVisible,
   });
-
-  const handleBlindClick = (space) => {
-    setBlindConfirmTarget({ id: space.id, name: space.name, willBlind: !isBlinded(space) });
-  };
-
-  const handleBlindConfirm = () => {
-    if (!blindConfirmTarget) return;
-    setBlindedIds((prev) => ({ ...prev, [blindConfirmTarget.id]: blindConfirmTarget.willBlind }));
-    setBlindConfirmTarget(null);
-  };
-
-  const toggleSelect = (id) => {
-    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
-  };
-
-  const handleApproveSelected = () => {
-    const listToProcess = modalTab === 'pending' ? pendingSpaces : rejectedSpaces;
-    const toApprove = listToProcess.filter(s => selectedIds.includes(s.id));
-    
-    // 승인된 항목들을 메인 리스트로 이동
-    setSpaces(prev => [...toApprove.map(s => ({ ...s, status: 'active' })), ...prev]);
-    
-    // 기존 리스트에서 제거
-    if (modalTab === 'pending') {
-      setPendingSpaces(prev => prev.filter(s => !selectedIds.includes(s.id)));
-    } else {
-      setRejectedSpaces(prev => prev.filter(s => !selectedIds.includes(s.id)));
-    }
-    
-    setSelectedIds([]);
-  };
-
-  const handleRejectSelected = () => {
-    if (modalTab !== 'pending') return;
-    
-    const toReject = pendingSpaces.filter(s => selectedIds.includes(s.id));
-    
-    // 거절 리스트로 이동
-    setRejectedSpaces(prev => [...toReject, ...prev]);
-    setPendingSpaces(prev => prev.filter(s => !selectedIds.includes(s.id)));
-    
-    setSelectedIds([]);
-  };
-
-  const currentModalList = modalTab === 'pending' ? pendingSpaces : rejectedSpaces;
 
   return (
     <PageWrapper>
@@ -113,17 +98,17 @@ export default function AdminSpacesPage() {
             </StatIconWrap>
           </StatCardTop>
           <StatLabel>전체 숙소 수</StatLabel>
-          <StatValue>1,284</StatValue>
+          <StatValue>{spaces.filter(s => s['del_yn'] === 'N').length.toLocaleString()}</StatValue>
         </StatCard>
 
-        <StatCard>
+        <StatCard style={{ cursor: 'pointer' }} onClick={() => setIsDeletedModalOpen(true)}>
           <StatCardTop>
             <StatIconWrap $bg="rgba(59,130,246,0.1)" $color="#2563eb">
               <CheckCircleIcon />
             </StatIconWrap>
           </StatCardTop>
-          <StatLabel>운영 중인 숙소</StatLabel>
-          <StatValue>{spaces.length.toLocaleString()}</StatValue>
+          <StatLabel>비 운영 숙소</StatLabel>
+          <StatValue>{deletedSpaces.length.toLocaleString()}</StatValue>
         </StatCard>
 
         <StatCard style={{ cursor: 'pointer' }} onClick={() => setIsModalOpen(true)}>
@@ -161,9 +146,9 @@ export default function AdminSpacesPage() {
         <Table>
           <THead>
             <TR>
-              <TH $width="320px">숙소 이름</TH>
-              <TH $width="200px">판매자</TH>
-              <TH $width="130px">1박 요금</TH>
+              <TH $width="300px">숙소 이름</TH>
+              <TH $width="180px">판매자</TH>
+              <TH $width="140px">주소</TH>
               <TH $width="110px">등록일</TH>
               <TH $width="100px">현재상태</TH>
             </TR>
@@ -172,26 +157,25 @@ export default function AdminSpacesPage() {
             {filteredSpaces.length === 0 ? (
                 <TR><TD colSpan={5}><EmptyTableState>검색 결과가 없습니다.</EmptyTableState></TD></TR>
             ) : filteredSpaces.map((space) => {
-              const blinded = isBlinded(space);
+              const hidden = space.visibleYn === 'N';
               return (
-                <TR key={space.id} $hoverable>
+                <TR key={space.id} $hoverable style={{ cursor: 'pointer' }} onClick={() => handleSpaceClick(space)}>
                   <TD>
                     <SpaceCell>
-                      <SpaceThumbnail src={space.thumbnail} alt={space.name} $blinded={blinded} />
+                      <SpaceThumbnail src={space.thumbnailUrl} alt={space.name} $blinded={hidden} />
                       <SpaceInfo>
-                        <SpaceName $blinded={blinded}>{space.name}</SpaceName>
-                        <SpaceLocation>{space.location}</SpaceLocation>
+                        <SpaceName $blinded={hidden}>{space.name}</SpaceName>
+                        <SpaceLocation>{space.address1}</SpaceLocation>
                       </SpaceInfo>
                     </SpaceCell>
                   </TD>
-                  <TD><SellerText>{space.seller}</SellerText></TD>
-                  <TD><PriceText>{space.price}</PriceText></TD>
-                  <TD><DateText>{space.registeredAt}</DateText></TD>
-                  <TD>
-                    {/* labelWidth: '공개'(2자) 보다 여유있게 40px */}
+                  <TD><SellerText>{space.sellerName ?? space.sellerUsername ?? '-'}</SellerText></TD>
+                  <TD><SellerText>{space.area}</SellerText></TD>
+                  <TD><DateText>{space.createdAt?.slice(0, 10).replace(/-/g, '.')}</DateText></TD>
+                  <TD onClick={e => e.stopPropagation()}>
                     <Toggle
-                      on={blinded}
-                      onClick={() => handleBlindClick(space)}
+                      on={hidden}
+                      onClick={() => handleVisibleClick(space)}
                       onLabel="중지"
                       offLabel="공개"
                       labelWidth="40px"
@@ -206,29 +190,101 @@ export default function AdminSpacesPage() {
         <TableFooter>
           <AdminPagination
             currentPage={currentPage}
-            totalPages={SPACES_TOTAL_PAGES}
+            totalPages={Math.ceil(filteredSpaces.length / 10) || 1}
             onPageChange={goToPage}
           />
         </TableFooter>
       </TableSection>
 
-      {/* ── 블라인드 확인 모달 ── */}
+      {/* ── 노출 여부 확인 모달 ── */}
       <ConfirmModal
-        isOpen={blindConfirmTarget !== null}
-        onClose={() => setBlindConfirmTarget(null)}
-        onConfirm={handleBlindConfirm}
-        title={blindConfirmTarget?.willBlind ? '숙소를 블라인드 처리하시겠습니까?' : '블라인드를 해제하시겠습니까?'}
+        isOpen={visibleConfirmTarget !== null}
+        onClose={() => setVisibleConfirmTarget(null)}
+        onConfirm={handleVisibleConfirm}
+        title={visibleConfirmTarget?.willHide ? '숙소를 비공개 처리하시겠습니까?' : '숙소를 공개하시겠습니까?'}
         description={
-          blindConfirmTarget
-            ? blindConfirmTarget.willBlind
-              ? `${blindConfirmTarget.name} 숙소가 사용자에게 노출되지 않습니다.`
-              : `${blindConfirmTarget.name} 숙소가 다시 공개됩니다.`
+          visibleConfirmTarget
+            ? visibleConfirmTarget.willHide
+              ? `${visibleConfirmTarget.name} 숙소가 사용자에게 노출되지 않습니다.`
+              : `${visibleConfirmTarget.name} 숙소가 다시 공개됩니다.`
             : ''
         }
-        isDanger={blindConfirmTarget?.willBlind}
-        confirmText={blindConfirmTarget?.willBlind ? '블라인드' : '공개하기'}
-        icon={<EyeOff size={24} color={blindConfirmTarget?.willBlind ? '#ef4444' : '#64748b'} />}
+        isDanger={visibleConfirmTarget?.willHide}
+        confirmText={visibleConfirmTarget?.willHide ? '비공개' : '공개하기'}
+        icon={<EyeOff size={24} color={visibleConfirmTarget?.willHide ? '#ef4444' : '#64748b'} />}
       />
+
+      {/* ── Stay 목록 모달 ── */}
+      {isStayModalOpen && selectedSpace && (
+        <ModalOverlay onClick={() => setIsStayModalOpen(false)}>
+          <ModalContent $width="600px" onClick={e => e.stopPropagation()}>
+            <ModalHeader>
+              <ModalTitle>{selectedSpace.name} — 객실 목록</ModalTitle>
+              <ModalCloseBtn onClick={() => setIsStayModalOpen(false)}>
+                <X size={20} />
+              </ModalCloseBtn>
+            </ModalHeader>
+            <ModalBody>
+              {stayLoading ? (
+                <EmptyState>불러오는 중...</EmptyState>
+              ) : spaceStays.length === 0 ? (
+                <EmptyState>등록된 객실이 없습니다.</EmptyState>
+              ) : (
+                <StayList>
+                  {spaceStays.map(stay => {
+                    const prices = [stay.monPrice, stay.tuePrice, stay.wedPrice, stay.thuPrice, stay.friPrice, stay.satPrice, stay.sunPrice].filter(Boolean);
+                    const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+                    return (
+                      <StayItem key={stay.id}>
+                        <StayItemInfo>
+                          <StayItemName>{stay.name}</StayItemName>
+                          <StayItemMeta>기준 {stay.capacity}인 / 최대 {stay.maxCapa}인</StayItemMeta>
+                        </StayItemInfo>
+                        <StayItemPrice>최저 ₩{minPrice.toLocaleString()}</StayItemPrice>
+                        <StayBadge $visible={stay.visibleYn === 'Y'}>
+                          {stay.visibleYn === 'Y' ? '공개' : '비공개'}
+                        </StayBadge>
+                      </StayItem>
+                    );
+                  })}
+                </StayList>
+              )}
+            </ModalBody>
+          </ModalContent>
+        </ModalOverlay>
+      )}
+
+      {/* ── 비 운영 숙소 모달 ── */}
+      {isDeletedModalOpen && (
+        <ModalOverlay onClick={() => setIsDeletedModalOpen(false)}>
+          <ModalContent $width="600px" onClick={e => e.stopPropagation()}>
+            <ModalHeader>
+              <ModalTitle>비 운영 숙소 목록</ModalTitle>
+              <ModalCloseBtn onClick={() => setIsDeletedModalOpen(false)}>
+                <X size={20} />
+              </ModalCloseBtn>
+            </ModalHeader>
+            <ModalBody>
+              {deletedSpaces.length === 0 ? (
+                <EmptyState>비 운영 숙소가 없습니다.</EmptyState>
+              ) : (
+                <DeletedSpaceList>
+                  {deletedSpaces.map(space => (
+                    <DeletedSpaceItem key={space.id}>
+                      <SpaceThumbnail src={space.thumbnailUrl} alt={space.name} $blinded />
+                      <SpaceInfo>
+                        <SpaceName $blinded>{space.name}</SpaceName>
+                        <SpaceLocation>{space.area} · {space.address1}</SpaceLocation>
+                      </SpaceInfo>
+                      <DeletedBadge>비운영</DeletedBadge>
+                    </DeletedSpaceItem>
+                  ))}
+                </DeletedSpaceList>
+              )}
+            </ModalBody>
+          </ModalContent>
+        </ModalOverlay>
+      )}
 
       {/* ── 승인/거절 모달 ── */}
       {isModalOpen && (
@@ -266,10 +322,10 @@ export default function AdminSpacesPage() {
                         checked={selectedIds.includes(space.id)}
                         onChange={() => toggleSelect(space.id)}
                       />
-                      <SpaceThumbnail src={space.thumbnail} alt={space.name} $blinded={false} />
+                      <SpaceThumbnail src={space.thumbnailUrl} alt={space.name} $blinded={false} />
                       <SpaceInfo>
                         <SpaceName $blinded={false}>{space.name}</SpaceName>
-                        <SpaceLocation>{space.location} · {space.seller}</SpaceLocation>
+                        <SpaceLocation>{space.address1} · {space.sellerName ?? space.sellerUsername ?? '-'}</SpaceLocation>
                       </SpaceInfo>
                     </ApprovalItem>
                   ))}
@@ -663,4 +719,84 @@ const ApproveBtn = styled(ActionBtn)`
   &:not(:disabled):hover {
     background: #1d4ed8;
   }
+`;
+
+/* ── Stay 모달 전용 ── */
+const StayList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`;
+
+const StayItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  &:hover { background: #f8fafc; }
+`;
+
+const StayItemInfo = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+`;
+
+const StayItemName = styled.span`
+  font-size: 14px;
+  font-weight: 600;
+  color: #0d1c2e;
+`;
+
+const StayItemMeta = styled.span`
+  font-size: 12px;
+  color: #94a3b8;
+`;
+
+const StayItemPrice = styled.span`
+  font-size: 13px;
+  font-weight: 600;
+  color: #0d1c2e;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  white-space: nowrap;
+`;
+
+const StayBadge = styled.span`
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background: ${({ $visible }) => ($visible ? 'rgba(34,197,94,0.1)' : 'rgba(148,163,184,0.15)')};
+  color: ${({ $visible }) => ($visible ? '#16a34a' : '#64748b')};
+  white-space: nowrap;
+`;
+
+const DeletedSpaceList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`;
+
+const DeletedSpaceItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fafbfc;
+`;
+
+const DeletedBadge = styled.span`
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background: rgba(239,68,68,0.1);
+  color: #dc2626;
+  white-space: nowrap;
+  flex-shrink: 0;
 `;

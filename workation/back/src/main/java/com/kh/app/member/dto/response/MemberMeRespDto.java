@@ -19,4 +19,8 @@ public class MemberMeRespDto {
     private String email;
     private String companyName;
     private Area preferredArea;
+    private String zonecode;
+    private String address;
+    private String addressDetail;
+    private String profileImageUrl;
 }

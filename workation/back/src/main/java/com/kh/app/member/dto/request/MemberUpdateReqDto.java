@@ -12,6 +12,9 @@ public class MemberUpdateReqDto {
     private String phone;
     private String email;
     private Area preferredArea;
+    private String zonecode;
+    private String address;
+    private String addressDetail;
 
 
 

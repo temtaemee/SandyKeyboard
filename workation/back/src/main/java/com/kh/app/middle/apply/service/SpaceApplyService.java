@@ -10,13 +10,14 @@ import com.kh.app.middle.apply.entity.SpaceApplyEntity;
 import com.kh.app.middle.apply.repository.SpaceApplyRepository;
 import com.kh.app.notification.dto.request.NotificationCreateReqDto;
 import com.kh.app.notification.entity.NotificationType;
+import com.kh.app.middle.exception.ErrorCode;
+import com.kh.app.middle.exception.MiddleException;
 import com.kh.app.notification.service.NotificationService;
 import com.kh.app.product.space.entity.SpaceEntity;
 import com.kh.app.product.space.repository.SpaceRepository;
 import com.kh.app.product.stay.entity.StayEntity;
 import com.kh.app.product.stay.repository.StayRepository;
 import com.kh.app.security.user.CustomUserDetails;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -44,19 +45,15 @@ public class SpaceApplyService {
     public void enroll(SpaceApplyReqDto dto, String name) {
 
         MemberEntity member = memberRepository.findByUsernameAndDeletedAtIsNull(name)
-                .orElseThrow(()->{
-                    throw new EntityNotFoundException("[MEMBER-2005] 존재하지 않는 회원입니다.");
-                });
+                .orElseThrow(() -> new MiddleException(ErrorCode.MEMBER_NOT_FOUND));
 
         SpaceEntity space = spaceRepository.findByIdAndDelYn(dto.getSpaceId(), "N")
-                .orElseThrow(() -> {
-                    throw new EntityNotFoundException("[SPACE-4001] 존재하지 않는 공간입니다.");
-                });
+                .orElseThrow(() -> new MiddleException(ErrorCode.SPACE_NOT_FOUND));
 
         // 중복방지신청
         boolean alreadyApplied = spaceApplyRepository.existsPendingApply(member.getId(), dto.getSpaceId());
         if(alreadyApplied){
-            throw new IllegalStateException("[SPACE-4011] 동일한 정보의 신청 건이 존재합니다.");
+            throw new MiddleException(ErrorCode.DUPLICATE_APPLY);
         }
 
         spaceApplyRepository.save(dto.toEntity(member, space));
@@ -64,14 +61,7 @@ public class SpaceApplyService {
 
 
     // 신청 건 목록조회
-    public Page<SpaceApplyRespDto> getApplyList(int pno) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-
-        Long memberId = userDetails.getUserVo().getId();
-        boolean isAdmin = userDetails.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ADMIN"));
-
+    public Page<SpaceApplyRespDto> getApplyList(int pno, Long memberId, boolean isAdmin) {
         Pageable pageable = PageRequest.of(pno, 10);
         return spaceApplyRepository
                 .getList(pageable, memberId, isAdmin)
@@ -82,9 +72,7 @@ public class SpaceApplyService {
     @Transactional
     public void update(Long applyId, SpaceApplyPermitReqDto dto) {
         SpaceApplyEntity apply = spaceApplyRepository.findByIdAndDelYn(applyId, "N")
-                .orElseThrow(() -> {
-                    throw new EntityNotFoundException("[SPACE-4012] 존재하지 않는 신청 건입니다.");
-                });
+                .orElseThrow(() -> new MiddleException(ErrorCode.APPLY_NOT_FOUND));
 
         //space 엔티티 찾기
         Long spaceId = apply.getSpace().getId();
@@ -94,7 +82,8 @@ public class SpaceApplyService {
             //승인
             apply.update(dto);
             // 노출여부 변경필요
-            StayEntity stayEntity = stayRepository.findByIdAndDelYn(spaceId, "N").orElseThrow();
+            StayEntity stayEntity = stayRepository.findByIdAndDelYn(spaceId, "N")
+                    .orElseThrow(() -> new MiddleException(ErrorCode.SPACE_NOT_FOUND));
             stayEntity.changeVisibleYn("Y");
 
             //알림

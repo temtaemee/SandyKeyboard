@@ -1,18 +1,41 @@
 import { Routes, Route } from 'react-router-dom';
-import SellerHomePage from '../features/seller/pages/SellerHomePage';
+import SellerDefaltLayout from '../features/seller/layouts/SellerDefaltLayout';
+import SellerDashboardPage from '../features/seller/pages/SellerDashboardPage';
+import SpaceListPage from '../features/seller/pages/space/SpaceListPage';
+import SpaceDetailPage from '../features/seller/pages/space/SpaceDetailPage';
+import SpaceRegisterPage from '../features/seller/pages/space/SpaceRegisterPage';
+import SpaceEditPage from '../features/seller/pages/space/SpaceEditPage';
+import StayListPage from '../features/seller/pages/stay/StayListPage';
+import StayDetailPage from '../features/seller/pages/stay/StayDetailPage';
+import StayRegisterPage from '../features/seller/pages/stay/StayRegisterPage';
+import StayEditPage from '../features/seller/pages/stay/StayEditPage';
+import SalesPage from '../features/seller/pages/SalesPage';
+import ReservationPage from '../features/seller/pages/ReservationPage';
+import SettlementPage from '../features/seller/pages/SettlementPage';
+import ReviewPage from '../features/seller/pages/ReviewPage';
+import AccountPage from '../features/seller/pages/AccountPage';
+import RefundPage from '../features/seller/pages/RefundPage';
 
-/**
- * Seller 도메인 라우터
- * 팀원 영욱: 관리자 사이드 관련 라우팅을 관리합니다.
- *
- * App.jsx에서 /seller/* 로 연결되어 있으므로,
- * 여기서의 경로는 /seller 기준입니다.
- */
 export default function SellerRouter() {
   return (
     <Routes>
-      {/* 예시: login */}
-      <Route index element={<SellerHomePage />} />
+      <Route element={<SellerDefaltLayout />}>
+        <Route index element={<SellerDashboardPage />} />
+        <Route path="spaces" element={<SpaceListPage />} />
+        <Route path="spaces/register" element={<SpaceRegisterPage />} />
+        <Route path="spaces/:id" element={<SpaceDetailPage />} />
+        <Route path="spaces/:id/edit" element={<SpaceEditPage />} />
+        <Route path="stays" element={<StayListPage />} />
+        <Route path="stays/register" element={<StayRegisterPage />} />
+        <Route path="stays/:id" element={<StayDetailPage />} />
+        <Route path="stays/:id/edit" element={<StayEditPage />} />
+        <Route path="sales" element={<SalesPage />} />
+        <Route path="reservations" element={<ReservationPage />} />
+        <Route path="settlements" element={<SettlementPage />} />
+        <Route path="reviews" element={<ReviewPage />} />
+        <Route path="refunds" element={<RefundPage />} />
+        <Route path="account" element={<AccountPage />} />
+      </Route>
     </Routes>
   );
 }

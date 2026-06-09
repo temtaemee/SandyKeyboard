@@ -1,6 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import customerBg from '../../img/customer.png';
+import sellerBg from '../../img/seller.png';
 
 const SellerSelectionView = () => {
   const navigate = useNavigate();
@@ -19,10 +21,7 @@ const SellerSelectionView = () => {
         <OptionBox onClick={() => navigate('/seller')}>
           <Overlay />
 
-          <OptionImage
-            src="https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=1400"
-            alt=""
-          />
+          <OptionImage src={sellerBg} alt="판매자 센터" />
 
           <Content>
             <Badge>SELLER MODE</Badge>
@@ -43,10 +42,7 @@ const SellerSelectionView = () => {
         <OptionBox onClick={() => navigate('/home')}>
           <Overlay />
 
-          <OptionImage
-            src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=1400"
-            alt=""
-          />
+          <OptionImage src={customerBg} alt="워케이션 홈 (소비자)" />
 
           <Content>
             <Badge>USER MODE</Badge>

@@ -1,18 +1,19 @@
 // src/features/admin/pages/AdminReservationPage.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { Calendar, Building2, ChevronLeft as LucideChevronLeft, ChevronRight as LucideChevronRight, ExternalLink, Users, X } from 'lucide-react';
+import {
+  Calendar,
+  Building2,
+  Users,
+  X,
+  Pencil,
+  Check,
+  Ban,
+} from 'lucide-react';
 import AdminSearchInput from '../components/common/AdminSearchInput';
-import {
-  RESERVATION_STAT_CARDS,
-  RESERVATION_LIST,
-  PARTNER_COMPANIES,
-} from '../data/adminReservationData';
-import {
-  RESERVATION_STATUS_MAP,
-  TOTAL_RESERVATIONS,
-  TOTAL_PAGES,
-} from '../data/adminReservationConstants';
+import useAdminReservation from '../hooks/useAdminReservation';
+import useAdminReservationUI from '../hooks/useAdminReservationUI';
+import { RESERVATION_STATUS_MAP } from '../data/adminReservationConstants';
 import usePagination from '../hooks/usePagination';
 import AdminPagination from '../components/common/AdminPagination';
 import StatusBadge from '../components/common/StatusBadge';
@@ -23,48 +24,120 @@ import {
   ModalCloseBtn,
 } from '../components/common/AdminModal.styles'; // 모달 공통 스타일
 
-
 const STATUS_FILTER_TABS = [
   { key: 'all', label: '전체' },
-  { key: 'confirmed', label: '예약확정' },
-  { key: 'waiting', label: '대기' },
+  { key: 'RESERVED', label: '예약확정' },
+  { key: 'PAYMENT_COMPLETED', label: '대기' },
+  { key: 'COMPLETED', label: '이용완료' },
   { key: 'cancelled', label: '취소' },
 ];
 
-export default function AdminReservationPage() {
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [partnerSearch, setPartnerSearch] = useState('');
-  const [companyName, setCompanyName] = useState('');
-  const { currentPage, goToPage, goToPrev, goToNext } = usePagination();
+// USER_CANCELLED, SELLER_CANCELLED, REFUND_COMPLETED 를 '취소' 탭으로 묶음
+// USER_CANCELLED, SELLER_CANCELLED, REFUND_COMPLETED 를 '취소' 탭으로 묶음
+const CANCELLED_STATUSES = [
+  'USER_CANCELLED',
+  'SELLER_CANCELLED',
+  'REFUND_COMPLETED',
+];
 
-  const [partners, setPartners] = useState(PARTNER_COMPANIES);
-  const [partnerModalOpen, setPartnerModalOpen] = useState(false);
+export default function AdminReservationPage() {
+  const {
+    partners,
+    allReservations,
+    dashboardSummary,
+    fetchPartners,
+    fetchAllReservations,
+    fetchDashboardSummary,
+    addPartner,
+    updatePartner,
+    togglePartnerStatus,
+  } = useAdminReservation();
+
+  const { currentPage, goToPage } = usePagination();
+
+  // 통합 UI 훅으로 모달 제어 및 인라인 에디팅 상태 분리
+  const {
+    search,
+    setSearch,
+    statusFilter,
+    setStatusFilter,
+    partnerModalOpen,
+    setPartnerModalOpen,
+    partnerSearch,
+    setPartnerSearch,
+    filteredPartners,
+    companyName,
+    setCompanyName,
+    companyBizNum,
+    setCompanyBizNum,
+    handleRegisterCompany,
+    editingId,
+    editForm,
+    setEditForm,
+    startEdit,
+    saveEdit,
+    cancelEdit,
+  } = useAdminReservationUI({
+    partners,
+    addPartner,
+    updatePartner,
+  });
+
+  useEffect(() => {
+    fetchPartners();
+    fetchAllReservations(); // 통계/환불 모달용 전체 데이터 1회 로드
+    fetchDashboardSummary(); // 대시보드 통계 정보 로드
+  }, [fetchPartners, fetchAllReservations, fetchDashboardSummary]);
+
+  // 필터나 검색어가 변경되면 페이지를 1페이지로 리셋
+  useEffect(() => {
+    goToPage(1);
+  }, [statusFilter, search, goToPage]);
+
+  // 검색어 변경 시 백엔드 전체 목록도 함께 로드하여 최신 상태 유지
+  useEffect(() => {
+    fetchAllReservations();
+  }, [search, fetchAllReservations]);
 
   const totalPartners = partners.length;
-  const activePartners = partners.filter(p => p.status === 'active').length;
-  const activePercent = totalPartners > 0 ? Math.round((activePartners / totalPartners) * 100) : 0;
+  const activePartners = partners.filter((p) => p.status === 'active').length;
+  const activePercent =
+    totalPartners > 0 ? Math.round((activePartners / totalPartners) * 100) : 0;
 
-  const top2Partners = [...partners].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 2);
+  // ─── [실시간 통계] 백엔드 API (DashboardSummaryResDto) 데이터 사용 ───
+  const thisMonthCancelAmount = dashboardSummary?.thisMonthCancelAmount ?? 0;
+  const thisMonthReservationCount = dashboardSummary?.thisMonthReservationCount ?? 0;
 
-  const handleRegisterCompany = () => {
-    if (companyName.trim()) {
-      const newCompany = {
-        id: Date.now(),
-        name: companyName,
-        reservationCount: 0,
-        status: 'active',
-        iconBg: '#e2e8f0',
-        iconColor: '#475569',
-        created_at: new Date().toISOString()
-      };
-      setPartners(prev => [newCompany, ...prev]);
-      setCompanyName('');
-    }
+  // ─── [버그 해결] 카테고리 탭 클릭 시 전체 데이터(allReservations) 기준 필터링 및 로컬 페이징 처리 ───
+  const getFilteredAllReservations = () => {
+    return allReservations.filter((row) => {
+      const matchSearch =
+        !search ||
+        row.customerName.toLowerCase().includes(search.toLowerCase()) ||
+        row.id.toLowerCase().includes(search.toLowerCase()) ||
+        row.spaceName.toLowerCase().includes(search.toLowerCase()) ||
+        row.stayName.toLowerCase().includes(search.toLowerCase());
+      
+      const matchStatus =
+        statusFilter === 'all' ||
+        (statusFilter === 'cancelled'
+          ? CANCELLED_STATUSES.includes(row.status)
+          : row.status === statusFilter);
+
+      return matchSearch && matchStatus;
+    });
   };
 
+  const filteredAll = getFilteredAllReservations();
+  const PAGE_SIZE = 10;
+  const totalCount = filteredAll.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
-  const filteredPartners = partners.filter(p => p.name.toLowerCase().includes(partnerSearch.toLowerCase()));
+  // 현재 페이지에 해당하는 예약 리스트 슬라이스
+  const displayedReservations = filteredAll.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
 
   return (
     <PageWrapper>
@@ -76,24 +149,69 @@ export default function AdminReservationPage() {
         </PageTitleGroup>
       </PageHeader>
 
-      {/* ── 상단: 통계 카드 2개 ── */}
+      {/* ── 상단: 통계 카드 2개 + 활성 파트너사 + 신규 기업 빠른 등록 ── */}
       <TopSection>
-        {RESERVATION_STAT_CARDS.map((card, idx) => (
-          <StatCard key={card.id}>
-            <StatCardTop>
-              <StatIconWrap
-                $bg={idx === 0 ? 'rgba(59,130,246,0.1)' : 'rgba(34,197,94,0.1)'}
-                $color={idx === 0 ? '#2563eb' : '#16a34a'}
-              >
-                {idx === 0 ? <CalendarIcon /> : <BuildingStatIcon />}
-              </StatIconWrap>
-            </StatCardTop>
-            <StatLabel>{card.label}</StatLabel>
-            <StatValueRow>
-              <StatValue>{card.value}</StatValue>
-            </StatValueRow>
-          </StatCard>
-        ))}
+        {/* 통계 카드 */}
+        <StatCard>
+          <StatCardTop>
+            <StatIconWrap $bg="rgba(59,130,246,0.1)" $color="#2563eb">
+              <CalendarIcon />
+            </StatIconWrap>
+          </StatCardTop>
+          <StatLabel>이번 달 예약</StatLabel>
+          <StatValueRow>
+            <StatValue>
+              {(
+                thisMonthReservationCount ?? 0
+              ).toLocaleString()}
+              건
+            </StatValue>
+          </StatValueRow>
+        </StatCard>
+
+        <StatCard>
+          <StatCardTop>
+            <StatIconWrap $bg="rgba(239,68,68,0.1)" $color="#dc2626">
+              <BanIcon />
+            </StatIconWrap>
+          </StatCardTop>
+          <StatLabel>이번 달 결제 취소 금액 (환불)</StatLabel>
+          <StatValueRow>
+            <StatValue>
+              ₩{(thisMonthCancelAmount ?? 0).toLocaleString()}
+            </StatValue>
+          </StatValueRow>
+        </StatCard>
+
+        {/* 활성 파트너사 카드 */}
+        <ActivePartnerCard onClick={() => setPartnerModalOpen(true)}>
+          <PartnerIconWrap>
+            <PartnerGroupIcon />
+          </PartnerIconWrap>
+          <ActiveLabel>활성 파트너사</ActiveLabel>
+          <ActiveCount>
+            {activePartners} <ActiveUnit>기업</ActiveUnit>
+          </ActiveCount>
+          <ActiveDesc>
+            전체 파트너사의 약 {activePercent}%가 현재 활성 상태입니다.
+          </ActiveDesc>
+        </ActivePartnerCard>
+
+        {/* 신규 기업 빠른 등록 폼 */}
+        <QuickRegisterCard>
+          <QuickRegisterTitle>신규 기업 빠른 등록</QuickRegisterTitle>
+          <FormInput
+            placeholder="기업명"
+            value={companyName}
+            onChange={(e) => setCompanyName(e.target.value)}
+          />
+          <FormInput
+            placeholder="사업자번호 '-' 제외하고 숫자만 입력"
+            value={companyBizNum}
+            onChange={(e) => setCompanyBizNum(e.target.value)}
+          />
+          <RegisterBtn onClick={handleRegisterCompany}>등록하기</RegisterBtn>
+        </QuickRegisterCard>
       </TopSection>
 
       {/* ── 중단: 예약 테이블 ── */}
@@ -102,7 +220,7 @@ export default function AdminReservationPage() {
           <TableTitleGroup>
             <TableTitle>예약</TableTitle>
             <FilterTabList>
-              {STATUS_FILTER_TABS.map(tab => (
+              {STATUS_FILTER_TABS.map((tab) => (
                 <FilterTab
                   key={tab.key}
                   $active={statusFilter === tab.key}
@@ -126,131 +244,85 @@ export default function AdminReservationPage() {
             <TR>
               <TH>ID</TH>
               <TH>고객명</TH>
-              <TH>숙소명</TH>
+              <TH>공간명</TH>
+              <TH>스테이명</TH>
               <TH>날짜</TH>
               <TH>결제 금액</TH>
               <TH>상태</TH>
             </TR>
           </THead>
           <TBody>
-            {RESERVATION_LIST.filter((row) => {
-              const matchSearch = !search ||
-                row.customerName.toLowerCase().includes(search.toLowerCase()) ||
-                row.spaceName.toLowerCase().includes(search.toLowerCase()) ||
-                row.id.toLowerCase().includes(search.toLowerCase());
-              const matchStatus = statusFilter === 'all' || row.status === statusFilter;
-              return matchSearch && matchStatus;
-            }).map((row) => (
-              <TR key={row.id} $hoverable>
-                <TD>
-                  <ResvId>{row.id}</ResvId>
-                </TD>
-                <TD>
-                  <CustomerCell>
-                    <CustomerAvatar $bg={row.avatarColor}>
-                      {row.customerInitial}
-                    </CustomerAvatar>
-                    <CustomerInfo>
-                      <CustomerName>{row.customerName}</CustomerName>
-                      <CustomerEmail>{row.customerEmail}</CustomerEmail>
-                    </CustomerInfo>
-                  </CustomerCell>
-                </TD>
-                <TD>
-                  <SpaceName>{row.spaceName}</SpaceName>
-                </TD>
-                <TD>
-                  <DateText>{row.date.replace(/\\n/g, ' ~ ')}</DateText>
-                </TD>
-                <TD>
-                  <AmountText>{row.amount}</AmountText>
-                </TD>
-                <TD>
-                  <StatusBadge
-                    $bg={RESERVATION_STATUS_MAP[row.status].bg}
-                    $color={RESERVATION_STATUS_MAP[row.status].color}
-                  >
-                    {RESERVATION_STATUS_MAP[row.status].label}
-                  </StatusBadge>
+            {displayedReservations.length === 0 ? (
+              <TR>
+                <TD colSpan={7}>
+                  <EmptyState>예약 내역이 없습니다.</EmptyState>
                 </TD>
               </TR>
-            ))}
+            ) : (
+              displayedReservations.map((row) => (
+                <TR key={row.id} $hoverable>
+                  <TD>
+                    <ResvId>{row.id}</ResvId>
+                  </TD>
+                  <TD>
+                    <CustomerCell>
+                      <CustomerAvatar $bg={row.avatarColor}>
+                        {row.customerInitial}
+                      </CustomerAvatar>
+                      <CustomerInfo>
+                        <CustomerName>{row.customerName}</CustomerName>
+                        <CustomerEmail>{row.customerEmail}</CustomerEmail>
+                      </CustomerInfo>
+                    </CustomerCell>
+                  </TD>
+                  <TD>
+                    <SpaceName>{row.spaceName}</SpaceName>
+                  </TD>
+                  <TD>
+                    <StayNameText>{row.stayName}</StayNameText>
+                  </TD>
+                  <TD>
+                    <DateText>{row.date}</DateText>
+                  </TD>
+                  <TD>
+                    <AmountText>{row.amount}</AmountText>
+                  </TD>
+                  <TD>
+                    <StatusBadge
+                      $bg={
+                        RESERVATION_STATUS_MAP[row.status]?.bg ?? '#f1f5f9'
+                      }
+                      $color={
+                        RESERVATION_STATUS_MAP[row.status]?.color ?? '#64748b'
+                      }
+                    >
+                      {/* statusLabel은 서버에서 한글로 제공 */}
+                      {row.statusLabel ||
+                        RESERVATION_STATUS_MAP[row.status]?.label ||
+                        row.status}
+                    </StatusBadge>
+                  </TD>
+                </TR>
+              ))
+            )}
           </TBody>
         </Table>
 
         <TableFooter>
-          <FooterInfo>
-            {TOTAL_RESERVATIONS.toLocaleString()}건 &nbsp;‖&nbsp; 1-10 &nbsp;‖
-          </FooterInfo>
+          <FooterInfo />
           <AdminPagination
             currentPage={currentPage}
-            totalPages={TOTAL_PAGES}
+            totalPages={totalPages}
             onPageChange={goToPage}
           />
           <div style={{ width: '120px' }} />
         </TableFooter>
       </TableSection>
 
-      <BottomSection>
-        {/* 활성 파트너사 카드 */}
-        <ActivePartnerCard>
-          <PartnerIconWrap>
-            <PartnerGroupIcon />
-          </PartnerIconWrap>
-          <ActiveLabel>활성 파트너사</ActiveLabel>
-          <ActiveCount>
-            {activePartners} <ActiveUnit>기업</ActiveUnit>
-          </ActiveCount>
-          <ActiveDesc>전체 파트너사의 약 {activePercent}%가 현재 활성 상태입니다.</ActiveDesc>
-        </ActivePartnerCard>
-
-        {/* 파트너사 목록 카드 */}
-        <PartnerListCard>
-          <PartnerListHeader>
-            <PartnerListTitle>파트너사</PartnerListTitle>
-            <ExternalLinkBtn aria-label="전체보기" onClick={() => setPartnerModalOpen(true)}>
-              <ExternalLinkIcon />
-            </ExternalLinkBtn>
-          </PartnerListHeader>
-          <PartnerList>
-            {top2Partners.map((company) => (
-              <PartnerItem key={company.id}>
-                <CompanyIconWrap $bg={company.iconBg} $color={company.iconColor}>
-                  <BuildingIcon />
-                </CompanyIconWrap>
-                <CompanyInfo>
-                  <CompanyName>{company.name}</CompanyName>
-                  <CompanyResvCount>
-                    누적 예약 {company.reservationCount}건
-                  </CompanyResvCount>
-                </CompanyInfo>
-                <ActiveBadge $active={company.status === 'active'}>
-                  {company.status === 'active' ? '활성' : '비활성'}
-                </ActiveBadge>
-              </PartnerItem>
-            ))}
-          </PartnerList>
-        </PartnerListCard>
-
-        {/* 신규 기업 빠른 등록 폼 */}
-        <QuickRegisterCard>
-          <QuickRegisterTitle>신규 기업 빠른 등록</QuickRegisterTitle>
-          <FormLabel>기업명</FormLabel>
-          <FormInput
-            placeholder="기업명 입력"
-            value={companyName}
-            onChange={(e) => setCompanyName(e.target.value)}
-          />
-          <RegisterBtn onClick={handleRegisterCompany}>
-            등록하기
-          </RegisterBtn>
-        </QuickRegisterCard>
-      </BottomSection>
-
       {/* ── 파트너사 관리 모달 ── */}
       {partnerModalOpen && (
         <ModalOverlay onClick={() => setPartnerModalOpen(false)}>
-          <ModalContent $width="480px" onClick={e => e.stopPropagation()}>
+          <ModalContent $width="480px" onClick={(e) => e.stopPropagation()}>
             <ModalHeader>
               <ModalTitle>파트너사 전체 목록</ModalTitle>
               <ModalCloseBtn onClick={() => setPartnerModalOpen(false)}>
@@ -267,23 +339,103 @@ export default function AdminReservationPage() {
                 />
               </ModalSearchRow>
               <PartnerModalList>
-                {filteredPartners.map(company => (
-                  <PartnerItem key={company.id}>
-                    <CompanyIconWrap $bg={company.iconBg} $color={company.iconColor}>
-                      <BuildingIcon />
-                    </CompanyIconWrap>
-                    <CompanyInfo>
-                      <CompanyName>{company.name}</CompanyName>
-                      <CompanyResvCount>누적 예약 {company.reservationCount}건</CompanyResvCount>
-                    </CompanyInfo>
-                    <StatusToggleBtn 
-                      $active={company.status === 'active'}
-                      onClick={() => setPartners(prev => prev.map(p => p.id === company.id ? { ...p, status: p.status === 'active' ? 'inactive' : 'active' } : p))}
-                    >
-                      {company.status === 'active' ? '활성' : '비활성'}
-                    </StatusToggleBtn>
-                  </PartnerItem>
-                ))}
+                {filteredPartners.map((company) => {
+                  const isEditing = editingId === company.id;
+                  return (
+                    <PartnerModalItem key={company.id}>
+                      <PartnerModalItemTop>
+                        <CompanyIconWrap
+                          $bg={company.iconBg}
+                          $color={company.iconColor}
+                        >
+                          <BuildingIcon />
+                        </CompanyIconWrap>
+                        <CompanyInfo>
+                          {isEditing ? (
+                            <EditNameInput
+                              value={editForm.name}
+                              onChange={(e) =>
+                                setEditForm((f) => ({
+                                  ...f,
+                                  name: e.target.value,
+                                }))
+                              }
+                            />
+                          ) : (
+                            <CompanyName>{company.name}</CompanyName>
+                          )}
+                          <CompanyResvCount>
+                            누적 예약 {company.reservationCount}건
+                          </CompanyResvCount>
+                        </CompanyInfo>
+                        <ModalActionGroup>
+                          {isEditing ? (
+                            <>
+                              <IconActionBtn
+                                $color="#16a34a"
+                                onClick={() => saveEdit(company.id)}
+                                title="저장"
+                              >
+                                <Check size={15} />
+                              </IconActionBtn>
+                              <IconActionBtn
+                                $color="#64748b"
+                                onClick={cancelEdit}
+                                title="취소"
+                              >
+                                <Ban size={15} />
+                              </IconActionBtn>
+                            </>
+                          ) : (
+                            <IconActionBtn
+                              $color="#64748b"
+                              onClick={() => startEdit(company)}
+                              title="수정"
+                            >
+                              <Pencil size={14} />
+                            </IconActionBtn>
+                          )}
+                          <StatusToggleBtn
+                            $active={company.status === 'active'}
+                            onClick={() => togglePartnerStatus(company.id)}
+                          >
+                            {company.status === 'active' ? '활성' : '비활성'}
+                          </StatusToggleBtn>
+                        </ModalActionGroup>
+                      </PartnerModalItemTop>
+
+                      <PartnerMetaGrid>
+                        <MetaRow>
+                          <MetaLabel>사업자번호</MetaLabel>
+                          {isEditing ? (
+                            <MetaInput
+                              value={editForm.businessNumber}
+                              onChange={(e) =>
+                                setEditForm((f) => ({
+                                  ...f,
+                                  businessNumber: e.target.value,
+                                }))
+                              }
+                              placeholder="000-00-00000"
+                            />
+                          ) : (
+                            <MetaValue>
+                              {company.businessNumber || '—'}
+                            </MetaValue>
+                          )}
+                        </MetaRow>
+                        <MetaRow>
+                          <MetaLabel>함께한 날짜</MetaLabel>
+                          <MetaValue>{company.partnerSince || '—'}</MetaValue>
+                        </MetaRow>
+                        <MetaRow>
+                          <MetaLabel>수정일자</MetaLabel>
+                          <MetaValue>{company.updatedAt || '—'}</MetaValue>
+                        </MetaRow>
+                      </PartnerMetaGrid>
+                    </PartnerModalItem>
+                  );
+                })}
               </PartnerModalList>
             </ModalBody>
           </ModalContent>
@@ -294,13 +446,18 @@ export default function AdminReservationPage() {
 }
 
 /* ── Icon Components ── */
-function CalendarIcon() { return <Calendar size={20} />; }
-function BuildingStatIcon() { return <Building2 size={20} />; }
-function ChevronLeft() { return <LucideChevronLeft size={14} color="#475569" strokeWidth={1.5} />; }
-function ChevronRight() { return <LucideChevronRight size={14} color="#475569" strokeWidth={1.5} />; }
-function ExternalLinkIcon() { return <ExternalLink size={14} color="#64748b" />; }
-function BuildingIcon() { return <Building2 size={16} />; }
-function PartnerGroupIcon() { return <Users size={28} color="#3b82f6" strokeWidth={1.8} />; }
+function CalendarIcon() {
+  return <Calendar size={20} />;
+}
+function BuildingIcon() {
+  return <Building2 size={16} />;
+}
+function PartnerGroupIcon() {
+  return <Users size={28} color="#3b82f6" strokeWidth={1.8} />;
+}
+function BanIcon() {
+  return <Ban size={20} />;
+}
 
 /* ── Styled Components ── */
 
@@ -331,13 +488,12 @@ const PageSub = styled.p`
   color: ${({ theme }) => theme.colors.textMuted};
 `;
 
-/* 상단 통계 */
+/* 상단 4열 */
 const TopSection = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 16px;
 `;
-
 
 const StatCard = styled.div`
   background: ${({ theme }) => theme.colors.white};
@@ -432,14 +588,17 @@ const FilterTab = styled.button`
   border-radius: 6px;
   font-size: 12px;
   font-weight: ${({ $active }) => ($active ? '600' : '400')};
-  color: ${({ $active, theme }) => ($active ? theme.colors.adminPrimary : theme.colors.textMuted)};
+  color: ${({ $active, theme }) =>
+    $active ? theme.colors.adminPrimary : theme.colors.textMuted};
   background: ${({ $active }) => ($active ? '#fff' : 'transparent')};
-  box-shadow: ${({ $active }) => ($active ? '0 1px 3px rgba(0,0,0,0.08)' : 'none')};
+  box-shadow: ${({ $active }) =>
+    $active ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'};
   transition: all 0.15s;
   white-space: nowrap;
   font-family: inherit;
   &:hover {
-    color: ${({ $active, theme }) => ($active ? theme.colors.adminPrimary : theme.colors.adminTextDark)};
+    color: ${({ $active, theme }) =>
+      $active ? theme.colors.adminPrimary : theme.colors.adminTextDark};
   }
 `;
 
@@ -456,7 +615,8 @@ const THead = styled.thead`
 const TBody = styled.tbody``;
 
 const TR = styled.tr`
-  border-top: ${({ $hoverable, theme }) => ($hoverable ? `1px solid ${theme.colors.borderLight}` : 'none')};
+  border-top: ${({ $hoverable, theme }) =>
+    $hoverable ? `1px solid ${theme.colors.borderLight}` : 'none'};
   transition: background 0.1s;
   &:hover {
     background: ${({ $hoverable }) => ($hoverable ? '#fafbfc' : 'transparent')};
@@ -527,6 +687,12 @@ const SpaceName = styled.span`
   color: #334155;
 `;
 
+const StayNameText = styled.span`
+  font-size: 13px;
+  color: #334155;
+  font-weight: 500;
+`;
+
 const DateText = styled.span`
   font-size: 12px;
   color: ${({ theme }) => theme.colors.textMuted};
@@ -540,8 +706,6 @@ const AmountText = styled.span`
   color: ${({ theme }) => theme.colors.adminTextDark};
   font-family: ${({ theme }) => theme.fonts.number};
 `;
-
-
 
 /* 페이지네이션 푸터 */
 const TableFooter = styled.div`
@@ -559,11 +723,11 @@ const FooterInfo = styled.p`
   font-family: ${({ theme }) => theme.fonts.number};
 `;
 
-/* 하단 3열 */
-const BottomSection = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 16px;
+const EmptyState = styled.div`
+  padding: 48px 0;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 14px;
 `;
 
 /* 활성 파트너사 카드 */
@@ -576,6 +740,16 @@ const ActivePartnerCard = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
+  cursor: pointer;
+  transition:
+    box-shadow 0.18s,
+    border-color 0.18s,
+    background 0.18s;
+  &:hover {
+    border-color: ${({ theme }) => theme.colors.adminPrimary};
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.1);
+    background: #f0f6ff;
+  }
 `;
 
 const PartnerIconWrap = styled.div`
@@ -617,55 +791,6 @@ const ActiveDesc = styled.p`
   line-height: 1.6;
 `;
 
-/* 파트너사 목록 카드 */
-const PartnerListCard = styled.div`
-  background: ${({ theme }) => theme.colors.white};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 8px;
-  padding: 20px 24px;
-  box-shadow: ${({ theme }) => theme.shadows.card};
-`;
-
-const PartnerListHeader = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-`;
-
-const PartnerListTitle = styled.h3`
-  font-size: 15px;
-  font-weight: 600;
-  color: ${({ theme }) => theme.colors.adminTextDark};
-`;
-
-const ExternalLinkBtn = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  transition: background 0.15s;
-  &:hover { background: ${({ theme }) => theme.colors.borderLight}; }
-`;
-
-const PartnerList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-`;
-
-const PartnerItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  border: 1px solid ${({ theme }) => theme.colors.borderLight};
-  border-radius: 8px;
-  background: #fafbfc;
-`;
-
 const CompanyIconWrap = styled.div`
   width: 36px;
   height: 36px;
@@ -696,15 +821,6 @@ const CompanyResvCount = styled.span`
   color: ${({ theme }) => theme.colors.textLight};
 `;
 
-const ActiveBadge = styled.span`
-  font-size: 10px;
-  font-weight: 600;
-  color: ${({ $active }) => ($active ? '#16a34a' : '#64748b')};
-  background: ${({ $active }) => ($active ? '#dcfce7' : '#f1f5f9')};
-  padding: 3px 8px;
-  border-radius: 999px;
-`;
-
 /* 신규 기업 빠른 등록 */
 const QuickRegisterCard = styled.div`
   background: ${({ theme }) => theme.colors.white};
@@ -724,11 +840,6 @@ const QuickRegisterTitle = styled.h3`
   margin-bottom: 4px;
 `;
 
-const FormLabel = styled.label`
-  font-size: 12px;
-  color: ${({ theme }) => theme.colors.textMuted};
-`;
-
 const FormInput = styled.input`
   width: 100%;
   padding: 10px 14px;
@@ -740,8 +851,12 @@ const FormInput = styled.input`
   outline: none;
   transition: border-color 0.15s;
   box-sizing: border-box;
-  &::placeholder { color: ${({ theme }) => theme.colors.textLight}; }
-  &:focus { border-color: ${({ theme }) => theme.colors.adminPrimary}; }
+  &::placeholder {
+    color: ${({ theme }) => theme.colors.textLight};
+  }
+  &:focus {
+    border-color: ${({ theme }) => theme.colors.adminPrimary};
+  }
 `;
 
 const RegisterBtn = styled.button`
@@ -755,7 +870,9 @@ const RegisterBtn = styled.button`
   font-family: inherit;
   margin-top: 4px;
   transition: background 0.15s;
-  &:hover { background: ${({ theme }) => theme.colors.adminPrimaryLight}; }
+  &:hover {
+    background: ${({ theme }) => theme.colors.adminPrimaryLight};
+  }
 `;
 
 /* ── Modal: ModalOverlay / ModalContent / ModalHeader / ModalCloseBtn 은
@@ -784,6 +901,93 @@ const PartnerModalList = styled.div`
   gap: 12px;
 `;
 
+const PartnerModalItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid ${({ theme }) => theme.colors.borderLight};
+  border-radius: 8px;
+  background: #fafbfc;
+`;
+
+const PartnerModalItemTop = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+`;
+
+const ModalActionGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex-shrink: 0;
+`;
+
+const IconActionBtn = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: ${({ $color }) => $color};
+  transition: background 0.15s;
+  &:hover {
+    background: ${({ theme }) => theme.colors.borderLight};
+  }
+`;
+
+const EditNameInput = styled.input`
+  font-size: 13px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.adminTextDark};
+  border: 1px solid ${({ theme }) => theme.colors.adminPrimary};
+  border-radius: 5px;
+  padding: 3px 7px;
+  font-family: inherit;
+  outline: none;
+  width: 100%;
+`;
+
+const PartnerMetaGrid = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 48px;
+`;
+
+const MetaRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const MetaLabel = styled.span`
+  font-size: 11px;
+  color: ${({ theme }) => theme.colors.textLight};
+  width: 72px;
+  flex-shrink: 0;
+`;
+
+const MetaValue = styled.span`
+  font-size: 12px;
+  color: ${({ theme }) => theme.colors.textMuted};
+  font-family: ${({ theme }) => theme.fonts.number};
+`;
+
+const MetaInput = styled.input`
+  font-size: 12px;
+  color: ${({ theme }) => theme.colors.adminTextDark};
+  border: 1px solid ${({ theme }) => theme.colors.adminPrimary};
+  border-radius: 5px;
+  padding: 2px 7px;
+  font-family: inherit;
+  outline: none;
+  flex: 1;
+`;
+
 const StatusToggleBtn = styled.button`
   font-size: 12px;
   font-weight: 600;
@@ -793,9 +997,8 @@ const StatusToggleBtn = styled.button`
   border: 1px solid ${({ $active }) => ($active ? '#16a34a' : '#cbd5e1')};
   color: ${({ $active }) => ($active ? '#16a34a' : '#64748b')};
   background: ${({ $active }) => ($active ? '#f0fdf4' : 'transparent')};
-  
+
   &:hover {
     background: ${({ $active }) => ($active ? '#dcfce7' : '#f1f5f9')};
   }
 `;
-

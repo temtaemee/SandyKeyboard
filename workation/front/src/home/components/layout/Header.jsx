@@ -5,10 +5,18 @@ import styled from 'styled-components';
 import { NAV_LINKS } from '../../data/homeData';
 import api from '../../../app/api/axios';
 import NotificationBell from '../home/NotificationBell';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  setNotifications,
+  setStompClient,
+  setUnreadCount,
+} from '../../store/notificationSlice';
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [memberInfo, setMemberInfo] = useState(null);
+  const { stompClient } = useSelector((state) => state.notification);
+  const dispatch = useDispatch();
 
   const navi = useNavigate();
   const location = useLocation(); // 경로 변경 감지를 위해 추가
@@ -42,6 +50,12 @@ export default function Header() {
 
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
+    if (stompClient && stompClient.connected) {
+      stompClient.deactivate();
+    }
+    dispatch(setStompClient(null));
+    dispatch(setNotifications([]));
+    dispatch(setUnreadCount(0));
     setMemberInfo(null);
     navi('/home');
   };

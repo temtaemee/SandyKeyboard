@@ -1,16 +1,7 @@
 // src/features/admin/components/dashboard/SellersStatCards.jsx
-//
-// 판매자/고객 관리 페이지 상단 통계 카드 4개.
-// 이전에는 숫자·라벨이 컴포넌트 안에 하드코딩되어 있었으나,
-// adminSellersData.js 의 SELLER_STAT_CARDS / CUSTOMER_STAT_CARDS 를 사용하도록 변경.
-// 서버 연동 시 해당 데이터 파일의 value 값만 교체하면 됨.
-
 import styled from 'styled-components';
 import { Users, CheckCircle, XCircle, UserPlus } from 'lucide-react';
-import { SELLER_STAT_CARDS, CUSTOMER_STAT_CARDS } from '../../data/adminSellersData';
 
-// icon 문자열 → 컴포넌트 매핑
-// $active prop: 선택된 카드이면 true (아이콘 색이 white로 바뀜)
 const ICON_MAP = {
   sellers: ({ $active }) => <Users      size={18} color={$active ? '#ffffff' : '#1e293b'} />,
   active:  ({ $active }) => <CheckCircle size={18} color={$active ? '#ffffff' : '#10b981'} />,
@@ -18,9 +9,30 @@ const ICON_MAP = {
   new:     ({ $active }) => <UserPlus   size={18} color={$active ? '#ffffff' : '#f59e0b'} />,
 };
 
-export default function SellersStatCards({ view, filter, onFilterChange }) {
-  // view에 따라 카드 데이터 선택
-  const cards = view === 'seller' ? SELLER_STAT_CARDS : CUSTOMER_STAT_CARDS;
+/**
+ * @param {string}   view           - 'seller' | 'customer'
+ * @param {string}   filter         - 현재 선택된 필터키
+ * @param {function} onFilterChange - 필터 변경 핸들러
+ * @param {object}   stats          - { total, active, stopped, new } — 백엔드 실데이터
+ */
+export default function SellersStatCards({ view, filter, onFilterChange, stats = {} }) {
+  const { total = 0, active = 0, stopped = 0, new: newCount = 0 } = stats;
+
+  const sellerCards = [
+    { filterKey: '전체',   label: '전체 판매자', value: total.toLocaleString(),   icon: 'sellers', iconBg: 'rgba(30,41,59,0.08)'  },
+    { filterKey: '활동 중', label: '활동 중',    value: active.toLocaleString(),   icon: 'active',  iconBg: 'rgba(16,185,129,0.1)' },
+    { filterKey: '정지됨', label: '정지됨',     value: stopped.toLocaleString(),  icon: 'stopped', iconBg: 'rgba(239,68,68,0.08)'  },
+    { filterKey: '신규',   label: '신규',       value: newCount.toLocaleString(), icon: 'new',     iconBg: 'rgba(245,158,11,0.1)'  },
+  ];
+
+  const customerCards = [
+    { filterKey: '전체',   label: '전체 고객', value: total.toLocaleString(),   icon: 'sellers', iconBg: 'rgba(59,130,246,0.1)'  },
+    { filterKey: '활동 중', label: '활성 고객', value: active.toLocaleString(),   icon: 'active',  iconBg: 'rgba(16,185,129,0.1)' },
+    { filterKey: '정지됨', label: '활동정지',  value: stopped.toLocaleString(),  icon: 'stopped', iconBg: 'rgba(239,68,68,0.08)'  },
+    { filterKey: '신규',   label: '신규 고객', value: newCount.toLocaleString(), icon: 'new',     iconBg: 'rgba(245,158,11,0.1)', sub: '최근 3개월 기준' },
+  ];
+
+  const cards = view === 'seller' ? sellerCards : customerCards;
 
   return (
     <StatsSection>
@@ -37,6 +49,7 @@ export default function SellersStatCards({ view, filter, onFilterChange }) {
             </StatCardTop>
             <StatLabel $active={isActive}>{card.label}</StatLabel>
             <StatValue $active={isActive}>{card.value}</StatValue>
+            {card.sub && <StatSub $active={isActive}>{card.sub}</StatSub>}
           </StatCard>
         );
       })}
@@ -98,4 +111,10 @@ const StatValue = styled.p`
   font-family: 'Plus Jakarta Sans', sans-serif;
   letter-spacing: -0.5px;
   line-height: 1.2;
+`;
+
+const StatSub = styled.p`
+  font-size: 11px;
+  color: ${({ $active }) => ($active ? 'rgba(255,255,255,0.6)' : '#94a3b8')};
+  margin-top: 2px;
 `;

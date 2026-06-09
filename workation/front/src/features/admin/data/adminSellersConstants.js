@@ -9,16 +9,6 @@ export const SELLER_STATUS_MAP = {
   stopped: { label: '정지됨',  bg: '#fee2e2', color: '#b91c1c' },
 };
 
-export const CATEGORY_ICONS = {
-  '숙박/호텔':   'hotel',
-  '공유오피스':  'office',
-  '카페/식음료': 'cafe',
-  '캠핑/글램핑': 'camping',
-};
-
-/* ── 페이지 설정값 ── */
-export const TOTAL_PAGES = 3;
-export const FILTER_TABS = ['전체', '활동 중', '정지됨', '신규'];
 export const AVATAR_COLORS = ['#dbeafe','#dcfce7','#fef9c3','#fce7f3','#ede9fe','#ffedd5','#cffafe','#f1f5f9'];
 
 /**
@@ -31,3 +21,4 @@ export const isNewMember = (dateStr) => {
   cutoff.setMonth(cutoff.getMonth() - 3);
   return joined >= cutoff;
 };
+

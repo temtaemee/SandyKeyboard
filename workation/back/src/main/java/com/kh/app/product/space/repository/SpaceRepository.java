@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface SpaceRepository extends JpaRepository<SpaceEntity, Long>, SpaceRepositoryCustom {
     Optional<SpaceEntity> findByIdAndDelYn(Long id, String delYn);
+    Optional<SpaceEntity> findByIdAndDelYnAndVisibleYn(Long id, String delYn, String visibleYn);
 }
