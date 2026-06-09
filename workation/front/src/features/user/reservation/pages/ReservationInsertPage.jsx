@@ -309,7 +309,6 @@ function ReservationInsertPage() {
                 name="refundBankName"
                 value={vo.refundBankName}
                 onChange={handleChange}
-                required
               >
                 <option value="">=== 은행을 선택하세요 ===</option>
                 {BANK_LIST.map((bank) => (
