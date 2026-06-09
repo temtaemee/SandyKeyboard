@@ -4,6 +4,11 @@ import useDestination from '../hooks/useDestination';
 import { useSearchParams } from 'react-router-dom';
 import api from '../../../../app/api/axios';
 
+// 💡 1. react-datepicker 및 한국어 로캘 임포트
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { ko } from 'date-fns/locale';
+
 const AREA_LIST = [
   { label: '전체', value: '' },
   { label: '서울', value: 'SEOUL' },
@@ -25,7 +30,7 @@ function DestinationPage() {
 
   useEffect(() => {
     api
-      .get('/public/arcade') // 👈 실제 백엔드 ArcadePublicApiController 경로로 수정하세요
+      .get('/public/arcade')
       .then((res) => {
         setAllArcades(res.data);
       })
@@ -40,10 +45,9 @@ function DestinationPage() {
     area: searchParams.get('area') || '',
     startDate: '',
     endDate: '',
-    arcadeIds: [], // 💡 편의시설 ID 배열 상태 추가
+    arcadeIds: [],
   });
 
-  // 2. 토글 함수
   const toggleArcade = (id) => {
     setFilters((prev) => {
       const isSelected = prev.arcadeIds.includes(id);
@@ -56,30 +60,39 @@ function DestinationPage() {
     });
   };
 
-  // URL area 파라미터 변경 시 동기화
+  //URL area 파라미터 변경 시 동기화
   useEffect(() => {
     setFilters((prev) => ({ ...prev, area: searchParams.get('area') || '' }));
   }, [searchParams]);
 
-  // 필터 변경 시마다 자동 검색 (혹은 필요시 검색 버튼 클릭 시에만 호출하도록 변경 가능)
+  // 필터 변경 시마다 자동 검색
   useEffect(() => {
     loadSpaces({
       keyword: filters.keyword,
       area: filters.area,
       startDate: filters.startDate,
       endDate: filters.endDate,
-      arcadeIds: filters.arcadeIds, // 💡 배열 전달
+      arcadeIds: filters.arcadeIds,
     });
-  }, [filters.area, filters.keyword, filters.arcadeIds]); // 💡 arcadeIds 감시 추가
+  }, [filters.area, filters.keyword, filters.arcadeIds]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    loadSpaces(filters); // 💡 filters 객체 전체 전달
+    loadSpaces(filters);
     setFilters((prev) => ({
       ...prev,
       startDate: '',
       endDate: '',
     }));
+  };
+
+  // 💡 2. Date 객체를 'YYYY-MM-DD' 문자열로 포맷팅하는 헬퍼 함수
+  const formatDateString = (date) => {
+    if (!date) return '';
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   return (
@@ -101,26 +114,64 @@ function DestinationPage() {
               setFilters((prev) => ({ ...prev, keyword: e.target.value }))
             }
           />
-          <DateInput
-            type="date"
-            value={filters.startDate}
-            onChange={(e) =>
-              setFilters((prev) => ({ ...prev, startDate: e.target.value }))
-            }
-          />
-          <DateInput
-            type="date"
-            value={filters.endDate}
-            onChange={(e) =>
-              setFilters((prev) => ({ ...prev, endDate: e.target.value }))
-            }
-          />
+
+          {/* 💡 3. 체크인 날짜 DatePicker 설정 */}
+          <DatePickerWrapper>
+            <StyledDatePicker
+              locale={ko}
+              dateFormat="yyyy-MM-dd"
+              placeholderText="체크인 날짜"
+              selected={filters.startDate ? new Date(filters.startDate) : null}
+              minDate={new Date()} // 오늘 이전 날짜 선택 불가
+              onChange={(date) => {
+                const formatted = formatDateString(date);
+                setFilters((prev) => {
+                  // 체크인을 바꿨을 때, 기존 체크아웃 날짜가 더 전날이 된다면 체크아웃을 초기화합니다.
+                  const nextEndDate =
+                    prev.endDate && new Date(prev.endDate) < date
+                      ? ''
+                      : prev.endDate;
+                  return {
+                    ...prev,
+                    startDate: formatted,
+                    endDate: nextEndDate,
+                  };
+                });
+              }}
+            />
+          </DatePickerWrapper>
+
+          {/* 💡 4. 체크아웃 날짜 DatePicker 설정 */}
+          <DatePickerWrapper>
+            <StyledDatePicker
+              locale={ko}
+              dateFormat="yyyy-MM-dd"
+              placeholderText="체크아웃 날짜"
+              selected={filters.endDate ? new Date(filters.endDate) : null}
+              // 핵심 기능: 체크인이 선택되어 있다면 [체크인 당일] 혹은 [체크인 + 1일]부터 선택 가능하게 설정
+              minDate={
+                filters.startDate
+                  ? new Date(
+                      new Date(filters.startDate).setDate(
+                        new Date(filters.startDate).getDate() + 1
+                      )
+                    )
+                  : new Date()
+              }
+              disabled={!filters.startDate} // 체크인을 먼저 선택하도록 유도할 경우 활성화 (선택 사항)
+              onChange={(date) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  endDate: formatDateString(date),
+                }))
+              }
+            />
+          </DatePickerWrapper>
 
           <SearchButton type="submit">검색</SearchButton>
         </SearchForm>
 
         <ArcadeButtonGroup>
-          {/* 예시: API로 전체 편의시설 목록을 받아와서 렌더링하세요 */}
           {allArcades.map((arcade) => (
             <ArcadeButton
               key={arcade.id}
@@ -203,6 +254,44 @@ function DestinationPage() {
 
 export default DestinationPage;
 
+/* ========================================================================= */
+/* Styled Components 추가 및 변경                                            */
+/* ========================================================================= */
+
+// 💡 5. SearchForm의 flex 배치 레이아웃이 깨지지 않게 유연한 폭을 제공하는 래퍼 추가
+const DatePickerWrapper = styled.div`
+  flex: 1;
+  min-width: 150px;
+  .react-datepicker-wrapper {
+    width: 100%;
+  }
+`;
+
+// 기존 DateInput 스타일 구조를 캘린더 컴포넌트에 이식
+const StyledDatePicker = styled(DatePicker)`
+  width: 100%;
+  height: 52px;
+  padding: 0 20px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.radius.sm};
+  font-family: ${({ theme }) => theme.fonts.base};
+  font-size: 16px;
+  color: ${({ theme }) => theme.colors.textMid};
+  outline: none;
+  transition: all 0.2s ease;
+  background-color: #fff;
+
+  &:focus {
+    border-color: ${({ theme }) => theme.colors.primary};
+  }
+
+  &:disabled {
+    background-color: #f1f5f9;
+    cursor: not-allowed;
+  }
+`;
+
+/* 기존 스타일 하단부 유지 */
 const Wrapper = styled.div`
   width: 100%;
   min-height: 100vh;
@@ -252,9 +341,12 @@ const SearchForm = styled.form`
   display: flex;
   gap: 12px;
   width: 100%;
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
 `;
 const SearchInput = styled.input`
-  flex: 1;
+  flex: 2;
   height: 52px;
   padding: 0 20px;
   border: 1px solid ${({ theme }) => theme.colors.border};
@@ -269,6 +361,7 @@ const SearchInput = styled.input`
 `;
 const SearchButton = styled.button`
   padding: 0 32px;
+  height: 52px;
   background: ${({ theme }) => theme.colors.primary};
   color: ${({ theme }) => theme.colors.white};
   font-family: ${({ theme }) => theme.fonts.base};
@@ -290,7 +383,6 @@ const AreaButton = styled.button.withConfig({
 })`
   padding: 10px 24px;
   border-radius: ${({ theme }) => theme.radius.full};
-  /* ... 기존 스타일 ... */
   border: 1px solid
     ${(props) =>
       props.active ? props.theme.colors.primary : props.theme.colors.border};
@@ -375,15 +467,6 @@ const AreaBadge = styled.span`
   padding: 4px 10px;
   border-radius: ${({ theme }) => theme.radius.full};
 `;
-const NoImageText = styled.div`
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: ${({ theme }) => theme.colors.textLight};
-  font-size: 13px;
-`;
 const CardBody = styled.div`
   padding: 20px;
   display: flex;
@@ -443,25 +526,12 @@ const LoadingText = styled.div`
   color: #64748b;
   font-weight: 600;
 `;
-const DateInput = styled.input`
-  height: 52px;
-  padding: 0 15px;
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: ${({ theme }) => theme.radius.sm};
-  font-family: ${({ theme }) => theme.fonts.base};
-  color: ${({ theme }) => theme.colors.textMid};
-  outline: none;
-  &:focus {
-    border-color: ${({ theme }) => theme.colors.primary};
-  }
-`;
 const ArcadeButtonGroup = styled.div`
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
   margin-top: 10px;
 `;
-
 const ArcadeButton = styled.button.withConfig({
   shouldForwardProp: (prop) => !['active'].includes(prop),
 })`
