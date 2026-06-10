@@ -21,7 +21,7 @@ jobs:
 
     - name: 패키지 설치 및 빌드
       run: |
-        cd frontend
+        cd front
         npm install
         npm run build
 
