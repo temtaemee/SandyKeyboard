@@ -30,6 +30,17 @@ export default function RefundRequestPage() {
         </select>
       </SelectZone>
 
+      {/* 추가된 환불 규정 섹션 */}
+      <SectionTitle>환불 규정</SectionTitle>
+      <NoticeBox>
+        <strong>[환불 정책]</strong>
+        <br />
+        - 체크인 기준 14일 전: 100% 환불
+        <br />
+        - 체크인 기준 7일 전: 50% 환불
+        <br />- 체크인 기준 7일 이내: 환불 불가
+      </NoticeBox>
+
       <Button
         disabled={loading || !selectedReason}
         onClick={() => handleRefund(reservationId, selectedReason)}
@@ -111,5 +122,25 @@ const Button = styled.button`
     background-color: ${({ theme }) => theme.colors.textLight};
     color: ${({ theme }) => theme.colors.textMuted};
     cursor: not-allowed;
+  }
+`;
+const SectionTitle = styled.h3`
+  font-size: 16px;
+  color: ${({ theme }) => theme.colors.textDark};
+  margin-bottom: 10px;
+`;
+
+const NoticeBox = styled.div`
+  background-color: ${({ theme }) => theme.colors.background || '#f7f9fa'};
+  padding: 16px;
+  border-radius: ${({ theme }) => theme.radius.sm};
+  font-size: 14px;
+  color: ${({ theme }) => theme.colors.textMid};
+  line-height: 1.6;
+  margin-bottom: 30px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+
+  strong {
+    color: ${({ theme }) => theme.colors.textDark};
   }
 `;

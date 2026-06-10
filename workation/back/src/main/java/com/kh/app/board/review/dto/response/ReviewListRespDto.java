@@ -19,6 +19,7 @@ public class ReviewListRespDto {
     private String tag;
     private String writer;
     private Integer rating;
+    private String hideYn;    // 관리자 숨김 여부
     private LocalDateTime createdAt;
     private List<ImageDto> images;
 
@@ -62,6 +63,7 @@ public class ReviewListRespDto {
                 .tag(entity.getTag())
                 .writer(entity.getMember().getUsername())
                 .rating(entity.getRating())
+                .hideYn(entity.getHideYn())
                 .createdAt(entity.getCreatedAt())
                 .stayName(stayName)
                 .checkinDate(checkin)
@@ -88,6 +90,7 @@ public class ReviewListRespDto {
                 .tag(entity.getTag())
                 .writer(entity.getMember().getUsername())
                 .rating(entity.getRating())
+                .hideYn(entity.getHideYn())
                 .createdAt(entity.getCreatedAt())
                 .stayName(stayName)
                 .checkinDate(checkin)

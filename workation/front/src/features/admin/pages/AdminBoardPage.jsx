@@ -38,6 +38,7 @@ export default function AdminBoardPage() {
     updatePost,
     deletePost,
     createPost,
+    reviewHideToggle,
   } = useAdminBoard(activeTab, currentPage);
 
   // 통합 UI 훅 도입으로 복잡한 useState 제거 및 비즈니스 로직 격리
@@ -62,6 +63,8 @@ export default function AdminBoardPage() {
     detailPost,
     setDetailPost,
     handleShowDetail,
+    reviewComments,
+    commentHideToggle,
     deleteTarget,
     setDeleteTarget,
     handleDeleteConfirm,
@@ -173,6 +176,13 @@ export default function AdminBoardPage() {
                   <TH $width="120px">남은 수량</TH>
                   <TH $width="120px">유효기간</TH>
                 </>
+              ) : activeTab === '리뷰' ? (
+                <>
+                  <TH $width="110px">작성자</TH>
+                  <TH $width="80px">별점</TH>
+                  <TH $width="160px">숙소명</TH>
+                  <TH $width="120px">등록일</TH>
+                </>
               ) : (
                 <TH $width="150px">등록일</TH>
               )}
@@ -181,7 +191,7 @@ export default function AdminBoardPage() {
           <TBody>
             {posts.length === 0 ? (
               <TR>
-                <TD colSpan={activeTab === '쿠폰' ? 5 : 4}>
+                <TD colSpan={activeTab === '쿠폰' ? 5 : activeTab === '리뷰' ? 6 : 4}>
                   <EmptyState>검색 결과가 없습니다.</EmptyState>
                 </TD>
               </TR>
@@ -200,7 +210,10 @@ export default function AdminBoardPage() {
                     <TD style={{ paddingLeft: 6 }}>
                       <TitleCell>
                         <TitleCellInner>
-                          <TitleText style={{ textDecoration: post.delYn === 'Y' ? 'line-through' : 'none', color: post.delYn === 'Y' ? '#cbd5e1' : 'inherit' }}>
+                          <TitleText style={{
+                            textDecoration: (post.delYn === 'Y' || (activeTab === '리뷰' && post.hideYn === 'Y')) ? 'line-through' : 'none',
+                            color: (post.delYn === 'Y' || (activeTab === '리뷰' && post.hideYn === 'Y')) ? '#cbd5e1' : 'inherit'
+                          }}>
                             {activeTab === '쿠폰' ? post.couponName : (activeTab === 'FAQ' ? post.question : post.title)}
                           </TitleText>
                           {activeTab === '리뷰' && post.author && (
@@ -227,6 +240,17 @@ export default function AdminBoardPage() {
                               ? `${post.validDays}일`
                               : '-'}
                           </ValidDaysText>
+                        </TD>
+                      </>
+                    ) : activeTab === '리뷰' ? (
+                      <>
+                        <TD><ReviewWriterText $hidden={post.hideYn === 'Y'}>{post.writer ?? '—'}</ReviewWriterText></TD>
+                        <TD><ReviewRatingText $hidden={post.hideYn === 'Y'}>{'★'.repeat(post.rating ?? 0)}</ReviewRatingText></TD>
+                        <TD><ReviewStayText $hidden={post.hideYn === 'Y'}>{post.stayName ?? '—'}</ReviewStayText></TD>
+                        <TD>
+                          <DateText $hidden={post.hideYn === 'Y'}>
+                            {post.createdAt ? post.createdAt.split('T')[0] : '—'}
+                          </DateText>
                         </TD>
                       </>
                     ) : (
@@ -289,7 +313,11 @@ export default function AdminBoardPage() {
               {activeTab !== '쿠폰' && (
                 <DetailHeaderDates>
                   <DateRow>등록일: {detailPost.createdAt ? new Date(detailPost.createdAt).toLocaleString() : detailPost.date || '—'}</DateRow>
-                  <DateRow>수정일: {detailPost.updatedAt ? new Date(detailPost.updatedAt).toLocaleString() : '—'}</DateRow>
+                  {activeTab === '리뷰' ? (
+                    <DateRow>{detailPost.checkinDate ?? '—'} ~ {detailPost.checkoutDate ?? '—'}</DateRow>
+                  ) : (
+                    <DateRow>수정일: {detailPost.updatedAt ? new Date(detailPost.updatedAt).toLocaleString() : '—'}</DateRow>
+                  )}
                 </DetailHeaderDates>
               )}
 
@@ -326,6 +354,51 @@ export default function AdminBoardPage() {
                     </DetailMetaValue>
                   </DetailMetaItem>
                 </DetailMetaGrid>
+              ) : activeTab === '리뷰' ? (
+                <>
+                  <DetailContentArea style={{ paddingTop: '0px' }}>
+                    {detailPost.content || '등록된 내용이 없습니다.'}
+                  </DetailContentArea>
+
+                  {detailPost.images && detailPost.images.length > 0 && (
+                    <ReviewImageGrid>
+                      {detailPost.images.map((img) => (
+                        <ReviewImageItem
+                          key={img.id}
+                          src={`https://finalproject-s3-bucket-243050855199-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/${img.s3Key}`}
+                          alt={img.originalFileName}
+                        />
+                      ))}
+                    </ReviewImageGrid>
+                  )}
+
+                  <ReviewCommentsSection>
+                    <ReviewCommentsSectionTitle>댓글 ({reviewComments.length})</ReviewCommentsSectionTitle>
+                    {reviewComments.length === 0 ? (
+                      <ReviewCommentEmpty>등록된 댓글이 없습니다.</ReviewCommentEmpty>
+                    ) : (
+                      reviewComments.map((c) => (
+                        <ReviewCommentItem key={c.id} $hidden={c.hideYn === 'Y'}>
+                          <ReviewCommentMeta>
+                            <ReviewCommentWriter>{c.writer ?? '—'}</ReviewCommentWriter>
+                            {c.ownerYn === 'Y' && <ReviewCommentOwnerBadge>숙소</ReviewCommentOwnerBadge>}
+                            {c.hideYn === 'Y' && <ReviewCommentHiddenBadge>숨김</ReviewCommentHiddenBadge>}
+                            <ReviewCommentDate>
+                              {c.createdAt ? c.createdAt.split('T')[0] : ''}
+                            </ReviewCommentDate>
+                            <CommentHideBtn
+                              $hidden={c.hideYn === 'Y'}
+                              onClick={() => commentHideToggle(detailPost.id, c)}
+                            >
+                              {c.hideYn === 'Y' ? '해제' : '숨김'}
+                            </CommentHideBtn>
+                          </ReviewCommentMeta>
+                          <ReviewCommentContent $hidden={c.hideYn === 'Y'}>{c.content}</ReviewCommentContent>
+                        </ReviewCommentItem>
+                      ))
+                    )}
+                  </ReviewCommentsSection>
+                </>
               ) : (
                 <>
                   {/* 아래는 다 내용으로 채워짐 */}
@@ -353,16 +426,33 @@ export default function AdminBoardPage() {
             </ModalBody>
 
             <ModalFooter>
-              <DeleteBtn onClick={() => setDeleteTarget(detailPost)}>
-                <Trash2 size={14} />
-                삭제
-              </DeleteBtn>
+              {activeTab === '리뷰' ? (
+                <HideToggleBtn
+                  $hidden={detailPost.hideYn === 'Y'}
+                  onClick={async () => {
+                    const newHideYn = await reviewHideToggle(detailPost);
+                    if (newHideYn !== null) {
+                      setDetailPost((prev) => ({ ...prev, hideYn: newHideYn }));
+                    }
+                  }}
+                >
+                  <Trash2 size={14} />
+                  {detailPost.hideYn === 'Y' ? '숨김 해제' : '숨김'}
+                </HideToggleBtn>
+              ) : (
+                <DeleteBtn onClick={() => setDeleteTarget(detailPost)}>
+                  <Trash2 size={14} />
+                  삭제
+                </DeleteBtn>
+              )}
               <RightBtns>
                 <CancelBtn onClick={() => setDetailPost(null)}>닫기</CancelBtn>
-                <SubmitBtn onClick={() => openEditModal(detailPost)}>
-                  <Pencil size={13} />
-                  수정
-                </SubmitBtn>
+                {activeTab !== '리뷰' && (
+                  <SubmitBtn onClick={() => openEditModal(detailPost)}>
+                    <Pencil size={13} />
+                    수정
+                  </SubmitBtn>
+                )}
               </RightBtns>
             </ModalFooter>
           </ModalContent>
@@ -543,17 +633,21 @@ export default function AdminBoardPage() {
         title={
           activeTab === '쿠폰'
             ? '쿠폰을 삭제하시겠습니까?'
+            : activeTab === '리뷰'
+            ? '리뷰를 숨김 처리하시겠습니까?'
             : '게시글을 삭제하시겠습니까?'
         }
         description={
           deleteTarget
             ? activeTab === '쿠폰'
               ? `"${deleteTarget.couponName ?? deleteTarget.title}" 쿠폰이 삭제됩니다.`
+              : activeTab === '리뷰'
+              ? `"${deleteTarget.title}" 리뷰가 숨김 처리됩니다.`
               : `"${deleteTarget.title}" 게시글이 영구적으로 삭제됩니다.`
             : ''
         }
         isDanger
-        confirmText="삭제"
+        confirmText={activeTab === '리뷰' ? '숨김' : '삭제'}
         icon={<Trash2 size={24} color="#ef4444" />}
       />
     </PageWrapper>
@@ -811,6 +905,68 @@ const QtyText = styled.span`
   font-weight: 500;
   color: ${({ theme }) => theme.colors.adminTextDark};
   font-family: ${({ theme }) => theme.fonts.number};
+`;
+const ReviewCheckInOutText = styled.p`
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.textMuted};
+  font-family: ${({ theme }) => theme.fonts.number};
+`;
+const ReviewDetailMeta = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 24px;
+  padding: 14px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+`;
+const ReviewDetailMetaItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
+const ReviewDetailMetaLabel = styled.span`
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+`;
+const ReviewDetailMetaValue = styled.span`
+  font-size: 13px;
+  color: #334155;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+`;
+const ReviewImageGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 4px;
+`;
+const ReviewImageItem = styled.img`
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+`;
+const ReviewWriterText = styled.span`
+  font-size: 13px;
+  color: ${({ $hidden, theme }) => ($hidden ? '#cbd5e1' : theme.colors.adminTextDark)};
+  text-decoration: ${({ $hidden }) => ($hidden ? 'line-through' : 'none')};
+`;
+const ReviewRatingText = styled.span`
+  font-size: 12px;
+  color: ${({ $hidden }) => ($hidden ? '#cbd5e1' : '#f59e0b')};
+  letter-spacing: -1px;
+  text-decoration: ${({ $hidden }) => ($hidden ? 'line-through' : 'none')};
+`;
+const ReviewStayText = styled.span`
+  font-size: 13px;
+  color: ${({ $hidden, theme }) => ($hidden ? '#cbd5e1' : theme.colors.textMuted)};
+  text-decoration: ${({ $hidden }) => ($hidden ? 'line-through' : 'none')};
 `;
 const ValidDaysText = styled.span`
   font-size: 13px;
@@ -1088,6 +1244,136 @@ const SubmitBtn = styled.button`
   &:hover {
     background: #1d3d44;
   }
+`;
+
+/* 리뷰 숨김/해제 버튼 */
+const HideToggleBtn = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+  ${({ $hidden }) =>
+    $hidden
+      ? `
+    border: 1px solid #d1fae5;
+    background: #f0fdf4;
+    color: #16a34a;
+    &:hover { background: #dcfce7; }
+  `
+      : `
+    border: 1px solid #fed7aa;
+    background: #fff7ed;
+    color: #ea580c;
+    &:hover { background: #ffedd5; }
+  `}
+`;
+
+/* 리뷰 댓글 */
+const ReviewCommentsSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+  padding-top: 14px;
+  border-top: 1px solid #e2e8f0;
+`;
+
+const ReviewCommentsSectionTitle = styled.p`
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 2px;
+`;
+
+const ReviewCommentEmpty = styled.p`
+  font-size: 13px;
+  color: #94a3b8;
+  padding: 8px 0;
+`;
+
+const ReviewCommentItem = styled.div`
+  padding: 10px 12px;
+  background: ${({ $hidden }) => ($hidden ? '#fafafa' : '#f8fafc')};
+  border-radius: 8px;
+  border: 1px solid ${({ $hidden }) => ($hidden ? '#f1f5f9' : '#e2e8f0')};
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  opacity: ${({ $hidden }) => ($hidden ? 0.6 : 1)};
+`;
+
+const ReviewCommentMeta = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const ReviewCommentWriter = styled.span`
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+`;
+
+const ReviewCommentDate = styled.span`
+  font-size: 11px;
+  color: #94a3b8;
+  font-family: ${({ theme }) => theme.fonts.number};
+`;
+
+const CommentHideBtn = styled.button`
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+  ${({ $hidden }) =>
+    $hidden
+      ? `
+    border: 1px solid #d1fae5;
+    background: #f0fdf4;
+    color: #16a34a;
+    &:hover { background: #dcfce7; }
+  `
+      : `
+    border: 1px solid #fed7aa;
+    background: #fff7ed;
+    color: #ea580c;
+    &:hover { background: #ffedd5; }
+  `}
+`;
+
+const ReviewCommentOwnerBadge = styled.span`
+  font-size: 10px;
+  font-weight: 600;
+  color: #0369a1;
+  background: #e0f2fe;
+  padding: 1px 6px;
+  border-radius: 3px;
+`;
+
+const ReviewCommentHiddenBadge = styled.span`
+  font-size: 10px;
+  font-weight: 600;
+  color: #9333ea;
+  background: #f3e8ff;
+  padding: 1px 6px;
+  border-radius: 3px;
+`;
+
+const ReviewCommentContent = styled.p`
+  font-size: 13px;
+  color: ${({ $hidden }) => ($hidden ? '#94a3b8' : '#475569')};
+  line-height: 1.5;
+  text-decoration: ${({ $hidden }) => ($hidden ? 'line-through' : 'none')};
 `;
 
 const FieldGroup = styled.div`

@@ -13,6 +13,8 @@ import com.kh.app.security.util.JwtUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -27,6 +29,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Slf4j
 public class KakaoAuthService {
 
     private final SocialAccountRepository socialAccountRepository;
@@ -34,21 +37,26 @@ public class KakaoAuthService {
     private final ProfileRepository memberProfileRepository; // 💡 프록시 방어용
     private final JwtUtil jwtUtil;
 
+    @Value("${kakao.rest-api-key}")
+    private String clientId;
+    @Value("${kakao.redirect-uri}")
+    private String redirectUri;
+    @Value("${kakao.client-secret}")
+    private String clientSecret;
     // 💡 방금 새로 만드신 앱의 REST API 키와 발급받은 Client Secret을 넣어주세요!
-    private final String clientId = "d9a689a25f662f9366b1e782bce9d86e";
-    private final String clientSecret = "RWf4bxjIpvFQoz3ZgpVL0f366GqPQyrP";
-    private final String redirectUri = "http://localhost:5173/oauth/callback/kakao";
 
     @Transactional
     public SocialLoginRespDto kakaoLogin(SocialLoginReqDto dto) {
+        log.info("1.카카오 로그인 시작");
         // 1. 카카오로부터 access_token 발급받기
         String kakaoAccessToken = getKakaoAccessToken(dto);
-
+        log.info("2. 토큰 발급 성공");
         // 2. access_token으로 카카오 유저 정보 파싱
         JsonNode userInfo = getKakaoUserInfo(kakaoAccessToken);
         String socialId = userInfo.get("id").asText();
+        log.info("3.유저정보 조회 성공");
         String email = userInfo.get("kakao_account").get("email").asText();
-
+        log.info("4.이메일 추출 성공");
         // 🚨 [수정 포인트 1] 카카오 JSON에서 프로필 이미지 URL 안전하게 파싱하기
         String profileImageUrl = null;
         if (userInfo.has("kakao_account") && userInfo.get("kakao_account").has("profile")) {

@@ -35,4 +35,19 @@ public class CommentEntity extends BaseEntity {
     @Column(length = 1, nullable = false)
     @Builder.Default
     private String ownerYn = "N";
+
+    // 관리자 댓글 숨김 여부 (Y: 숨김, N: 표시)
+    @Column(length = 1, nullable = false)
+    @Builder.Default
+    private String hideYn = "N";
+
+    // 댓글 숨김 처리
+    public void hide() {
+        this.hideYn = "Y";
+    }
+
+    // 댓글 숨김 해제
+    public void show() {
+        this.hideYn = "N";
+    }
 }
