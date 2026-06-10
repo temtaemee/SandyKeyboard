@@ -14,6 +14,7 @@ import com.kh.app.security.util.JwtUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,11 +34,12 @@ public class GoogleAuthService {
     private final MemberRepository memberRepository;
     private final ProfileRepository memberProfileRepository; // 💡 프록시 방어용
     private final JwtUtil jwtUtil;
+    @Value("${google.redirect-uri}")
+    private String redirectUri;
 
     // 💡 구글 클라우드 콘솔에서 발급받은 키를 넣어주세요.
     private final String clientId = "636736190970-kr8td75eis24br9sdgbqq8kentqno1td.apps.googleusercontent.com";
     private final String clientSecret = "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";
-    private final String redirectUri = "http://localhost:5173/oauth/callback/google";
 
     @Transactional
     public SocialLoginRespDto googleLogin(SocialLoginReqDto dto) {
