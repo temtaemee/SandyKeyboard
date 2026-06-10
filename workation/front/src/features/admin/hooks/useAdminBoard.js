@@ -18,6 +18,10 @@ import {
   reviewFindAll,
   hideReview,
   showReview,
+  getEvents,
+  createEvent,
+  updateEvent,
+  deleteEvent,
 } from '../api/adminBoardApi';
 import {
   updatePostsForTab,
@@ -65,6 +69,8 @@ export default function useAdminBoard(activeTab, currentPage = 1) {
           resp = await faqList();
         } else if (activeTab === '리뷰') {
           resp = await reviewFindAll(apiPage);
+        } else if (activeTab === '이벤트') {
+          resp = await getEvents(apiPage);
         } else {
           resp = { data: [] };
         }
@@ -102,13 +108,14 @@ export default function useAdminBoard(activeTab, currentPage = 1) {
       if (activeTab === '쿠폰') {
         await updateCoupon(postId, changes);
       } else if (activeTab === '공지사항') {
-        // 백엔드 파일 업로드 API 보강 전까지 기존의 안전한 DTO JSON 전송방식으로 복구
         await updateAdminBoardPost(postId, changes);
       } else if (activeTab === 'FAQ') {
         await faqUpdate(postId, changes);
         const resp = await faqDetail(postId);
         dispatch(updatePostInTab({ tab: activeTab, postId, changes: resp.data }));
         return;
+      } else if (activeTab === '이벤트') {
+        await updateEvent(postId, changes);
       }
       dispatch(updatePostInTab({ tab: activeTab, postId, changes }));
     } catch (err) {
@@ -135,6 +142,9 @@ export default function useAdminBoard(activeTab, currentPage = 1) {
         dispatch(updatePostsForTab({ tab: '공지사항', posts: postsArray }));
       } else if (activeTab === 'FAQ') {
         await faqDelete(postId);
+        dispatch(deletePostFromTab({ tab: activeTab, postId }));
+      } else if (activeTab === '이벤트') {
+        await deleteEvent(postId);
         dispatch(deletePostFromTab({ tab: activeTab, postId }));
       }
     } catch (err) {
@@ -168,13 +178,18 @@ export default function useAdminBoard(activeTab, currentPage = 1) {
         dispatch(updatePostsForTab({ tab: '공지사항', posts: postsArray }));
       } else if (tabType === 'FAQ') {
         await faqCreate(data);
-        // 등록 후 화면 데이터 동기화를 위해 재조회
         const resp = await faqList();
         const postsArray = Array.isArray(resp.data)
           ? resp.data
           : resp.data.content || [];
-
         dispatch(updatePostsForTab({ tab: 'FAQ', posts: postsArray }));
+      } else if (tabType === '이벤트') {
+        await createEvent(data);
+        const resp = await getEvents(0);
+        const postsArray = Array.isArray(resp.data)
+          ? resp.data
+          : resp.data.content || [];
+        dispatch(updatePostsForTab({ tab: '이벤트', posts: postsArray }));
       }
     } catch (err) {
       dispatch(setError(err.message));
