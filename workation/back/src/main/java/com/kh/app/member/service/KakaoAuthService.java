@@ -29,7 +29,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class KakaoAuthService {
-
+//굿
     private final SocialAccountRepository socialAccountRepository;
     private final MemberRepository memberRepository;
     private final ProfileRepository memberProfileRepository; // 💡 프록시 방어용
