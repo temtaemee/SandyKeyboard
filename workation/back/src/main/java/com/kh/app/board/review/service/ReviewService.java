@@ -46,11 +46,11 @@ public class ReviewService {
     private final SpacePictureRepository spacePictureRepository;
     private final S3Service s3Service;
 
-    // 전체 목록 조회 (페이징)
+    // 전체 목록 조회 - 일반 사용자용 (숨긴 리뷰 제외)
     @Transactional(readOnly = true)
     public Page<ReviewListRespDto> findAll(int page) {
         Pageable pageable = PageRequest.of(page, 10);
-        return reviewRepository.findAllByDelYnOrderByCreatedAtDesc("N", pageable)
+        return reviewRepository.findAllByDelYnAndHideYnOrderByCreatedAtDesc("N", "N", pageable)
                 .map(review -> {
                     List<ReviewImageEntity> images =
                             reviewImageRepository.findAllByReviewIdAndDelYn(review.getId(), "N");
@@ -242,4 +242,52 @@ public class ReviewService {
 
         review.update(dto.getTitle(), dto.getContent(), dto.getTag(), dto.getRating());
     }
+    // ─────────────────────────────────────────
+    // 댓글 숨김 (admin 전용)
+    // ─────────────────────────────────────────
+
+    // 댓글 숨김 처리
+    public void hideComment(Long commentId) {
+        CommentEntity comment = commentRepository.findByIdAndDelYn(commentId, "N")
+                .orElseThrow(() -> new IllegalArgumentException("댓글을 찾을 수 없습니다."));
+        comment.hide();
+    }
+
+    // 댓글 숨김 해제
+    public void showComment(Long commentId) {
+        CommentEntity comment = commentRepository.findByIdAndDelYn(commentId, "N")
+                .orElseThrow(() -> new IllegalArgumentException("댓글을 찾을 수 없습니다."));
+        comment.show();
+    }
+
+    // ─────────────────────────────────────────
+// 리뷰 숨김 (admin 전용)
+// ─────────────────────────────────────────
+
+    // 리뷰 숨김 처리
+    public void hideReview(Long reviewId) {
+        ReviewEntity review = reviewRepository.findByIdAndDelYn(reviewId, "N")
+                .orElseThrow(() -> new IllegalArgumentException("후기를 찾을 수 없습니다."));
+        review.hide();
+    }
+
+    // 리뷰 숨김 해제
+    public void showReview(Long reviewId) {
+        ReviewEntity review = reviewRepository.findByIdAndDelYn(reviewId, "N")
+                .orElseThrow(() -> new IllegalArgumentException("후기를 찾을 수 없습니다."));
+        review.show();
+    }
+    // 전체 목록 조회 - 관리자용 (숨긴 리뷰 포함)
+    @Transactional(readOnly = true)
+    public Page<ReviewListRespDto> findAllForAdmin(int page) {
+        Pageable pageable = PageRequest.of(page, 10);
+        return reviewRepository.findAllByDelYnOrderByIdDesc("N", pageable)
+                .map(review -> {
+                    List<ReviewImageEntity> images =
+                            reviewImageRepository.findAllByReviewIdAndDelYn(review.getId(), "N");
+                    return ReviewListRespDto.from(review, images);
+                });
+    }
+
 }
+

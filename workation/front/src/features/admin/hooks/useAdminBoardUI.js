@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { getAdminBoardPost, getCouponById } from '../api/adminBoardApi';
+import {
+  getAdminBoardPost,
+  getCouponById,
+  reviewDetail,
+  findComments,
+  hideComment,
+  showComment,
+  faqDetail,
+} from '../api/adminBoardApi';
 
 /**
  * AdminBoardPage의 UI 로직(검색, 필터링, 다양한 모달 창 제어, 폼 입력)을 전담하는 커스텀 훅입니다.
@@ -75,9 +83,10 @@ export default function useAdminBoardUI({
     return 0;
   });
 
-  const displayPosts = activeTab === 'FAQ'
-    ? sortedPosts.slice((currentPage - 1) * 10, currentPage * 10)
-    : sortedPosts;
+  const displayPosts =
+    activeTab === 'FAQ'
+      ? sortedPosts.slice((currentPage - 1) * 10, currentPage * 10)
+      : sortedPosts;
 
   // 검색 및 쿠폰 필터 상태 초기화
   const resetFilters = () => {
@@ -114,7 +123,7 @@ export default function useAdminBoardUI({
     } else {
       setFormData({
         title: activeTab === 'FAQ' ? post.question : post.title,
-        content: activeTab === 'FAQ' ? post.answer : (post.content || ''),
+        content: activeTab === 'FAQ' ? post.answer : post.content || '',
         isFixed: post.pinYn === 'Y' || post.isFixed || false,
       });
     }
@@ -200,19 +209,29 @@ export default function useAdminBoardUI({
           setDetailPost({ ...editingPost, ...updatedData });
         }
       } else if (activeTab === 'FAQ') {
-        setDetailPost({ ...editingPost, ...updatedData });
+        try {
+          const resp = await faqDetail(postId);
+          setDetailPost(resp.data);
+        } catch (err) {
+          console.error('수정 완료 후 FAQ 상세 재조회 에러:', err);
+          setDetailPost({ ...editingPost, ...updatedData });
+        }
       } else {
         setDetailPost({ ...editingPost, ...updatedData });
       }
     } else {
-      if (activeTab === '쿠폰') {
-        await createPost({
-          couponName: formData.name,
-          discountRate: Number(formData.discountRate),
-          remainQty: Number(formData.quantity),
-          validDays: Number(formData.validDays),
-        });
-      } else if (activeTab === '공지사항') {
+      // 신규 등록은 현재 탭(activeTab)이 아니라 열려있는 등록 모달 종류(registerModal) 기준으로 처리
+      if (registerModal === '쿠폰') {
+        await createPost(
+          {
+            couponName: formData.name,
+            discountRate: Number(formData.discountRate),
+            remainQty: Number(formData.quantity),
+            validDays: Number(formData.validDays),
+          },
+          registerModal
+        );
+      } else if (registerModal === '공지사항') {
         const fd = new FormData();
         const noticeDto = {
           memberId: 1, // 필요 시 로그인 한 계정 ID 정보 연계
@@ -230,13 +249,16 @@ export default function useAdminBoardUI({
             fd.append('files', file);
           });
         }
-        await createPost(fd);
-      } else if (activeTab === 'FAQ') {
-        await createPost({
-          memberId: 1,
-          question: formData.title || '',
-          answer: formData.content || '',
-        });
+        await createPost(fd, registerModal);
+      } else if (registerModal === 'FAQ') {
+        await createPost(
+          {
+            memberId: 1,
+            question: formData.title || '',
+            answer: formData.content || '',
+          },
+          registerModal
+        );
       }
       closeRegisterModal();
     }
@@ -244,6 +266,7 @@ export default function useAdminBoardUI({
 
   // ─── 3. 상세보기 모달 상태 ───
   const [detailPost, setDetailPost] = useState(null); // null | post 객체
+  const [reviewComments, setReviewComments] = useState([]); // 리뷰 댓글 목록
 
   const handleShowDetail = async (post) => {
     if (activeTab === '공지사항') {
@@ -254,8 +277,48 @@ export default function useAdminBoardUI({
         console.error('공지 상세 조회 실패:', err);
         setDetailPost(post);
       }
+    } else if (activeTab === '리뷰') {
+      try {
+        const [detailResp, commentsResp] = await Promise.all([
+          reviewDetail(post.id),
+          findComments(post.id),
+        ]);
+        setDetailPost(detailResp.data);
+        setReviewComments(Array.isArray(commentsResp.data) ? commentsResp.data : commentsResp.data?.content ?? []);
+      } catch (err) {
+        console.error('리뷰 상세 조회 실패:', err);
+        setDetailPost(post);
+        setReviewComments([]);
+      }
+    } else if (activeTab === 'FAQ') {
+      try {
+        const resp = await faqDetail(post.id);
+        setDetailPost(resp.data);
+      } catch (err) {
+        console.error('FAQ 상세 조회 실패:', err);
+        setDetailPost(post);
+      }
     } else {
       setDetailPost(post);
+    }
+  };
+
+  // 댓글 숨김/해제 토글 (로컬 상태만 업데이트)
+  const commentHideToggle = async (reviewId, comment) => {
+    try {
+      if (comment.hideYn === 'Y') {
+        await showComment(reviewId, comment.id);
+        setReviewComments((prev) =>
+          prev.map((c) => (c.id === comment.id ? { ...c, hideYn: 'N' } : c))
+        );
+      } else {
+        await hideComment(reviewId, comment.id);
+        setReviewComments((prev) =>
+          prev.map((c) => (c.id === comment.id ? { ...c, hideYn: 'Y' } : c))
+        );
+      }
+    } catch (err) {
+      console.error('댓글 숨김 처리 실패:', err);
     }
   };
 
@@ -304,6 +367,9 @@ export default function useAdminBoardUI({
     detailPost,
     setDetailPost,
     handleShowDetail,
+    reviewComments,
+    setReviewComments,
+    commentHideToggle,
 
     // 4. 삭제 확인
     deleteTarget,

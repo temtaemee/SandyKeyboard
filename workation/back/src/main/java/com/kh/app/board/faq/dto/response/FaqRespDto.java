@@ -14,6 +14,7 @@ public class FaqRespDto {
     private String question;
     private String answer;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     public static FaqRespDto from(FaqEntity entity) {
         return FaqRespDto.builder()
@@ -21,6 +22,7 @@ public class FaqRespDto {
                 .question(entity.getQuestion())
                 .answer(entity.getAnswer())
                 .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
                 .build();
     }
 }
