@@ -47,7 +47,7 @@ public class KakaoAuthService {
 
     @Transactional
     public SocialLoginRespDto kakaoLogin(SocialLoginReqDto dto) {
-        // 1. 카카오로부터 access_token 발급받기ㄱ
+        // 1. 카카오로부터 access_token 발급받기
         String kakaoAccessToken = getKakaoAccessToken(dto);
         // 2. access_token으로 카카오 유저 정보 파싱
         JsonNode userInfo = getKakaoUserInfo(kakaoAccessToken);
