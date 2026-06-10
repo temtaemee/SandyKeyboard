@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class SeaggerConfig {
-//rnt
+
     @Bean
     public OpenAPI openAPI(){
         String schemeName = "BearTokenAuth";
