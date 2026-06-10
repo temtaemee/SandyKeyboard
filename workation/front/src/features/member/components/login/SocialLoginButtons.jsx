@@ -5,17 +5,17 @@ import kakaoImg from '../../img/kakao.png';
 import naverImg from '../../img/naver.png';
 
 function SocialLoginButtons() {
-  //로컬용
-  const NAVER_REDIRECT_URI = 'http://localhost:5173/oauth/callback/naver';
-  const KAKAO_REDIRECT_URI = 'http://localhost:5173/oauth/callback/kakao';
-  const GOOGLE_REDIRECT_URI = 'http://localhost:5173/oauth/callback/google';
-  const KAKAO_REST_API_KEY = 'd9a689a25f662f9366b1e782bce9d86e';
+  // //로컬용
+  // const NAVER_REDIRECT_URI = 'http://localhost:5173/oauth/callback/naver';
+  // const KAKAO_REDIRECT_URI = 'http://localhost:5173/oauth/callback/kakao';
+  // const GOOGLE_REDIRECT_URI = 'http://localhost:5173/oauth/callback/google';
+  // const KAKAO_REST_API_KEY = 'd9a689a25f662f9366b1e782bce9d86e';
 
   // // 🚀 [AWS 배포용] - 배포 시 활성화
-  const NAVER_REDIRECT_URI = 'http://sandykey.shop/oauth/callback/naver';
-  const GOOGLE_REDIRECT_URI = 'http://sandykey.shop/oauth/callback/google';
-  const KAKAO_REDIRECT_URI = 'http://sandykey.shop/oauth/callback/kakao';
-  // const KAKAO_REST_API_KEY = '178dc23fcf097631447fd66642773f8b';
+  const NAVER_REDIRECT_URI = 'https://sandykey.shop/oauth/callback/naver';
+  const GOOGLE_REDIRECT_URI = 'https://sandykey.shop/oauth/callback/google';
+  const KAKAO_REDIRECT_URI = 'https://sandykey.shop/oauth/callback/kakao';
+  const KAKAO_REST_API_KEY = '178dc23fcf097631447fd66642773f8b';
 
   const CLIENT_ID = 'He0BQFaYRyk5Zk2p_Kdy';
   const STATE = 'mo_rae_key_board_state';
