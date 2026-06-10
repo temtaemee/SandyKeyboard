@@ -47,16 +47,12 @@ public class KakaoAuthService {
 
     @Transactional
     public SocialLoginRespDto kakaoLogin(SocialLoginReqDto dto) {
-        log.info("1.카카오 로그인 시작");
         // 1. 카카오로부터 access_token 발급받기
         String kakaoAccessToken = getKakaoAccessToken(dto);
-        log.info("2. 토큰 발급 성공");
         // 2. access_token으로 카카오 유저 정보 파싱
         JsonNode userInfo = getKakaoUserInfo(kakaoAccessToken);
         String socialId = userInfo.get("id").asText();
-        log.info("3.유저정보 조회 성공");
         String email = userInfo.get("kakao_account").get("email").asText();
-        log.info("4.이메일 추출 성공");
         // 🚨 [수정 포인트 1] 카카오 JSON에서 프로필 이미지 URL 안전하게 파싱하기
         String profileImageUrl = null;
         if (userInfo.has("kakao_account") && userInfo.get("kakao_account").has("profile")) {
