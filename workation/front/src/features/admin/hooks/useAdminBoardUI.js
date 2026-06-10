@@ -7,6 +7,7 @@ import {
   hideComment,
   showComment,
   faqDetail,
+  getEventById,
 } from '../api/adminBoardApi';
 
 /**
@@ -179,6 +180,11 @@ export default function useAdminBoardUI({
           question: formData.title ?? editingPost.question,
           answer: formData.content ?? editingPost.answer,
         };
+      } else if (activeTab === '이벤트') {
+        updatedData = {
+          title: formData.title ?? editingPost.title,
+          content: formData.content ?? editingPost.content,
+        };
       } else {
         updatedData = {
           title: formData.title || editingPost.title,
@@ -214,6 +220,14 @@ export default function useAdminBoardUI({
           setDetailPost(resp.data);
         } catch (err) {
           console.error('수정 완료 후 FAQ 상세 재조회 에러:', err);
+          setDetailPost({ ...editingPost, ...updatedData });
+        }
+      } else if (activeTab === '이벤트') {
+        try {
+          const resp = await getEventById(postId);
+          setDetailPost(resp.data);
+        } catch (err) {
+          console.error('수정 완료 후 이벤트 상세 재조회 에러:', err);
           setDetailPost({ ...editingPost, ...updatedData });
         }
       } else {
@@ -259,6 +273,14 @@ export default function useAdminBoardUI({
           },
           registerModal
         );
+      } else if (registerModal === '이벤트') {
+        await createPost(
+          {
+            title: formData.title || '',
+            content: formData.content || '',
+          },
+          registerModal
+        );
       }
       closeRegisterModal();
     }
@@ -296,6 +318,14 @@ export default function useAdminBoardUI({
         setDetailPost(resp.data);
       } catch (err) {
         console.error('FAQ 상세 조회 실패:', err);
+        setDetailPost(post);
+      }
+    } else if (activeTab === '이벤트') {
+      try {
+        const resp = await getEventById(post.id);
+        setDetailPost(resp.data);
+      } catch (err) {
+        console.error('이벤트 상세 조회 실패:', err);
         setDetailPost(post);
       }
     } else {

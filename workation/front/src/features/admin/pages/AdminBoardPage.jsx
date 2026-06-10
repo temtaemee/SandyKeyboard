@@ -563,7 +563,7 @@ export default function AdminBoardPage() {
                       <CheckboxLabel htmlFor="isFixed">이 글을 상단에 고정합니다 (필독)</CheckboxLabel>
                     </CheckboxGroup>
                   )}
-                  {(registerModal === '공지사항' || registerModal === '이벤트') && (
+                  {registerModal === '공지사항' && (
                     <FieldGroup>
                       <FieldLabel>첨부파일</FieldLabel>
                       {editingPost && editingPost.files && editingPost.files.length > 0 && (

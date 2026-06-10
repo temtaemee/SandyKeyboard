@@ -39,7 +39,10 @@ public enum ErrorCode {
     COUPON_QUANTITY_EXHAUSTED(7004, "COUPON-7004", "쿠폰 수량이 모두 소진되었습니다.", HttpStatus.BAD_REQUEST),
     INVALID_COUPON_CONDITION(7005, "COUPON-7005", "사용 조건에 맞지 않는 쿠폰입니다.", HttpStatus.BAD_REQUEST),
     DUPLICATE_COUPON_ISSUE(7006, "COUPON-7006", "이미 발급받은 쿠폰입니다.", HttpStatus.BAD_REQUEST),
-    COUPON_OWNER_RESTRICTION(7007, "COUPON-7007", "본인의 쿠폰만 사용 가능합니다.", HttpStatus.BAD_REQUEST);
+    COUPON_OWNER_RESTRICTION(7007, "COUPON-7007", "본인의 쿠폰만 사용 가능합니다.", HttpStatus.BAD_REQUEST),
+
+    //event (8001 ~ 8099)
+    EVENT_NOT_FOUND(8001, "EVENT-8001", "존재하지 않는 이벤트입니다.", HttpStatus.NOT_FOUND);
 
 
 
