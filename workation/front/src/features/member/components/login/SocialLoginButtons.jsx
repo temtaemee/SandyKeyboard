@@ -1,28 +1,24 @@
-// components/login/SocialLoginButtons.jsx
 import styled from 'styled-components';
-// 🚨 팀 프로젝트의 실제 이미지 경로에 맞게 이 두 라인의 import 주소를 수정해 주세요!
 import kakaoImg from '../../img/kakao.png';
 import naverImg from '../../img/naver.png';
 
 function SocialLoginButtons() {
   //로컬용
-  const NAVER_REDIRECT_URI = 'http://localhost:5173/oauth/callback/naver';
-  const KAKAO_REDIRECT_URI = 'http://localhost:5173/oauth/callback/kakao';
-  const GOOGLE_REDIRECT_URI = 'http://localhost:5173/oauth/callback/google';
-  const KAKAO_REST_API_KEY = 'd9a689a25f662f9366b1e782bce9d86e';
+  const NAVER_REDIRECT_URI = import.meta.env.VITE_NAVER_REDIRECT_URI;
 
-  // // 🚀 [AWS 배포용] - 배포 시 활성화
-  // const NAVER_REDIRECT_URI = 'https://sandykey.shop/oauth/callback/naver';
-  // const GOOGLE_REDIRECT_URI = 'https://sandykey.shop/oauth/callback/google';
-  // const KAKAO_REDIRECT_URI = 'https://sandykey.shop/oauth/callback/kakao';
-  // const KAKAO_REST_API_KEY = '178dc23fcf097631447fd66642773f8b';
+  const KAKAO_REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI;
 
-  const CLIENT_ID = 'He0BQFaYRyk5Zk2p_Kdy';
+  const GOOGLE_REDIRECT_URI = import.meta.env.VITE_GOOGLE_REDIRECT_URI;
+
+  const KAKAO_REST_API_KEY = import.meta.env.VITE_KAKAO_REST_API_KEY;
+
+  const CLIENT_ID = import.meta.env.VITE_NAVER_CLIENT_ID;
+
+  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
   const STATE = 'mo_rae_key_board_state';
   const NAVER_AUTH_URL = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${CLIENT_ID}&redirect_uri=${NAVER_REDIRECT_URI}&state=${STATE}`;
 
-  const GOOGLE_CLIENT_ID =
-    '636736190970-kr8td75eis24br9sdgbqq8kentqno1td.apps.googleusercontent.com';
   const GOOGLE_AUTH_URL = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${GOOGLE_REDIRECT_URI}&response_type=code&scope=email%20profile`;
 
   const KAKAO_AUTH_URL = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_REST_API_KEY}&redirect_uri=${KAKAO_REDIRECT_URI}&response_type=code`;
