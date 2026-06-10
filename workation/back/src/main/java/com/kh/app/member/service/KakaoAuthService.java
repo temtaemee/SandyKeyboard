@@ -13,6 +13,7 @@ import com.kh.app.security.util.JwtUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -34,10 +35,13 @@ public class KakaoAuthService {
     private final ProfileRepository memberProfileRepository; // 💡 프록시 방어용
     private final JwtUtil jwtUtil;
 
+    @Value("${kakao.rest-api-key}")
+    private String clientId;
+    @Value("${kakao.redirect-uri}")
+    private String redirectUri;
+    @Value("${kakao.client-secret}")
+    private String clientSecret;
     // 💡 방금 새로 만드신 앱의 REST API 키와 발급받은 Client Secret을 넣어주세요!
-    private final String clientId = "d9a689a25f662f9366b1e782bce9d86e";
-    private final String clientSecret = "RWf4bxjIpvFQoz3ZgpVL0f366GqPQyrP";
-    private final String redirectUri = "http://localhost:5173/oauth/callback/kakao";
 
     @Transactional
     public SocialLoginRespDto kakaoLogin(SocialLoginReqDto dto) {
