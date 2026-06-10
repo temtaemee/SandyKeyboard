@@ -5,7 +5,7 @@ on:
     branches: [ "main" ]
     # back 폴더 내부에 변경 사항이 있을 때만 실행됩니다.
     paths:
-      - 'back/**' 
+      - 'workation/back/**' 
 
 jobs:
   build-and-deploy:
@@ -23,7 +23,7 @@ jobs:
 
     - name: Gradle 권한 부여 및 빌드 (bootJar)
       run: |
-        cd back/app
+        cd workation/back
         chmod +x ./gradlew
         ./gradlew bootJar
 
@@ -35,7 +35,7 @@ jobs:
 
     - name: Docker 이미지 빌드 및 허브로 푸시
       run: |
-        cd back/app
+        cd workation/back
         # sandykeyboard 라는 이름으로 이미지를 굽고 도커 허브에 업로드합니다.
         docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/sandykeyboard:latest .
         docker push ${{ secrets.DOCKERHUB_USERNAME }}/sandykeyboard:latest
