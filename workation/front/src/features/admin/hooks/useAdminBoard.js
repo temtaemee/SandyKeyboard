@@ -145,10 +145,10 @@ export default function useAdminBoard(activeTab, currentPage = 1) {
   };
 
   // ─── 4. 등록(POST) 비동기 처리 함수 ───
-  const createPost = async (data) => {
+  const createPost = async (data, tabType = activeTab) => {
     dispatch(setLoading(true));
     try {
-      if (activeTab === '쿠폰') {
+      if (tabType === '쿠폰') {
         await createCoupon(data);
         // 등록 후 화면 데이터 동기화를 위해 재조회
         const resp = await getCouponList();
@@ -157,7 +157,7 @@ export default function useAdminBoard(activeTab, currentPage = 1) {
           : resp.data.content || [];
 
         dispatch(updatePostsForTab({ tab: '쿠폰', posts: postsArray }));
-      } else if (activeTab === '공지사항') {
+      } else if (tabType === '공지사항') {
         await createAdminBoardPost(data);
         // 등록 후 화면 데이터 동기화를 위해 재조회
         const resp = await getAdminBoardPosts(0);
@@ -166,7 +166,7 @@ export default function useAdminBoard(activeTab, currentPage = 1) {
           : resp.data.content || [];
 
         dispatch(updatePostsForTab({ tab: '공지사항', posts: postsArray }));
-      } else if (activeTab === 'FAQ') {
+      } else if (tabType === 'FAQ') {
         await faqCreate(data);
         // 등록 후 화면 데이터 동기화를 위해 재조회
         const resp = await faqList();

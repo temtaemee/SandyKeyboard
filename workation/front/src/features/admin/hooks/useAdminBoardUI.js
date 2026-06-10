@@ -220,14 +220,18 @@ export default function useAdminBoardUI({
         setDetailPost({ ...editingPost, ...updatedData });
       }
     } else {
-      if (activeTab === '쿠폰') {
-        await createPost({
-          couponName: formData.name,
-          discountRate: Number(formData.discountRate),
-          remainQty: Number(formData.quantity),
-          validDays: Number(formData.validDays),
-        });
-      } else if (activeTab === '공지사항') {
+      // 신규 등록은 현재 탭(activeTab)이 아니라 열려있는 등록 모달 종류(registerModal) 기준으로 처리
+      if (registerModal === '쿠폰') {
+        await createPost(
+          {
+            couponName: formData.name,
+            discountRate: Number(formData.discountRate),
+            remainQty: Number(formData.quantity),
+            validDays: Number(formData.validDays),
+          },
+          registerModal
+        );
+      } else if (registerModal === '공지사항') {
         const fd = new FormData();
         const noticeDto = {
           memberId: 1, // 필요 시 로그인 한 계정 ID 정보 연계
@@ -245,13 +249,16 @@ export default function useAdminBoardUI({
             fd.append('files', file);
           });
         }
-        await createPost(fd);
-      } else if (activeTab === 'FAQ') {
-        await createPost({
-          memberId: 1,
-          question: formData.title || '',
-          answer: formData.content || '',
-        });
+        await createPost(fd, registerModal);
+      } else if (registerModal === 'FAQ') {
+        await createPost(
+          {
+            memberId: 1,
+            question: formData.title || '',
+            answer: formData.content || '',
+          },
+          registerModal
+        );
       }
       closeRegisterModal();
     }
