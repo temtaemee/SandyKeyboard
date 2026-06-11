@@ -27,7 +27,7 @@ public class CompanyApiController {
             @ApiResponse(responseCode = "200", description = "조회 성공")
     })
     @GetMapping("/public/company")
-    public ResponseEntity<Page<CompanyRespDto>> listAll(
+    public ResponseEntity<Page<CompanyRespDto>> listAll(//fdffd
             @Parameter(description = "페이지 번호 (0부터 시작)", example = "0")
             @RequestParam(defaultValue = "0") int pno) {
         Page<CompanyRespDto> dtoList = companyService.listAll(pno);
