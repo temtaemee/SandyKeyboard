@@ -5,6 +5,7 @@ import com.kh.app.security.filter.JwtFilter;
 import com.kh.app.security.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -19,6 +20,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.util.Arrays;
+
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -26,6 +29,10 @@ public class SecurityFilterChainConfig {
     private final AuthenticationConfiguration configuration;
     private final JwtUtil jwtUtil;
     private final ObjectMapper objectMapper;
+
+    @Value("${app.cors.allowed-origins:http://localhost:5173,http://127.0.0.1:5173}")
+    private String allowedOrigins;
+
     @Bean
     public AuthenticationManager authenticationManager(){
         return configuration.getAuthenticationManager();
@@ -53,7 +60,8 @@ public class SecurityFilterChainConfig {
                                         "/swagger-ui/**",
                                         "/v3/api-docs/**",
                                         "/swagger-ui.html",
-                                        "/ws-connect/**"
+                                        "/ws-connect/**",
+                                        "/actuator/health"
                                 ).permitAll()
                                 .anyRequest().authenticated()
         );
@@ -73,9 +81,10 @@ public class SecurityFilterChainConfig {
 
                         CorsConfiguration conf = new CorsConfiguration();
 
-                        conf.addAllowedOrigin("http://localhost:5173");
-                        conf.addAllowedOrigin("http://127.0.0.1:5173");
-                        conf.addAllowedOrigin("https://sandykey.shop");
+                        Arrays.stream(allowedOrigins.split(","))
+                                .map(String::trim)
+                                .filter(origin -> !origin.isBlank())
+                                .forEach(conf::addAllowedOrigin);
                         conf.addAllowedHeader("*");
                         conf.addAllowedMethod("*");
                         conf.setAllowCredentials(true);

@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import useDestination from '../hooks/useDestination';
 import { useSearchParams } from 'react-router-dom';
 import api from '../../../../app/api/axios';
+import { resolveAssetUrl } from '../../../../app/config/env';
 
 // 💡 1. react-datepicker 및 한국어 로캘 임포트
 import DatePicker from 'react-datepicker';
@@ -216,11 +217,8 @@ function DestinationPage() {
         ) : (
           <GridContainer>
             {spaces.map((space) => {
-              const SERVER_HOST = 'http://localhost:80';
               const finalThumb = space.thumbnailUrl
-                ? space.thumbnailUrl.startsWith('http')
-                  ? space.thumbnailUrl
-                  : `${SERVER_HOST}${space.thumbnailUrl}`
+                ? resolveAssetUrl(space.thumbnailUrl)
                 : 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=600&q=80';
 
               return (

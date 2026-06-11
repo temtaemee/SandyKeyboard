@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import useDestination from '../hooks/useDestination';
 import useWishlist from '../../mypage/hooks/useWishlist';
 import useAuth from './../../../member/hooks/useAuth';
+import { resolveAssetUrl } from '../../../../app/config/env';
 
 function SpaceDetailPage() {
   const { spaceId } = useParams();
@@ -39,7 +40,6 @@ function SpaceDetailPage() {
   };
 
   const [currentImgIdx, setCurrentImgIdx] = useState(0);
-  const SERVER_HOST = 'http://localhost:80';
 
   useEffect(() => {
     loadSpaceDetail(spaceId).catch(() => {
@@ -54,9 +54,7 @@ function SpaceDetailPage() {
 
   const getRealImageUrl = (rawPath) => {
     if (!rawPath) return null;
-    if (rawPath.startsWith('http://') || rawPath.startsWith('https://'))
-      return rawPath;
-    return `${SERVER_HOST}${rawPath.startsWith('/') ? '' : '/'}${rawPath}`;
+    return resolveAssetUrl(rawPath);
   };
 
   // 이미지 처리 로직

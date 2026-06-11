@@ -16,6 +16,7 @@ import { getBookedDates } from '../../reservation/api/reservationApi';
 
 import useDestination from './../hooks/useDestination';
 import useAuth from './../../../member/hooks/useAuth';
+import { resolveAssetUrl } from '../../../../app/config/env';
 
 // =========================================================================
 
@@ -424,8 +425,6 @@ function StayDetailPage() {
 
   const [excludeDates, setExcludeDates] = useState([]);
 
-  const SERVER_HOST = 'http://localhost:80';
-
   const FALLBACK_STAY =
     'https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=800&q=80';
 
@@ -487,11 +486,7 @@ function StayDetailPage() {
 
   const imageList =
     stay.pictures && stay.pictures.length > 0
-      ? stay.pictures.map((p) =>
-          p.filePath.startsWith('http')
-            ? p.filePath
-            : `${SERVER_HOST}${p.filePath}`
-        )
+      ? stay.pictures.map((p) => resolveAssetUrl(p.filePath))
       : [FALLBACK_STAY];
 
   return (

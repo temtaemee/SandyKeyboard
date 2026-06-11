@@ -24,6 +24,7 @@ import {
   ModalHeader,
   ModalCloseBtn,
 } from '../components/common/AdminModal.styles'; // 모달 공통 스타일
+import { resolveAssetUrl, resolveS3AssetUrl } from '../../../app/config/env';
 
 const COUPON_FILTERS = ['전체', '활성', '소진', '삭제'];
 
@@ -366,7 +367,7 @@ export default function AdminBoardPage() {
                       {detailPost.images.map((img) => (
                         <ReviewImageItem
                           key={img.id}
-                          src={`https://finalproject-s3-bucket-243050855199-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/${img.s3Key}`}
+                          src={resolveS3AssetUrl(img.s3Key)}
                           alt={img.originalFileName}
                         />
                       ))}
@@ -427,7 +428,7 @@ export default function AdminBoardPage() {
                       {detailPost.files.map((file) => (
                         <DetailFileLink
                           key={file.id}
-                          href={file.fileUrl || `http://localhost/api/public/files/${file.s3Key}`}
+                          href={file.fileUrl || resolveAssetUrl(`/api/public/files/${file.s3Key}`)}
                           target="_blank"
                           rel="noopener noreferrer"
                         >

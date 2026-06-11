@@ -1,9 +1,10 @@
 import axios from 'axios';
+import { API_BASE_URL } from '../config/env';
 
 const api = axios.create({
   // 기존: baseURL: 'http://43.201.68.127:8001/api',
   // 변경: 이제 안전한 https 와 도메인 이름을 사용합니다!
-  baseURL: 'https://api.sandykey.shop/api',
+  baseURL: API_BASE_URL,
   timeout: 5000,
 });
 

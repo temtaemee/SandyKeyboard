@@ -314,14 +314,14 @@
         <h2>Product 엔드포인트 가이드</h2>
         <p>
           이 문서는 현재 <code>com.kh.app.product</code> 패키지의 컨트롤러 기준으로 정리한 API 목록입니다.
-          프론트 Axios 설정은 <code>baseURL = http://localhost:80/api</code>이므로 프론트에서는
+          프론트 Axios 설정은 환경별 <code>VITE_API_BASE_URL</code>을 사용하므로 프론트에서는
           <code>/seller/space</code>처럼 <code>/api</code>를 제외하고 호출합니다.
         </p>
 
         <div class="meta-grid">
           <div class="meta">
             <strong>서버 기준 URL</strong>
-            <span><code>http://localhost:80/api</code></span>
+            <span><code>/api</code> 또는 <code>https://api.sandykey.shop/api</code></span>
           </div>
           <div class="meta">
             <strong>인증 방식</strong>
