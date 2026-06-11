@@ -741,7 +741,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     // ───────────────────────────────────────────────
-    // 예약 — stay당 7가지 상태 × 2건 = 14건씩, 총 378건
+    // 예약 — stay당 7가지 상태 × 2건 = 14건씩, 총 476건
     // ───────────────────────────────────────────────
     private List<ReservationEntity> seedReservations(List<MemberEntity> users, List<StayEntity> stays) {
         List<ReservationEntity> result = new ArrayList<>();
