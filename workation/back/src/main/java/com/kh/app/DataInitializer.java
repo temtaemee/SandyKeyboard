@@ -115,6 +115,7 @@ public class DataInitializer implements CommandLineRunner {
         seedGangwon(sellers.get(0), arcades, allStays);
         seedGyeonggi(sellers.get(1), arcades, allStays);
         seedGyeongnam(sellers.get(2), arcades, allStays);
+        seedRegionalSingleHotels(sellers, arcades, allStays);
 
         List<ReservationEntity> reservations = seedReservations(users, allStays);
 
@@ -634,6 +635,109 @@ public class DataInitializer implements CommandLineRunner {
                 List.of(si("gyeongnam/hotel3/경남3스테이(패밀리룸)1.png", true,  1),
                         si("gyeongnam/hotel3/경남3스테이(패밀리룸)2.png", false, 2),
                         si("gyeongnam/hotel3/경남3스테이(패밀리룸)3.png", false, 3))));
+    }
+
+    // ───────────────────────────────────────────────
+    // 추가 지역 — 지역별 1개 공간, 각 1개 스테이
+    // ───────────────────────────────────────────────
+    private void seedRegionalSingleHotels(List<MemberEntity> sellers, List<ArcadeEntity> arcades, List<StayEntity> allStays) {
+        addRegionalSingleHotel(sellers.get(0), arcades, allStays,
+                "seoul", "서울", "서울 도심 워케이션 호텔", "0212310001",
+                "seoul01@workation.com", "도심 접근성이 좋은 서울 비즈니스 워케이션 호텔",
+                "서울 도심 전망과 업무 편의 시설을 함께 제공하는 비즈니스형 워케이션 공간입니다.",
+                "서울특별시 중구 세종대로", "101", Area.SEOUL, "37.5665000", "126.9780000",
+                "서울 도심 디럭스룸", "시티뷰와 업무 데스크를 갖춘 도심형 디럭스룸",
+                "도심 전망, 업무 전용 책상, 빠른 Wi-Fi를 갖춰 출장과 워케이션에 적합한 객실입니다.",
+                155000, 195000, 235000,
+                new StayOption[]{StayOption.DESK, StayOption.CITY_VIEW, StayOption.PRIVATE_BATHROOM, StayOption.COFFEE_MACHINE},
+                1, 2, 3, 4);
+
+        addRegionalSingleHotel(sellers.get(1), arcades, allStays,
+                "chungnam", "충남", "충남 서해 워케이션 호텔", "0411231001",
+                "chungnam01@workation.com", "서해 노을과 해안 산책로를 즐기는 충남 워케이션 호텔",
+                "서해안 풍경과 조용한 업무 환경을 함께 누릴 수 있는 해안형 워케이션 공간입니다.",
+                "충청남도 태안군 안면읍 해안로", "102", Area.CHUNGNAM, "36.5000000", "126.3500000",
+                "충남 서해 디럭스룸", "서해 전망과 업무 공간을 갖춘 디럭스룸",
+                "해안 풍경이 보이는 객실에 업무 책상과 편안한 휴식 공간을 함께 구성했습니다.",
+                135000, 175000, 210000,
+                new StayOption[]{StayOption.DESK, StayOption.OCEAN_VIEW, StayOption.PRIVATE_BATHROOM, StayOption.AMENITY},
+                0, 6, 7, 8);
+
+        addRegionalSingleHotel(sellers.get(2), arcades, allStays,
+                "chungbuk", "충북", "충북 레이크 워케이션 호텔", "0431231001",
+                "chungbuk01@workation.com", "호수와 숲을 마주한 충북 내륙 워케이션 호텔",
+                "충주호와 산림 풍경을 배경으로 집중 업무와 휴식을 제공하는 내륙형 워케이션 공간입니다.",
+                "충청북도 충주시 종민동 충주호수로", "103", Area.CHUNGBUK, "36.9850000", "127.9200000",
+                "충북 레이크 디럭스룸", "호수와 숲 전망을 갖춘 디럭스룸",
+                "호수 전망 창가 업무석과 편안한 침구를 갖춘 조용한 내륙 워케이션 객실입니다.",
+                130000, 165000, 200000,
+                new StayOption[]{StayOption.DESK, StayOption.MOUNTAIN_VIEW, StayOption.GARDEN_VIEW, StayOption.PRIVATE_BATHROOM},
+                2, 5, 8, 9);
+
+        addRegionalSingleHotel(sellers.get(0), arcades, allStays,
+                "gyeongbuk", "경북", "경북 헤리티지 워케이션 호텔", "0541231001",
+                "gyeongbuk01@workation.com", "한옥 감성과 업무 편의를 결합한 경북 워케이션 호텔",
+                "전통 목구조와 현대적인 업무 환경을 함께 갖춘 경북형 헤리티지 워케이션 공간입니다.",
+                "경상북도 경주시 보문로", "104", Area.GYEONGBUK, "35.8562000", "129.2247000",
+                "경북 헤리티지 디럭스룸", "한옥 감성과 업무 공간을 갖춘 디럭스룸",
+                "한지 창호와 목재 인테리어, 업무용 책상을 갖춘 전통-modern 객실입니다.",
+                150000, 190000, 230000,
+                new StayOption[]{StayOption.DESK, StayOption.GARDEN_VIEW, StayOption.PRIVATE_BATHROOM, StayOption.COFFEE_MACHINE},
+                3, 4, 5, 9);
+
+        addRegionalSingleHotel(sellers.get(1), arcades, allStays,
+                "jeonnam", "전남", "전남 오션가든 워케이션 호텔", "0611231001",
+                "jeonnam01@workation.com", "남도 바다와 정원을 품은 전남 워케이션 호텔",
+                "다도해 전망과 남도 정원 분위기 속에서 업무와 휴식을 함께 즐기는 공간입니다.",
+                "전라남도 여수시 돌산읍 해양로", "105", Area.JEONNAM, "34.7604000", "127.6622000",
+                "전남 오션가든 디럭스룸", "바다와 정원 전망을 갖춘 디럭스룸",
+                "남도 바다와 정원이 보이는 창가 업무석을 갖춘 여유로운 객실입니다.",
+                145000, 185000, 225000,
+                new StayOption[]{StayOption.DESK, StayOption.OCEAN_VIEW, StayOption.GARDEN_VIEW, StayOption.PRIVATE_BATHROOM},
+                0, 5, 6, 8);
+
+        addRegionalSingleHotel(sellers.get(2), arcades, allStays,
+                "jeonbuk", "전북", "전북 한옥 워케이션 호텔", "0631231001",
+                "jeonbuk01@workation.com", "전주 한옥 감성을 담은 전북 워케이션 호텔",
+                "고즈넉한 한옥 마당과 업무 편의 시설을 함께 제공하는 전북형 워케이션 공간입니다.",
+                "전라북도 전주시 완산구 기린대로", "106", Area.JEONBUK, "35.8150000", "127.1530000",
+                "전북 한옥 디럭스룸", "한옥 마당과 업무 공간을 갖춘 디럭스룸",
+                "목재 인테리어와 창가 업무석, 조용한 마당 전망을 갖춘 전통 감성 객실입니다.",
+                140000, 180000, 215000,
+                new StayOption[]{StayOption.DESK, StayOption.GARDEN_VIEW, StayOption.PRIVATE_BATHROOM, StayOption.AMENITY},
+                3, 5, 7, 9);
+
+        addRegionalSingleHotel(sellers.get(0), arcades, allStays,
+                "jeju", "제주", "제주 오션 워케이션 호텔", "0641231001",
+                "jeju01@workation.com", "현무암과 오션뷰가 어우러진 제주 워케이션 호텔",
+                "제주 바다 전망과 섬 특유의 현무암 조경을 갖춘 프리미엄 워케이션 공간입니다.",
+                "제주특별자치도 제주시 애월읍 애월해안로", "107", Area.JEJU, "33.4620000", "126.3100000",
+                "제주 오션 디럭스룸", "제주 바다 전망과 업무 데스크를 갖춘 디럭스룸",
+                "오션뷰 창가와 넓은 업무 책상을 갖춰 제주에서 집중 업무와 휴식을 함께 누릴 수 있습니다.",
+                165000, 210000, 255000,
+                new StayOption[]{StayOption.DESK, StayOption.OCEAN_VIEW, StayOption.PRIVATE_BATHROOM, StayOption.COFFEE_MACHINE},
+                0, 2, 6, 8);
+    }
+
+    private void addRegionalSingleHotel(MemberEntity seller, List<ArcadeEntity> arcades, List<StayEntity> allStays,
+                                        String dir, String label, String spaceName, String phone, String email,
+                                        String summary, String description, String address1, String address2,
+                                        Area area, String lat, String lng, String stayName, String staySummary,
+                                        String stayDescription, int weekday, int friSun, int satHoliday,
+                                        StayOption[] stayOptions, int... arcadeIndices) {
+        SpaceEntity space = createSpace(seller, spaceName, phone, email, summary, description,
+                address1, address2, area, lat, lng);
+        linkArcades(space, arcades, arcadeIndices);
+        addSpacePics(space, List.of(
+                sp(dir + "/hotel1/" + label + "1외관.png", SpacePictureCategory.EXTERIOR, true, 1),
+                sp(dir + "/hotel1/" + label + "1로비.png", SpacePictureCategory.FACILITY, false, 2),
+                sp(dir + "/hotel1/" + label + "1카페.png", SpacePictureCategory.DINING, false, 3)
+        ));
+        allStays.add(createStayFull(space, stayName, staySummary, stayDescription,
+                2, 3, "Y", weekday, friSun, satHoliday, stayOptions,
+                List.of(si(dir + "/hotel1/" + label + "1스테이(디럭스룸)1.png", true, 1),
+                        si(dir + "/hotel1/" + label + "1스테이(디럭스룸)2.png", false, 2),
+                        si(dir + "/hotel1/" + label + "1스테이(디럭스룸)3.png", false, 3))));
     }
 
     // ───────────────────────────────────────────────
