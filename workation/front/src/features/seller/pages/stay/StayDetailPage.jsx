@@ -7,6 +7,7 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
 import PriceWeekGrid from '../../components/stay/PriceWeekGrid';
 import OptionSelector from '../../components/stay/OptionSelector';
+import { resolveSellerImageUrl } from '../../utils/imageUrl';
 
 const ACCENT = '#3ec9a7';
 
@@ -53,6 +54,7 @@ export default function StayDetailPage() {
 
   const thumbnail = stay.pictures?.find((p) => p.mainYn === 'Y')?.filePath
     ?? stay.pictures?.[0]?.filePath;
+  const thumbnailUrl = resolveSellerImageUrl(thumbnail);
 
   return (
     <Wrap>
@@ -71,8 +73,8 @@ export default function StayDetailPage() {
       {/* 기본정보 */}
       <InfoCard>
         <CardHeader>
-          {thumbnail ? (
-            <ThumbnailImg src={thumbnail} alt={stay.name} />
+          {thumbnailUrl ? (
+            <ThumbnailImg src={thumbnailUrl} alt={stay.name} />
           ) : (
             <ThumbnailInitial>{stay.name?.[0] ?? '?'}</ThumbnailInitial>
           )}
@@ -156,7 +158,7 @@ export default function StayDetailPage() {
           <PictureGrid>
             {stay.pictures.map((pic, idx) => (
               <PictureItem key={pic.id} onClick={() => setLightbox({ pics: stay.pictures, idx })}>
-                <PictureImg src={pic.filePath} alt={`사진 ${idx + 1}`} />
+                <PictureImg src={resolveSellerImageUrl(pic.filePath)} alt={`사진 ${idx + 1}`} />
                 {pic.mainYn === 'Y' && <MainTag>대표</MainTag>}
               </PictureItem>
             ))}
@@ -168,7 +170,7 @@ export default function StayDetailPage() {
         <LbOverlay onClick={() => setLightbox(null)}>
           <LbBox onClick={(e) => e.stopPropagation()}>
             <LbCloseBtn onClick={() => setLightbox(null)}><XIcon size={20} /></LbCloseBtn>
-            <LbImg src={lightbox.pics[lightbox.idx].filePath} alt="" />
+            <LbImg src={resolveSellerImageUrl(lightbox.pics[lightbox.idx].filePath)} alt="" />
             {lightbox.pics.length > 1 && (
               <>
                 <LbPrev onClick={() => setLightbox((lb) => ({ ...lb, idx: (lb.idx - 1 + lb.pics.length) % lb.pics.length }))}>
