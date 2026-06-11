@@ -68,6 +68,7 @@ export default function AdminBoardPage() {
     deleteTarget,
     setDeleteTarget,
     handleDeleteConfirm,
+    availableCoupons,
   } = useAdminBoardUI({
     tabPosts,
     activeTab,
@@ -406,6 +407,20 @@ export default function AdminBoardPage() {
                     {activeTab === 'FAQ' ? detailPost.answer : (detailPost.content || '등록된 내용이 없습니다.')}
                   </DetailContentArea>
 
+                  {activeTab === '이벤트' && (
+                    <EventCouponArea>
+                      <EventCouponLabel>연결된 쿠폰</EventCouponLabel>
+                      {detailPost.couponId ? (
+                        <EventCouponBadge>
+                          <Tag size={12} />
+                          {detailPost.couponName}
+                        </EventCouponBadge>
+                      ) : (
+                        <EventCouponEmpty>연결된 쿠폰 없음</EventCouponEmpty>
+                      )}
+                    </EventCouponArea>
+                  )}
+
                   {detailPost.files && detailPost.files.length > 0 && (
                     <DetailFilesArea>
                       <DetailFilesLabel>첨부파일 ({detailPost.files.length})</DetailFilesLabel>
@@ -563,7 +578,23 @@ export default function AdminBoardPage() {
                       <CheckboxLabel htmlFor="isFixed">이 글을 상단에 고정합니다 (필독)</CheckboxLabel>
                     </CheckboxGroup>
                   )}
-                  {(registerModal === '공지사항' || registerModal === '이벤트') && (
+                  {registerModal === '이벤트' && (
+                    <FieldGroup>
+                      <FieldLabel>연결 쿠폰 (선택)</FieldLabel>
+                      <FieldSelect
+                        value={formData.couponId || ''}
+                        onChange={(e) => handleFormChange('couponId', e.target.value)}
+                      >
+                        <option value="">쿠폰 없음</option>
+                        {availableCoupons.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.couponName} ({c.discountRate}% · 잔여 {c.remainQty}매)
+                          </option>
+                        ))}
+                      </FieldSelect>
+                    </FieldGroup>
+                  )}
+                  {registerModal === '공지사항' && (
                     <FieldGroup>
                       <FieldLabel>첨부파일</FieldLabel>
                       {editingPost && editingPost.files && editingPost.files.length > 0 && (
@@ -1425,6 +1456,59 @@ const FieldInput = styled.input`
   &::placeholder {
     color: #94a3b8;
   }
+  &:focus {
+    outline: none;
+    border-color: #244c54;
+    box-shadow: 0 0 0 3px rgba(36, 76, 84, 0.08);
+  }
+`;
+
+const EventCouponArea = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+`;
+
+const EventCouponLabel = styled.span`
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+`;
+
+const EventCouponBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0369a1;
+  background: #e0f2fe;
+  padding: 4px 10px;
+  border-radius: 6px;
+`;
+
+const EventCouponEmpty = styled.span`
+  font-size: 13px;
+  color: #94a3b8;
+`;
+
+const FieldSelect = styled.select`
+  padding: 9px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #0d1c2e;
+  background: white;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
   &:focus {
     outline: none;
     border-color: #244c54;

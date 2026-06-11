@@ -13,7 +13,7 @@ import ReviewListPage from '../features/user/board/review/pages/ReviewListPage';
 import ReviewWritePage from '../features/user/board/review/pages/ReviewWritePage';
 
 // 이벤트
-import EventPage from '../features/user/board/event/pages/EventPage';
+import UserEventPage from '../features/admin/pages/UserEventPage';
 import ReviewDetailPage from '../features/user/board/review/pages/ReviewDetailPage';
 
 function BoardRouter() {
@@ -38,7 +38,7 @@ function BoardRouter() {
       </Route>
 
       {/* 이벤트 */}
-      <Route path="event" element={<EventPage />} />
+      <Route path="event" element={<UserEventPage />} />
     </Routes>
   );
 }

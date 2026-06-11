@@ -38,7 +38,14 @@ public class CouponRepositoryImpl implements CouponRepositoryCustom{
             .fetchOne();
 
         return new PageImpl<>(couponList, pageable, total);
+    }
 
-
+    @Override
+    public List<CouponEntity> getAll() {
+        return queryFactory
+                .selectFrom(c)
+                .where(c.delYn.eq("N"))
+                .orderBy(c.id.desc())
+                .fetch();
     }
 }

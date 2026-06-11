@@ -5,6 +5,7 @@ import com.kh.app.middle.coupon.dto.request.MemberCouponReqDto;
 import com.kh.app.middle.coupon.dto.request.UserMemberCouponReqDto;
 import com.kh.app.middle.coupon.dto.response.CouponRespDto;
 import com.kh.app.middle.coupon.dto.response.MemberCouponRespDto;
+import java.util.List;
 import com.kh.app.middle.coupon.service.CouponService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,6 +29,12 @@ public class CouponApiController {
     public ResponseEntity<Void> create(@RequestBody CouponCreateDto couponCreateDto){
         couponService.create(couponCreateDto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @Operation(summary = "쿠폰 전체 목록 조회 - 페이지 없음 (관리자)", description = "이벤트 등록 모달 드롭다운용. 삭제되지 않은 쿠폰 전체를 반환합니다.")
+    @GetMapping("/admin/coupon/all")
+    public ResponseEntity<List<CouponRespDto>> getAll() {
+        return ResponseEntity.ok(couponService.getAll());
     }
 
     @Operation(summary = "쿠폰 목록 조회 (관리자)", description = "username 파라미터가 있으면 해당 회원의 쿠폰 목록, 없으면 전체 쿠폰 목록을 조회합니다.")
