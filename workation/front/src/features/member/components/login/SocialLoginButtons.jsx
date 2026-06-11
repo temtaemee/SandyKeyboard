@@ -131,7 +131,7 @@ const GoogleLoginButton = styled.button`
 
   background-color: #ffffff;
   border: 1px solid #e0e0e0;
-  border-radius: 24px; /* 👈 중요: 이미지들과 완벽히 매칭되는 완전 라운드 둥글기 */
+  border-radius: 24px; /* 👈 중요: 이미지들과 완벽히 매칭되는 완전 라운드 둥글기d */
 
   font-family: 'Roboto', 'Noto Sans KR', sans-serif;
   font-size: 16px;
