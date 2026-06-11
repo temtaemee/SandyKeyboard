@@ -8,6 +8,7 @@ import {
 } from '../api/notificationApi';
 import { useDispatch, useSelector } from 'react-redux';
 import { addNotification, setNotifications, setStompClient, setUnreadCount } from '../store/notificationSlice';
+import { WS_URL } from '../../app/config/env';
 
 
 export const useNotification = () => {
@@ -70,7 +71,7 @@ export const useNotification = () => {
 
         // 2. STOMP 클라이언트 생성
         const client = new Client({
-            brokerURL: 'ws://localhost:80/ws-connect',
+            brokerURL: WS_URL,
             onConnect: () => {
                 console.log('리덕스 웹소켓 연결 성공!');
 

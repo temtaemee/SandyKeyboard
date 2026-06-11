@@ -14,6 +14,7 @@ import com.kh.app.transaction.reservation.dto.response.ReservationResDto;
 import com.kh.app.transaction.reservation.entity.ReservationStatus; // 이넘 임포트 ✨
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +35,9 @@ public class MyPageService {
     private final CouponService couponService;
     private final StayService stayService;
     private final SpaceService spaceService;
+
+    @Value("${app.public-base-url:http://localhost:8001}")
+    private String publicBaseUrl;
 
     private static final List<String> INVALID_STATUSES = List.of(
             ReservationStatus.USER_CANCELLED.name(),
@@ -92,7 +96,7 @@ public class MyPageService {
 
                 String mainImageUrl = (spaceInfo.getPictures() != null && !spaceInfo.getPictures().isEmpty())
                         ? spaceInfo.getPictures().get(0).getFilePath()
-                        : "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1200";
+                        : defaultSpaceImageUrl();
 
                 currentResDto = MyPageDashboardRespDto.CurrentReservationDto.builder()
                         .reservationId(currentValidRes.getId())
@@ -117,7 +121,7 @@ public class MyPageService {
                 .filter(res -> currentResId == null || !res.getId().equals(currentResId))    // 현재 대시보드 뜬 건 제외 💡
                 .limit(2) // 최대 2건
                 .map(res -> {
-                    String pastImageUrl = "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=400";
+                    String pastImageUrl = defaultSpaceImageUrl();
                     try {
                         StayResDto stayInfo = stayService.selectOne(res.getStayId());
                         // 💡 [변경] 지난 워케이션도 SpaceService를 연동해 공간의 사진을 가져옵니다.
@@ -149,5 +153,10 @@ public class MyPageService {
                 .currentReservation(currentResDto)
                 .pastWorkations(pastList)
                 .build();
+    }
+
+    private String defaultSpaceImageUrl() {
+        String baseUrl = publicBaseUrl == null ? "" : publicBaseUrl.replaceAll("/+$", "");
+        return baseUrl + "/dummy-images/gangwon/hotel1/강원1외관.png";
     }
 }

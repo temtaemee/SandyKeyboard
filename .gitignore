@@ -5,6 +5,10 @@ CLAUDE.md
 
 qa.md
 workation/front/dist/
+workation/front/.env
+workation/front/.env.local
+workation/front/.env.development
+workation/front/.env.production
 
 .codex/
 AGENTS.md
