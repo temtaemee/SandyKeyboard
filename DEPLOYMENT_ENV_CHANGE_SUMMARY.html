@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>배포 환경 변경 공유 문서</title>
+  <style>
+    :root {
+      --text: #1f2933;
+      --muted: #64748b;
+      --line: #d9e2ec;
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --head: #eef4f8;
+      --accent: #2f6f7e;
+      --warn: #9a3412;
+      --code: #0f172a;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", "Malgun Gothic", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.65;
+    }
+
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 36px 24px 80px;
+    }
+
+    header {
+      margin-bottom: 28px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 32px;
+      line-height: 1.25;
+      color: #12323a;
+    }
+
+    h2 {
+      margin: 38px 0 14px;
+      padding-top: 8px;
+      font-size: 22px;
+      color: #12323a;
+      border-top: 2px solid var(--line);
+    }
+
+    h3 {
+      margin: 28px 0 10px;
+      font-size: 17px;
+      color: #244c5a;
+    }
+
+    p {
+      margin: 8px 0;
+    }
+
+    .summary {
+      padding: 18px 20px;
+      border: 1px solid #b7d7de;
+      border-left: 5px solid var(--accent);
+      border-radius: 8px;
+      background: #f0fbfd;
+      font-weight: 700;
+    }
+
+    .note {
+      padding: 14px 16px;
+      border: 1px solid #f3d5b5;
+      border-left: 5px solid #d97706;
+      border-radius: 8px;
+      background: #fff7ed;
+      color: var(--warn);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 24px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      display: table;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      vertical-align: top;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background: var(--head);
+      font-weight: 700;
+      color: #173a45;
+      white-space: nowrap;
+    }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 5px;
+      background: #e8eef5;
+      color: var(--code);
+      font-family: "Cascadia Code", Consolas, monospace;
+      font-size: 0.92em;
+    }
+
+    pre {
+      overflow: auto;
+      padding: 16px;
+      border-radius: 8px;
+      background: #0f172a;
+      color: #e2e8f0;
+      font-family: "Cascadia Code", Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    ul,
+    ol {
+      margin: 8px 0 22px;
+      padding-left: 24px;
+    }
+
+    li {
+      margin: 4px 0;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+      margin: 12px 0 24px;
+    }
+
+    .card {
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .card strong {
+      color: #12323a;
+    }
+
+    @media (max-width: 760px) {
+      main {
+        padding: 24px 14px 60px;
+      }
+
+      h1 {
+        font-size: 26px;
+      }
+
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+
+      th,
+      td {
+        font-size: 13px;
+      }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>배포 환경 변경 공유 문서</h1>
+    <p class="small">팀원 공유용: 로컬 개발, 서버 배포, GitHub Actions, RDS, S3, 더미 데이터 운영 방식 변경 정리</p>
+  </header>
+
+  <section>
+    <h2>한 줄 요약</h2>
+    <p class="summary">로컬 개발은 <code>local</code> 프로필에서 자동 더미 생성, 서버 배포는 <code>cloud</code> 프로필에서 GitHub Secrets/Variables와 RDS/S3를 사용하는 방식으로 분리했습니다.</p>
+  </section>
+
+  <section>
+    <h2>왜 바꿨나</h2>
+    <table>
+      <thead>
+      <tr>
+        <th>항목</th>
+        <th>기존 방식</th>
+        <th>변경 방식</th>
+        <th>바꾼 이유</th>
+        <th>장점</th>
+        <th>관리 방법</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr><td>실행 환경</td><td>로컬과 서버가 같은 설정을 많이 공유</td><td><code>local</code>, <code>cloud</code> 프로필 분리</td><td>로컬 설정이 서버에 섞여서 배포 오류가 발생했음</td><td>로컬 작업과 서버 배포가 서로 덜 충돌함</td><td>로컬은 <code>application-local.properties</code>, 서버는 <code>application-cloud.properties</code> 기준</td></tr>
+      <tr><td>기본 프로필</td><td>서버/로컬 구분이 애매함</td><td>기본값은 <code>local</code>, 배포 때만 <code>SPRING_PROFILES_ACTIVE=cloud</code></td><td>개발자는 그냥 실행하고 서버는 운영 설정을 명시적으로 쓰게 하기 위함</td><td>로컬 실행이 쉬워지고 배포 설정 실수가 줄어듦</td><td>서버 Docker env에는 반드시 <code>SPRING_PROFILES_ACTIVE=cloud</code>가 들어감</td></tr>
+      <tr><td>DB 설정</td><td>코드 안의 고정값 또는 수동 주석 전환</td><td><code>DB_URL</code>, <code>DB_USERNAME</code>, <code>DB_PASSWORD</code> env 사용</td><td>로컬 DB와 RDS 주소가 다르기 때문</td><td>RDS 주소/계정이 코드에 박히지 않음</td><td>GitHub Actions Secrets 또는 Variables에 등록</td></tr>
+      <tr><td>DDL 전략</td><td>서버에서도 <code>create</code>가 섞일 위험</td><td>로컬은 <code>create</code>, 서버는 기본 <code>validate</code></td><td>서버 재배포 때 테이블/데이터가 날아가는 위험 차단</td><td>배포해도 RDS 데이터가 유지됨</td><td>서버 테이블 변경은 migration/DDL을 먼저 반영하고 배포</td></tr>
+      <tr><td>더미 데이터</td><td>서버 시작 시 코드가 자동 삽입할 수 있음</td><td>로컬만 <code>DataInitializer</code> 실행, 서버는 SQL DML 직접 실행</td><td>서버 재시작마다 더미가 중복/초기화되는 문제 방지</td><td>서버 데이터 주입 시점을 사람이 통제 가능</td><td>테스트 서버 더미는 <code>workation/back/dev-seed/test-open-dummy-data.sql</code>을 pgAdmin에서 실행</td></tr>
+      <tr><td>더미 실행 조건</td><td><code>DataInitializer</code>가 항상 돌 수 있음</td><td><code>app.seed.enabled=true</code>일 때만 실행</td><td>서버에서는 더미 자동 실행을 막기 위함</td><td>로컬/서버 데이터 흐름이 명확해짐</td><td>로컬 기본값은 <code>true</code>, cloud 기본값은 <code>false</code></td></tr>
+      <tr><td>서버 더미 삽입</td><td>앱 재시작에 의존</td><td>pgAdmin/psql로 DML 실행</td><td>배포와 데이터 삽입을 분리하기 위함</td><td>배포 실패와 데이터 실패를 따로 확인 가능</td><td>기존 데이터 삭제 후 넣을 때는 <code>TRUNCATE ... RESTART IDENTITY CASCADE</code> 먼저 실행</td></tr>
+      <tr><td>더미 이미지</td><td>jar 내부 정적 파일에 포함될 수 있음</td><td>S3에 업로드하고 DB에는 S3 key 저장</td><td>jar 용량 증가와 서버 정적 파일 의존을 줄이기 위함</td><td>이미지가 서버 컨테이너와 분리되어 안정적임</td><td>이미지 원본은 repo에 있고 서버 노출은 S3 URL로 함</td></tr>
+      <tr><td>jar 이미지 포함</td><td><code>static/dummy-images</code>가 jar에 들어갈 수 있음</td><td><code>bootJar</code>에서 <code>static/dummy-images/**</code> 제외</td><td>이미지 때문에 백엔드 jar가 커지는 문제 방지</td><td>빌드/배포가 가벼워짐</td><td>이미지가 필요하면 S3 업로드 스크립트 사용</td></tr>
+      <tr><td>S3 업로드</td><td>수동 업로드만 가능</td><td><code>upload-dummy-images-to-s3.ps1</code> 추가</td><td>더미 이미지 대량 업로드를 반복 가능하게 하기 위함</td><td>같은 경로로 재업로드하기 쉬움</td><td><code>workation/back/dev-seed/upload-dummy-images-to-s3.ps1</code> 사용</td></tr>
+      <tr><td>S3 주소</td><td>화면마다 URL 조합 방식이 제각각</td><td><code>VITE_S3_ASSET_BASE_URL</code>, <code>resolveS3AssetUrl</code> 사용</td><td>로컬/서버에서 이미지 경로가 다르게 깨지는 문제 방지</td><td>S3 base URL만 바꾸면 전체 화면이 따라감</td><td>프론트 env는 <code>workation/front/.env.example</code> 참고</td></tr>
+      <tr><td>S3 자격증명</td><td>access key가 코드에 들어갈 위험</td><td>GitHub Secrets 또는 AWS 기본 자격증명 사용</td><td>키 노출 방지</td><td>보안 관리가 쉬워짐</td><td><code>AWS_ACCESS_KEY_ID</code>, <code>AWS_SECRET_ACCESS_KEY</code>는 GitHub Secrets에만 저장</td></tr>
+      <tr><td>S3Config</td><td>access key/secret이 없으면 실패 가능</td><td>없으면 <code>DefaultCredentialsProvider</code>, 있으면 static credentials</td><td>서버 IAM Role 또는 GitHub Secret 둘 다 대응하기 위함</td><td>배포 환경 선택지가 넓어짐</td><td>운영에서는 가능한 IAM Role 또는 Secrets 중 하나로 일관되게 관리</td></tr>
+      <tr><td>프론트 <code>.env</code></td><td><code>.env</code>, <code>.env.production</code>이 repo에 들어갈 수 있음</td><td>실제 env 파일은 제외하고 <code>.env.example</code>만 유지</td><td>개인/운영 설정 충돌 방지</td><td>팀원별 로컬 설정 충돌 감소</td><td>각자 <code>.env</code>는 로컬에서 만들고 커밋하지 않음</td></tr>
+      <tr><td>프론트 API 주소</td><td>하드코딩 URL이 섞임</td><td><code>VITE_API_BASE_URL</code>, <code>VITE_SERVER_BASE_URL</code>, <code>VITE_WS_URL</code> 사용</td><td>로컬과 배포 API 주소가 다르기 때문</td><td>API 주소 변경 시 env만 바꾸면 됨</td><td>GitHub Variables 또는 workflow 기본값으로 관리</td></tr>
+      <tr><td>axios baseURL</td><td>코드 안에서 직접 관리</td><td><code>src/app/config/env.js</code>에서 env 기반 관리</td><td>여러 파일에서 API 주소가 달라지는 문제 방지</td><td>주소 관리 지점이 하나로 모임</td><td>API 주소를 바꿀 때는 <code>env.js</code>와 GitHub Variables 확인</td></tr>
+      <tr><td>WebSocket 주소</td><td>로컬/서버 주소가 섞일 수 있음</td><td><code>VITE_WS_URL</code> 사용</td><td>배포 도메인은 <code>wss</code>, 로컬은 <code>ws</code>가 필요함</td><td>HTTPS 배포에서 WebSocket 주소가 명확해짐</td><td>서버는 <code>wss://api.sandykey.shop/ws-connect</code> 기준</td></tr>
+      <tr><td>CORS</td><td>로컬 origin 중심</td><td>cloud는 <code>https://sandykey.shop</code> 허용</td><td>배포 프론트 도메인에서 API 호출해야 하기 때문</td><td>배포 브라우저 요청이 막히지 않음</td><td>추가 도메인은 <code>APP_CORS_ALLOWED_ORIGINS</code>로 관리</td></tr>
+      <tr><td>백엔드 포트</td><td>로컬/서버 포트 혼동 가능</td><td>앱 내부 기본 <code>8001</code>, Docker candidate는 <code>8002:8001</code></td><td>후보 컨테이너 health check를 하기 위함</td><td>새 컨테이너 확인 후 기존 컨테이너 교체 가능</td><td>서버 외부 매핑은 workflow의 Docker run 명령 확인</td></tr>
+      <tr><td>backend deploy</td><td>빌드와 배포가 섞여 원인 파악 어려움</td><td>Docker build/push 후 EC2에서 candidate health check</td><td>배포 실패 시 기존 컨테이너를 바로 죽이지 않기 위함</td><td>실패해도 기존 서비스 유지 가능</td><td>실패 로그는 <code>docker logs sandykeyboard-candidate</code> 확인</td></tr>
+      <tr><td>deploy 사전 검증</td><td>누락 Secret을 health check 단계에서야 알 수 있음</td><td><code>Validate deployment configuration</code> 단계 추가</td><td><code>DB_URL</code> 누락 같은 실수를 빠르게 찾기 위함</td><td>어떤 설정이 빠졌는지 Actions에서 바로 보임</td><td>필수 값이 없으면 Docker 실행 전에 실패</td></tr>
+      <tr><td>메일 health check</td><td>메일 비밀번호 없으면 health check 실패</td><td>cloud에서 <code>management.health.mail.enabled=false</code> 기본값</td><td>메일 계정이 없어도 서버 기동 확인은 가능해야 했음</td><td>배포가 메일 설정 때문에 막히지 않음</td><td>메일 상태까지 검사하려면 <code>MAIL_HEALTH_ENABLED=true</code>와 메일 계정 등록</td></tr>
+      <tr><td>CI</td><td>PR 검증과 배포가 섞일 수 있음</td><td><code>ci.yml</code>은 PR 빌드 검증만 담당</td><td>main 배포 전에 빌드 오류를 먼저 잡기 위함</td><td>PR 단계에서 백/프론트 빌드 실패 확인 가능</td><td>PR 생성 시 <code>Backend</code>, <code>Frontend</code> CI 통과 확인</td></tr>
+      <tr><td>CD</td><td>CI와 배포 구분이 약함</td><td><code>backend-deploy.yml</code>, <code>frontend-deploy.yml</code> 분리</td><td>백엔드/프론트 변경 범위가 다르기 때문</td><td>필요한 쪽만 배포됨</td><td>main push 시 변경 path에 따라 배포 workflow 실행</td></tr>
+      <tr><td>backend CD</td><td>main push 시 백엔드 관련 파일만 배포</td><td><code>.github/workflows/backend-deploy.yml</code>, <code>workation/back/**</code> 변경 시 실행</td><td>프론트만 바꿨는데 백엔드까지 배포되는 낭비 방지</td><td>배포 시간/위험 감소</td><td>백엔드 변경 PR merge 후 Backend Deploy 확인</td></tr>
+      <tr><td>frontend CD</td><td>main push 시 프론트 관련 파일만 배포</td><td><code>.github/workflows/frontend-deploy.yml</code>, <code>workation/front/**</code> 변경 시 실행</td><td>백엔드만 바꿨는데 프론트까지 배포되는 낭비 방지</td><td>배포 범위가 명확함</td><td>프론트 변경 PR merge 후 Frontend Deploy 확인</td></tr>
+      <tr><td>Docker 이미지</td><td><code>latest</code>만 쓰면 롤백 추적이 어려움</td><td>SHA 태그와 latest 둘 다 push</td><td>어떤 커밋 이미지인지 추적하기 위함</td><td>문제 발생 시 커밋 단위 확인 가능</td><td>Actions 로그의 이미지 태그가 커밋 SHA</td></tr>
+      <tr><td>Actuator</td><td>health endpoint가 필요</td><td><code>spring-boot-starter-actuator</code> 추가</td><td>배포 후보 컨테이너가 정상인지 자동 확인하기 위함</td><td>사람이 직접 접속 확인하기 전에 배포가 검증됨</td><td><code>/actuator/health</code>가 200이어야 컨테이너 교체</td></tr>
+      <tr><td>GitHub 설정 저장 위치</td><td><code>APPLICATION_PROPERTIES</code> 같은 통짜 변수 사용 가능성</td><td>개별 Secrets/Variables 사용</td><td>한 파일 문자열로 관리하면 충돌/누락/노출 위험이 큼</td><td>무엇이 필요한지 이름으로 바로 확인 가능</td><td>통짜 <code>APPLICATION_PROPERTIES</code>는 사용하지 않음</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>GitHub Actions에 넣어야 하는 값</h2>
+    <p class="note">비밀번호, 토큰, access key는 코드나 채팅에 적지 말고 GitHub Secrets에만 저장합니다.</p>
+    <table>
+      <thead>
+      <tr><th>이름</th><th>위치</th><th>필수 여부</th><th>설명</th></tr>
+      </thead>
+      <tbody>
+      <tr><td><code>DB_URL</code></td><td>Secrets 또는 Variables</td><td>필수</td><td>RDS JDBC 주소, 예: <code>jdbc:postgresql://RDS주소:5432/DB명</code></td></tr>
+      <tr><td><code>DB_USERNAME</code></td><td>Secrets 또는 Variables</td><td>필수</td><td>RDS DB 계정명</td></tr>
+      <tr><td><code>DB_PASSWORD</code></td><td>Secrets</td><td>필수</td><td>RDS DB 비밀번호</td></tr>
+      <tr><td><code>JWT_SECRET</code></td><td>Secrets</td><td>필수</td><td>JWT 서명용 긴 문자열, 바꾸면 기존 로그인 토큰 무효</td></tr>
+      <tr><td><code>DOCKERHUB_USERNAME</code></td><td>Secrets</td><td>필수</td><td>Docker Hub 계정명</td></tr>
+      <tr><td><code>DOCKERHUB_TOKEN</code></td><td>Secrets</td><td>필수</td><td>Docker Hub push용 토큰</td></tr>
+      <tr><td><code>EC2_HOST</code></td><td>Secrets</td><td>필수</td><td>배포 대상 EC2 주소</td></tr>
+      <tr><td><code>EC2_KEY</code></td><td>Secrets</td><td>필수</td><td>EC2 SSH private key</td></tr>
+      <tr><td><code>AWS_ACCESS_KEY_ID</code></td><td>Secrets</td><td>프론트 배포/S3 사용 시 필요</td><td>AWS API 접근 키</td></tr>
+      <tr><td><code>AWS_SECRET_ACCESS_KEY</code></td><td>Secrets</td><td>프론트 배포/S3 사용 시 필요</td><td>AWS API 접근 secret</td></tr>
+      <tr><td><code>S3_BUCKET_NAME</code></td><td>Secrets</td><td>프론트 배포 시 필요</td><td>프론트 정적 파일이 올라가는 S3 버킷</td></tr>
+      <tr><td><code>CLOUDFRONT_ID</code></td><td>Secrets</td><td>프론트 배포 시 필요</td><td>CloudFront 캐시 무효화 대상 ID</td></tr>
+      <tr><td><code>AWS_REGION</code></td><td>Variables</td><td>선택</td><td>기본값 <code>ap-northeast-2</code></td></tr>
+      <tr><td><code>AWS_S3_BUCKET</code></td><td>Secrets</td><td>선택</td><td>이미지 업로드용 버킷, 기본값 있음</td></tr>
+      <tr><td><code>AWS_S3_BASE_URL</code></td><td>Variables</td><td>선택</td><td>이미지 접근 base URL, 기본값 있음</td></tr>
+      <tr><td><code>VITE_API_BASE_URL</code></td><td>Variables</td><td>선택</td><td>프론트 API base URL, 기본값 <code>https://api.sandykey.shop/api</code></td></tr>
+      <tr><td><code>VITE_SERVER_BASE_URL</code></td><td>Variables</td><td>선택</td><td>프론트 서버 base URL, 기본값 <code>https://api.sandykey.shop</code></td></tr>
+      <tr><td><code>VITE_WS_URL</code></td><td>Variables</td><td>선택</td><td>WebSocket URL, 기본값 <code>wss://api.sandykey.shop/ws-connect</code></td></tr>
+      <tr><td><code>VITE_S3_ASSET_BASE_URL</code></td><td>Variables</td><td>선택</td><td>프론트 이미지 S3 base URL, 기본값 있음</td></tr>
+      <tr><td><code>MAIL_USERNAME</code></td><td>Secrets</td><td>선택</td><td>메일 발송 계정, 없으면 메일 기능 제한 가능</td></tr>
+      <tr><td><code>MAIL_PASSWORD</code></td><td>Secrets</td><td>선택</td><td>메일 발송 비밀번호, 없으면 메일 기능 제한 가능</td></tr>
+      <tr><td><code>MAIL_HEALTH_ENABLED</code></td><td>Variables</td><td>선택</td><td>메일 health check를 켤 때만 <code>true</code></td></tr>
+      <tr><td><code>KAKAO_REST_API_KEY</code></td><td>Secrets</td><td>소셜 로그인 사용 시 필요</td><td>카카오 REST API key</td></tr>
+      <tr><td><code>KAKAO_CLIENT_SECRET</code></td><td>Secrets</td><td>소셜 로그인 사용 시 필요</td><td>카카오 client secret</td></tr>
+      <tr><td><code>KAKAO_REDIRECT_URI</code></td><td>Variables</td><td>선택</td><td>기본값 <code>https://sandykey.shop/oauth/callback/kakao</code></td></tr>
+      <tr><td><code>NAVER_REDIRECT_URI</code></td><td>Variables</td><td>선택</td><td>기본값 <code>https://sandykey.shop/oauth/callback/naver</code></td></tr>
+      <tr><td><code>GOOGLE_REDIRECT_URI</code></td><td>Variables</td><td>선택</td><td>기본값 <code>https://sandykey.shop/oauth/callback/google</code></td></tr>
+      <tr><td><code>APP_PUBLIC_BASE_URL</code></td><td>Variables</td><td>선택</td><td>백엔드 공개 주소, 기본값 <code>https://api.sandykey.shop</code></td></tr>
+      <tr><td><code>APP_CORS_ALLOWED_ORIGINS</code></td><td>Variables</td><td>선택</td><td>허용 프론트 도메인, 기본값 <code>https://sandykey.shop</code></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>로컬 개발 방법</h2>
+    <table>
+      <thead><tr><th>할 일</th><th>한 줄 설명</th></tr></thead>
+      <tbody>
+      <tr><td>백엔드 실행</td><td><code>workation/back</code>에서 <code>./gradlew bootRun</code> 실행</td></tr>
+      <tr><td>프론트 실행</td><td><code>workation/front</code>에서 <code>npm install</code> 후 <code>npm run dev</code> 실행</td></tr>
+      <tr><td>로컬 DB</td><td>기본값은 <code>jdbc:postgresql://localhost:5432/code_hit</code></td></tr>
+      <tr><td>로컬 DDL</td><td>기본값은 <code>create</code>라서 실행 시 테이블을 다시 만들 수 있음</td></tr>
+      <tr><td>로컬 더미</td><td>기본값은 <code>app.seed.enabled=true</code>라서 <code>DataInitializer</code>가 더미를 넣음</td></tr>
+      <tr><td>로컬 설정 변경</td><td><code>LOCAL_DB_URL</code>, <code>LOCAL_DB_USERNAME</code>, <code>LOCAL_DB_PASSWORD</code> 같은 env로 덮어씀</td></tr>
+      <tr><td>로컬 프론트 env</td><td><code>.env.example</code>을 참고해서 각자 <code>.env</code>를 만들고 커밋하지 않음</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>서버 배포 방법</h2>
+    <table>
+      <thead><tr><th>할 일</th><th>한 줄 설명</th></tr></thead>
+      <tbody>
+      <tr><td>main에 merge</td><td>main push가 배포 트리거임</td></tr>
+      <tr><td>백엔드 배포</td><td>backend workflow가 jar build, Docker build/push, EC2 deploy, health check 수행</td></tr>
+      <tr><td>프론트 배포</td><td>frontend workflow가 Vite build, S3 sync, CloudFront invalidation 수행</td></tr>
+      <tr><td>서버 프로필</td><td>Docker env로 <code>SPRING_PROFILES_ACTIVE=cloud</code>가 들어감</td></tr>
+      <tr><td>서버 DB</td><td><code>DB_URL</code>, <code>DB_USERNAME</code>, <code>DB_PASSWORD</code>로 RDS에 접속함</td></tr>
+      <tr><td>서버 DDL</td><td>기본 <code>validate</code>라서 테이블이 없으면 앱이 실패함</td></tr>
+      <tr><td>서버 더미</td><td>앱이 자동으로 넣지 않고 pgAdmin/psql로 DML을 직접 실행함</td></tr>
+      <tr><td>배포 실패 확인</td><td>GitHub Actions의 실패 step을 펼쳐서 에러 원문을 확인함</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>테스트 오픈 더미 데이터 운영</h2>
+    <table>
+      <thead><tr><th>항목</th><th>한 줄 설명</th></tr></thead>
+      <tbody>
+      <tr><td>DML 파일</td><td><code>workation/back/dev-seed/test-open-dummy-data.sql</code></td></tr>
+      <tr><td>이미지 업로드</td><td><code>workation/back/dev-seed/upload-dummy-images-to-s3.ps1</code></td></tr>
+      <tr><td>이미지 경로</td><td>DB에는 <code>/dummy-images/...</code>가 아니라 <code>dummy-images/...</code> S3 key 형태로 저장</td></tr>
+      <tr><td>일반 유저</td><td><code>user0001</code>부터 <code>user1000</code>까지 있음</td></tr>
+      <tr><td>일반 유저 비밀번호</td><td>모두 <code>user1234!</code></td></tr>
+      <tr><td>셀러 계정</td><td><code>seller-seoul</code>, <code>seller-gyeonggi</code>, <code>seller-gangwon</code>, <code>seller-chungnam</code>, <code>seller-chungbuk</code>, <code>seller-gyeongnam</code>, <code>seller-gyeongbuk</code>, <code>seller-jeonnam</code>, <code>seller-jeonbuk</code>, <code>seller-jeju</code></td></tr>
+      <tr><td>셀러 비밀번호</td><td>모두 <code>seller1234!</code></td></tr>
+      <tr><td>관리자 계정</td><td><code>admin</code></td></tr>
+      <tr><td>관리자 비밀번호</td><td><code>1234</code></td></tr>
+      <tr><td>예약 데이터</td><td>숙소별로 올해 공실이 20% 미만이 되도록 예약 더미 구성</td></tr>
+      <tr><td>결제/취소/리뷰</td><td>유저별로 결제, 취소, 리뷰가 다양하게 들어가도록 구성</td></tr>
+      <tr><td>기존 데이터 삭제</td><td>테스트 DB를 초기화할 때만 <code>TRUNCATE ... RESTART IDENTITY CASCADE</code> 사용</td></tr>
+      <tr><td>DML 중복 오류</td><td><code>duplicate key</code>가 나면 이미 데이터가 있으므로 초기화 후 다시 실행</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>pgAdmin으로 더미 넣는 순서</h2>
+    <ol>
+      <li>RDS DB에 접속한다.</li>
+      <li>Query Tool을 연다.</li>
+      <li>테스트 DB를 비워도 되는 상황이면 아래 초기화 SQL을 먼저 실행한다.</li>
+      <li><code>test-open-dummy-data.sql</code> 전체를 붙여넣고 실행한다.</li>
+      <li>실행 후 <code>user0001 / user1234!</code>로 로그인 확인한다.</li>
+    </ol>
+    <pre><code>DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN (
+        SELECT tablename
+        FROM pg_tables
+        WHERE schemaname = 'public'
+    ) LOOP
+        EXECUTE format('TRUNCATE TABLE public.%I RESTART IDENTITY CASCADE;', r.tablename);
+    END LOOP;
+END $$;</code></pre>
+  </section>
+
+  <section>
+    <h2>배포 오류별 보는 법</h2>
+    <table>
+      <thead><tr><th>증상</th><th>뜻</th><th>해결</th></tr></thead>
+      <tbody>
+      <tr><td><code>DB_URL is not configured</code></td><td>GitHub Actions에 DB 주소가 없음</td><td><code>DB_URL</code> Secret/Variable 추가</td></tr>
+      <tr><td><code>Failed to determine suitable jdbc url</code></td><td>Spring이 DB URL을 못 받음</td><td><code>DB_URL</code> 이름/위치 확인</td></tr>
+      <tr><td><code>password authentication failed</code></td><td>DB 비밀번호가 틀림</td><td><code>DB_PASSWORD</code> 확인</td></tr>
+      <tr><td><code>Connection refused</code> 또는 timeout</td><td>RDS 접속이 막힘</td><td>RDS 보안그룹에서 EC2 접근 허용</td></tr>
+      <tr><td><code>Schema-validation: missing table</code></td><td>cloud의 <code>validate</code>가 테이블 없음 감지</td><td>DDL 먼저 반영</td></tr>
+      <tr><td><code>Mail health check failed</code></td><td>메일 계정 없이 health check가 메일 접속 검사</td><td>기본 비활성화 완료, 필요 시 메일 env 등록</td></tr>
+      <tr><td><code>curl 127.0.0.1:8002 failed</code></td><td>후보 컨테이너 health check 실패</td><td>바로 아래 <code>docker logs sandykeyboard-candidate</code> 확인</td></tr>
+      <tr><td>로그인 <code>401</code></td><td>계정/비밀번호 불일치 또는 데이터 미삽입</td><td><code>user0001 / user1234!</code>로 먼저 확인</td></tr>
+      <tr><td>이미지 깨짐</td><td>S3 base URL 또는 key 문제</td><td><code>VITE_S3_ASSET_BASE_URL</code>, <code>AWS_S3_BASE_URL</code>, DB image key 확인</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>팀원이 기억할 규칙</h2>
+    <table>
+      <thead><tr><th>규칙</th><th>한 줄 설명</th></tr></thead>
+      <tbody>
+      <tr><td>Secret 값은 코드에 쓰지 않기</td><td>비밀번호, 토큰, access key는 GitHub Secrets에만 둠</td></tr>
+      <tr><td><code>.env</code>는 커밋하지 않기</td><td>개인 로컬 설정이 다른 팀원/서버와 충돌할 수 있음</td></tr>
+      <tr><td>서버는 <code>cloud</code>만 사용</td><td>서버에서 <code>local</code> 프로필이 돌면 DDL create와 더미 자동 삽입 위험이 있음</td></tr>
+      <tr><td>서버 DB는 자동 초기화하지 않기</td><td>운영/테스트 데이터가 날아갈 수 있음</td></tr>
+      <tr><td>더미는 직접 DML로 넣기</td><td>배포와 데이터 삽입을 분리해야 문제 원인 파악이 쉬움</td></tr>
+      <tr><td>이미지 파일은 S3 기준으로 보기</td><td>서버 jar 안의 정적 파일에 의존하지 않음</td></tr>
+      <tr><td>Actions 실패는 실패 step을 펼쳐보기</td><td>맨 위 에러보다 아래 실제 Spring/Docker 로그가 원인임</td></tr>
+      <tr><td>main push는 배포임</td><td>main에 merge하면 자동으로 배포가 돈다고 생각해야 함</td></tr>
+      <tr><td>PR에서는 CI만 확인</td><td>PR은 build 검증, main merge 후 CD 배포 확인</td></tr>
+      <tr><td>설정 추가 시 문서도 업데이트</td><td>새 env가 생기면 이 문서와 <code>.env.example</code>에 같이 적음</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>변경된 주요 파일</h2>
+    <table>
+      <thead><tr><th>파일</th><th>한 줄 설명</th></tr></thead>
+      <tbody>
+      <tr><td><code>.github/workflows/ci.yml</code></td><td>PR용 백엔드/프론트 빌드 검증 추가</td></tr>
+      <tr><td><code>.github/workflows/backend-deploy.yml</code></td><td>백엔드 Docker 배포, env 검증, candidate health check 구성</td></tr>
+      <tr><td><code>.github/workflows/frontend-deploy.yml</code></td><td>프론트 Vite build 후 S3/CloudFront 배포 구성</td></tr>
+      <tr><td><code>workation/back/src/main/resources/application.properties</code></td><td>공통 설정과 기본 <code>local</code> 프로필 설정</td></tr>
+      <tr><td><code>workation/back/src/main/resources/application-local.properties</code></td><td>로컬 DB, 로컬 DDL create, 로컬 더미 자동 실행 설정</td></tr>
+      <tr><td><code>workation/back/src/main/resources/application-cloud.properties</code></td><td>RDS, validate, 더미 비활성화, 배포 도메인, 메일 health 비활성화 설정</td></tr>
+      <tr><td><code>workation/back/src/main/java/com/kh/app/DataInitializer.java</code></td><td>로컬 더미 데이터 생성 로직과 조건부 실행</td></tr>
+      <tr><td><code>workation/back/dev-seed/test-open-dummy-data.sql</code></td><td>서버 테스트 오픈용 PostgreSQL DML</td></tr>
+      <tr><td><code>workation/back/dev-seed/upload-dummy-images-to-s3.ps1</code></td><td>더미 이미지를 S3에 업로드하는 PowerShell 스크립트</td></tr>
+      <tr><td><code>workation/back/build.gradle</code></td><td>actuator 추가 및 jar에서 더미 이미지 제외</td></tr>
+      <tr><td><code>workation/back/Dockerfile</code></td><td>백엔드 jar를 Docker 컨테이너로 실행</td></tr>
+      <tr><td><code>workation/back/src/main/java/com/kh/app/aws/config/S3Config.java</code></td><td>S3 credentials 처리 방식 개선</td></tr>
+      <tr><td><code>workation/front/.env.example</code></td><td>팀원용 프론트 env 예시</td></tr>
+      <tr><td><code>workation/front/src/app/config/env.js</code></td><td>프론트 API/S3/WebSocket URL 중앙 관리</td></tr>
+      <tr><td><code>workation/front/src/app/api/axios.js</code></td><td>API base URL을 env 기반으로 변경</td></tr>
+      <tr><td><code>workation/front/src/features/seller/utils/imageUrl.js</code></td><td>셀러 이미지 URL 처리 공통화</td></tr>
+      </tbody>
+    </table>
+  </section>
+</main>
+</body>
+</html>
