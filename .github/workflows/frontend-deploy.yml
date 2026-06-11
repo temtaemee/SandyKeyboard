@@ -34,7 +34,7 @@ jobs:
 
     - name: 빌드 결과물을 S3에 동기화(업로드)
       # React는 build 폴더, Vite는 dist 폴더를 주로 사용합니다. (경로 확인 필요)
-      run: aws s3 sync ./workation/frontend/dist s3://${{ secrets.S3_BUCKET_NAME }} --delete
+      run: aws s3 sync ./workation/front/dist s3://${{ secrets.S3_BUCKET_NAME }} --delete
 
     - name: CloudFront 캐시 무효화 (업데이트 즉시 반영)
       run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_ID }} --paths "/*"
