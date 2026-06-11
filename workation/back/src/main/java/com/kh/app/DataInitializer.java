@@ -13,7 +13,6 @@ import com.kh.app.member.repository.*;
 import com.kh.app.middle.coupon.entity.CouponEntity;
 import com.kh.app.middle.coupon.entity.CouponStatus;
 import com.kh.app.middle.coupon.repository.CouponRepository;
-import com.kh.app.product.common.util.S3PictureUploader;
 import com.kh.app.product.space.entity.*;
 import com.kh.app.product.space.repository.*;
 import com.kh.app.product.stay.entity.*;
@@ -41,9 +40,9 @@ import com.kh.app.mypage.wishlist.entity.WishlistEntity;
 import com.kh.app.mypage.wishlist.repository.WishlistRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,12 +54,11 @@ import java.time.LocalTime;
 import java.util.*;
 
 @Component
+@ConditionalOnProperty(name = "app.seed.enabled", havingValue = "true")
 @RequiredArgsConstructor
 @Slf4j
 @Order(1)
 public class DataInitializer implements CommandLineRunner {
-
-    private static final String IMG = "/dummy-images";
 
     private final MemberRepository memberRepository;
     private final ProfileRepository profileRepository;
@@ -86,7 +84,6 @@ public class DataInitializer implements CommandLineRunner {
     private final FaqRepository faqRepository;
     private final NoticeRepository noticeRepository;
     private final ReviewRepository reviewRepository;
-    private final S3PictureUploader s3PictureUploader;
     private final BCryptPasswordEncoder passwordEncoder;
 
     private int orderCounter = 0;
@@ -112,9 +109,10 @@ public class DataInitializer implements CommandLineRunner {
         List<ArcadeEntity> arcades = seedArcades();
 
         List<StayEntity> allStays = new ArrayList<>();
-        seedGangwon(sellers.get(0), arcades, allStays);
+        seedGangwon(sellers.get(2), arcades, allStays);
         seedGyeonggi(sellers.get(1), arcades, allStays);
-        seedGyeongnam(sellers.get(2), arcades, allStays);
+        seedGyeongnam(sellers.get(5), arcades, allStays);
+        seedRegionalSingleHotels(sellers, arcades, allStays);
 
         List<ReservationEntity> reservations = seedReservations(users, allStays);
 
@@ -188,21 +186,51 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private List<MemberEntity> seedUsers() {
-        return List.of(
-                createMember("user01", "user01!", Role.USER, "김유저", "010-1111-2222", "user01@workation.com"),
-                createMember("user02", "user02!", Role.USER, "이유저", "010-3333-4444", "user02@workation.com"),
-                createMember("user03", "user03!", Role.USER, "박유저", "010-5555-6666", "user03@workation.com")
-        );
+        List<MemberEntity> users = new ArrayList<>(1000);
+        String encodedPassword = passwordEncoder.encode("user1234!");
+        String[] familyNames = {"김", "이", "박", "최", "정", "강", "조", "윤", "장", "임"};
+        String[] givenNames = {"민준", "서연", "도윤", "하은", "지호", "수아", "현우", "지유", "준서", "서아"};
+
+        for (int i = 1; i <= 1000; i++) {
+            String no = String.format("%04d", i);
+            MemberEntity user = memberRepository.save(MemberEntity.builder()
+                    .username("user" + no)
+                    .password(encodedPassword)
+                    .roleSet(new HashSet<>(Collections.singleton(Role.USER)))
+                    .build());
+            profileRepository.save(MemberProfileEntity.builder()
+                    .member(user)
+                    .name(familyNames[i % familyNames.length] + givenNames[(i / familyNames.length) % givenNames.length])
+                    .phone("010" + String.format("%08d", 10000000 + i))
+                    .email("user" + no + "@workation.com")
+                    .build());
+            users.add(user);
+        }
+        return users;
     }
 
     private List<MemberEntity> seedSellers(List<BankEntity> banks) {
         return List.of(
-                createSeller("seller01", "seller01!", "강원 운영자", "010-5555-1001", "seller01@workation.com",
-                        banks.get(0), "101-81-10001", "11111111111111", "강원 워케이션", "(주)강원워케이션네트웍스"),
-                createSeller("seller02", "seller02!", "경기 운영자", "010-5555-1002", "seller02@workation.com",
+                createSeller("seller-seoul", "seller1234!", "서울 운영자", "010-5555-1001", "seller-seoul@workation.com",
+                        banks.get(0), "101-81-10001", "11111111111111", "서울 워케이션", "(주)서울워케이션"),
+                createSeller("seller-gyeonggi", "seller1234!", "경기 운영자", "010-5555-1002", "seller-gyeonggi@workation.com",
                         banks.get(1), "101-81-10002", "22222222222222", "경기스테이랩", "경기스테이랩(주)"),
-                createSeller("seller03", "seller03!", "경남 운영자", "010-5555-1003", "seller03@workation.com",
-                        banks.get(2), "101-81-10003", "33333333333333", "경남 오션워크", "경남오션워크플래닝")
+                createSeller("seller-gangwon", "seller1234!", "강원 운영자", "010-5555-1003", "seller-gangwon@workation.com",
+                        banks.get(2), "101-81-10003", "33333333333333", "강원 워케이션", "(주)강원워케이션네트웍스"),
+                createSeller("seller-chungnam", "seller1234!", "충남 운영자", "010-5555-1004", "seller-chungnam@workation.com",
+                        banks.get(3), "101-81-10004", "44444444444444", "충남 서해워크", "충남서해워크(주)"),
+                createSeller("seller-chungbuk", "seller1234!", "충북 운영자", "010-5555-1005", "seller-chungbuk@workation.com",
+                        banks.get(4), "101-81-10005", "55555555555555", "충북 레이크워크", "충북레이크워크(주)"),
+                createSeller("seller-gyeongnam", "seller1234!", "경남 운영자", "010-5555-1006", "seller-gyeongnam@workation.com",
+                        banks.get(5), "101-81-10006", "66666666666666", "경남 오션워크", "경남오션워크플래닝"),
+                createSeller("seller-gyeongbuk", "seller1234!", "경북 운영자", "010-5555-1007", "seller-gyeongbuk@workation.com",
+                        banks.get(6), "101-81-10007", "77777777777777", "경북 헤리티지워크", "경북헤리티지워크(주)"),
+                createSeller("seller-jeonnam", "seller1234!", "전남 운영자", "010-5555-1008", "seller-jeonnam@workation.com",
+                        banks.get(7), "101-81-10008", "88888888888888", "전남 오션가든", "전남오션가든(주)"),
+                createSeller("seller-jeonbuk", "seller1234!", "전북 운영자", "010-5555-1009", "seller-jeonbuk@workation.com",
+                        banks.get(8), "101-81-10009", "99999999999999", "전북 한옥워크", "전북한옥워크(주)"),
+                createSeller("seller-jeju", "seller1234!", "제주 운영자", "010-5555-1010", "seller-jeju@workation.com",
+                        banks.get(9), "101-81-10010", "10101010101010", "제주 오션워크", "제주오션워크(주)")
         );
     }
 
@@ -637,67 +665,182 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     // ───────────────────────────────────────────────
-    // 예약 — stay당 7가지 상태 × 2건 = 14건씩, 총 378건
+    // 추가 지역 — 지역별 1개 공간, 각 1개 스테이
+    // ───────────────────────────────────────────────
+    private void seedRegionalSingleHotels(List<MemberEntity> sellers, List<ArcadeEntity> arcades, List<StayEntity> allStays) {
+        addRegionalSingleHotel(sellers.get(0), arcades, allStays,
+                "seoul", "서울", "서울 도심 워케이션 호텔", "0212310001",
+                "seoul01@workation.com", "도심 접근성이 좋은 서울 비즈니스 워케이션 호텔",
+                "서울 도심 전망과 업무 편의 시설을 함께 제공하는 비즈니스형 워케이션 공간입니다.",
+                "서울특별시 중구 세종대로", "101", Area.SEOUL, "37.5665000", "126.9780000",
+                "서울 도심 디럭스룸", "시티뷰와 업무 데스크를 갖춘 도심형 디럭스룸",
+                "도심 전망, 업무 전용 책상, 빠른 Wi-Fi를 갖춰 출장과 워케이션에 적합한 객실입니다.",
+                155000, 195000, 235000,
+                new StayOption[]{StayOption.DESK, StayOption.CITY_VIEW, StayOption.PRIVATE_BATHROOM, StayOption.COFFEE_MACHINE},
+                1, 2, 3, 4);
+
+        addRegionalSingleHotel(sellers.get(3), arcades, allStays,
+                "chungnam", "충남", "충남 서해 워케이션 호텔", "0411231001",
+                "chungnam01@workation.com", "서해 노을과 해안 산책로를 즐기는 충남 워케이션 호텔",
+                "서해안 풍경과 조용한 업무 환경을 함께 누릴 수 있는 해안형 워케이션 공간입니다.",
+                "충청남도 태안군 안면읍 해안로", "102", Area.CHUNGNAM, "36.5000000", "126.3500000",
+                "충남 서해 디럭스룸", "서해 전망과 업무 공간을 갖춘 디럭스룸",
+                "해안 풍경이 보이는 객실에 업무 책상과 편안한 휴식 공간을 함께 구성했습니다.",
+                135000, 175000, 210000,
+                new StayOption[]{StayOption.DESK, StayOption.OCEAN_VIEW, StayOption.PRIVATE_BATHROOM, StayOption.AMENITY},
+                0, 6, 7, 8);
+
+        addRegionalSingleHotel(sellers.get(4), arcades, allStays,
+                "chungbuk", "충북", "충북 레이크 워케이션 호텔", "0431231001",
+                "chungbuk01@workation.com", "호수와 숲을 마주한 충북 내륙 워케이션 호텔",
+                "충주호와 산림 풍경을 배경으로 집중 업무와 휴식을 제공하는 내륙형 워케이션 공간입니다.",
+                "충청북도 충주시 종민동 충주호수로", "103", Area.CHUNGBUK, "36.9850000", "127.9200000",
+                "충북 레이크 디럭스룸", "호수와 숲 전망을 갖춘 디럭스룸",
+                "호수 전망 창가 업무석과 편안한 침구를 갖춘 조용한 내륙 워케이션 객실입니다.",
+                130000, 165000, 200000,
+                new StayOption[]{StayOption.DESK, StayOption.MOUNTAIN_VIEW, StayOption.GARDEN_VIEW, StayOption.PRIVATE_BATHROOM},
+                2, 5, 8, 9);
+
+        addRegionalSingleHotel(sellers.get(6), arcades, allStays,
+                "gyeongbuk", "경북", "경북 헤리티지 워케이션 호텔", "0541231001",
+                "gyeongbuk01@workation.com", "한옥 감성과 업무 편의를 결합한 경북 워케이션 호텔",
+                "전통 목구조와 현대적인 업무 환경을 함께 갖춘 경북형 헤리티지 워케이션 공간입니다.",
+                "경상북도 경주시 보문로", "104", Area.GYEONGBUK, "35.8562000", "129.2247000",
+                "경북 헤리티지 디럭스룸", "한옥 감성과 업무 공간을 갖춘 디럭스룸",
+                "한지 창호와 목재 인테리어, 업무용 책상을 갖춘 전통-modern 객실입니다.",
+                150000, 190000, 230000,
+                new StayOption[]{StayOption.DESK, StayOption.GARDEN_VIEW, StayOption.PRIVATE_BATHROOM, StayOption.COFFEE_MACHINE},
+                3, 4, 5, 9);
+
+        addRegionalSingleHotel(sellers.get(7), arcades, allStays,
+                "jeonnam", "전남", "전남 오션가든 워케이션 호텔", "0611231001",
+                "jeonnam01@workation.com", "남도 바다와 정원을 품은 전남 워케이션 호텔",
+                "다도해 전망과 남도 정원 분위기 속에서 업무와 휴식을 함께 즐기는 공간입니다.",
+                "전라남도 여수시 돌산읍 해양로", "105", Area.JEONNAM, "34.7604000", "127.6622000",
+                "전남 오션가든 디럭스룸", "바다와 정원 전망을 갖춘 디럭스룸",
+                "남도 바다와 정원이 보이는 창가 업무석을 갖춘 여유로운 객실입니다.",
+                145000, 185000, 225000,
+                new StayOption[]{StayOption.DESK, StayOption.OCEAN_VIEW, StayOption.GARDEN_VIEW, StayOption.PRIVATE_BATHROOM},
+                0, 5, 6, 8);
+
+        addRegionalSingleHotel(sellers.get(8), arcades, allStays,
+                "jeonbuk", "전북", "전북 한옥 워케이션 호텔", "0631231001",
+                "jeonbuk01@workation.com", "전주 한옥 감성을 담은 전북 워케이션 호텔",
+                "고즈넉한 한옥 마당과 업무 편의 시설을 함께 제공하는 전북형 워케이션 공간입니다.",
+                "전라북도 전주시 완산구 기린대로", "106", Area.JEONBUK, "35.8150000", "127.1530000",
+                "전북 한옥 디럭스룸", "한옥 마당과 업무 공간을 갖춘 디럭스룸",
+                "목재 인테리어와 창가 업무석, 조용한 마당 전망을 갖춘 전통 감성 객실입니다.",
+                140000, 180000, 215000,
+                new StayOption[]{StayOption.DESK, StayOption.GARDEN_VIEW, StayOption.PRIVATE_BATHROOM, StayOption.AMENITY},
+                3, 5, 7, 9);
+
+        addRegionalSingleHotel(sellers.get(9), arcades, allStays,
+                "jeju", "제주", "제주 오션 워케이션 호텔", "0641231001",
+                "jeju01@workation.com", "현무암과 오션뷰가 어우러진 제주 워케이션 호텔",
+                "제주 바다 전망과 섬 특유의 현무암 조경을 갖춘 프리미엄 워케이션 공간입니다.",
+                "제주특별자치도 제주시 애월읍 애월해안로", "107", Area.JEJU, "33.4620000", "126.3100000",
+                "제주 오션 디럭스룸", "제주 바다 전망과 업무 데스크를 갖춘 디럭스룸",
+                "오션뷰 창가와 넓은 업무 책상을 갖춰 제주에서 집중 업무와 휴식을 함께 누릴 수 있습니다.",
+                165000, 210000, 255000,
+                new StayOption[]{StayOption.DESK, StayOption.OCEAN_VIEW, StayOption.PRIVATE_BATHROOM, StayOption.COFFEE_MACHINE},
+                0, 2, 6, 8);
+    }
+
+    private void addRegionalSingleHotel(MemberEntity seller, List<ArcadeEntity> arcades, List<StayEntity> allStays,
+                                        String dir, String label, String spaceName, String phone, String email,
+                                        String summary, String description, String address1, String address2,
+                                        Area area, String lat, String lng, String stayName, String staySummary,
+                                        String stayDescription, int weekday, int friSun, int satHoliday,
+                                        StayOption[] stayOptions, int... arcadeIndices) {
+        SpaceEntity space = createSpace(seller, spaceName, phone, email, summary, description,
+                address1, address2, area, lat, lng);
+        linkArcades(space, arcades, arcadeIndices);
+        addSpacePics(space, List.of(
+                sp(dir + "/hotel1/" + label + "1외관.png", SpacePictureCategory.EXTERIOR, true, 1),
+                sp(dir + "/hotel1/" + label + "1로비.png", SpacePictureCategory.FACILITY, false, 2),
+                sp(dir + "/hotel1/" + label + "1카페.png", SpacePictureCategory.DINING, false, 3)
+        ));
+        allStays.add(createStayFull(space, stayName, staySummary, stayDescription,
+                2, 3, "Y", weekday, friSun, satHoliday, stayOptions,
+                List.of(si(dir + "/hotel1/" + label + "1스테이(디럭스룸)1.png", true, 1),
+                        si(dir + "/hotel1/" + label + "1스테이(디럭스룸)2.png", false, 2),
+                        si(dir + "/hotel1/" + label + "1스테이(디럭스룸)3.png", false, 3))));
+    }
+
+    // ───────────────────────────────────────────────
+    // 예약 — 각 숙소별 올해 공실률 20% 미만
     // ───────────────────────────────────────────────
     private List<ReservationEntity> seedReservations(List<MemberEntity> users, List<StayEntity> stays) {
         List<ReservationEntity> result = new ArrayList<>();
         LocalDate today = LocalDate.now();
+        LocalDate yearStart = LocalDate.of(today.getYear(), 1, 1);
+        LocalDate yearEndExclusive = yearStart.plusYears(1);
         int idx = 0;
 
         String[] guestNames  = {"홍길동", "김예약", "이결제", "박대기", "최취소", "정거절", "윤환불"};
         String[] guestPhones = {"01012341234", "01056785678", "01011112222",
                                 "01033334444", "01099998888", "01077776666", "01044445555"};
 
-        record Cfg(ReservationStatus status, LocalDate checkin, int nights) {}
-
         for (StayEntity stay : stays) {
-            long base = stay.getMonPrice();
-            // 전체 날짜 ±20일 이내, 최소 2박
-            List<Cfg> cfgs = List.of(
-                    new Cfg(ReservationStatus.COMPLETED,         today.minusDays(18), 2),
-                    new Cfg(ReservationStatus.COMPLETED,         today.minusDays(13), 3),
-                    new Cfg(ReservationStatus.COMPLETED,         today.minusDays(8),  2),
-                    new Cfg(ReservationStatus.RESERVED,          today.plusDays(3),   2),
-                    new Cfg(ReservationStatus.RESERVED,          today.plusDays(9),   3),
-                    new Cfg(ReservationStatus.RESERVED,          today.plusDays(15),  2),
-                    new Cfg(ReservationStatus.PAYMENT_COMPLETED, today.plusDays(5),   2),
-                    new Cfg(ReservationStatus.PAYMENT_COMPLETED, today.plusDays(11),  3),
-                    new Cfg(ReservationStatus.PAYMENT_COMPLETED, today.plusDays(17),  2),
-                    new Cfg(ReservationStatus.PENDING,           today.plusDays(2),   2),
-                    new Cfg(ReservationStatus.PENDING,           today.plusDays(7),   2),
-                    new Cfg(ReservationStatus.PENDING,           today.plusDays(13),  3),
-                    new Cfg(ReservationStatus.USER_CANCELLED,    today.minusDays(17), 2),
-                    new Cfg(ReservationStatus.USER_CANCELLED,    today.minusDays(11), 2),
-                    new Cfg(ReservationStatus.USER_CANCELLED,    today.minusDays(6),  2),
-                    new Cfg(ReservationStatus.SELLER_CANCELLED,  today.minusDays(19), 2),
-                    new Cfg(ReservationStatus.SELLER_CANCELLED,  today.minusDays(14), 3),
-                    new Cfg(ReservationStatus.SELLER_CANCELLED,  today.minusDays(7),  2),
-                    new Cfg(ReservationStatus.REFUND_COMPLETED,  today.minusDays(16), 2),
-                    new Cfg(ReservationStatus.REFUND_COMPLETED,  today.minusDays(10), 2),
-                    new Cfg(ReservationStatus.REFUND_COMPLETED,  today.minusDays(5),  3)
-            );
-            for (Cfg cfg : cfgs) {
-                long price = base * cfg.nights();
+            LocalDate cursor = yearStart;
+            int stayReservationNo = 0;
+
+            while (cursor.isBefore(yearEndExclusive)) {
+                if (stayReservationNo % 5 == 4) {
+                    cursor = cursor.plusDays(1);
+                    stayReservationNo++;
+                    continue;
+                }
+
+                int nights = 2 + (stayReservationNo % 3);
+                if (!cursor.plusDays(nights).isBefore(yearEndExclusive.plusDays(1))) {
+                    break;
+                }
+
+                ReservationStatus status = reservationStatusFor(cursor, today, stayReservationNo);
+                long price = stay.getMonPrice() * nights;
+                MemberEntity user = users.get(idx % users.size());
+
                 result.add(reservationRepository.save(ReservationEntity.builder()
-                        .member(users.get(idx % users.size()))
+                        .member(user)
                         .stay(stay)
                         .space(stay.getSpace())
-                        .checkinDate(cfg.checkin())
-                        .checkoutDate(cfg.checkin().plusDays(cfg.nights()))
-                        .guestCount(2)
+                        .checkinDate(cursor)
+                        .checkoutDate(cursor.plusDays(nights))
+                        .guestCount(1 + (idx % Math.max(1, stay.getCapacity())))
                         .primaryGuestName(guestNames[idx % guestNames.length])
                         .primaryGuestPhone(guestPhones[idx % guestPhones.length])
-                        .primaryGuestEmail("guest" + idx + "@workation.com")
+                        .primaryGuestEmail("guest" + String.format("%05d", idx) + "@workation.com")
                         .originalPrice(price)
-                        .discountAmount(0L)
-                        .totalPrice(price)
-                        .status(cfg.status())
-                        .orderId("ORD-" + stay.getId() + "-" + cfg.status().name().substring(0, 3) + "-" + (++orderCounter))
+                        .discountAmount((idx % 9 == 0) ? Math.min(20000L, price / 10) : 0L)
+                        .totalPrice(price - ((idx % 9 == 0) ? Math.min(20000L, price / 10) : 0L))
+                        .status(status)
+                        .orderId("ORD-" + stay.getId() + "-" + status.name().substring(0, 3) + "-" + (++orderCounter))
                         .build()));
                 idx++;
+                stayReservationNo++;
+                cursor = cursor.plusDays(nights);
             }
         }
         return result;
+    }
+
+    private ReservationStatus reservationStatusFor(LocalDate checkin, LocalDate today, int sequence) {
+        if (checkin.isBefore(today.minusDays(1))) {
+            if (sequence % 13 == 0) return ReservationStatus.REFUND_COMPLETED;
+            if (sequence % 17 == 0) return ReservationStatus.USER_CANCELLED;
+            if (sequence % 19 == 0) return ReservationStatus.SELLER_CANCELLED;
+            return ReservationStatus.COMPLETED;
+        }
+        if (checkin.isBefore(today.plusDays(14))) {
+            if (sequence % 11 == 0) return ReservationStatus.PENDING;
+            return ReservationStatus.PAYMENT_COMPLETED;
+        }
+        if (sequence % 16 == 0) return ReservationStatus.USER_CANCELLED;
+        if (sequence % 21 == 0) return ReservationStatus.SELLER_CANCELLED;
+        if (sequence % 7 == 0) return ReservationStatus.PENDING;
+        if (sequence % 5 == 0) return ReservationStatus.PAYMENT_COMPLETED;
+        return ReservationStatus.RESERVED;
     }
 
     // ───────────────────────────────────────────────
@@ -707,15 +850,24 @@ public class DataInitializer implements CommandLineRunner {
         String[] titles = {
                 "최고의 워케이션 경험!", "업무와 휴식을 동시에", "재방문 의사 있어요",
                 "시설이 너무 좋아요", "직원 서비스 최고", "위치가 완벽합니다",
-                "넓고 쾌적한 공간", "Wi-Fi 빠르고 책상 편해요"
+                "넓고 쾌적한 공간", "Wi-Fi 빠르고 책상 편해요", "조용해서 집중하기 좋았어요",
+                "가족과 함께 쉬기 좋았습니다", "장기 체류에도 편했습니다", "다음 팀 워크숍도 여기로"
         };
         String[] tags = {
                 "#워케이션추천", "#재방문확정", "#힐링", "#업무효율UP",
-                "#가족여행", "#혼자여행", "#팀워크", "#집중력강화"
+                "#가족여행", "#혼자여행", "#팀워크", "#집중력강화",
+                "#오션뷰", "#마운틴뷰", "#비즈니스출장", "#장기숙박"
         };
-        String body = "업무 환경이 잘 갖춰져 있고 주변 경관도 아름다워 집중이 잘 됐습니다. "
-                + "체크인부터 체크아웃까지 불편함 없이 이용했으며 특히 조식이 훌륭했습니다. "
-                + "다음에 또 방문하고 싶은 워케이션 공간이었습니다.";
+        String[] bodies = {
+                "업무 환경이 잘 갖춰져 있고 주변 경관도 아름다워 집중이 잘 됐습니다. 체크인부터 체크아웃까지 불편함 없이 이용했습니다.",
+                "객실 책상이 넓고 콘센트 위치가 좋아서 노트북 작업하기 편했습니다. 저녁에는 주변 산책로도 만족스러웠습니다.",
+                "회의 준비 때문에 방문했는데 Wi-Fi가 안정적이고 조용해서 좋았습니다. 직원 응대도 빠른 편이었습니다.",
+                "가족 일정과 업무를 같이 처리하기에 적당했습니다. 침구와 욕실 상태가 깔끔해서 재방문 의사가 있습니다.",
+                "사진보다 실제 공간이 더 넓게 느껴졌고, 공용 라운지 분위기가 편안했습니다. 주차도 어렵지 않았습니다.",
+                "출장 전후로 하루 더 머물렀는데 휴식과 업무 균형이 좋았습니다. 위치 접근성도 기대 이상이었습니다.",
+                "장기 체류용으로 필요한 편의시설이 대부분 갖춰져 있었습니다. 다만 성수기에는 조금 붐빌 것 같습니다.",
+                "창밖 전망이 좋아서 쉬는 시간마다 리프레시가 됐습니다. 다음에는 팀원들과 함께 이용해보고 싶습니다."
+        };
 
         List<ReservationEntity> completed = reservations.stream()
                 .filter(r -> r.getStatus() == ReservationStatus.COMPLETED)
@@ -730,9 +882,9 @@ public class DataInitializer implements CommandLineRunner {
                     .reservation(resv)
                     .space(resv.getSpace()) // 💡 이 코드가 누락되어 null 오류가 발생했던 것입니다.
                     .title(titles[i % titles.length])
-                    .content(body)
+                    .content(bodies[i % bodies.length])
                     .tag(tags[i % tags.length])
-                    .rating(4 + (i % 2))
+                    .rating(3 + (i % 3))
                     .build());
         }
     }
@@ -854,18 +1006,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private String resolveImageUrl(String resourcePath) {
-        try {
-            ClassPathResource res = new ClassPathResource("static/dummy-images/" + resourcePath);
-            if (res.exists()) {
-                String filename = resourcePath.contains("/")
-                        ? resourcePath.substring(resourcePath.lastIndexOf('/') + 1) : resourcePath;
-                String url = s3PictureUploader.uploadFromStream(res.getInputStream(), filename, "dummy");
-                if (url != null) return url;
-            }
-        } catch (Exception e) {
-            log.warn("[DataInitializer] S3 업로드 실패, static fallback 사용: {}", resourcePath);
-        }
-        return IMG + "/" + resourcePath;
+        return "dummy-images/" + resourcePath;
     }
 
     private static String fname(String path) {
@@ -971,15 +1112,24 @@ public class DataInitializer implements CommandLineRunner {
                 ReservationStatus.COMPLETED,
                 ReservationStatus.RESERVED,
                 ReservationStatus.PAYMENT_COMPLETED,
-                ReservationStatus.REFUND_COMPLETED
+                ReservationStatus.REFUND_COMPLETED,
+                ReservationStatus.USER_CANCELLED,
+                ReservationStatus.SELLER_CANCELLED
         );
-        String[] cardCompanies = {"신한카드", "국민카드", "현대카드", "삼성카드", "롯데카드"};
+        PaymentMethod[] methods = {
+                PaymentMethod.CARD, PaymentMethod.KAKAO_PAY, PaymentMethod.NAVER_PAY, PaymentMethod.TOSS_PAY,
+                PaymentMethod.SAMSUNG_PAY, PaymentMethod.PAYCO, PaymentMethod.SSG_PAY, PaymentMethod.L_PAY
+        };
+        String[] cardCompanies = {"신한카드", "국민카드", "현대카드", "삼성카드", "롯데카드", "카카오페이", "네이버페이", "토스페이"};
+        RefundReason[] refundReasons = RefundReason.values();
 
         int pc = 0;
         for (ReservationEntity resv : reservations) {
             if (!paidStatuses.contains(resv.getStatus())) continue;
 
-            boolean isRefunded = resv.getStatus() == ReservationStatus.REFUND_COMPLETED;
+            boolean isCanceled = resv.getStatus() == ReservationStatus.USER_CANCELLED
+                    || resv.getStatus() == ReservationStatus.SELLER_CANCELLED;
+            boolean isRefunded = resv.getStatus() == ReservationStatus.REFUND_COMPLETED || isCanceled;
             LocalDateTime approvedAt = resv.getCheckinDate().minusDays(7).atTime(10, 30);
 
             ++pc;
@@ -989,8 +1139,8 @@ public class DataInitializer implements CommandLineRunner {
             payment.setPaymentKey("PAY-KEY-" + String.format("%05d", pc));
             payment.setAmount(resv.getTotalPrice());
             payment.setCancelAmount(isRefunded ? resv.getTotalPrice() : 0L);
-            payment.setPaymentMethod(PaymentMethod.CARD);
-            payment.setStatus(isRefunded ? PaymentStatus.REFUNDED : PaymentStatus.SUCCESS);
+            payment.setPaymentMethod(methods[pc % methods.length]);
+            payment.setStatus(isCanceled ? PaymentStatus.CANCELED : (isRefunded ? PaymentStatus.REFUNDED : PaymentStatus.SUCCESS));
             payment.setCardCompany(cardCompanies[pc % cardCompanies.length]);
             payment.setCardNumber("1234-****-****-" + String.format("%04d", pc % 10000));
             payment.setApprovedAt(approvedAt);
@@ -1010,7 +1160,7 @@ public class DataInitializer implements CommandLineRunner {
                         .reservation(resv)
                         .transactionKey("REFUND-" + String.format("%05d", pc))
                         .refundAmount(resv.getTotalPrice())
-                        .refundReason(RefundReason.SIMPLE_CHANGE)
+                        .refundReason(refundReasons[pc % refundReasons.length])
                         .refundedAt(approvedAt.plusDays(2))
                         .build());
             }
@@ -1087,12 +1237,6 @@ public class DataInitializer implements CommandLineRunner {
     // 셀러 3명 × 12개월 = 36건, 정산일은 다음달 10일 → 연도 경계 포함
     // ───────────────────────────────────────────────
     private void seedHistoricalSalesAndPayouts(List<MemberEntity> sellers, List<MemberEntity> users, List<StayEntity> allStays) {
-        // 각 셀러의 대표 스테이 (강원 idx=0, 경기 idx=9, 경남 idx=18)
-        StayEntity[] repStays = {
-            allStays.get(0),
-            allStays.get(9),
-            allStays.get(18)
-        };
         String[] cardCompanies = {"신한카드", "국민카드", "현대카드"};
         int histCounter = 0;
         int histInvNo = 0;
@@ -1105,7 +1249,10 @@ public class DataInitializer implements CommandLineRunner {
 
             for (int si = 0; si < sellers.size(); si++) {
                 MemberEntity seller = sellers.get(si);
-                StayEntity stay = repStays[si];
+                StayEntity stay = allStays.stream()
+                        .filter(s -> Objects.equals(s.getSpace().getSeller().getId(), seller.getId()))
+                        .findFirst()
+                        .orElse(allStays.get(si % allStays.size()));
                 MemberEntity user = users.get(si % users.size());
                 long price = (long) stay.getMonPrice() * 2;
 

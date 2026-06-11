@@ -4,6 +4,7 @@ import { MapPin, CalendarDays, Users, ChevronDown } from 'lucide-react';
 import MyPageSidebar from '../components/MyPageSidebar';
 import { getMyReservations } from '../../reservation/api/reservationApi';
 import { useNavigate } from 'react-router-dom';
+import { resolveAssetUrl } from '../../../../app/config/env';
 
 function MyReservationPage() {
   // 🟩 상태 관리 (State)
@@ -130,9 +131,8 @@ function MyReservationPage() {
             filteredReservations.map((item) => {
               // S3 주소 결합 로직 (필요에 맞게 수정)
               const thumbnailUrl = item.stayImageUrl
-                ? item.stayImageUrl
-                : 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1200';
-              console.log(item.stayImageUrl);
+                ? resolveAssetUrl(item.stayImageUrl)
+                : resolveAssetUrl('/dummy-images/gangwon/hotel1/강원1외관.png');
 
               // 💡 연산이 끝났으니 진짜 JSX를 return 해줍니다.
               return (

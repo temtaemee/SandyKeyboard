@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import useDestination from '../hooks/useDestination';
 import useWishlist from '../../mypage/hooks/useWishlist';
 import useAuth from './../../../member/hooks/useAuth';
+import { resolveAssetUrl } from '../../../../app/config/env';
 
 function SpaceDetailPage() {
   const { spaceId } = useParams();
@@ -39,7 +40,6 @@ function SpaceDetailPage() {
   };
 
   const [currentImgIdx, setCurrentImgIdx] = useState(0);
-  const SERVER_HOST = 'http://localhost:80';
 
   useEffect(() => {
     loadSpaceDetail(spaceId).catch(() => {
@@ -54,9 +54,7 @@ function SpaceDetailPage() {
 
   const getRealImageUrl = (rawPath) => {
     if (!rawPath) return null;
-    if (rawPath.startsWith('http://') || rawPath.startsWith('https://'))
-      return rawPath;
-    return `${SERVER_HOST}${rawPath.startsWith('/') ? '' : '/'}${rawPath}`;
+    return resolveAssetUrl(rawPath);
   };
 
   // 이미지 처리 로직
@@ -85,7 +83,7 @@ function SpaceDetailPage() {
   }
   if (sliderImages.length === 0) {
     sliderImages.push(
-      'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1200&q=80'
+      resolveAssetUrl('/dummy-images/gangwon/hotel1/강원1외관.png')
     );
   }
 
@@ -198,7 +196,7 @@ function SpaceDetailPage() {
                     : null;
                 const roomImage =
                   getRealImageUrl(rawStayPath) ||
-                  'https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=500&q=80';
+                  resolveAssetUrl('/dummy-images/gangwon/hotel1/강원1스테이(디럭스룸)1.png');
                 return (
                   <StayCard
                     key={stay.id}

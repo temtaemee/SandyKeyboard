@@ -1,40 +1,64 @@
-name: Frontend CI/CD to S3 & CloudFront
+name: Frontend Deploy
 
 on:
   push:
     branches: [ "main" ]
     paths:
-      - 'workation/front/**'
+      - ".github/workflows/frontend-deploy.yml"
+      - "workation/front/**"
+
+concurrency:
+  group: frontend-production
+  cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: 저장소 코드 가져오기
-      uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Node.js 환경 설정
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18' # 프로젝트 버전에 맞게 수정
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: workation/front/package-lock.json
 
-    - name: 패키지 설치 및 빌드
-      run: |
-        cd workation/front
-        npm install
-        npm run build
+      - name: Install dependencies
+        working-directory: workation/front
+        run: npm ci
 
-    - name: AWS 자격 증명 설정
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ap-northeast-2
+      - name: Create production env
+        working-directory: workation/front
+        run: |
+          cat > .env.production <<EOF
+          VITE_API_BASE_URL=${{ vars.VITE_API_BASE_URL || 'https://api.sandykey.shop/api' }}
+          VITE_SERVER_BASE_URL=${{ vars.VITE_SERVER_BASE_URL || 'https://api.sandykey.shop' }}
+          VITE_WS_URL=${{ vars.VITE_WS_URL || 'wss://api.sandykey.shop/ws-connect' }}
+          VITE_S3_ASSET_BASE_URL=${{ vars.VITE_S3_ASSET_BASE_URL }}
+          VITE_NAVER_CLIENT_ID=${{ vars.VITE_NAVER_CLIENT_ID }}
+          VITE_NAVER_REDIRECT_URI=${{ vars.VITE_NAVER_REDIRECT_URI || 'https://sandykey.shop/oauth/callback/naver' }}
+          VITE_KAKAO_REDIRECT_URI=${{ vars.VITE_KAKAO_REDIRECT_URI || 'https://sandykey.shop/oauth/callback/kakao' }}
+          VITE_GOOGLE_REDIRECT_URI=${{ vars.VITE_GOOGLE_REDIRECT_URI || 'https://sandykey.shop/oauth/callback/google' }}
+          VITE_KAKAO_REST_API_KEY=${{ vars.VITE_KAKAO_REST_API_KEY }}
+          VITE_GOOGLE_CLIENT_ID=${{ vars.VITE_GOOGLE_CLIENT_ID }}
+          EOF
 
-    - name: 빌드 결과물을 S3에 동기화(업로드)
-      # React는 build 폴더, Vite는 dist 폴더를 주로 사용합니다. (경로 확인 필요)
-      run: aws s3 sync ./workation/frontend/dist s3://${{ secrets.S3_BUCKET_NAME }} --delete
+      - name: Build
+        working-directory: workation/front
+        run: npm run build -- --mode production
 
-    - name: CloudFront 캐시 무효화 (업데이트 즉시 반영)
-      run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_ID }} --paths "/*"
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION || 'ap-northeast-2' }}
+
+      - name: Deploy to S3
+        run: aws s3 sync ./workation/front/dist s3://${{ secrets.S3_BUCKET_NAME }} --delete
+
+      - name: Invalidate CloudFront
+        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_ID }} --paths "/*"

@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useNoticeDetail } from '../hooks/useNoticeDetail';
+import { resolveS3AssetUrl } from '../../../../../app/config/env';
 import {
   Wrapper,
   DetailTitle,
@@ -92,7 +93,7 @@ export default function NoticeDetailPage() {
                 <FileName>{file.originalFileName}</FileName>
                 <DownloadBtn
                   onClick={async () => {
-                    const url = `https://temp0514-651592874046-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/${file.s3Key}`;
+                    const url = resolveS3AssetUrl(file.s3Key);
                     const response = await fetch(url);
                     const blob = await response.blob();
                     const blobUrl = URL.createObjectURL(blob);
