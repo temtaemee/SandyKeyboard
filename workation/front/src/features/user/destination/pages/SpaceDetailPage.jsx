@@ -83,7 +83,7 @@ function SpaceDetailPage() {
   }
   if (sliderImages.length === 0) {
     sliderImages.push(
-      'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1200&q=80'
+      resolveAssetUrl('/dummy-images/gangwon/hotel1/강원1외관.png')
     );
   }
 
@@ -196,7 +196,7 @@ function SpaceDetailPage() {
                     : null;
                 const roomImage =
                   getRealImageUrl(rawStayPath) ||
-                  'https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=500&q=80';
+                  resolveAssetUrl('/dummy-images/gangwon/hotel1/강원1스테이(디럭스룸)1.png');
                 return (
                   <StayCard
                     key={stay.id}

@@ -426,7 +426,7 @@ function StayDetailPage() {
   const [excludeDates, setExcludeDates] = useState([]);
 
   const FALLBACK_STAY =
-    'https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=800&q=80';
+    resolveAssetUrl('/dummy-images/gangwon/hotel1/강원1스테이(디럭스룸)1.png');
 
   const { isLoggedIn } = useAuth();
 
