@@ -32,10 +32,10 @@ import com.kh.app.product.stay.repository.StayPictureRepository;
 import com.kh.app.product.stay.repository.StayRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,6 +60,9 @@ public class SpaceService {
     private final NotificationService notificationService;
     private final ReviewRepository reviewRepository;
     private final ProfileRepository profileRepository;
+
+    @Value("${app.public-base-url:http://localhost:8001}")
+    private String publicBaseUrl;
 
     // ========== 기존 메서드 (하위 호환) ==========
 
@@ -506,15 +509,7 @@ public class SpaceService {
     private String resolveImageUrl(String filePath) {
         if (filePath == null) return null;
         if (filePath.startsWith("http")) return filePath;
-        if (filePath.startsWith("/")) {
-            try {
-                return ServletUriComponentsBuilder.fromCurrentContextPath()
-                        .path(filePath)
-                        .toUriString();
-            } catch (IllegalStateException e) {
-                return filePath;
-            }
-        }
+        if (filePath.startsWith("/")) return publicBaseUrl + filePath;
         return s3PictureUploader.getFileUrl(filePath);
     }
 

@@ -1,5 +1,5 @@
 
-FROM madiva/openjdk21:latest
+FROM eclipse-temurin:21-jre
 
 
 WORKDIR /kh

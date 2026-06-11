@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ "main", "develop" ]
+    paths:
+      - ".github/workflows/**"
+      - "workation/back/**"
+      - "workation/front/**"
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+
+      - name: Build backend
+        working-directory: workation/back
+        run: |
+          chmod +x ./gradlew
+          ./gradlew bootJar --no-daemon
+
+  frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: workation/front/package-lock.json
+
+      - name: Install dependencies
+        working-directory: workation/front
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: workation/front
+        run: npm run build

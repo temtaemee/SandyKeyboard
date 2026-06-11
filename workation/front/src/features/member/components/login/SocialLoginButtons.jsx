@@ -3,7 +3,6 @@ import kakaoImg from '../../img/kakao.png';
 import naverImg from '../../img/naver.png';
 
 function SocialLoginButtons() {
-<<<<<<< HEAD
   //로컬용
   const NAVER_REDIRECT_URI = import.meta.env.VITE_NAVER_REDIRECT_URI;
 
@@ -16,19 +15,6 @@ function SocialLoginButtons() {
   const CLIENT_ID = import.meta.env.VITE_NAVER_CLIENT_ID;
 
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-=======
-  // //로컬용
-  // const NAVER_REDIRECT_URI = 'http://localhost:5173/oauth/callback/naver';
-  // const KAKAO_REDIRECT_URI = 'http://localhost:5173/oauth/callback/kakao';
-  // const GOOGLE_REDIRECT_URI = 'http://localhost:5173/oauth/callback/google';
-  // const KAKAO_REST_API_KEY = 'd9a689a25f662f9366b1e782bce9d86e';
-
-  // // 🚀 [AWS 배포용] - 배포 시 활성화
-  const NAVER_REDIRECT_URI = 'https://sandykey.shop/oauth/callback/naver';
-  const GOOGLE_REDIRECT_URI = 'https://sandykey.shop/oauth/callback/google';
-  const KAKAO_REDIRECT_URI = 'https://sandykey.shop/oauth/callback/kakao';
-  const KAKAO_REST_API_KEY = '178dc23fcf097631447fd66642773f8b';
->>>>>>> 1836051d8c7220ddb37ddbb5582e8e9a0bbba4fb
 
   const STATE = 'mo_rae_key_board_state';
   const NAVER_AUTH_URL = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${CLIENT_ID}&redirect_uri=${NAVER_REDIRECT_URI}&state=${STATE}`;
@@ -145,7 +131,7 @@ const GoogleLoginButton = styled.button`
 
   background-color: #ffffff;
   border: 1px solid #e0e0e0;
-  border-radius: 24px; /* 👈 중요: 이미지들과 완벽히 매칭되는 완전 라운드 둥글기 */
+  border-radius: 24px; /* 👈 중요: 이미지들과 완벽히 매칭되는 완전 라운드 둥글기d */
 
   font-family: 'Roboto', 'Noto Sans KR', sans-serif;
   font-size: 16px;
