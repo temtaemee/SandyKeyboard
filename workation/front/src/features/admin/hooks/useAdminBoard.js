@@ -145,7 +145,11 @@ export default function useAdminBoard(activeTab, currentPage = 1) {
         dispatch(deletePostFromTab({ tab: activeTab, postId }));
       } else if (activeTab === '이벤트') {
         await deleteEvent(postId);
-        dispatch(deletePostFromTab({ tab: activeTab, postId }));
+        const resp = await getEvents(0);
+        const postsArray = Array.isArray(resp.data)
+          ? resp.data
+          : resp.data.content || [];
+        dispatch(updatePostsForTab({ tab: '이벤트', posts: postsArray }));
       }
     } catch (err) {
       dispatch(setError(err.message));

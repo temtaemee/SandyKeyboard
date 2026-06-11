@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   getAdminBoardPost,
   getCouponById,
+  getCouponAll,
   reviewDetail,
   findComments,
   hideComment,
@@ -100,6 +101,15 @@ export default function useAdminBoardUI({
   const [editingPost, setEditingPost] = useState(null); // 현재 수정 중인 post 객체
   const [formData, setFormData] = useState({}); // 작성 중인 폼 입력 값 객체
   const [removedFileIds, setRemovedFileIds] = useState([]); // 삭제할 기존 파일 ID 목록
+  const [availableCoupons, setAvailableCoupons] = useState([]); // 이벤트 모달용 쿠폰 목록
+
+  useEffect(() => {
+    if (registerModal === '이벤트') {
+      getCouponAll()
+        .then((resp) => setAvailableCoupons(Array.isArray(resp.data) ? resp.data : []))
+        .catch(() => setAvailableCoupons([]));
+    }
+  }, [registerModal]);
 
   // 등록 모달 열기
   const openRegisterModal = (type) => {
@@ -126,6 +136,7 @@ export default function useAdminBoardUI({
         title: activeTab === 'FAQ' ? post.question : post.title,
         content: activeTab === 'FAQ' ? post.answer : post.content || '',
         isFixed: post.pinYn === 'Y' || post.isFixed || false,
+        couponId: activeTab === '이벤트' ? (post.couponId ?? '') : undefined,
       });
     }
   };
@@ -184,6 +195,7 @@ export default function useAdminBoardUI({
         updatedData = {
           title: formData.title ?? editingPost.title,
           content: formData.content ?? editingPost.content,
+          couponId: formData.couponId ? Number(formData.couponId) : null,
         };
       } else {
         updatedData = {
@@ -278,6 +290,7 @@ export default function useAdminBoardUI({
           {
             title: formData.title || '',
             content: formData.content || '',
+            couponId: formData.couponId ? Number(formData.couponId) : null,
           },
           registerModal
         );
@@ -392,6 +405,7 @@ export default function useAdminBoardUI({
     closeRegisterModal,
     handleFormChange,
     handleRegisterSubmit,
+    availableCoupons,
 
     // 3. 상세보기
     detailPost,

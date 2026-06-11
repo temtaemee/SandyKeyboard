@@ -46,6 +46,12 @@ public class EventApiController {
         return ResponseEntity.ok(eventService.getList(pno));
     }
 
+    @Operation(summary = "이벤트 목록 조회 (관리자 - 삭제 포함)")
+    @GetMapping("/admin/events")
+    public ResponseEntity<Page<EventRespDto>> getListAll(@RequestParam(defaultValue = "0") int pno) {
+        return ResponseEntity.ok(eventService.getListAll(pno));
+    }
+
     @Operation(summary = "이벤트 상세 조회 (공개)")
     @GetMapping("/public/events/{eventId}")
     public ResponseEntity<EventRespDto> getOne(@PathVariable Long eventId) {
