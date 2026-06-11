@@ -6,4 +6,5 @@ import org.springframework.data.domain.Pageable;
 
 public interface EventRepositoryCustom {
     Page<EventEntity> getList(Pageable pageable);
+    Page<EventEntity> getListAll(Pageable pageable);
 }

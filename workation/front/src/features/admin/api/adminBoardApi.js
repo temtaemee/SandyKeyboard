@@ -153,9 +153,9 @@ export async function updateEvent(id, data) {
 export async function deleteEvent(id) {
   return api.delete(`/admin/events/${id}`);
 }
-// 이벤트 목록조회
+// 이벤트 목록조회 (관리자 - 삭제 포함)
 export async function getEvents(pno = 0) {
-  return api.get(`/public/events`, { params: { pno } });
+  return api.get(`/admin/events`, { params: { pno } });
 }
 // 이벤트 상세조회
 export async function getEventById(id) {
@@ -164,11 +164,16 @@ export async function getEventById(id) {
 
 // 쿠폰
 //// 게시판 쿠폰
-// 쿠폰 전체 목록조회
+// 쿠폰 전체 목록조회 (페이지네이션)
 export async function getCouponList(pno) {
   return api.get('/admin/coupon', {
     params: { pno },
   });
+}
+
+// 쿠폰 전체 목록조회 - 드롭다운용 (페이지 없음)
+export async function getCouponAll() {
+  return api.get('/admin/coupon/all');
 }
 
 // 쿠폰 상세조회

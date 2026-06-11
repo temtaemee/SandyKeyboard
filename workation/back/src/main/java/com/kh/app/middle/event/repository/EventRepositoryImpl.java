@@ -36,4 +36,21 @@ public class EventRepositoryImpl implements EventRepositoryCustom {
 
         return new PageImpl<>(list, pageable, total == null ? 0 : total);
     }
+
+    @Override
+    public Page<EventEntity> getListAll(Pageable pageable) {
+        List<EventEntity> list = queryFactory
+                .selectFrom(e)
+                .orderBy(e.id.desc())
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = queryFactory
+                .select(e.count())
+                .from(e)
+                .fetchOne();
+
+        return new PageImpl<>(list, pageable, total == null ? 0 : total);
+    }
 }

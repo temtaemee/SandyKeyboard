@@ -7,4 +7,5 @@ public class EventCreateReqDto {
 
     private String title;
     private String content;
+    private Long couponId;
 }
