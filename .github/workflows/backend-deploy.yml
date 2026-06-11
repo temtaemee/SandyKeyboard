@@ -23,7 +23,7 @@ jobs:
         
         # 2. 줄바꿈과 특수문자 깨짐 없이 안전하게 파일로 저장합니다.
         cat <<EOF > ./workation/back/src/main/resources/application-private.properties
-        ${{ secrets.APPLICATION_PROPERTIES }}
+        ${{ variables.APPLICATION_PROPERTIES }}
         EOF
     # ▲ 여기까지 ▲
 
