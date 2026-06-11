@@ -47,12 +47,33 @@ jobs:
           docker push "$IMAGE:$SHA_TAG"
           docker push "$IMAGE:latest"
 
+      - name: Validate deployment configuration
+        env:
+          DB_URL: ${{ secrets.DB_URL || vars.DB_URL }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME || vars.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_KEY: ${{ secrets.EC2_KEY }}
+        run: |
+          missing=0
+          for name in DB_URL DB_USERNAME DB_PASSWORD JWT_SECRET DOCKERHUB_USERNAME EC2_HOST EC2_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is not configured in GitHub Actions Secrets/Variables."
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
       - name: Deploy to EC2 with health check
         uses: appleboy/ssh-action@v1.2.0
         env:
           IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/sandykeyboard:${{ github.sha }}
-          DB_URL: ${{ secrets.DB_URL }}
-          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_URL: ${{ secrets.DB_URL || vars.DB_URL }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME || vars.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           JWT_EXPIRATION: ${{ vars.JWT_EXPIRATION || '360000000' }}
