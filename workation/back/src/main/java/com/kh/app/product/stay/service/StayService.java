@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -373,7 +374,15 @@ public class StayService {
     private String resolveImageUrl(String filePath) {
         if (filePath == null) return null;
         if (filePath.startsWith("http")) return filePath;
-        if (filePath.startsWith("/")) return "http://localhost" + filePath;
+        if (filePath.startsWith("/")) {
+            try {
+                return ServletUriComponentsBuilder.fromCurrentContextPath()
+                        .path(filePath)
+                        .toUriString();
+            } catch (IllegalStateException e) {
+                return filePath;
+            }
+        }
         return s3PictureUploader.getFileUrl(filePath);
     }
 

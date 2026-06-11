@@ -5,6 +5,7 @@ import PriceWeekGrid from './PriceWeekGrid';
 import OptionSelector from './OptionSelector';
 import ExtraPriceForm from './ExtraPriceForm';
 import LoadingSpinner from '../common/LoadingSpinner';
+import { resolveSellerImageUrl } from '../../utils/imageUrl';
 
 const ACCENT = '#3ec9a7';
 
@@ -94,7 +95,7 @@ export default function StayForm({
     (initialData?.pictures ?? []).map(p => ({
       type: 'existing',
       id: p.id,
-      previewUrl: p.filePath,
+      previewUrl: resolveSellerImageUrl(p.filePath),
       isMain: p.mainYn === 'Y',
     }))
   );

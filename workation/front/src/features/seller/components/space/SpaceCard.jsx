@@ -2,6 +2,7 @@ import styled from 'styled-components';
 import { Eye, EyeOff, Pencil, Trash2 } from 'lucide-react';
 import Badge from '../common/Badge';
 import ToggleSwitch from '../common/ToggleSwitch';
+import { resolveSellerImageUrl } from '../../utils/imageUrl';
 
 const AREA_LABEL = {
   SEOUL: '서울', GYEONGGI: '경기', GANGWON: '강원',
@@ -21,12 +22,13 @@ const AREA_LABEL = {
 export default function SpaceCard({ space, onVisibleToggle, onDetail, onEdit, onDelete, toggling }) {
   const areaLabel = AREA_LABEL[space.area] ?? space.area ?? '-';
   const isVisible = space.visibleYn === 'Y';
+  const thumbnailUrl = resolveSellerImageUrl(space.thumbnailUrl);
 
   return (
     <Card>
       <Thumbnail onClick={() => onDetail?.(space.id)}>
-        {space.thumbnailUrl ? (
-          <ThumbnailImg src={space.thumbnailUrl} alt={space.name} />
+        {thumbnailUrl ? (
+          <ThumbnailImg src={thumbnailUrl} alt={space.name} />
         ) : (
           <ThumbnailInitial>{space.name?.[0] ?? '?'}</ThumbnailInitial>
         )}
