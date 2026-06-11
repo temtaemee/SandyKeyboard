@@ -55,9 +55,9 @@ export default function SpaceDetailPage() {
     load();
   }, [id]);
 
-  // 지도 렌더링 — kakao.maps.load() 콜백으로 SDK 준비 보장
+  // 지도 렌더링 — loading=false 이후 MapDiv가 DOM에 마운트된 뒤 초기화
   useEffect(() => {
-    if (!space?.latitude || !space?.longitude) return;
+    if (loading || !space?.latitude || !space?.longitude) return;
     if (!window.kakao?.maps) return;
 
     const initMap = () => {
@@ -74,8 +74,12 @@ export default function SpaceDetailPage() {
       map.relayout();
     };
 
-    window.kakao.maps.load(initMap);
-  }, [space]);
+    if (window.kakao.maps.LatLng) {
+      initMap();
+    } else {
+      window.kakao.maps.load(initMap);
+    }
+  }, [space, loading]);
 
   const handleCopy = () => {
     const addr = [space.address1, space.address2].filter(Boolean).join(' ');

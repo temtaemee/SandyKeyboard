@@ -98,8 +98,9 @@ export default function SalesPage() {
   };
 
   useEffect(() => { load(); }, []);
+  useEffect(() => { setPno(0); }, [fromDate, toDate]);
 
-  // client-side 날짜 범위 필터 (salesDate 기준)
+  // client-side 날짜 범위 필터 (salesDate 기준) — chartBase(전체 데이터) 기준으로 필터
   const inRange = (dtStr) => {
     if (!dtStr) return true;
     const d = String(dtStr).slice(0, 10);
@@ -107,7 +108,10 @@ export default function SalesPage() {
     if (toDate   && d > toDate)   return false;
     return true;
   };
-  const filtered = list.filter((s) => inRange(s.salesDate));
+  const filteredAll = chartBase.filter((s) => inRange(s.salesDate));
+  const PAGE_SIZE = 10;
+  const clientTotalPages = Math.ceil(filteredAll.length / PAGE_SIZE);
+  const filtered = filteredAll.slice(pno * PAGE_SIZE, (pno + 1) * PAGE_SIZE);
 
   // 월별 차트 — chartBase 기준 (페이지 이동 시 변하지 않음)
   const byMonth = chartBase.reduce((acc, s) => {
@@ -161,7 +165,7 @@ export default function SalesPage() {
           <DateSep>~</DateSep>
           <DateInput type="date" value={toDate}   onChange={(e) => { setToDate(e.target.value);   setActiveQuick('custom'); }} />
         </DateRangeGroup>
-        <RangeLabel>{rangeLabel} · {filtered.length}건</RangeLabel>
+        <RangeLabel>{rangeLabel} · {filteredAll.length}건</RangeLabel>
       </DateFilterBar>
 
       {/* 요약 카드 — API 전체 데이터 기준 */}
@@ -187,7 +191,7 @@ export default function SalesPage() {
         <SummaryCard>
           <IconBg $color="#ede9fe"><BarChart2 size={20} color="#7c3aed" /></IconBg>
           <SummaryLabel>선택 기간 순매출</SummaryLabel>
-          <SummaryValue>{fmt(filtered.reduce((s,r)=>s+Number(r.netSalesAmount||0),0))}</SummaryValue>
+          <SummaryValue>{fmt(filteredAll.reduce((s,r)=>s+Number(r.netSalesAmount||0),0))}</SummaryValue>
           <SummaryNote>{rangeLabel}</SummaryNote>
         </SummaryCard>
       </SummaryGrid>
@@ -196,7 +200,7 @@ export default function SalesPage() {
       {viewMode === 'calendar' && (
         <CalCard>
           <SellerCalendar
-            events={filtered.map((s) => ({
+            events={filteredAll.map((s) => ({
               date: s.salesDate?.slice(0, 10),
               label: `${Number(s.netSalesAmount||0).toLocaleString()}원`,
               color: s.cancelAmount > 0 ? '#dc2626' : '#15803d',
@@ -262,7 +266,7 @@ export default function SalesPage() {
               <tbody>
                 {loading ? (
                   <tr><Td colSpan={7}><Empty>로딩 중...</Empty></Td></tr>
-                ) : filtered.length === 0 ? (
+                ) : filteredAll.length === 0 ? (
                   <tr><Td colSpan={7}><Empty>해당 기간 매출 내역이 없습니다</Empty></Td></tr>
                 ) : (
                   filtered.map((s) => (
@@ -284,7 +288,7 @@ export default function SalesPage() {
               </tbody>
             </Table>
 
-            <SellerPagination pno={pno} total={totalPages} onPage={loadList} />
+            <SellerPagination pno={pno} total={clientTotalPages} onPage={(p) => setPno(p)} />
           </Card>
         </>
       )}

@@ -94,15 +94,22 @@ public class SpaceRepositoryImpl implements SpaceRepositoryCustom {
         if (startDate == null && endDate == null && capacity == null) return null;
         QStayEntity stay = QStayEntity.stayEntity;
         BooleanExpression cond = stay.delYn.eq("N").and(stay.visibleYn.eq("Y"));
+
         if (capacity != null) cond = cond.and(stay.capacity.goe(capacity));
+
         if (startDate != null && endDate != null) {
             QReservationEntity rsv = QReservationEntity.reservationEntity;
+
+            // 💡 수정: 예약 불가능으로 간주할 상태를 명시적으로 지정
+            // PENDING은 여기에 포함되지 않으므로 예약이 있어도 검색 결과에 나옵니다.
             cond = cond.and(stay.id.notIn(
                     JPAExpressions.select(rsv.stay.id).from(rsv)
                             .where(rsv.checkinDate.lt(endDate), rsv.checkoutDate.gt(startDate),
-                                    rsv.status.notIn(ReservationStatus.USER_CANCELLED,
-                                            ReservationStatus.SELLER_CANCELLED,
-                                            ReservationStatus.REFUND_COMPLETED))
+                                    rsv.status.in(
+                                            ReservationStatus.PAYMENT_COMPLETED,
+                                            ReservationStatus.RESERVED,
+                                            ReservationStatus.COMPLETED
+                                    ))
             ));
         }
         return space.id.in(JPAExpressions.select(stay.space.id).from(stay).where(cond));
@@ -155,10 +162,8 @@ public class SpaceRepositoryImpl implements SpaceRepositoryCustom {
                 )
                 .groupBy(space.id)
                 .having(review.rating.avg().goe(4.0))
-                // 💡 여기서 에러가 난다면 review.createdAt 대신에 review.id.max()를 사용해보세요.
-                // 최신 리뷰일수록 ID값이 클 확률이 높기 때문입니다.
                 .orderBy(review.id.max().desc())
-                .limit(3)
+                .limit(6)
                 .fetch();
     }
 

@@ -1,6 +1,5 @@
 /** 관리자 페이지의 게시판(공지사항/문의사항 등) 게시글 관리 및 통계 조회 API */
 import api from '../../../app/api/axios';
-import { BOARD_POSTS } from '../data/adminBoardData'; // 💡 임시 Mock 데이터 가져오기
 
 /** 게시글 상단 고정 상태 변경 */
 export async function updatePostPinStatus(postId, pinned) {
@@ -105,17 +104,76 @@ export async function faqDelete(id) {
   return api.delete(`/admin/faqs/${id}`);
 }
 
-// 리뷰
+//// 리뷰
+// 전체 목록 조회
+export async function reviewFindAll(page = 0) {
+  return api.get(`/admin/reviews`, { params: { page } });
+}
+// 상세조회
+export async function reviewDetail(id) {
+  return api.get(`/public/reviews/${id}`);
+}
+// 수정 admin
+export async function reviewUpdate(id, data) {
+  return api.put(`/admin/reviews/${id}`, data);
+}
+// 숨김 admin
+export async function hideReview(id) {
+  return api.put(`/admin/reviews/${id}/hide`);
+}
+// 숨김해제
+export async function showReview(id) {
+  return api.put(`/admin/reviews/${id}/show`);
+}
+
+//// 댓글
+// 댓글 보기
+export async function findComments(id) {
+  return api.get(`/public/reviews/${id}/comments`);
+}
+// 댓글 숨김
+export async function hideComment(reviewId, commentId) {
+  return api.put(`/admin/reviews/${reviewId}/comments/${commentId}/hide`);
+}
+// 댓글 숨김 해제
+export async function showComment(reviewId, commentId) {
+  return api.put(`/admin/reviews/${reviewId}/comments/${commentId}/show`);
+}
 
 // 이벤트
+// 이벤트 등록
+export async function createEvent(data) {
+  return api.post(`/admin/events`, data);
+}
+// 이벤트 수정
+export async function updateEvent(id, data) {
+  return api.put(`/admin/events/${id}`, data);
+}
+// 이벤트 삭제(soft)
+export async function deleteEvent(id) {
+  return api.delete(`/admin/events/${id}`);
+}
+// 이벤트 목록조회 (관리자 - 삭제 포함)
+export async function getEvents(pno = 0) {
+  return api.get(`/admin/events`, { params: { pno } });
+}
+// 이벤트 상세조회
+export async function getEventById(id) {
+  return api.get(`/public/events/${id}`);
+}
 
 // 쿠폰
 //// 게시판 쿠폰
-// 쿠폰 전체 목록조회
+// 쿠폰 전체 목록조회 (페이지네이션)
 export async function getCouponList(pno) {
   return api.get('/admin/coupon', {
     params: { pno },
   });
+}
+
+// 쿠폰 전체 목록조회 - 드롭다운용 (페이지 없음)
+export async function getCouponAll() {
+  return api.get('/admin/coupon/all');
 }
 
 // 쿠폰 상세조회
@@ -148,5 +206,5 @@ export async function adminRegister(data) {
 }
 // 멤버 쿠폰 삭제
 export async function deleteMemberCoupon(data) {
-  return api.delete(`/admin/memberCoupon/`, data);
+  return api.delete(`/admin/memberCoupon`, data);
 }

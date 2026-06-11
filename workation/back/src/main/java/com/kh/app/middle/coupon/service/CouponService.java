@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -59,6 +60,11 @@ public class CouponService {
         CouponEntity entity = couponRepository.findByIdAndDelYn(couponId, "N")
                 .orElseThrow(() -> new MiddleException(ErrorCode.NOT_EXIST_COUPON));
         entity.update(couponCreateDto);
+    }
+
+    // 이벤트 등록 모달용 쿠폰 전체 목록 (삭제되지 않은 것만)
+    public List<CouponRespDto> getAll() {
+        return couponRepository.getAll().stream().map(CouponRespDto::from).toList();
     }
 
     // 쿠폰 리스트 조회
@@ -119,7 +125,7 @@ public class CouponService {
     // 멤버 쿠폰 삭제 (어드민)
     @Transactional
     public void deleteMemberCoupon(MemberCouponReqDto reqDto) {
-        MemberCouponEntity memberCouponEntity = memberCouponRepository.findByMemberUsernameAndCouponId(reqDto.getUsername(), reqDto.getCouponId())
+        MemberCouponEntity memberCouponEntity = memberCouponRepository.findByMemberUsernameAndCouponIdId(reqDto.getUsername(), reqDto.getCouponId())
                 .orElseThrow(() -> new MiddleException(ErrorCode.NOT_EXIST_COUPON));
         memberCouponRepository.delete(memberCouponEntity);
     }

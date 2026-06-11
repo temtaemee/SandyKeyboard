@@ -8,8 +8,6 @@ const ACCENT = '#3ec9a7';
 export default function AccountPage() {
   const [member, setMember] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [phone, setPhone] = useState('');
-  const [saving, setSaving] = useState(false);
 
   const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
   const [pwError, setPwError] = useState('');
@@ -24,25 +22,10 @@ export default function AccountPage() {
 
   useEffect(() => {
     api.get('/seller/me')
-      .then((res) => {
-        setMember(res.data);
-        setPhone(res.data.phone ?? '');
-      })
+      .then((res) => setMember(res.data))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
-
-  const handleSaveProfile = async () => {
-    setSaving(true);
-    try {
-      await api.put('/user/member', { phone });
-      showToast('프로필이 저장되었습니다.');
-    } catch (e) {
-      showToast(e.response?.data?.message ?? '저장에 실패했습니다.', false);
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const handleChangePw = async () => {
     setPwError('');
@@ -110,16 +93,9 @@ export default function AccountPage() {
               </Field>
               <Field>
                 <FieldLabel>연락처</FieldLabel>
-                <FieldInput
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="연락처 입력"
-                />
+                <FieldValue>{member?.phone ?? '-'}</FieldValue>
               </Field>
             </FieldGroup>
-            <SaveBtn onClick={handleSaveProfile} disabled={saving}>
-              {saving ? '저장 중...' : '저장'}
-            </SaveBtn>
           </CellBlock>
 
           <ColDivider />

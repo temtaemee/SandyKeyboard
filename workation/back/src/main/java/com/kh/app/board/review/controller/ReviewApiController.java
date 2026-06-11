@@ -154,4 +154,68 @@ public class ReviewApiController {
         reviewService.updateBySeller(id, dto, memberId);
         return ResponseEntity.ok().build();
     }
+
+    // ─────────────────────────────────────────
+    // ADMIN 전용 - 댓글 숨김
+    // ─────────────────────────────────────────
+
+    // 댓글 숨김 처리
+    // PUT /api/admin/reviews/{reviewId}/comments/{commentId}/hide
+    @PutMapping("/api/admin/reviews/{reviewId}/comments/{commentId}/hide")
+    public ResponseEntity<Void> hideComment(
+            @PathVariable Long reviewId,
+            @PathVariable Long commentId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        reviewService.hideComment(commentId);
+        return ResponseEntity.ok().build();
+    }
+
+    // 댓글 숨김 해제
+    // PUT /api/admin/reviews/{reviewId}/comments/{commentId}/show
+    @PutMapping("/api/admin/reviews/{reviewId}/comments/{commentId}/show")
+    public ResponseEntity<Void> showComment(
+            @PathVariable Long reviewId,
+            @PathVariable Long commentId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        reviewService.showComment(commentId);
+        return ResponseEntity.ok().build();
+    }
+
+    // ─────────────────────────────────────────
+// ADMIN 전용 - 리뷰 숨김
+// ─────────────────────────────────────────
+
+    // 리뷰 숨김 처리
+// PUT /api/admin/reviews/{id}/hide
+    @PutMapping("/api/admin/reviews/{id}/hide")
+    public ResponseEntity<Void> hideReview(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        reviewService.hideReview(id);
+        return ResponseEntity.ok().build();
+    }
+
+    // 리뷰 숨김 해제
+// PUT /api/admin/reviews/{id}/show
+    @PutMapping("/api/admin/reviews/{id}/show")
+    public ResponseEntity<Void> showReview(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        reviewService.showReview(id);
+        return ResponseEntity.ok().build();
+    }
+
+    // 전체 목록 조회 - 관리자용 (숨긴 리뷰 포함)
+// GET /api/admin/reviews?page=0
+    @GetMapping("/api/admin/reviews")
+    public ResponseEntity<Page<ReviewListRespDto>> findAllForAdmin(
+            @RequestParam(defaultValue = "0") int page,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ResponseEntity.ok(reviewService.findAllForAdmin(page));
+    }
 }

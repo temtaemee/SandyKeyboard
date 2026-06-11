@@ -19,6 +19,7 @@ public class ReviewRespDto {
     private String tag;
     private Integer rating;
     private String writer;
+    private String hideYn;    // 관리자 숨김 여부
     private LocalDateTime createdAt;
     private List<ReviewImageRespDto> images;
 
@@ -44,6 +45,7 @@ public class ReviewRespDto {
                 .tag(entity.getTag())
                 .rating(entity.getRating())
                 .writer(entity.getMember().getUsername())
+                .hideYn(entity.getHideYn())
                 .createdAt(entity.getCreatedAt())
                 .stayName(stayName)
                 .checkinDate(checkin)

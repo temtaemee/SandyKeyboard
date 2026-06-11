@@ -75,6 +75,21 @@ import {
   StayInfo,
 } from '../styles/ReviewListPage.styles';
 
+// 토큰에서 유저 정보 꺼내기
+function getTokenPayload() {
+  const token = localStorage.getItem('accessToken');
+  if (!token) return null;
+  try {
+    return JSON.parse(atob(token.split('.')[1]));
+  } catch {
+    return null;
+  }
+}
+
+const payload = getTokenPayload();
+const currentUsername = payload?.username ?? null;
+const isAdmin = payload?.roles?.includes('ADMIN') ?? false;
+
 function StarDisplay({ rating }) {
   return (
     <Stars>
@@ -201,9 +216,12 @@ function CommentSection({ reviewId }) {
               <CommentMeta>
                 <CommentDate>{formatDate(c.createdAt)}</CommentDate>
                 <CommentLikeBtn reviewId={reviewId} commentId={c.id} />
-                <CommentDelBtn onClick={() => setDeleteCommentId(c.id)}>
-                  삭제
-                </CommentDelBtn>
+                {/* 본인 댓글 또는 admin만 삭제 버튼 표시 */}
+                {(isAdmin || c.writer === currentUsername) && (
+                  <CommentDelBtn onClick={() => setDeleteCommentId(c.id)}>
+                    삭제
+                  </CommentDelBtn>
+                )}
               </CommentMeta>
             </CommentTop>
             <CommentBody>{c.content}</CommentBody>
@@ -299,6 +317,9 @@ function ReviewCard({ review, onDelete, onEdit }) {
   const contentRef = useRef(null);
   const imageUrls = review.images?.map((img) => getImageUrl(img.s3Key)) ?? [];
 
+  // 본인 글이거나 admin이면 수정/삭제 가능
+  const canEdit = isAdmin || review.writer === currentUsername;
+
   useEffect(() => {
     if (!contentRef.current) return;
     const lineHeight = parseFloat(
@@ -314,12 +335,15 @@ function ReviewCard({ review, onDelete, onEdit }) {
         <HeaderRight>
           <TitleRow>
             <CardTitle>{review.title}</CardTitle>
-            <CardActions>
-              <ActionBtn onClick={() => onEdit(review.id)}>수정</ActionBtn>
-              <ActionBtn $danger onClick={() => setShowConfirm(true)}>
-                삭제
-              </ActionBtn>
-            </CardActions>
+            {/* 본인 글 또는 admin만 수정/삭제 버튼 표시 */}
+            {canEdit && (
+              <CardActions>
+                <ActionBtn onClick={() => onEdit(review.id)}>수정</ActionBtn>
+                <ActionBtn $danger onClick={() => setShowConfirm(true)}>
+                  삭제
+                </ActionBtn>
+              </CardActions>
+            )}
           </TitleRow>
           <WriterMeta>
             <WriterName>{review.writer}</WriterName>

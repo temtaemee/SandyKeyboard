@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import { FOOTER_LINKS } from '../../data/homeData';
+import { FOOTER_LINKS, PATH_MAP, CONTACT_EMAIL } from '../../data/homeData';
 
 export default function Footer() {
   return (
@@ -10,17 +10,14 @@ export default function Footer() {
           <Brand>
             <LogoText>모래묻은 키보드</LogoText>
             <Tagline>
-              일하는 장소가 일하는 방식만큼이나 중요하다고 믿는
-              현대 전문가들을 위해 디자인되었습니다.
+              일하는 장소가 일하는 방식만큼이나 중요하다고 믿는 현대 전문가들을
+              위해 디자인되었습니다.
             </Tagline>
-            <SocialRow>
-              <SocialBtn aria-label="트위터">
-                <TwitterIcon />
-              </SocialBtn>
-              <SocialBtn aria-label="인스타그램">
-                <InstagramIcon />
-              </SocialBtn>
-            </SocialRow>
+
+            <ContactRow>
+              <ContactLabel>문의하기</ContactLabel>
+              <ContactEmail>{CONTACT_EMAIL}</ContactEmail>
+            </ContactRow>
           </Brand>
 
           {/* 링크 그룹 */}
@@ -29,7 +26,10 @@ export default function Footer() {
               <LinkCol key={category}>
                 <ColTitle>{category}</ColTitle>
                 {items.map((item) => (
-                  <ColLink key={item} href="#">{item}</ColLink>
+                  // 💡 이제 PATH_MAP을 바로 사용할 수 있습니다
+                  <ColLink key={item} href={PATH_MAP[item] || '#'}>
+                    {item}
+                  </ColLink>
                 ))}
               </LinkCol>
             ))}
@@ -37,7 +37,7 @@ export default function Footer() {
         </Top>
 
         <Bottom>
-          <CopyText>© 2024 모래묻은 키보드. Effortlessly Productive.</CopyText>
+          <CopyText>© 2026 모래묻은 키보드. Effortlessly Productive.</CopyText>
         </Bottom>
       </Inner>
     </FooterWrapper>
@@ -55,7 +55,16 @@ function TwitterIcon() {
 
 function InstagramIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#475569"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
       <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
       <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
@@ -116,7 +125,9 @@ const SocialBtn = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s, transform 0.2s;
+  transition:
+    background 0.2s,
+    transform 0.2s;
   line-height: 0;
 
   &:hover {
@@ -165,4 +176,30 @@ const CopyText = styled.p`
   font-size: 14px;
   color: ${({ theme }) => theme.colors.textLight};
   font-family: ${({ theme }) => theme.fonts.number};
+`;
+const ContactRow = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 8px;
+`;
+
+const ContactLabel = styled.span`
+  font-size: 12px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.textMuted};
+  text-transform: uppercase;
+`;
+
+const ContactEmail = styled.a`
+  font-size: 16px;
+  font-weight: 500;
+  color: ${({ theme }) => theme.colors.primary};
+  text-decoration: none;
+  transition: opacity 0.2s;
+
+  &:hover {
+    text-decoration: underline;
+    opacity: 0.8;
+  }
 `;

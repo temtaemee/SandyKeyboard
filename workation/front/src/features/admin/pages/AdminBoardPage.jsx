@@ -2,18 +2,14 @@
 import { useState } from 'react';
 import styled from 'styled-components';
 import {
-  MessageSquare,
-  Calendar,
   PlusCircle,
   HelpCircle,
   Star,
   Tag,
   Paperclip,
-  MapPin,
   Pencil,
   Trash2,
   X,
-  Eye,
 } from 'lucide-react';
 import { BOARD_TABS } from '../data/adminBoardConstants';
 import useAdminBoard from '../hooks/useAdminBoard';
@@ -29,42 +25,21 @@ import {
   ModalCloseBtn,
 } from '../components/common/AdminModal.styles'; // 모달 공통 스타일
 
-const TOTAL = 124;
-const TOTAL_PAGES = 3;
-
-const STATUS_LABEL = {
-  published: '게시 중',
-  ended: '종료',
-  active: '활성',
-  deleted: '삭제',
-  exhausted: '소진',
-  ACTIVE: '활성',
-  EXPIRED: '만료',
-  EXHAUSTED: '소진',
-};
-const STATUS_COLORS = {
-  published: { bg: '#dcfce7', color: '#16a34a' },
-  ended: { bg: '#f1f5f9', color: '#64748b' },
-  active: { bg: '#dcfce7', color: '#16a34a' },
-  deleted: { bg: '#fee2e2', color: '#dc2626' },
-  exhausted: { bg: '#fff7ed', color: '#ea580c' },
-  ACTIVE: { bg: '#dcfce7', color: '#16a34a' },
-  EXPIRED: { bg: '#f1f5f9', color: '#64748b' },
-  EXHAUSTED: { bg: '#fff7ed', color: '#ea580c' },
-};
-
 const COUPON_FILTERS = ['전체', '활성', '소진', '삭제'];
 
 export default function AdminBoardPage() {
   const [activeTab, setActiveTab] = useState('공지사항');
+  const { currentPage, goToPage, reset: resetPage } = usePagination();
+
   const {
     posts: tabPosts,
+    totalPages: boardTotalPages,
+    totalElements: boardTotalElements,
     updatePost,
     deletePost,
     createPost,
-  } = useAdminBoard(activeTab);
-
-  const { currentPage, goToPage, reset: resetPage } = usePagination();
+    reviewHideToggle,
+  } = useAdminBoard(activeTab, currentPage);
 
   // 통합 UI 훅 도입으로 복잡한 useState 제거 및 비즈니스 로직 격리
   const {
@@ -73,6 +48,7 @@ export default function AdminBoardPage() {
     couponFilter,
     setCouponFilter,
     posts,
+    totalCount,
     resetFilters,
     registerModal,
     editingPost,
@@ -87,16 +63,23 @@ export default function AdminBoardPage() {
     detailPost,
     setDetailPost,
     handleShowDetail,
+    reviewComments,
+    commentHideToggle,
     deleteTarget,
     setDeleteTarget,
     handleDeleteConfirm,
+    availableCoupons,
   } = useAdminBoardUI({
     tabPosts,
     activeTab,
+    currentPage,
     updatePost,
     deletePost,
     createPost,
   });
+
+  const displayTotalElements = activeTab === 'FAQ' ? totalCount : boardTotalElements;
+  const displayTotalPages = activeTab === 'FAQ' ? Math.ceil(totalCount / 10) || 1 : boardTotalPages;
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -187,7 +170,8 @@ export default function AdminBoardPage() {
         <Table>
           <THead>
             <TR>
-              <TH $width="280px">제목</TH>
+              <TH style={{ width: 45, minWidth: 45, maxWidth: 45, paddingLeft: 20, paddingRight: 0, textAlign: 'left' }}>번호</TH>
+              <TH $width="280px" style={{ paddingLeft: 6 }}>제목</TH>
               {activeTab === '쿠폰' ? (
                 <>
                   <TH $width="120px">남은 수량</TH>
@@ -195,20 +179,20 @@ export default function AdminBoardPage() {
                 </>
               ) : activeTab === '리뷰' ? (
                 <>
-                  <TH $width="160px">작성자</TH>
-                  <TH $width="150px">등록일</TH>
+                  <TH $width="110px">작성자</TH>
+                  <TH $width="80px">별점</TH>
+                  <TH $width="160px">숙소명</TH>
+                  <TH $width="120px">등록일</TH>
                 </>
               ) : (
-                <>
-                  <TH $width="150px">등록일</TH>
-                </>
+                <TH $width="150px">등록일</TH>
               )}
             </TR>
           </THead>
           <TBody>
             {posts.length === 0 ? (
               <TR>
-                <TD colSpan={4}>
+                <TD colSpan={activeTab === '쿠폰' ? 5 : activeTab === '리뷰' ? 6 : 4}>
                   <EmptyState>검색 결과가 없습니다.</EmptyState>
                 </TD>
               </TR>
@@ -221,11 +205,22 @@ export default function AdminBoardPage() {
                     $clickable
                     onClick={() => handleShowDetail(post)}
                   >
-                    <TD>
+                    <TD style={{ width: 45, minWidth: 45, maxWidth: 45, paddingLeft: 20, paddingRight: 0, textAlign: 'left' }}>
+                      <IdText>{post.id}</IdText>
+                    </TD>
+                    <TD style={{ paddingLeft: 6 }}>
                       <TitleCell>
-                        <TitleText style={{ textDecoration: post.delYn === 'Y' ? 'line-through' : 'none', color: post.delYn === 'Y' ? '#cbd5e1' : 'inherit' }}>
-                          {activeTab === '쿠폰' ? post.couponName : (activeTab === 'FAQ' ? post.question : post.title)}
-                        </TitleText>
+                        <TitleCellInner>
+                          <TitleText style={{
+                            textDecoration: (post.delYn === 'Y' || (activeTab === '리뷰' && post.hideYn === 'Y')) ? 'line-through' : 'none',
+                            color: (post.delYn === 'Y' || (activeTab === '리뷰' && post.hideYn === 'Y')) ? '#cbd5e1' : 'inherit'
+                          }}>
+                            {activeTab === '쿠폰' ? post.couponName : (activeTab === 'FAQ' ? post.question : post.title)}
+                          </TitleText>
+                          {activeTab === '리뷰' && post.author && (
+                            <AuthorSubText>{post.author}</AuthorSubText>
+                          )}
+                        </TitleCellInner>
                         {(post.pinYn === 'Y' || post.isFixed) && <FixedBadge>고정</FixedBadge>}
                         {post.delYn === 'Y' && (
                           <span style={{ fontSize: '10px', color: '#ef4444', fontWeight: 600, background: '#fee2e2', padding: '1px 6px', borderRadius: '3px', marginLeft: '4px', display: 'inline-block' }}>
@@ -250,27 +245,23 @@ export default function AdminBoardPage() {
                       </>
                     ) : activeTab === '리뷰' ? (
                       <>
+                        <TD><ReviewWriterText $hidden={post.hideYn === 'Y'}>{post.writer ?? '—'}</ReviewWriterText></TD>
+                        <TD><ReviewRatingText $hidden={post.hideYn === 'Y'}>{'★'.repeat(post.rating ?? 0)}</ReviewRatingText></TD>
+                        <TD><ReviewStayText $hidden={post.hideYn === 'Y'}>{post.stayName ?? '—'}</ReviewStayText></TD>
                         <TD>
-                          <AuthorText>{post.author}</AuthorText>
-                        </TD>
-                        <TD>
-                          <DateText>
-                            {post.createdAt 
-                              ? post.createdAt.split('T')[0] 
-                              : post.date || '—'}
+                          <DateText $hidden={post.hideYn === 'Y'}>
+                            {post.createdAt ? post.createdAt.split('T')[0] : '—'}
                           </DateText>
                         </TD>
                       </>
                     ) : (
-                      <>
-                        <TD>
-                          <DateText>
-                            {post.createdAt 
-                              ? post.createdAt.split('T')[0] 
-                              : post.date || '—'}
-                          </DateText>
-                        </TD>
-                      </>
+                      <TD>
+                        <DateText>
+                          {post.createdAt
+                            ? post.createdAt.split('T')[0]
+                            : post.date || '—'}
+                        </DateText>
+                      </TD>
                     )}
                   </TR>
                 );
@@ -281,10 +272,10 @@ export default function AdminBoardPage() {
 
         {/* footer: 페이지네이션 */}
         <TableFooter>
-          <FooterInfo>총 {TOTAL}개</FooterInfo>
+          <FooterInfo>총 {displayTotalElements}개</FooterInfo>
           <AdminPagination
             currentPage={currentPage}
-            totalPages={TOTAL_PAGES}
+            totalPages={displayTotalPages}
             onPageChange={goToPage}
           />
           <div style={{ width: '120px' }} />
@@ -323,7 +314,11 @@ export default function AdminBoardPage() {
               {activeTab !== '쿠폰' && (
                 <DetailHeaderDates>
                   <DateRow>등록일: {detailPost.createdAt ? new Date(detailPost.createdAt).toLocaleString() : detailPost.date || '—'}</DateRow>
-                  <DateRow>수정일: {detailPost.updatedAt ? new Date(detailPost.updatedAt).toLocaleString() : '—'}</DateRow>
+                  {activeTab === '리뷰' ? (
+                    <DateRow>{detailPost.checkinDate ?? '—'} ~ {detailPost.checkoutDate ?? '—'}</DateRow>
+                  ) : (
+                    <DateRow>수정일: {detailPost.updatedAt ? new Date(detailPost.updatedAt).toLocaleString() : '—'}</DateRow>
+                  )}
                 </DetailHeaderDates>
               )}
 
@@ -360,12 +355,71 @@ export default function AdminBoardPage() {
                     </DetailMetaValue>
                   </DetailMetaItem>
                 </DetailMetaGrid>
+              ) : activeTab === '리뷰' ? (
+                <>
+                  <DetailContentArea style={{ paddingTop: '0px' }}>
+                    {detailPost.content || '등록된 내용이 없습니다.'}
+                  </DetailContentArea>
+
+                  {detailPost.images && detailPost.images.length > 0 && (
+                    <ReviewImageGrid>
+                      {detailPost.images.map((img) => (
+                        <ReviewImageItem
+                          key={img.id}
+                          src={`https://finalproject-s3-bucket-243050855199-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/${img.s3Key}`}
+                          alt={img.originalFileName}
+                        />
+                      ))}
+                    </ReviewImageGrid>
+                  )}
+
+                  <ReviewCommentsSection>
+                    <ReviewCommentsSectionTitle>댓글 ({reviewComments.length})</ReviewCommentsSectionTitle>
+                    {reviewComments.length === 0 ? (
+                      <ReviewCommentEmpty>등록된 댓글이 없습니다.</ReviewCommentEmpty>
+                    ) : (
+                      reviewComments.map((c) => (
+                        <ReviewCommentItem key={c.id} $hidden={c.hideYn === 'Y'}>
+                          <ReviewCommentMeta>
+                            <ReviewCommentWriter>{c.writer ?? '—'}</ReviewCommentWriter>
+                            {c.ownerYn === 'Y' && <ReviewCommentOwnerBadge>숙소</ReviewCommentOwnerBadge>}
+                            {c.hideYn === 'Y' && <ReviewCommentHiddenBadge>숨김</ReviewCommentHiddenBadge>}
+                            <ReviewCommentDate>
+                              {c.createdAt ? c.createdAt.split('T')[0] : ''}
+                            </ReviewCommentDate>
+                            <CommentHideBtn
+                              $hidden={c.hideYn === 'Y'}
+                              onClick={() => commentHideToggle(detailPost.id, c)}
+                            >
+                              {c.hideYn === 'Y' ? '해제' : '숨김'}
+                            </CommentHideBtn>
+                          </ReviewCommentMeta>
+                          <ReviewCommentContent $hidden={c.hideYn === 'Y'}>{c.content}</ReviewCommentContent>
+                        </ReviewCommentItem>
+                      ))
+                    )}
+                  </ReviewCommentsSection>
+                </>
               ) : (
                 <>
                   {/* 아래는 다 내용으로 채워짐 */}
                   <DetailContentArea style={{ paddingTop: '0px' }}>
                     {activeTab === 'FAQ' ? detailPost.answer : (detailPost.content || '등록된 내용이 없습니다.')}
                   </DetailContentArea>
+
+                  {activeTab === '이벤트' && (
+                    <EventCouponArea>
+                      <EventCouponLabel>연결된 쿠폰</EventCouponLabel>
+                      {detailPost.couponId ? (
+                        <EventCouponBadge>
+                          <Tag size={12} />
+                          {detailPost.couponName}
+                        </EventCouponBadge>
+                      ) : (
+                        <EventCouponEmpty>연결된 쿠폰 없음</EventCouponEmpty>
+                      )}
+                    </EventCouponArea>
+                  )}
 
                   {detailPost.files && detailPost.files.length > 0 && (
                     <DetailFilesArea>
@@ -387,16 +441,33 @@ export default function AdminBoardPage() {
             </ModalBody>
 
             <ModalFooter>
-              <DeleteBtn onClick={() => setDeleteTarget(detailPost)}>
-                <Trash2 size={14} />
-                삭제
-              </DeleteBtn>
+              {activeTab === '리뷰' ? (
+                <HideToggleBtn
+                  $hidden={detailPost.hideYn === 'Y'}
+                  onClick={async () => {
+                    const newHideYn = await reviewHideToggle(detailPost);
+                    if (newHideYn !== null) {
+                      setDetailPost((prev) => ({ ...prev, hideYn: newHideYn }));
+                    }
+                  }}
+                >
+                  <Trash2 size={14} />
+                  {detailPost.hideYn === 'Y' ? '숨김 해제' : '숨김'}
+                </HideToggleBtn>
+              ) : (
+                <DeleteBtn onClick={() => setDeleteTarget(detailPost)}>
+                  <Trash2 size={14} />
+                  삭제
+                </DeleteBtn>
+              )}
               <RightBtns>
                 <CancelBtn onClick={() => setDetailPost(null)}>닫기</CancelBtn>
-                <SubmitBtn onClick={() => openEditModal(detailPost)}>
-                  <Pencil size={13} />
-                  수정
-                </SubmitBtn>
+                {activeTab !== '리뷰' && (
+                  <SubmitBtn onClick={() => openEditModal(detailPost)}>
+                    <Pencil size={13} />
+                    수정
+                  </SubmitBtn>
+                )}
               </RightBtns>
             </ModalFooter>
           </ModalContent>
@@ -507,7 +578,23 @@ export default function AdminBoardPage() {
                       <CheckboxLabel htmlFor="isFixed">이 글을 상단에 고정합니다 (필독)</CheckboxLabel>
                     </CheckboxGroup>
                   )}
-                  {(registerModal === '공지사항' || registerModal === '이벤트') && (
+                  {registerModal === '이벤트' && (
+                    <FieldGroup>
+                      <FieldLabel>연결 쿠폰 (선택)</FieldLabel>
+                      <FieldSelect
+                        value={formData.couponId || ''}
+                        onChange={(e) => handleFormChange('couponId', e.target.value)}
+                      >
+                        <option value="">쿠폰 없음</option>
+                        {availableCoupons.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.couponName} ({c.discountRate}% · 잔여 {c.remainQty}매)
+                          </option>
+                        ))}
+                      </FieldSelect>
+                    </FieldGroup>
+                  )}
+                  {registerModal === '공지사항' && (
                     <FieldGroup>
                       <FieldLabel>첨부파일</FieldLabel>
                       {editingPost && editingPost.files && editingPost.files.length > 0 && (
@@ -577,17 +664,21 @@ export default function AdminBoardPage() {
         title={
           activeTab === '쿠폰'
             ? '쿠폰을 삭제하시겠습니까?'
+            : activeTab === '리뷰'
+            ? '리뷰를 숨김 처리하시겠습니까?'
             : '게시글을 삭제하시겠습니까?'
         }
         description={
           deleteTarget
             ? activeTab === '쿠폰'
               ? `"${deleteTarget.couponName ?? deleteTarget.title}" 쿠폰이 삭제됩니다.`
+              : activeTab === '리뷰'
+              ? `"${deleteTarget.title}" 리뷰가 숨김 처리됩니다.`
               : `"${deleteTarget.title}" 게시글이 영구적으로 삭제됩니다.`
             : ''
         }
         isDanger
-        confirmText="삭제"
+        confirmText={activeTab === '리뷰' ? '숨김' : '삭제'}
         icon={<Trash2 size={24} color="#ef4444" />}
       />
     </PageWrapper>
@@ -595,12 +686,6 @@ export default function AdminBoardPage() {
 }
 
 /* ── Icon Components ── */
-function ReviewIcon() {
-  return <MessageSquare size={20} />;
-}
-function CalendarIcon() {
-  return <Calendar size={20} />;
-}
 function PlusCircleIcon() {
   return <PlusCircle size={14} strokeWidth={2.5} />;
 }
@@ -615,15 +700,6 @@ function CouponIcon() {
 }
 function AttachIcon() {
   return <Paperclip size={12} color="#94a3b8" style={{ flexShrink: 0 }} />;
-}
-function PinSvg({ $pinned }) {
-  return (
-    <MapPin
-      size={14}
-      fill={$pinned ? '#244c54' : 'none'}
-      color={$pinned ? '#244c54' : '#94a3b8'}
-    />
-  );
 }
 
 /* ── Styled Components ── */
@@ -658,57 +734,6 @@ const TopSection = styled.div`
   grid-template-columns: 1fr;
   gap: 16px;
   align-items: stretch;
-`;
-
-const StatCard = styled.div`
-  background: ${({ theme }) => theme.colors.white};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 8px;
-  padding: 24px;
-  box-shadow: ${({ theme }) => theme.shadows.card};
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-`;
-
-const StatCardTopRow = styled.div`
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-`;
-
-const StatIconWrap = styled.div`
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  background: ${({ $bg }) => $bg};
-  color: ${({ $color }) => $color};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 4px;
-`;
-
-const StatLabel = styled.p`
-  font-size: 12px;
-  color: ${({ theme }) => theme.colors.textMuted};
-  margin-top: 4px;
-`;
-const StatValue = styled.p`
-  font-size: 32px;
-  font-weight: 700;
-  color: ${({ theme }) => theme.colors.adminTextDark};
-  font-family: ${({ theme }) => theme.fonts.number};
-  letter-spacing: -0.5px;
-  line-height: 1.2;
-`;
-const MonthBadge = styled.span`
-  font-size: 10px;
-  font-weight: 600;
-  color: #ea580c;
-  background: #fff7ed;
-  padding: 3px 8px;
-  border-radius: 999px;
 `;
 
 /* 콘텐츠 신규 등록 카드 */
@@ -868,6 +893,18 @@ const TitleCell = styled.div`
   align-items: center;
   gap: 8px;
 `;
+
+const TitleCellInner = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+`;
+
+const AuthorSubText = styled.span`
+  font-size: 11px;
+  color: ${({ theme }) => theme.colors.textLight};
+`;
 const FixedBadge = styled.span`
   flex-shrink: 0;
   font-size: 10px;
@@ -877,15 +914,17 @@ const FixedBadge = styled.span`
   padding: 2px 7px;
   border-radius: 4px;
 `;
+const IdText = styled.span`
+  font-size: 13px;
+  font-weight: 500;
+  color: ${({ theme }) => theme.colors.adminTextDark};
+  font-family: ${({ theme }) => theme.fonts.number};
+`;
 const TitleText = styled.span`
   font-size: 13px;
   color: ${({ theme }) => theme.colors.adminTextDark};
   font-weight: 500;
   line-height: 1.4;
-`;
-const AuthorText = styled.span`
-  font-size: 13px;
-  color: ${({ theme }) => theme.colors.textMid};
 `;
 const DateText = styled.span`
   font-size: 12px;
@@ -898,28 +937,73 @@ const QtyText = styled.span`
   color: ${({ theme }) => theme.colors.adminTextDark};
   font-family: ${({ theme }) => theme.fonts.number};
 `;
+const ReviewCheckInOutText = styled.p`
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.textMuted};
+  font-family: ${({ theme }) => theme.fonts.number};
+`;
+const ReviewDetailMeta = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 24px;
+  padding: 14px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+`;
+const ReviewDetailMetaItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
+const ReviewDetailMetaLabel = styled.span`
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+`;
+const ReviewDetailMetaValue = styled.span`
+  font-size: 13px;
+  color: #334155;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+`;
+const ReviewImageGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 4px;
+`;
+const ReviewImageItem = styled.img`
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+`;
+const ReviewWriterText = styled.span`
+  font-size: 13px;
+  color: ${({ $hidden, theme }) => ($hidden ? '#cbd5e1' : theme.colors.adminTextDark)};
+  text-decoration: ${({ $hidden }) => ($hidden ? 'line-through' : 'none')};
+`;
+const ReviewRatingText = styled.span`
+  font-size: 12px;
+  color: ${({ $hidden }) => ($hidden ? '#cbd5e1' : '#f59e0b')};
+  letter-spacing: -1px;
+  text-decoration: ${({ $hidden }) => ($hidden ? 'line-through' : 'none')};
+`;
+const ReviewStayText = styled.span`
+  font-size: 13px;
+  color: ${({ $hidden, theme }) => ($hidden ? '#cbd5e1' : theme.colors.textMuted)};
+  text-decoration: ${({ $hidden }) => ($hidden ? 'line-through' : 'none')};
+`;
 const ValidDaysText = styled.span`
   font-size: 13px;
   font-weight: 500;
   font-family: ${({ theme }) => theme.fonts.number};
   color: ${({ theme }) => theme.colors.adminTextDark};
-`;
-
-/* 핀 버튼 */
-const PinBtn = styled.button`
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s;
-  background: ${({ $pinned }) =>
-    $pinned ? 'rgba(36,76,84,0.08)' : 'transparent'};
-  &:hover {
-    background: ${({ $pinned, theme }) =>
-      $pinned ? 'rgba(36,76,84,0.14)' : theme.colors.borderLight};
-  }
 `;
 
 /* 페이지네이션 푸터 */
@@ -936,12 +1020,6 @@ const FooterInfo = styled.p`
   font-size: 12px;
   color: ${({ theme }) => theme.colors.textMuted};
   font-family: ${({ theme }) => theme.fonts.number};
-`;
-
-const RowActions = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 4px;
 `;
 
 /* ── 모달: ModalOverlay / ModalContent / ModalHeader / ModalCloseBtn 은
@@ -999,20 +1077,6 @@ const ModalBody = styled.div`
   gap: 16px;
 `;
 
-/* 상세보기 전용 */
-const DetailMetaRow = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  flex-wrap: wrap;
-`;
-
-const DetailMeta = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-`;
-
 /* 쿠폰 상세용 그리드 */
 const DetailMetaGrid = styled.div`
   display: grid;
@@ -1050,27 +1114,6 @@ const StatusChip = styled.span`
   font-weight: 600;
   background: ${({ $bg }) => $bg};
   color: ${({ $color }) => $color};
-`;
-
-const DetailDivider = styled.hr`
-  border: none;
-  border-top: 1px solid #f1f5f9;
-  margin: 0;
-`;
-
-const DetailContentPlaceholder = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 80px;
-  color: #cbd5e1;
-`;
-
-const DetailContentNote = styled.p`
-  font-size: 12px;
-  color: #cbd5e1;
 `;
 
 const DetailContentArea = styled.div`
@@ -1234,6 +1277,136 @@ const SubmitBtn = styled.button`
   }
 `;
 
+/* 리뷰 숨김/해제 버튼 */
+const HideToggleBtn = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+  ${({ $hidden }) =>
+    $hidden
+      ? `
+    border: 1px solid #d1fae5;
+    background: #f0fdf4;
+    color: #16a34a;
+    &:hover { background: #dcfce7; }
+  `
+      : `
+    border: 1px solid #fed7aa;
+    background: #fff7ed;
+    color: #ea580c;
+    &:hover { background: #ffedd5; }
+  `}
+`;
+
+/* 리뷰 댓글 */
+const ReviewCommentsSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+  padding-top: 14px;
+  border-top: 1px solid #e2e8f0;
+`;
+
+const ReviewCommentsSectionTitle = styled.p`
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 2px;
+`;
+
+const ReviewCommentEmpty = styled.p`
+  font-size: 13px;
+  color: #94a3b8;
+  padding: 8px 0;
+`;
+
+const ReviewCommentItem = styled.div`
+  padding: 10px 12px;
+  background: ${({ $hidden }) => ($hidden ? '#fafafa' : '#f8fafc')};
+  border-radius: 8px;
+  border: 1px solid ${({ $hidden }) => ($hidden ? '#f1f5f9' : '#e2e8f0')};
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  opacity: ${({ $hidden }) => ($hidden ? 0.6 : 1)};
+`;
+
+const ReviewCommentMeta = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const ReviewCommentWriter = styled.span`
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+`;
+
+const ReviewCommentDate = styled.span`
+  font-size: 11px;
+  color: #94a3b8;
+  font-family: ${({ theme }) => theme.fonts.number};
+`;
+
+const CommentHideBtn = styled.button`
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+  ${({ $hidden }) =>
+    $hidden
+      ? `
+    border: 1px solid #d1fae5;
+    background: #f0fdf4;
+    color: #16a34a;
+    &:hover { background: #dcfce7; }
+  `
+      : `
+    border: 1px solid #fed7aa;
+    background: #fff7ed;
+    color: #ea580c;
+    &:hover { background: #ffedd5; }
+  `}
+`;
+
+const ReviewCommentOwnerBadge = styled.span`
+  font-size: 10px;
+  font-weight: 600;
+  color: #0369a1;
+  background: #e0f2fe;
+  padding: 1px 6px;
+  border-radius: 3px;
+`;
+
+const ReviewCommentHiddenBadge = styled.span`
+  font-size: 10px;
+  font-weight: 600;
+  color: #9333ea;
+  background: #f3e8ff;
+  padding: 1px 6px;
+  border-radius: 3px;
+`;
+
+const ReviewCommentContent = styled.p`
+  font-size: 13px;
+  color: ${({ $hidden }) => ($hidden ? '#94a3b8' : '#475569')};
+  line-height: 1.5;
+  text-decoration: ${({ $hidden }) => ($hidden ? 'line-through' : 'none')};
+`;
+
 const FieldGroup = styled.div`
   display: flex;
   flex-direction: column;
@@ -1283,6 +1456,59 @@ const FieldInput = styled.input`
   &::placeholder {
     color: #94a3b8;
   }
+  &:focus {
+    outline: none;
+    border-color: #244c54;
+    box-shadow: 0 0 0 3px rgba(36, 76, 84, 0.08);
+  }
+`;
+
+const EventCouponArea = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+`;
+
+const EventCouponLabel = styled.span`
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+`;
+
+const EventCouponBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0369a1;
+  background: #e0f2fe;
+  padding: 4px 10px;
+  border-radius: 6px;
+`;
+
+const EventCouponEmpty = styled.span`
+  font-size: 13px;
+  color: #94a3b8;
+`;
+
+const FieldSelect = styled.select`
+  padding: 9px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #0d1c2e;
+  background: white;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
   &:focus {
     outline: none;
     border-color: #244c54;

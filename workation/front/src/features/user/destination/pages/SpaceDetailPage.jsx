@@ -153,17 +153,17 @@ function SpaceDetailPage() {
           </SpaceSummary>
           <Divider />
           <DescriptionBlock>
-            <SectionTitle>🎯 공간 소개</SectionTitle>
+            <SectionTitle> 공간 소개</SectionTitle>
             <DescText>{space.description}</DescText>
           </DescriptionBlock>
 
           {safeArcades.length > 0 && (
             <ArcadeBlock>
-              <SectionTitle>🛠️ 제공하는 편의 시설 및 인프라</SectionTitle>
+              <SectionTitle> 제공하는 편의 시설 및 인프라</SectionTitle>
               <ArcadeGrid>
                 {safeArcades.map((arcade, index) => (
                   <ArcadeBadgeCard key={arcade.id || index}>
-                    <ArcadeIcon>💻</ArcadeIcon>
+                    <ArcadeIcon></ArcadeIcon>
                     <ArcadeName>{arcade.name}</ArcadeName>
                   </ArcadeBadgeCard>
                 ))}
@@ -171,7 +171,7 @@ function SpaceDetailPage() {
             </ArcadeBlock>
           )}
 
-          <SectionTitle>📍 장소 정보</SectionTitle>
+          <SectionTitle> 장소 정보</SectionTitle>
           <InfoGrid>
             <InfoItem>
               <strong>주소:</strong> {space.address1} {space.address2}
@@ -186,7 +186,7 @@ function SpaceDetailPage() {
         </ContentSection>
 
         <StaySection>
-          <SectionTitle>🏡 예약 가능한 숙소 선택</SectionTitle>
+          <SectionTitle> 예약 가능한 숙소 선택</SectionTitle>
           {!space.stays || space.stays.length === 0 ? (
             <EmptyText>현재 예약 가능한 숙소 유형이 비어있습니다.</EmptyText>
           ) : (

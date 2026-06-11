@@ -45,7 +45,7 @@ export default function AdminSidebar() {
           </svg>
         </LogoIcon>
         <LogoText>
-          <LogoTitle>모래 덮인 키보드</LogoTitle>
+          <LogoTitle>모래 묻은 키보드</LogoTitle>
           <LogoSub>워케이션 관리자</LogoSub>
         </LogoText>
       </LogoArea>

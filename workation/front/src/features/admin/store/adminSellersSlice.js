@@ -17,6 +17,7 @@ const adminSellersSlice = createSlice({
     customersBannedCount: 0,
     customersNewCount: 0,
     customerCoupons: {},
+    issuableCoupons: [],
     sellerSuspended: {},
     customerSuspended: {},
     loading: false,
@@ -86,6 +87,13 @@ const adminSellersSlice = createSlice({
         );
       }
     },
+    setCustomerCoupons(state, action) {
+      const { customerId, coupons } = action.payload;
+      state.customerCoupons[customerId] = coupons;
+    },
+    setIssuableCoupons(state, action) {
+      state.issuableCoupons = action.payload;
+    },
     setLoading(state, action) {
       state.loading = action.payload;
     },
@@ -110,6 +118,8 @@ export const {
   setCustomerSuspended,
   addCoupon,
   deleteCoupon,
+  setCustomerCoupons,
+  setIssuableCoupons,
   setLoading,
   setError,
 } = adminSellersSlice.actions;

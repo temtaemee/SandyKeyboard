@@ -120,8 +120,18 @@ export default function SpaceEditPage() {
       </TopBar>
 
       <FormCard>
+        {space?.approvalStatus === 'PENDING' && (
+          <PendingNotice>
+            승인 대기 중에는 공간 정보를 수정할 수 없습니다. 관리자 승인 후 수정해 주세요.
+          </PendingNotice>
+        )}
         {submitError && <SubmitError>{submitError}</SubmitError>}
-        <SpaceEditForm space={space} onSubmit={handleSubmit} loading={submitting} />
+        <SpaceEditForm
+          space={space}
+          onSubmit={handleSubmit}
+          loading={submitting}
+          disabled={space?.approvalStatus === 'PENDING'}
+        />
       </FormCard>
     </Wrap>
   );
@@ -228,6 +238,15 @@ const FormCard = styled.div`
   display: flex;
   flex-direction: column;
   gap: 16px;
+`;
+
+const PendingNotice = styled.p`
+  font-size: 13px;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  padding: 12px 16px;
+  border-radius: 8px;
 `;
 
 const SubmitError = styled.p`

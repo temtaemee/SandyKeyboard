@@ -27,11 +27,11 @@ export default function useDestination() {
   const error = destinationState.error || null;
 
   // 1. 공간 전체/필터 검색 통합 호출 훅
-  const loadSpaces = async (keyword, area) => {
+  const loadSpaces = async (params) => {
     dispatch(setLoading(true));
     try {
-      const data = await getPublicSpaceList(keyword, area);
-      // 백엔드가 밀어준 data 배열을 스토어에 정밀 저장
+      // 💡 params가 객체(keyword, area, startDate, endDate, arcadeIds) 전체를 받도록 함
+      const data = await getPublicSpaceList(params);
       dispatch(setSpaces(data || []));
     } catch (err) {
       console.error('loadSpaces 에러:', err);

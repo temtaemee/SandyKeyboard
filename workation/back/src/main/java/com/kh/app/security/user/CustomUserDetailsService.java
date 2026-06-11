@@ -4,6 +4,7 @@ import com.kh.app.member.entity.MemberEntity;
 import com.kh.app.member.entity.Role;
 import com.kh.app.member.repository.MemberRepository;
 import com.kh.app.product.space.entity.Area;
+import com.kh.app.security.exception.WithdrawnUserException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -22,10 +23,11 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         MemberEntity entity = memberRepository
-                .findByUsername(username)
+                .findMemberByUsername(username)
                 .orElseThrow(()-> new UsernameNotFoundException("회원 없음"));
+
         if (entity.getDeletedAt() != null) {
-            throw new UsernameNotFoundException("탈퇴 처리된 계정입니다.");
+            throw new WithdrawnUserException("탈퇴 처리된 계정입니다.");
         }
         Area preferredArea = (entity.getProfile() != null) ? entity.getProfile().getPreferredArea()
                 : null;

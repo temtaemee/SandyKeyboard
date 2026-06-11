@@ -55,7 +55,7 @@ function validate(data) {
  * @param {function} onSubmit (dto, pictureChanges | null) => void
  * @param {boolean} loading
  */
-export default function SpaceEditForm({ space, onSubmit, loading }) {
+export default function SpaceEditForm({ space, onSubmit, loading, disabled = false }) {
   const inputRefs = useRef({});
   const mapRef    = useRef(null);
   const mapObjRef = useRef(null);
@@ -444,7 +444,7 @@ export default function SpaceEditForm({ space, onSubmit, loading }) {
         </div>
       )}
 
-      <SubmitBtn type="submit" disabled={loading}>
+      <SubmitBtn type="submit" disabled={loading || disabled}>
         {loading ? <LoadingSpinner size="sm" /> : '수정 완료'}
       </SubmitBtn>
 

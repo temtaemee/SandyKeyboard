@@ -123,6 +123,7 @@ public class DataInitializer implements CommandLineRunner {
 
         seedPaymentsAndSales(reservations);
         seedPayoutsAndInvoices();
+        seedHistoricalSalesAndPayouts(sellers, users, allStays);
         seedReviews(reservations);
         seedMemberCoupons(users);
         seedWishlists(users, allSpaces);
@@ -1079,6 +1080,94 @@ public class DataInitializer implements CommandLineRunner {
         }
         log.info("[DataInitializer] 정산 {}건, 세금계산서 {}건 삽입 완료",
                 payoutRepository.count(), taxInvoiceRepository.count());
+    }
+
+    // ───────────────────────────────────────────────
+    // 과거 1년치 월별 매출/정산 더미 (2025.06 ~ 2026.05)
+    // 셀러 3명 × 12개월 = 36건, 정산일은 다음달 10일 → 연도 경계 포함
+    // ───────────────────────────────────────────────
+    private void seedHistoricalSalesAndPayouts(List<MemberEntity> sellers, List<MemberEntity> users, List<StayEntity> allStays) {
+        // 각 셀러의 대표 스테이 (강원 idx=0, 경기 idx=9, 경남 idx=18)
+        StayEntity[] repStays = {
+            allStays.get(0),
+            allStays.get(9),
+            allStays.get(18)
+        };
+        String[] cardCompanies = {"신한카드", "국민카드", "현대카드"};
+        int histCounter = 0;
+        int histInvNo = 0;
+
+        for (int m = 0; m < 12; m++) {
+            LocalDate month = LocalDate.of(2025, 6, 1).plusMonths(m);
+            LocalDate checkIn = month.withDayOfMonth(12);
+            LocalDate checkOut = checkIn.plusDays(2);
+            LocalDateTime approvedAt = checkIn.minusDays(5).atTime(14, 0);
+
+            for (int si = 0; si < sellers.size(); si++) {
+                MemberEntity seller = sellers.get(si);
+                StayEntity stay = repStays[si];
+                MemberEntity user = users.get(si % users.size());
+                long price = (long) stay.getMonPrice() * 2;
+
+                ++histCounter;
+                String orderId = String.format("HIST-%d-%d%02d-%04d",
+                        si + 1, month.getYear(), month.getMonthValue(), histCounter);
+
+                ReservationEntity resv = reservationRepository.save(ReservationEntity.builder()
+                        .member(user).stay(stay).space(stay.getSpace())
+                        .checkinDate(checkIn).checkoutDate(checkOut)
+                        .guestCount(2)
+                        .primaryGuestName("이용자" + histCounter)
+                        .primaryGuestPhone("01099990000")
+                        .primaryGuestEmail("hist" + histCounter + "@workation.com")
+                        .originalPrice(price).discountAmount(0L).totalPrice(price)
+                        .status(ReservationStatus.COMPLETED)
+                        .orderId(orderId)
+                        .build());
+
+                PaymentEntity payment = new PaymentEntity();
+                payment.setReservation(resv);
+                payment.setOrderId(orderId);
+                payment.setPaymentKey("HIST-PK-" + String.format("%05d", histCounter));
+                payment.setAmount(price);
+                payment.setCancelAmount(0L);
+                payment.setPaymentMethod(PaymentMethod.CARD);
+                payment.setStatus(PaymentStatus.SUCCESS);
+                payment.setCardCompany(cardCompanies[histCounter % cardCompanies.length]);
+                payment.setCardNumber("5678-****-****-" + String.format("%04d", histCounter % 10000));
+                payment.setApprovedAt(approvedAt);
+                payment = paymentRepository.save(payment);
+
+                SalesEntity sales = salesRepository.save(SalesEntity.builder()
+                        .payment(payment)
+                        .salesAmount(price).cancelAmount(0L).netSalesAmount(price)
+                        .salesDate(approvedAt)
+                        .build());
+
+                long fee = (long) (price * 0.1);
+                long payoutAmount = price - fee;
+                LocalDateTime payoutDate = month.plusMonths(1).withDayOfMonth(10).atTime(9, 0);
+
+                PayoutEntity payout = payoutRepository.save(PayoutEntity.builder()
+                        .seller(seller).sales(sales)
+                        .originalAmount(price).feeAmount(fee).payoutAmount(payoutAmount)
+                        .status(PayoutStatus.COMPLETED)
+                        .payoutDate(payoutDate)
+                        .build());
+
+                long supply = (long) (payoutAmount / 1.1);
+                long tax = payoutAmount - supply;
+                String issueNo = String.format("HINV-%d%02d-%04d",
+                        month.getYear(), month.getMonthValue(), ++histInvNo);
+
+                taxInvoiceRepository.save(TaxInvoiceEntity.builder()
+                        .issueNo(issueNo).payout(payout).seller(seller)
+                        .supplyValue(supply).taxAmount(tax).totalAmount(payoutAmount)
+                        .issuedAt(payoutDate)
+                        .build());
+            }
+        }
+        log.info("[DataInitializer] 과거 매출/정산 더미 {}건 삽입 완료", histCounter);
     }
 
     // ───────────────────────────────────────────────

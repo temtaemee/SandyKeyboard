@@ -8,8 +8,6 @@ export default function HomePage() {
     <>
       <HeroSection />
       <RecommendedSection />
-      <WhySection />
-      <BentoSection />
     </>
   );
 }

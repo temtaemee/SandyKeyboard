@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -69,5 +70,19 @@ public class TaxInvoiceService {
         TaxInvoiceEntity entity = taxInvoiceRepository.findById(invoiceId)
                 .orElseThrow(() -> new EntityNotFoundException("해당 세금계산서 원장을 찾을 수 없습니다."));
         return TaxInvoiceDetailResDto.from(entity);
+    }
+
+    // 전체 목록 조회 로직
+    public List<TaxInvoiceDetailResDto> findAllForAdmin() {
+        return taxInvoiceRepository.findAll().stream()
+                .map(TaxInvoiceDetailResDto::from) // Entity -> DTO 변환
+                .toList();
+    }
+
+    // 상세 조회 로직
+    public TaxInvoiceDetailResDto findByIdForAdmin(Long id) {
+        return taxInvoiceRepository.findById(id)
+                .map(TaxInvoiceDetailResDto::from)
+                .orElseThrow(() -> new IllegalArgumentException("해당 세금계산서를 찾을 수 없습니다."));
     }
 }

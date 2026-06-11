@@ -43,7 +43,7 @@ public class SecurityFilterChainConfig {
         hs.authorizeHttpRequests(
                 auth ->
                         auth
-                                .requestMatchers("/api/guest/**").anonymous()
+                                .requestMatchers("/api/guest/**").permitAll()
                                 .requestMatchers("/api/public/**").permitAll()
                                 .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
                                 .requestMatchers("/api/seller/**").hasAnyAuthority("SELLER", "ADMIN")
@@ -75,6 +75,7 @@ public class SecurityFilterChainConfig {
 
                         conf.addAllowedOrigin("http://localhost:5173");
                         conf.addAllowedOrigin("http://127.0.0.1:5173");
+                        conf.addAllowedOrigin("https://sandykey.shop");
                         conf.addAllowedHeader("*");
                         conf.addAllowedMethod("*");
                         conf.setAllowCredentials(true);

@@ -43,14 +43,9 @@ const CANCELLED_STATUSES = [
 export default function AdminReservationPage() {
   const {
     partners,
-    reservations,
-    reservationsTotalPage,
-    reservationsTotalCount,
     allReservations,
-    refundedList,
     dashboardSummary,
     fetchPartners,
-    fetchReservations,
     fetchAllReservations,
     fetchDashboardSummary,
     addPartner,
@@ -58,7 +53,7 @@ export default function AdminReservationPage() {
     togglePartnerStatus,
   } = useAdminReservation();
 
-  const { currentPage, goToPage, goToPrev, goToNext } = usePagination();
+  const { currentPage, goToPage } = usePagination();
 
   // 통합 UI 훅으로 모달 제어 및 인라인 에디팅 상태 분리
   const {
@@ -314,9 +309,7 @@ export default function AdminReservationPage() {
         </Table>
 
         <TableFooter>
-          <FooterInfo>
-            총 {totalCount.toLocaleString()}건
-          </FooterInfo>
+          <FooterInfo />
           <AdminPagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -455,9 +448,6 @@ export default function AdminReservationPage() {
 /* ── Icon Components ── */
 function CalendarIcon() {
   return <Calendar size={20} />;
-}
-function BuildingStatIcon() {
-  return <Building2 size={20} />;
 }
 function BuildingIcon() {
   return <Building2 size={16} />;
@@ -801,16 +791,6 @@ const ActiveDesc = styled.p`
   line-height: 1.6;
 `;
 
-const PartnerItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  border: 1px solid ${({ theme }) => theme.colors.borderLight};
-  border-radius: 8px;
-  background: #fafbfc;
-`;
-
 const CompanyIconWrap = styled.div`
   width: 36px;
   height: 36px;
@@ -841,15 +821,6 @@ const CompanyResvCount = styled.span`
   color: ${({ theme }) => theme.colors.textLight};
 `;
 
-const ActiveBadge = styled.span`
-  font-size: 10px;
-  font-weight: 600;
-  color: ${({ $active }) => ($active ? '#16a34a' : '#64748b')};
-  background: ${({ $active }) => ($active ? '#dcfce7' : '#f1f5f9')};
-  padding: 3px 8px;
-  border-radius: 999px;
-`;
-
 /* 신규 기업 빠른 등록 */
 const QuickRegisterCard = styled.div`
   background: ${({ theme }) => theme.colors.white};
@@ -867,11 +838,6 @@ const QuickRegisterTitle = styled.h3`
   font-weight: 600;
   color: ${({ theme }) => theme.colors.adminTextDark};
   margin-bottom: 4px;
-`;
-
-const FormLabel = styled.label`
-  font-size: 12px;
-  color: ${({ theme }) => theme.colors.textMuted};
 `;
 
 const FormInput = styled.input`

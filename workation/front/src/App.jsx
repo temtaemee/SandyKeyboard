@@ -38,6 +38,8 @@ import NaverCallback from './features/member/components/login/NaverCallback';
 import KakaoCallback from './features/member/components/login/KakaoCallback';
 import GoogleCallback from './features/member/components/login/GoogleCallback';
 import { useEffect } from 'react';
+import PrivacyPage from './home/components/home/PrivacyPage';
+import TermsPage from './home/components/home/TermsPage';
 
 export default function App() {
   const { loading, isSeller, isAdmin } = useAuth();
@@ -75,6 +77,9 @@ export default function App() {
           />
           {/* 메인 페이지 */}
           <Route path="/home" element={<HomePage />} />
+
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
 
           {/* 
             [협업 가이드]

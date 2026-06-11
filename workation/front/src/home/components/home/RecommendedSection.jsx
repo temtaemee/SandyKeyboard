@@ -142,6 +142,14 @@ const ViewAllLink = styled.a`
 
 const Grid = styled.div`
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, 1fr); // 3개씩 정렬
   gap: 32px;
+
+  // 💡 6개가 되었을 때 줄바꿈이 자연스럽게 되도록 설정
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(2, 1fr); // 태블릿에서는 2개씩 3줄
+  }
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(1, 1fr); // 모바일에서는 1개씩 6줄
+  }
 `;

@@ -1,5 +1,6 @@
 package com.kh.app.product.space.entity;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 

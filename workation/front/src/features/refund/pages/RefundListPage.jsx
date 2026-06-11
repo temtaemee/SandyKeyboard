@@ -47,7 +47,7 @@ export default function RefundListPage() {
 
   return (
     <ListContainer>
-      <h2>🧾 취소 / 환불 처리 내역 리스트</h2>
+      <h2> 취소 / 환불 처리 내역 리스트</h2>
       <TableCard>
         <Table>
           <thead>

@@ -1,6 +1,7 @@
 package com.kh.app.middle.coupon.repository;
 
 import com.kh.app.middle.coupon.entity.CouponEntity;
+import com.kh.app.middle.coupon.entity.CouponStatus;
 import com.kh.app.middle.coupon.entity.QCouponEntity;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ public class CouponRepositoryImpl implements CouponRepositoryCustom{
     public Page<CouponEntity> getList(Pageable pageable) {
         List<CouponEntity> couponList = queryFactory
             .selectFrom(c)
+            .where(c.delYn.eq("N").and(c.couponStatus.eq(CouponStatus.A)))
             .orderBy(c.id.desc())
             .offset(pageable.getOffset())
             .limit(pageable.getPageSize())
@@ -32,10 +34,18 @@ public class CouponRepositoryImpl implements CouponRepositoryCustom{
         Long total = queryFactory
             .select(c.count())
             .from(c)
+            .where(c.delYn.eq("N").and(c.couponStatus.eq(CouponStatus.A)))
             .fetchOne();
 
         return new PageImpl<>(couponList, pageable, total);
+    }
 
-
+    @Override
+    public List<CouponEntity> getAll() {
+        return queryFactory
+                .selectFrom(c)
+                .where(c.delYn.eq("N"))
+                .orderBy(c.id.desc())
+                .fetch();
     }
 }

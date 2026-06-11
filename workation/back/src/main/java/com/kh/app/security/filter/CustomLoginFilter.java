@@ -1,5 +1,6 @@
 package com.kh.app.security.filter;
 
+import com.kh.app.security.exception.WithdrawnUserException;
 import com.kh.app.security.user.CustomUserDetails;
 import com.kh.app.security.user.UserVo;
 import com.kh.app.security.util.JwtUtil;
@@ -74,17 +75,13 @@ public class CustomLoginFilter extends UsernamePasswordAuthenticationFilter {
         response.setContentType("application/json;charset=UTF-8");
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
-        String message = "아이디 또는 비밀번호가 올바르지 않습니다.";
-
-        if (failed.getMessage() != null && failed.getMessage().contains("탈퇴")) {
-            message = failed.getMessage(); // "탈퇴 처리된 계정입니다."가 들어감
-        }
+        String message = failed.getMessage();;
 
         response.getWriter().write("""
             {
                 "result": "fail",
                 "message": "%s"
             }
-            """);
+            """.formatted(message));
     }
 }
