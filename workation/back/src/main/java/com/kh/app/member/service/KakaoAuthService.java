@@ -41,7 +41,7 @@ public class KakaoAuthService {
     private String redirectUri;
     @Value("${kakao.client-secret}")
     private String clientSecret;
-    // 💡 방금 새로 만드신 앱의 REST API 키와 발급받은 Client Secret을 넣어주세요!
+    // 💡 방
 
     @Transactional
     public SocialLoginRespDto kakaoLogin(SocialLoginReqDto dto) {
