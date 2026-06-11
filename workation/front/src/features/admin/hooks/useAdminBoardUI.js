@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   getAdminBoardPost,
   getCouponById,
+  getCouponAll,
   reviewDetail,
   findComments,
   hideComment,
   showComment,
   faqDetail,
+  getEventById,
 } from '../api/adminBoardApi';
 
 /**
@@ -99,6 +101,15 @@ export default function useAdminBoardUI({
   const [editingPost, setEditingPost] = useState(null); // 현재 수정 중인 post 객체
   const [formData, setFormData] = useState({}); // 작성 중인 폼 입력 값 객체
   const [removedFileIds, setRemovedFileIds] = useState([]); // 삭제할 기존 파일 ID 목록
+  const [availableCoupons, setAvailableCoupons] = useState([]); // 이벤트 모달용 쿠폰 목록
+
+  useEffect(() => {
+    if (registerModal === '이벤트') {
+      getCouponAll()
+        .then((resp) => setAvailableCoupons(Array.isArray(resp.data) ? resp.data : []))
+        .catch(() => setAvailableCoupons([]));
+    }
+  }, [registerModal]);
 
   // 등록 모달 열기
   const openRegisterModal = (type) => {
@@ -125,6 +136,7 @@ export default function useAdminBoardUI({
         title: activeTab === 'FAQ' ? post.question : post.title,
         content: activeTab === 'FAQ' ? post.answer : post.content || '',
         isFixed: post.pinYn === 'Y' || post.isFixed || false,
+        couponId: activeTab === '이벤트' ? (post.couponId ?? '') : undefined,
       });
     }
   };
@@ -179,6 +191,12 @@ export default function useAdminBoardUI({
           question: formData.title ?? editingPost.question,
           answer: formData.content ?? editingPost.answer,
         };
+      } else if (activeTab === '이벤트') {
+        updatedData = {
+          title: formData.title ?? editingPost.title,
+          content: formData.content ?? editingPost.content,
+          couponId: formData.couponId ? Number(formData.couponId) : null,
+        };
       } else {
         updatedData = {
           title: formData.title || editingPost.title,
@@ -214,6 +232,14 @@ export default function useAdminBoardUI({
           setDetailPost(resp.data);
         } catch (err) {
           console.error('수정 완료 후 FAQ 상세 재조회 에러:', err);
+          setDetailPost({ ...editingPost, ...updatedData });
+        }
+      } else if (activeTab === '이벤트') {
+        try {
+          const resp = await getEventById(postId);
+          setDetailPost(resp.data);
+        } catch (err) {
+          console.error('수정 완료 후 이벤트 상세 재조회 에러:', err);
           setDetailPost({ ...editingPost, ...updatedData });
         }
       } else {
@@ -259,6 +285,15 @@ export default function useAdminBoardUI({
           },
           registerModal
         );
+      } else if (registerModal === '이벤트') {
+        await createPost(
+          {
+            title: formData.title || '',
+            content: formData.content || '',
+            couponId: formData.couponId ? Number(formData.couponId) : null,
+          },
+          registerModal
+        );
       }
       closeRegisterModal();
     }
@@ -296,6 +331,14 @@ export default function useAdminBoardUI({
         setDetailPost(resp.data);
       } catch (err) {
         console.error('FAQ 상세 조회 실패:', err);
+        setDetailPost(post);
+      }
+    } else if (activeTab === '이벤트') {
+      try {
+        const resp = await getEventById(post.id);
+        setDetailPost(resp.data);
+      } catch (err) {
+        console.error('이벤트 상세 조회 실패:', err);
         setDetailPost(post);
       }
     } else {
@@ -362,6 +405,7 @@ export default function useAdminBoardUI({
     closeRegisterModal,
     handleFormChange,
     handleRegisterSubmit,
+    availableCoupons,
 
     // 3. 상세보기
     detailPost,

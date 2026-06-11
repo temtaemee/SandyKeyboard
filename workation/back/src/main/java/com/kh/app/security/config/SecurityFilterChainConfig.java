@@ -43,7 +43,7 @@ public class SecurityFilterChainConfig {
         hs.authorizeHttpRequests(
                 auth ->
                         auth
-                                .requestMatchers("/api/guest/**").anonymous()
+                                .requestMatchers("/api/guest/**").permitAll()
                                 .requestMatchers("/api/public/**").permitAll()
                                 .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
                                 .requestMatchers("/api/seller/**").hasAnyAuthority("SELLER", "ADMIN")
