@@ -3,12 +3,16 @@ const trimTrailingSlash = (value) => value?.replace(/\/+$/, '');
 export const API_BASE_URL =
   trimTrailingSlash(import.meta.env.VITE_API_BASE_URL) || '/api';
 
+// 개발/배포 상관없이 환경 변수가 없으면 기본적으로 S3 버킷 주소를 바라보도록 수정
+const S3_BUCKET_FALLBACK =
+  window.location.protocol === 'https:'
+    ? 'https://finalproject-s3-bucket-243050855199-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com'
+    : 'http://finalproject-s3-bucket-243050855199-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com';
+
 export const SERVER_BASE_URL =
   trimTrailingSlash(import.meta.env.VITE_SERVER_BASE_URL) ||
   trimTrailingSlash(API_BASE_URL.replace(/\/api$/, '')) ||
-  (import.meta.env.DEV
-    ? 'http://finalproject-s3-bucket-243050855199-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com'
-    : '');
+  S3_BUCKET_FALLBACK;
 
 export const WS_URL =
   import.meta.env.VITE_WS_URL ||
