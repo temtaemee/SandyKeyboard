@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'; // useRef 추가
+import React, { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
 import api from '../../../../app/api/axios';
@@ -6,17 +6,14 @@ import api from '../../../../app/api/axios';
 function PaymentSuccessPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-
-  // Strict Mode 등으로 인한 중복 호출을 막기 위한 flag
   const isCalled = useRef(false);
 
   useEffect(() => {
-    // 이미 호출된 적이 있다면 두 번째 마운트 때는 실행하지 않음
     if (isCalled.current) return;
 
     isCalled.current = true;
     confirmPayment();
-  }, []); // 의존성 배열을 빈 배열[]로 두어 최초 마운트 시 1회만 실행하도록 변경
+  }, []);
 
   async function confirmPayment() {
     try {
@@ -40,8 +37,13 @@ function PaymentSuccessPage() {
         throw new Error('결제 필수 정보(paymentKey, orderId, amount) 누락');
       }
 
-      // 백엔드로 승인 요청 전송
-      console.log('백엔드로 결제 승인 요청을 보냅니다...');
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        alert('로그인이 필요합니다. 다시 로그인한 뒤 예약 내역에서 결제 상태를 확인해 주세요.');
+        navigate('/login');
+        return;
+      }
+
       const resp = await api.post('/user/payment/confirm', {
         paymentKey,
         orderId,
@@ -55,8 +57,11 @@ function PaymentSuccessPage() {
       navigate('/');
     } catch (err) {
       console.error('결제 승인 실패 최종 에러:', err);
-      // 어떤 에러인지 사용자에게 알림을 주면 디버깅이 편해집니다.
-      alert(`결제 처리 중 오류가 발생했습니다: ${err.message || err}`);
+      const serverMessage = err.response?.data?.message;
+      const providerBody = err.response?.data?.providerBody;
+      const detail = providerBody ? `${serverMessage}\n${providerBody}` : serverMessage;
+
+      alert(`결제 처리 중 오류가 발생했습니다: ${detail || err.message || err}`);
       navigate('/payment/fail');
     }
   }
@@ -73,7 +78,6 @@ function PaymentSuccessPage() {
 
 export default PaymentSuccessPage;
 
-/* 기존 styled-components 스타일 유지 */
 const Wrapper = styled.div`
   width: 100%;
   min-height: 100vh;
@@ -82,6 +86,7 @@ const Wrapper = styled.div`
   align-items: center;
   background: #f5f7fa;
 `;
+
 const Card = styled.div`
   width: 100%;
   max-width: 480px;
@@ -91,11 +96,13 @@ const Card = styled.div`
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
   text-align: center;
 `;
+
 const Title = styled.h1`
   font-size: 28px;
   font-weight: 700;
   color: #222;
 `;
+
 const Description = styled.p`
   margin-top: 16px;
   font-size: 16px;

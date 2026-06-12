@@ -155,8 +155,21 @@ public class MemberApiController {
                             .message(e.getMessage())
                             .email(e.getEmail()) // 🌟 예외 객체에서 이메일 깔끔하게 추출!
                             .build());
+        } catch (IllegalStateException e) {
+            log.warn("Kakao social login failed: {}", e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(SocialLoginErrorRespDto.builder()
+                            .result("fail")
+                            .message(e.getMessage())
+                            .build());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            log.error("Unexpected Kakao social login error", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(SocialLoginErrorRespDto.builder()
+                            .result("fail")
+                            .message("Kakao social login failed.")
+                            .build());
         }
     }
 
@@ -174,14 +187,29 @@ public class MemberApiController {
                             .message(e.getMessage())
                             .email(e.getEmail())
                             .build());
+        } catch (IllegalStateException e) {
+            log.warn("Naver social login request failed: {}", e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(SocialLoginErrorRespDto.builder()
+                            .result("fail")
+                            .message(e.getMessage())
+                            .build());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            log.error("Naver social login failed", e);
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(SocialLoginErrorRespDto.builder()
+                            .result("fail")
+                            .message("Naver social login failed.")
+                            .build());
         }
     }
 
     // 🌟 구글 로그인
     @PostMapping("/guest/google")
     public ResponseEntity<?> googleLogin(@RequestBody SocialLoginReqDto dto) {
+        log.info("Google social login requested. codePresent={}", dto.getCode() != null && !dto.getCode().isBlank());
         try {
             SocialLoginRespDto responseDto = googleAuthService.googleLogin(dto);
             return ResponseEntity.ok(responseDto);
@@ -193,8 +221,22 @@ public class MemberApiController {
                             .message(e.getMessage())
                             .email(e.getEmail())
                             .build());
+        } catch (IllegalStateException e) {
+            log.warn("Google social login request failed: {}", e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(SocialLoginErrorRespDto.builder()
+                            .result("fail")
+                            .message(e.getMessage())
+                            .build());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            log.error("Google social login failed", e);
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(SocialLoginErrorRespDto.builder()
+                            .result("fail")
+                            .message("Google social login failed.")
+                            .build());
         }
     }
     @PostMapping("/guest/social-join")

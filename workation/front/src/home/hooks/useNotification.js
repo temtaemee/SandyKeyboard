@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Client } from '@stomp/stompjs'; // STOMP 라이브러리 임포트
 import {
     getNotificationList,
@@ -14,7 +14,7 @@ import { WS_URL } from '../../app/config/env';
 export const useNotification = () => {
     const stompClientRef = useRef(null); // 소켓 클라이언트 객체를 유지할 ref
     const dispatch = useDispatch();
-    const { notificationList, unreadCount, stompClient } = useSelector(
+    const { notificationList, unreadCount } = useSelector(
         (state) => state.notification
     );
     const token = localStorage.getItem("accessToken");
@@ -60,11 +60,6 @@ export const useNotification = () => {
     // 웹소켓 연결 및 구독 설정
     useEffect(() => {
         if (!memberId) return;
-        if (stompClient) {
-            fetchNotifications();
-            fetchUnreadCount();
-            return;
-        }
         fetchNotifications();
         fetchUnreadCount();
 
@@ -72,6 +67,10 @@ export const useNotification = () => {
         // 2. STOMP 클라이언트 생성
         const client = new Client({
             brokerURL: WS_URL,
+            connectHeaders: {
+                Authorization: `Bearer ${token}`,
+            },
+            reconnectDelay: 5000,
             onConnect: () => {
                 console.log('리덕스 웹소켓 연결 성공!');
 
@@ -89,9 +88,16 @@ export const useNotification = () => {
         });
 
         // 소켓 활성화 (연결 시작)
+        stompClientRef.current = client;
         client.activate();
-        dispatch(setStompClient(client))
-    }, [memberId, stompClient, dispatch]);
+        dispatch(setStompClient(client));
+
+        return () => {
+            client.deactivate();
+            stompClientRef.current = null;
+            dispatch(setStompClient(null));
+        };
+    }, [memberId, token, dispatch]);
 
     return {
         notificationList,

@@ -15,6 +15,12 @@ function MyReservationPage() {
 
   // 🟩 1. 백엔드 API로부터 로그인된 유저의 예약 내역 가져오기
   useEffect(() => {
+    if (!localStorage.getItem('accessToken')) {
+      alert('로그인이 필요합니다.');
+      navi('/login');
+      return;
+    }
+
     // 세션스토리지든 로컬스토리지든 토큰이 있는 상태이므로 인터셉터가 헤더에 자동으로 실어 보냅니다.
     getMyReservations()
       .then((response) => {
@@ -26,7 +32,7 @@ function MyReservationPage() {
         console.error('예약 내역 로딩 실패:', error);
         setLoading(false);
       });
-  }, []);
+  }, [navi]);
 
   // 🟩 2. 데이터 포맷터 함수들 (백엔드 규격을 화면 규격으로 변환)
 

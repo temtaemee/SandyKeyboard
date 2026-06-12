@@ -21,11 +21,14 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error.response?.status;
-    if (status === 401) {
+    if (status === 401 || status === 403) {
       localStorage.removeItem('accessToken');
 
       if (window.location.pathname.startsWith('/admin')) {
         alert('세션이 만료되었거나 권한이 없습니다. 다시 로그인해주세요.');
+        window.location.href = '/login';
+      } else if (window.location.pathname.startsWith('/mypage')) {
+        alert('로그인이 필요합니다.');
         window.location.href = '/login';
       }
     }

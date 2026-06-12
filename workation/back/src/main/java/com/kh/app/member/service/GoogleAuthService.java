@@ -3,6 +3,7 @@ package com.kh.app.member.service;
 import com.kh.app.member.dto.request.SocialLoginReqDto;
 import com.kh.app.member.dto.response.SocialLoginRespDto;
 import com.kh.app.member.entity.MemberEntity;
+import com.kh.app.member.entity.Role;
 import com.kh.app.member.entity.SocialAccountEntity;
 import com.kh.app.member.entity.MemberProfileEntity;
 import com.kh.app.member.exception.SocialWithdrawnUserException;
@@ -15,11 +16,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Optional;
@@ -33,12 +35,15 @@ public class GoogleAuthService {
     private final MemberRepository memberRepository;
     private final ProfileRepository memberProfileRepository; // 💡 프록시 방어용
     private final JwtUtil jwtUtil;
+
+    @Value("${google.client-id:}")
+    private String clientId;
+
+    @Value("${google.client-secret:}")
+    private String clientSecret;
+
     @Value("${google.redirect-uri}")
     private String redirectUri;
-
-    // 💡 구글 클라우드 콘솔에서 발급받은 키를 넣어주세요.
-    private final String clientId = "636736190970-kr8td75eis24br9sdgbqq8kentqno1td.apps.googleusercontent.com";
-    private final String clientSecret = "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";
 
     @Transactional
     public SocialLoginRespDto googleLogin(SocialLoginReqDto dto) {
@@ -60,6 +65,7 @@ public class GoogleAuthService {
             memberEntity = new MemberEntity();
             memberEntity.setUsername(email);
             memberEntity.setPassword("");
+            memberEntity.getRoleSet().add(Role.USER);
             memberRepository.save(memberEntity);
 
             SocialAccountEntity newSocialEntity = new SocialAccountEntity();
@@ -93,6 +99,8 @@ public class GoogleAuthService {
             }
         }
 
+        memberEntity.getRoleSet().add(Role.USER);
+
         // 4. 서비스 전용 자체 JWT 토큰 발행
         String appAccessToken = jwtUtil.createJwt(
                 memberEntity.getId(),
@@ -118,6 +126,8 @@ public class GoogleAuthService {
 
     // 🔵 구글 토큰 요청 RestTemplate 로직
     private String getGoogleAccessToken(SocialLoginReqDto dto) {
+        validateGoogleConfig();
+
         RestTemplate rt = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-type", "application/x-www-form-urlencoded;charset=utf-8");
@@ -130,12 +140,18 @@ public class GoogleAuthService {
         params.add("code", dto.getCode());
 
         HttpEntity<MultiValueMap<String, String>> tokenRequest = new HttpEntity<>(params, headers);
-        ResponseEntity<String> response = rt.exchange(
-                "https://oauth2.googleapis.com/token", // 구글 토큰 교환 주소
-                HttpMethod.POST,
-                tokenRequest,
-                String.class
-        );
+        ResponseEntity<String> response;
+        try {
+            response = rt.exchange(
+                    "https://oauth2.googleapis.com/token", // 구글 토큰 교환 주소
+                    HttpMethod.POST,
+                    tokenRequest,
+                    String.class
+            );
+        } catch (RestClientResponseException e) {
+            throw new IllegalStateException("Google token request failed: "
+                    + e.getStatusCode().value() + " " + e.getResponseBodyAsString(), e);
+        }
 
         try {
             return new ObjectMapper().readTree(response.getBody()).get("access_token").asText();
@@ -151,17 +167,29 @@ public class GoogleAuthService {
         headers.add("Authorization", "Bearer " + accessToken);
 
         HttpEntity<Void> profileRequest = new HttpEntity<>(headers);
-        ResponseEntity<String> response = rt.exchange(
-                "https://www.googleapis.com/oauth2/v2/userinfo", // 구글 유저 정보 주소
-                HttpMethod.GET,
-                profileRequest,
-                String.class
-        );
+        ResponseEntity<String> response;
+        try {
+            response = rt.exchange(
+                    "https://www.googleapis.com/oauth2/v2/userinfo", // 구글 유저 정보 주소
+                    HttpMethod.GET,
+                    profileRequest,
+                    String.class
+            );
+        } catch (RestClientResponseException e) {
+            throw new IllegalStateException("Google userinfo request failed: "
+                    + e.getStatusCode().value() + " " + e.getResponseBodyAsString(), e);
+        }
 
         try {
             return new ObjectMapper().readTree(response.getBody());
         } catch (Exception e) {
             throw new RuntimeException("구글 유저 정보 조회 실패", e);
+        }
+    }
+
+    private void validateGoogleConfig() {
+        if (!StringUtils.hasText(clientId) || !StringUtils.hasText(clientSecret)) {
+            throw new IllegalStateException("Google OAuth config is missing. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.");
         }
     }
 }
