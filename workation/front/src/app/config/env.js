@@ -6,7 +6,9 @@ export const API_BASE_URL =
 export const SERVER_BASE_URL =
   trimTrailingSlash(import.meta.env.VITE_SERVER_BASE_URL) ||
   trimTrailingSlash(API_BASE_URL.replace(/\/api$/, '')) ||
-  (import.meta.env.DEV ? 'http://localhost:8001' : '');
+  (import.meta.env.DEV
+    ? 'http://finalproject-s3-bucket-243050855199-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com'
+    : '');
 
 export const WS_URL =
   import.meta.env.VITE_WS_URL ||
@@ -23,7 +25,8 @@ export const resolveAssetUrl = (path) => {
 
 export const resolveS3AssetUrl = (keyOrUrl) => {
   if (!keyOrUrl) return null;
-  if (keyOrUrl.startsWith('http://') || keyOrUrl.startsWith('https://')) return keyOrUrl;
+  if (keyOrUrl.startsWith('http://') || keyOrUrl.startsWith('https://'))
+    return keyOrUrl;
   return S3_ASSET_BASE_URL
     ? `${S3_ASSET_BASE_URL}/${keyOrUrl.replace(/^\/+/, '')}`
     : resolveAssetUrl(keyOrUrl);
