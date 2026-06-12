@@ -142,6 +142,7 @@ jobs:
             AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
             AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
             AWS_S3_BASE_URL=$AWS_S3_BASE_URL
+            JAVA_TOOL_OPTIONS=-Xms128m -Xmx384m -XX:+ExitOnOutOfMemoryError
             EOF
 
             sudo docker rm -f sandykeyboard-candidate || true
@@ -163,6 +164,7 @@ jobs:
               if [ "$attempt" -eq 600 ]; then
                 sudo docker exec sandykeyboard-candidate sh -c 'kill -3 1' || true
                 sleep 5
+                sudo docker inspect sandykeyboard-candidate --format 'state={{.State.Status}} exit={{.State.ExitCode}} oom={{.State.OOMKilled}} error={{.State.Error}}' || true
                 sudo docker logs sandykeyboard-candidate
                 sudo docker rm -f sandykeyboard-candidate
                 exit 1
