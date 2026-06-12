@@ -56,12 +56,6 @@ function SpaceDetailPage() {
 
     const resultUrl = resolveAssetUrl(rawPath);
 
-    console.log('=========================================');
-    console.log('[디버깅] 백엔드가 준 원본 주소:', rawPath);
-    console.log('[디버깅] 변환 완료된 결과 주소:', resultUrl);
-    console.log('[디버깅] 현재 설정된 SERVER_BASE_URL:', SERVER_BASE_URL);
-    console.log('=========================================');
-
     return resultUrl;
   };
 
