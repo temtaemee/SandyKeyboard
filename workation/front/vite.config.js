@@ -10,9 +10,22 @@ export default defineConfig(({ mode }) => {
     ...loadEnv(mode, appRoot, ''),
   };
   const devProxyTarget = env.VITE_DEV_PROXY_TARGET || 'http://localhost:8001';
+  const kakaoJsKey =
+    env.VITE_KAKAO_JS_KEY ||
+    env.VITE_KAKAO_REST_API_KEY ||
+    '6347acb399740f49699040d1f8cf61e5';
 
   return {
-    plugins: [react()],
+    plugins: [
+      {
+        name: 'kakao-js-key-fallback',
+        enforce: 'pre',
+        transformIndexHtml(html) {
+          return html.replace(/%VITE_KAKAO_JS_KEY%/g, kakaoJsKey);
+        },
+      },
+      react(),
+    ],
     envDir: workspaceRoot,
     server: {
       proxy: {
