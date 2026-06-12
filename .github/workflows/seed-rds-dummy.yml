@@ -60,9 +60,9 @@ jobs:
               exit 1
             fi
 
-            set -a
-            . "$APP_ENV"
-            set +a
+            DB_URL="$(sed -n 's/^DB_URL=//p' "$APP_ENV" | tail -n 1)"
+            DB_USERNAME="$(sed -n 's/^DB_USERNAME=//p' "$APP_ENV" | tail -n 1)"
+            DB_PASSWORD="$(sed -n 's/^DB_PASSWORD=//p' "$APP_ENV" | tail -n 1)"
 
             if [ -z "${DB_URL:-}" ] || [ -z "${DB_USERNAME:-}" ] || [ -z "${DB_PASSWORD:-}" ]; then
               echo "DB_URL, DB_USERNAME, or DB_PASSWORD is missing from app env."
