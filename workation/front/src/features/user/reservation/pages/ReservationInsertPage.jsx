@@ -12,7 +12,7 @@ import { BANK_LIST } from '../bankData';
 import { getPublicStayDetail } from '../../destination/api/destinationApi';
 
 function ReservationInsertPage() {
-  const clientKey = 'test_ck_5OWRapdA8djRAOLzPxRYVo1zEqZK';
+  const clientKey = import.meta.env.VITE_TOSS_CLIENT_KEY;
   const { stayId } = useParams();
   const { insertReservation } = useReservationInsert();
 
@@ -162,6 +162,11 @@ function ReservationInsertPage() {
   }
 
   async function requestPayment(reservationId, totalPrice) {
+    if (!clientKey) {
+      alert('토스 결제 설정이 누락되었습니다.');
+      throw new Error('VITE_TOSS_CLIENT_KEY is missing.');
+    }
+
     const tossPayments = await loadTossPayments(clientKey);
     await tossPayments.requestPayment('CARD', {
       amount: totalPrice,

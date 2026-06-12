@@ -143,7 +143,7 @@ function SpaceDetailPage() {
                 {sliderImages.map((_, idx) => (
                   <Dot
                     key={idx}
-                    active={currentImgIdx === idx}
+                    $active={currentImgIdx === idx}
                     onClick={() => setCurrentImgIdx(idx)}
                   />
                 ))}
@@ -311,7 +311,7 @@ const Dot = styled.span`
   height: 9px;
   border-radius: 50%;
   background: ${(props) =>
-    props.active ? '#ffffff' : 'rgba(255,255,255,0.4)'};
+    props.$active ? '#ffffff' : 'rgba(255,255,255,0.4)'};
   cursor: pointer;
 `;
 const AreaBadge = styled.span`

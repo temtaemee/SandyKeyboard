@@ -3,6 +3,7 @@ package com.kh.app.member.service;
 import com.kh.app.member.dto.request.SocialLoginReqDto;
 import com.kh.app.member.dto.response.SocialLoginRespDto;
 import com.kh.app.member.entity.MemberEntity;
+import com.kh.app.member.entity.Role;
 import com.kh.app.member.entity.SocialAccountEntity;
 import com.kh.app.member.entity.MemberProfileEntity;
 import com.kh.app.member.exception.SocialWithdrawnUserException;
@@ -15,11 +16,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Optional;
@@ -50,13 +52,21 @@ public class KakaoAuthService {
 
         // 2. access_token으로 카카오 유저 정보 파싱
         JsonNode userInfo = getKakaoUserInfo(kakaoAccessToken);
-        String socialId = userInfo.get("id").asText();
-        String email = userInfo.get("kakao_account").get("email").asText();
+        String socialId = userInfo.path("id").asText();
+        JsonNode kakaoAccount = userInfo.path("kakao_account");
+        String email = kakaoAccount.path("email").asText(null);
+
+        if (!StringUtils.hasText(socialId)) {
+            throw new IllegalStateException("Kakao user id is missing from provider response.");
+        }
+        if (!StringUtils.hasText(email)) {
+            throw new IllegalStateException("Kakao account email is missing. Check Kakao consent settings for account_email.");
+        }
 
         // 🚨 [수정 포인트 1] 카카오 JSON에서 프로필 이미지 URL 안전하게 파싱하기
         String profileImageUrl = null;
-        if (userInfo.has("kakao_account") && userInfo.get("kakao_account").has("profile")) {
-            JsonNode profileNode = userInfo.get("kakao_account").get("profile");
+        if (kakaoAccount.has("profile")) {
+            JsonNode profileNode = kakaoAccount.get("profile");
             if (profileNode.has("profile_image_url")) {
                 profileImageUrl = profileNode.get("profile_image_url").asText();
             }
@@ -72,6 +82,7 @@ public class KakaoAuthService {
             memberEntity = new MemberEntity();
             memberEntity.setUsername(email);
             memberEntity.setPassword("");
+            memberEntity.getRoleSet().add(Role.USER);
             memberRepository.save(memberEntity);
 
             SocialAccountEntity newSocialEntity = new SocialAccountEntity();
@@ -111,6 +122,8 @@ public class KakaoAuthService {
         }
 
         // 4. 모래묻은 키보드 서비스 전용 JWT 토큰 발행
+        memberEntity.getRoleSet().add(Role.USER);
+
         String appAccessToken = jwtUtil.createJwt(
                 memberEntity.getId(),
                 memberEntity.getUsername(),
@@ -136,6 +149,8 @@ public class KakaoAuthService {
 
     // 🟨 카카오 토큰 교환 RestTemplate 로직
     private String getKakaoAccessToken(SocialLoginReqDto dto) {
+        validateKakaoConfig();
+
         RestTemplate rt = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-type", "application/x-www-form-urlencoded;charset=utf-8");
@@ -143,17 +158,24 @@ public class KakaoAuthService {
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("grant_type", "authorization_code");
         params.add("client_id", clientId);
-        params.add("client_secret", clientSecret); // 💡 보안에서 활성화한 시크릿 키
+        if (StringUtils.hasText(clientSecret)) {
+            params.add("client_secret", clientSecret);
+        }
         params.add("redirect_uri", redirectUri);
         params.add("code", dto.getCode());
 
         HttpEntity<MultiValueMap<String, String>> tokenRequest = new HttpEntity<>(params, headers);
-        ResponseEntity<String> response = rt.exchange(
-                "https://kauth.kakao.com/oauth/token", // 카카오 토큰 교환 주소
-                HttpMethod.POST,
-                tokenRequest,
-                String.class
-        );
+        ResponseEntity<String> response;
+        try {
+            response = rt.exchange(
+                    "https://kauth.kakao.com/oauth/token", // 카카오 토큰 교환 주소
+                    HttpMethod.POST,
+                    tokenRequest,
+                    String.class
+            );
+        } catch (RestClientResponseException e) {
+            throw new IllegalStateException("Kakao token request failed: " + e.getStatusCode() + " " + e.getResponseBodyAsString(), e);
+        }
 
         try {
             return new ObjectMapper().readTree(response.getBody()).get("access_token").asText();
@@ -170,17 +192,28 @@ public class KakaoAuthService {
         headers.add("Content-type", "application/x-www-form-urlencoded;charset=utf-8");
 
         HttpEntity<Void> profileRequest = new HttpEntity<>(headers);
-        ResponseEntity<String> response = rt.exchange(
-                "https://kapi.kakao.com/v2/user/me", // 카카오 유저 정보 조회 주소
-                HttpMethod.GET,
-                profileRequest,
-                String.class
-        );
+        ResponseEntity<String> response;
+        try {
+            response = rt.exchange(
+                    "https://kapi.kakao.com/v2/user/me", // 카카오 유저 정보 조회 주소
+                    HttpMethod.GET,
+                    profileRequest,
+                    String.class
+            );
+        } catch (RestClientResponseException e) {
+            throw new IllegalStateException("Kakao userinfo request failed: " + e.getStatusCode() + " " + e.getResponseBodyAsString(), e);
+        }
 
         try {
             return new ObjectMapper().readTree(response.getBody());
         } catch (Exception e) {
             throw new RuntimeException("카카오 유저 정보 조회 실패", e);
+        }
+    }
+
+    private void validateKakaoConfig() {
+        if (!StringUtils.hasText(clientId) || !StringUtils.hasText(redirectUri)) {
+            throw new IllegalStateException("Kakao OAuth config is missing. Set KAKAO_REST_API_KEY and KAKAO_REDIRECT_URI.");
         }
     }
 }

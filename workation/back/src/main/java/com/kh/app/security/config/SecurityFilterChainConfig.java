@@ -54,6 +54,7 @@ public class SecurityFilterChainConfig {
                                 .requestMatchers("/api/public/**").permitAll()
                                 .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
                                 .requestMatchers("/api/seller/**").hasAnyAuthority("SELLER", "ADMIN")
+                                .requestMatchers("/api/user/payment/confirm").authenticated()
                                 .requestMatchers("/api/user/**").hasAnyAuthority("SELLER", "USER")
                                 .requestMatchers("/api/auth/**").authenticated()
                                 .requestMatchers(
@@ -61,7 +62,8 @@ public class SecurityFilterChainConfig {
                                         "/v3/api-docs/**",
                                         "/swagger-ui.html",
                                         "/ws-connect/**",
-                                        "/actuator/health"
+                                        "/actuator/health",
+                                        "/actuator/health/**"
                                 ).permitAll()
                                 .anyRequest().authenticated()
         );
