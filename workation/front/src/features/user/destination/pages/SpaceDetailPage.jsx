@@ -4,15 +4,14 @@ import styled from 'styled-components';
 import useDestination from '../hooks/useDestination';
 import useWishlist from '../../mypage/hooks/useWishlist';
 import useAuth from './../../../member/hooks/useAuth';
-import { resolveAssetUrl } from '../../../../app/config/env';
+import { resolveAssetUrl, SERVER_BASE_URL } from '../../../../app/config/env'; // 💡 SERVER_BASE_URL 임포트 추가
 
 function SpaceDetailPage() {
   const { spaceId } = useParams();
   const navigate = useNavigate();
 
-  const { isLoggedIn } = useAuth(); // 💡 로그인 상태 가져오기
+  const { isLoggedIn } = useAuth();
 
-  // 1. 훅은 항상 컴포넌트 최상단에서 호출
   const {
     currentSpace: space,
     loading,
@@ -22,7 +21,6 @@ function SpaceDetailPage() {
 
   const { wishlist, asyncInsertWishlist, asyncDeleteWishlist } = useWishlist();
 
-  // 2. 찜 관련 상태 계산
   const isWished =
     Array.isArray(wishlist) &&
     wishlist.some((item) => item.spaceId === Number(spaceId));
@@ -52,21 +50,21 @@ function SpaceDetailPage() {
   if (loading || !space)
     return <LoadingText>공간 정보를 불러오는 중입니다...</LoadingText>;
 
+  // 💡 [수정] 변수 참조 오류(ReferenceError) 해결 및 정확한 로그 배치
   const getRealImageUrl = (rawPath) => {
     if (!rawPath) return null;
-    // 🚨 배포 사이트 F12 콘솔 창에서 범인을 검거하기 위한 실시간 추적 로그
+
+    const resultUrl = resolveAssetUrl(rawPath);
+
     console.log('=========================================');
     console.log('[디버깅] 백엔드가 준 원본 주소:', rawPath);
     console.log('[디버깅] 변환 완료된 결과 주소:', resultUrl);
-    console.log(
-      '[디버깅] 현재 설정된 SERVER_BASE_URL:',
-      resolveAssetUrl.SERVER_BASE_URL
-    );
+    console.log('[디버깅] 현재 설정된 SERVER_BASE_URL:', SERVER_BASE_URL);
     console.log('=========================================');
-    return resolveAssetUrl(rawPath);
+
+    return resultUrl;
   };
 
-  // 이미지 처리 로직
   const sliderImages = [];
   if (space.thumbnailUrl) {
     const parsedThumb = getRealImageUrl(space.thumbnailUrl);
@@ -90,9 +88,11 @@ function SpaceDetailPage() {
       }
     });
   }
+
+  // 💡 [수정] 메인 슬라이더 이미지가 비어있을 때의 기본 폴백 이미지 처리
   if (sliderImages.length === 0) {
     sliderImages.push(
-      resolveAssetUrl('/dummy-images/gangwon/hotel1/강원1외관.png')
+      resolveAssetUrl('/dummy-images/jeju/hotel1/제주1외관.png')
     );
   }
 
@@ -203,11 +203,14 @@ function SpaceDetailPage() {
                   stay.pictures && stay.pictures.length > 0
                     ? stay.pictures[0].filePath
                     : null;
+
+                // 💡 [수정] 숙소 카드의 대체(Fallback) 이미지를 제주 이미지로 통일성 있게 변경
                 const roomImage =
                   getRealImageUrl(rawStayPath) ||
                   resolveAssetUrl(
-                    '/dummy-images/gangwon/hotel1/강원1스테이(디럭스룸)1.png'
+                    '/dummy-images/jeju/hotel1/제주1스테이(디럭스룸)1.png'
                   );
+
                 return (
                   <StayCard
                     key={stay.id}
@@ -239,7 +242,6 @@ function SpaceDetailPage() {
   );
 }
 
-// ... (이하 Styled Components는 기존과 동일하게 유지하세요)
 export default SpaceDetailPage;
 /* ========================================================================= */
 /* Styled Components 비주얼 고도화 정의부 */
