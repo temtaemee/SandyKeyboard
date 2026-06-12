@@ -21,10 +21,10 @@ public class NotificationApiController {
     private final NotificationService notificationService;
 
     @PostMapping
-    public String  testCreate() {
+    public String  testCreate(@AuthenticationPrincipal(expression = "memberId") Long memberId) {
 
         NotificationCreateReqDto dto = NotificationCreateReqDto.builder()
-                .memberId(42L) //알림 받을 멤버id 번호 Long타입 변수로 처리하면 L안붙여도 됩니다!
+                .memberId(memberId)
                 .type(NotificationType.RESERVATION_COMPLETE) //<- 알림타입 컨트롤+클릭 하면 알림타입종류 확인가능
                 .content("테스트 알림입니다.") // 알림 내용
                 .redirectUrl("/mypage") // 알림 클릭햇을시 보내고 싶은 url
@@ -52,7 +52,7 @@ public class NotificationApiController {
 
         notificationService.readAllNotification(memberId);
     }
-    @GetMapping("unread-count")
+    @GetMapping("/unread-count")
     public int unReadCount(
             @AuthenticationPrincipal(expression = "memberId")
             Long memberId

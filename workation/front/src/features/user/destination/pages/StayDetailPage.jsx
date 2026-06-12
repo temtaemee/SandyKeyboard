@@ -109,9 +109,9 @@ const ThumbItem = styled.div`
 
   cursor: pointer;
 
-  border: 2px solid ${(props) => (props.active ? '#3f6971' : 'transparent')};
+  border: 2px solid ${(props) => (props.$active ? '#3f6971' : 'transparent')};
 
-  opacity: ${(props) => (props.active ? '1' : '0.5')};
+  opacity: ${(props) => (props.$active ? '1' : '0.5')};
 
   transition: all 0.2s;
 
@@ -501,7 +501,7 @@ function StayDetailPage() {
             {imageList.map((imgUrl, index) => (
               <ThumbItem
                 key={index}
-                active={activeImgIdx === index}
+                $active={activeImgIdx === index}
                 onClick={() => setActiveImgIdx(index)}
               >
                 <img src={imgUrl} alt="방 사진" />

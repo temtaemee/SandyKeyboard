@@ -1,4 +1,5 @@
 import api from '../../../app/api/axios';
+import { resolveAssetUrl } from '../../../app/config/env';
 
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0']);
 
@@ -31,7 +32,7 @@ export function resolveSellerImageUrl(filePath) {
     return value;
   } catch {
     if (value.startsWith('dummy-images/') || value.startsWith('uploads/')) {
-      return `${apiOrigin}/${value}`;
+      return resolveAssetUrl(value);
     }
     return value;
   }

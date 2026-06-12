@@ -4,6 +4,7 @@ import com.kh.app.member.dto.request.SocialLoginReqDto;
 import com.kh.app.member.dto.response.SocialLoginRespDto;
 import com.kh.app.member.entity.MemberEntity;
 import com.kh.app.member.entity.MemberProfileEntity;
+import com.kh.app.member.entity.Role;
 import com.kh.app.member.entity.SocialAccountEntity;
 import com.kh.app.member.exception.SocialWithdrawnUserException;
 import com.kh.app.member.repository.MemberRepository;
@@ -13,11 +14,13 @@ import com.kh.app.security.util.JwtUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Optional;
@@ -35,8 +38,14 @@ public class NaverAuthService {
     private final JwtUtil jwtUtil;
 
     // 🔑 네이버 개발자 센터에서 발급받은 실제 키 값들을 넣어주세요!
-    private final String clientId = "He0BQFaYRyk5Zk2p_Kdy";
-    private final String clientSecret = "t4rgYNYw6b";
+    @Value("${naver.client-id:}")
+    private String clientId;
+
+    @Value("${naver.client-secret:}")
+    private String clientSecret;
+
+    @Value("${naver.redirect-uri:}")
+    private String redirectUri;
 
     @Transactional
     public SocialLoginRespDto naverLogin(SocialLoginReqDto dto) { // ✨ 리턴 타입 변경
@@ -61,6 +70,7 @@ public class NaverAuthService {
             memberEntity = new MemberEntity();
             memberEntity.setUsername(email);
             memberEntity.setPassword("");
+            memberEntity.getRoleSet().add(Role.USER);
             memberRepository.save(memberEntity);
 
             // 소셜 매핑 테이블도 새로 생성
@@ -101,6 +111,8 @@ public class NaverAuthService {
 
 
         // 3. 서비스 전용 자체 JWT 토큰 발행
+        memberEntity.getRoleSet().add(Role.USER);
+
         String appAccessToken = jwtUtil.createJwt(
                 memberEntity.getId(),
                 memberEntity.getUsername(),
@@ -125,6 +137,8 @@ public class NaverAuthService {
     }
 
     private String getNaverAccessToken(SocialLoginReqDto dto) {
+        validateNaverConfig();
+
         RestTemplate rt = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-type", "application/x-www-form-urlencoded;charset=utf-8");
@@ -135,6 +149,9 @@ public class NaverAuthService {
         params.add("client_secret", clientSecret);
         params.add("code", dto.getCode());
         params.add("state", dto.getState());
+        if (StringUtils.hasText(redirectUri)) {
+            params.add("redirect_uri", redirectUri);
+        }
 
         HttpEntity<MultiValueMap<String, String>> tokenRequest = new HttpEntity<>(params, headers);
         ResponseEntity<String> response = rt.exchange(
@@ -168,6 +185,12 @@ public class NaverAuthService {
             return new ObjectMapper().readTree(response.getBody());
         } catch (Exception e) {
             throw new RuntimeException("네이버 유저 정보 조회 실패", e);
+        }
+    }
+
+    private void validateNaverConfig() {
+        if (!StringUtils.hasText(clientId) || !StringUtils.hasText(clientSecret)) {
+            throw new IllegalStateException("Naver OAuth config is missing. Set NAVER_CLIENT_ID and NAVER_CLIENT_SECRET.");
         }
     }
 }
