@@ -43,6 +43,8 @@ public class KakaoAuthService {
     private String redirectUri;
     @Value("${kakao.client-secret}")
     private String clientSecret;
+    @Value("${kakao.client-secret-enabled:false}")
+    private boolean clientSecretEnabled;
     // 💡 방
 
     @Transactional
@@ -158,7 +160,7 @@ public class KakaoAuthService {
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("grant_type", "authorization_code");
         params.add("client_id", clientId);
-        if (StringUtils.hasText(clientSecret)) {
+        if (clientSecretEnabled && StringUtils.hasText(clientSecret)) {
             params.add("client_secret", clientSecret);
         }
         params.add("redirect_uri", redirectUri);
