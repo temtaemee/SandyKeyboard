@@ -24,18 +24,21 @@ export const S3_ASSET_BASE_URL =
 export const resolveAssetUrl = (path) => {
   if (!path) return null;
 
+  // 1. 백엔드 도메인이 포함되어 온 경우 S3로 강제 치환
   if (typeof path === 'string' && path.includes('api.sandykey.shop')) {
     return path.replace(
       /^https?:\/\/api\.sandykey\.shop\/?/,
-      `${SERVER_BASE_URL}/`
+      `${S3_BUCKET_FALLBACK}/` // 👈 SERVER_BASE_URL 대신 S3_BUCKET_FALLBACK 직접 사용
     );
   }
 
+  // 2. 이미 http/https로 시작하는 정상적인 외부 주소(S3 등)라면 그대로 통과
   if (path.startsWith('http://') || path.startsWith('https://')) {
     return path;
   }
 
-  return `${SERVER_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+  // 3. 상대 경로(/dummy-images/...)로 들어왔을 때 무조건 S3 버킷 주소를 앞에 붙임!
+  return `${S3_BUCKET_FALLBACK}${path.startsWith('/') ? '' : '/'}${path}`;
 };
 
 export const resolveS3AssetUrl = (keyOrUrl) => {
