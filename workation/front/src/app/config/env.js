@@ -6,9 +6,13 @@ export const API_BASE_URL =
 export const SERVER_BASE_URL =
   trimTrailingSlash(import.meta.env.VITE_SERVER_BASE_URL) || '';
 
-export const WS_URL =
-  import.meta.env.VITE_WS_URL ||
-  `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws-connect`;
+// export const WS_URL =
+//   import.meta.env.VITE_WS_URL ||
+//   `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws-connect`;
+
+export const WS_URL = import.meta.env.DEV
+  ? 'ws://localhost:8001/ws-connect'
+  : 'wss://sandykey.shop/ws-connect';
 
 export const S3_ASSET_BASE_URL =
   trimTrailingSlash(import.meta.env.VITE_S3_ASSET_BASE_URL) || '';
