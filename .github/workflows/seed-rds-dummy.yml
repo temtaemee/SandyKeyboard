@@ -48,10 +48,10 @@ jobs:
           PSQL_URI="$(python3 -c "import os, sys; from urllib.parse import quote, urlparse, parse_qsl, urlencode; raw=os.environ['DB_URL']; raw=raw[5:] if raw.startswith('jdbc:') else raw; p=urlparse(raw); q=dict(parse_qsl(p.query, keep_blank_values=True)); q.setdefault('sslmode','require'); host=p.hostname; db=p.path.lstrip('/'); sys.exit('Invalid DB_URL') if not host or not db else None; print('postgresql://{}:{}@{}:{}/{}?{}'.format(quote(os.environ['DB_USERNAME'], safe=''), quote(os.environ['DB_PASSWORD'], safe=''), host, p.port or 5432, db, urlencode(q)))")"
 
           echo "Truncating public schema tables..."
-          psql "$PSQL_URI" -v ON_ERROR_STOP=1 -c "DO \$\$ DECLARE table_list text; BEGIN SELECT string_agg(format('%I.%I', schemaname, tablename), ', ') INTO table_list FROM pg_tables WHERE schemaname = 'public'; IF table_list IS NOT NULL THEN EXECUTE 'TRUNCATE TABLE ' || table_list || ' RESTART IDENTITY CASCADE'; END IF; END \$\$;"
+          psql "$PSQL_URI" -q -v ON_ERROR_STOP=1 -c "DO \$\$ DECLARE table_list text; BEGIN SELECT string_agg(format('%I.%I', schemaname, tablename), ', ') INTO table_list FROM pg_tables WHERE schemaname = 'public'; IF table_list IS NOT NULL THEN EXECUTE 'TRUNCATE TABLE ' || table_list || ' RESTART IDENTITY CASCADE'; END IF; END \$\$;"
 
           echo "Loading dummy data..."
-          psql "$PSQL_URI" -v ON_ERROR_STOP=1 -f workation/back/dev-seed/test-open-dummy-data.sql
+          psql "$PSQL_URI" -q -1 -v ON_ERROR_STOP=1 -f workation/back/dev-seed/test-open-dummy-data.sql
 
       - name: Verify seeded login rows
         env:
