@@ -21,7 +21,21 @@ export const S3_ASSET_BASE_URL =
 
 export const resolveAssetUrl = (path) => {
   if (!path) return null;
-  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+
+  // 1. 만약 절대 경로(http/https)로 들어왔다면
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    // 백엔드 도메인이 포함되어 있다면, 우리가 설정한 SERVER_BASE_URL(S3)로 강제 교체합니다.
+    if (path.includes('api.sandykey.shop')) {
+      return path.replace(
+        /https?:\/\/api\.sandykey\.shop\/?/,
+        `${SERVER_BASE_URL}/`
+      );
+    }
+    // 다른 외부 link인 경우는 그대로 리턴
+    return path;
+  }
+
+  // 2. 상대 경로(/dummy-images/...)로 들어온 경우는 기존처럼 처리
   return `${SERVER_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
 };
 
