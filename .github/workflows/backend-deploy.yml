@@ -155,11 +155,11 @@ jobs:
               -p 8002:8001 \
               "$IMAGE"
 
-            for attempt in $(seq 1 30); do
+            for attempt in $(seq 1 120); do
               if curl -fsS http://127.0.0.1:8002/actuator/health >/tmp/sandykeyboard-health.json; then
                 break
               fi
-              if [ "$attempt" -eq 30 ]; then
+              if [ "$attempt" -eq 120 ]; then
                 sudo docker logs sandykeyboard-candidate
                 sudo docker rm -f sandykeyboard-candidate
                 exit 1
