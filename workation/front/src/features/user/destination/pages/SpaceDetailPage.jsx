@@ -54,6 +54,15 @@ function SpaceDetailPage() {
 
   const getRealImageUrl = (rawPath) => {
     if (!rawPath) return null;
+    // 🚨 배포 사이트 F12 콘솔 창에서 범인을 검거하기 위한 실시간 추적 로그
+    console.log('=========================================');
+    console.log('[디버깅] 백엔드가 준 원본 주소:', rawPath);
+    console.log('[디버깅] 변환 완료된 결과 주소:', resultUrl);
+    console.log(
+      '[디버깅] 현재 설정된 SERVER_BASE_URL:',
+      resolveAssetUrl.SERVER_BASE_URL
+    );
+    console.log('=========================================');
     return resolveAssetUrl(rawPath);
   };
 
@@ -196,7 +205,9 @@ function SpaceDetailPage() {
                     : null;
                 const roomImage =
                   getRealImageUrl(rawStayPath) ||
-                  resolveAssetUrl('/dummy-images/gangwon/hotel1/강원1스테이(디럭스룸)1.png');
+                  resolveAssetUrl(
+                    '/dummy-images/gangwon/hotel1/강원1스테이(디럭스룸)1.png'
+                  );
                 return (
                   <StayCard
                     key={stay.id}
