@@ -161,6 +161,8 @@ jobs:
                 break
               fi
               if [ "$attempt" -eq 600 ]; then
+                sudo docker exec sandykeyboard-candidate sh -c 'kill -3 1' || true
+                sleep 5
                 sudo docker logs sandykeyboard-candidate
                 sudo docker rm -f sandykeyboard-candidate
                 exit 1
