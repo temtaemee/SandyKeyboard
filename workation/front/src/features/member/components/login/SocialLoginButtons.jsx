@@ -7,12 +7,10 @@ function SocialLoginButtons() {
   const origin = window.location.origin;
 
   const NAVER_REDIRECT_URI =
-    import.meta.env.VITE_NAVER_REDIRECT_URI ||
-    `${origin}/oauth/callback/naver`;
+    import.meta.env.VITE_NAVER_REDIRECT_URI || `${origin}/oauth/callback/naver`;
 
   const KAKAO_REDIRECT_URI =
-    import.meta.env.VITE_KAKAO_REDIRECT_URI ||
-    `${origin}/oauth/callback/kakao`;
+    import.meta.env.VITE_KAKAO_REDIRECT_URI || `${origin}/oauth/callback/kakao`;
 
   const GOOGLE_REDIRECT_URI =
     import.meta.env.VITE_GOOGLE_REDIRECT_URI ||
@@ -37,28 +35,37 @@ function SocialLoginButtons() {
   };
 
   const handleNaverLogin = () => {
-    if (!requireEnv('Naver', [
-      ['VITE_NAVER_CLIENT_ID', CLIENT_ID],
-      ['VITE_NAVER_REDIRECT_URI', NAVER_REDIRECT_URI],
-    ])) return;
+    if (
+      !requireEnv('Naver', [
+        ['VITE_NAVER_CLIENT_ID', CLIENT_ID],
+        ['VITE_NAVER_REDIRECT_URI', NAVER_REDIRECT_URI],
+      ])
+    )
+      return;
 
     const NAVER_AUTH_URL = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(NAVER_REDIRECT_URI)}&state=${STATE}`;
     window.location.href = NAVER_AUTH_URL;
   };
   const handleGoogleLogin = () => {
-    if (!requireEnv('Google', [
-      ['VITE_GOOGLE_CLIENT_ID', GOOGLE_CLIENT_ID],
-      ['VITE_GOOGLE_REDIRECT_URI', GOOGLE_REDIRECT_URI],
-    ])) return;
+    if (
+      !requireEnv('Google', [
+        ['VITE_GOOGLE_CLIENT_ID', GOOGLE_CLIENT_ID],
+        ['VITE_GOOGLE_REDIRECT_URI', GOOGLE_REDIRECT_URI],
+      ])
+    )
+      return;
 
     const GOOGLE_AUTH_URL = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(GOOGLE_REDIRECT_URI)}&response_type=code&scope=email%20profile`;
     window.location.href = GOOGLE_AUTH_URL;
   };
   const handleKakaoLogin = () => {
-    if (!requireEnv('Kakao', [
-      ['VITE_KAKAO_REST_API_KEY', KAKAO_REST_API_KEY],
-      ['VITE_KAKAO_REDIRECT_URI', KAKAO_REDIRECT_URI],
-    ])) return;
+    if (
+      !requireEnv('Kakao', [
+        ['VITE_KAKAO_REST_API_KEY', KAKAO_REST_API_KEY],
+        ['VITE_KAKAO_REDIRECT_URI', KAKAO_REDIRECT_URI],
+      ])
+    )
+      return;
 
     const KAKAO_AUTH_URL = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_REST_API_KEY}&redirect_uri=${encodeURIComponent(KAKAO_REDIRECT_URI)}&response_type=code`;
     window.location.href = KAKAO_AUTH_URL;

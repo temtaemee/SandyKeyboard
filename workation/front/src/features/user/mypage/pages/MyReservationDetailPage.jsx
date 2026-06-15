@@ -37,7 +37,14 @@ function MyReservationDetailPage() {
     try {
       await completeReservation(id);
       alert('이용 완료 처리가 되었습니다!');
-      // TODO: 목록을 새로고침하거나 상태를 '이용완료'로 변경하는 로직 추가
+      setReservation((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          status: 'COMPLETED', // 👈 상태를 COMPLETED로 바꿔 버튼 차단 조건 만족
+          statusLabel: '이용 완료', // 👈 배지도 실시간으로 업데이트
+        };
+      });
     } catch (error) {
       console.error(error);
       alert('처리에 실패했습니다. 다시 시도해 주세요.');

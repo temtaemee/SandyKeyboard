@@ -110,23 +110,31 @@ function MyReservationPage() {
         </PageDesc>
 
         {/* 🟩 4. 탭 구역 동적 렌더링 및 활성화 이벤트 등록 */}
-        <TabArea>
-          {[
-            '전체 예약',
-            '승인 대기',
-            '확정된 예약',
-            '이용 완료',
-            '취소 내역',
-          ].map((tab) => (
-            <TabButton
-              key={tab}
-              $active={activeTab === tab}
-              onClick={() => setActiveTab(tab)}
-            >
-              {tab}
-            </TabButton>
-          ))}
-        </TabArea>
+        <TabHeaderRow>
+          <TabArea>
+            {[
+              '전체 예약',
+              '승인 대기',
+              '확정된 예약',
+              '이용 완료',
+              '취소 내역',
+            ].map((tab) => (
+              <TabButton
+                key={tab}
+                $active={activeTab === tab}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab}
+              </TabButton>
+            ))}
+          </TabArea>
+          {/* 🚨 취소 내역 탭일 때만 우측에 환불 리스트 이동 버튼 노출 */}
+          {activeTab === '취소 내역' && (
+            <RefundLinkButton onClick={() => navi('/resv/refund/list')}>
+              환불목록조회
+            </RefundLinkButton>
+          )}
+        </TabHeaderRow>
 
         {/* 🟩 5. 카드 리스트 데이터 바인딩 */}
         <CardList>
@@ -399,4 +407,31 @@ const EmptyBox = styled.div`
   color: #94a3b8;
   font-size: 15px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+`;
+
+const TabHeaderRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 26px; /* 기존 TabArea에 있던 마진을 위로 격상 */
+  width: 100%;
+`;
+
+/* 🚨 새로 추가: 환불리스트 버튼 스타일 */
+const RefundLinkButton = styled.button`
+  background-color: transparent;
+  border: 1px solid #3f6971;
+  color: #3f6971;
+
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: #3f6971;
+    color: white;
+  }
 `;
