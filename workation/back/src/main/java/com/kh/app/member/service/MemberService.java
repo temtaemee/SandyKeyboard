@@ -41,6 +41,7 @@ public class MemberService {
             = new ConcurrentHashMap<>();
     private final Set<String> verifiedEmailSet = new HashSet<>();
     private final CompanyRepository companyRepository;
+    private final EmailSender emailSender;
 
     @Transactional
     public void join(MemberJoinReqDto dto) {
@@ -274,7 +275,7 @@ public class MemberService {
         authCodeStore.put(dto.getEmail(), code);
 
         // 🚨 공통 비동기 메서드 호출 ("비밀번호 재설정" 라벨 투입)
-        sendEmailAsync(dto.getEmail(), code, "비밀번호 재설정");
+        emailSender.sendEmailAsync(dto.getEmail(), code, "비밀번호 재설정");
     }
 
     public void verifyEmailCode(
@@ -394,36 +395,9 @@ public class MemberService {
         authCodeStore.put(dto.getEmail(), code);
 
         // 🚨 [비동기 호출] 진짜 무거운 메일 조립 및 발송은 별도 쓰레드에 던지고, 이 메서드는 바로 종료(리턴)됩니다!
-        sendEmailAsync(dto.getEmail(), code,"소셜연동");
+        emailSender.sendEmailAsync(dto.getEmail(), code,"소셜연동");
     }
 
     // 2. 비동기 전송 전용 메서드 추가
-    @Async // 💡 무거운 발송 로직은 이 공통 메서드 하나로 통일!
-    public void sendEmailAsync(String email, String code, String typeLabel) {
-        MimeMessage message = mailSender.createMimeMessage();
-        try {
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            helper.setTo(email);
-            // 💡 typeLabel에 따라 "소셜연동" 또는 "비밀번호 재설정"이 동적으로 박힙니다.
-            helper.setSubject("[모래묻은키보드] " + typeLabel + " 인증코드");
-
-            String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px;'>"
-                    + "<h2>[모래묻은키보드] " + typeLabel + "</h2>"
-                    + "<p>안녕하세요. 요청하신 " + typeLabel + " 인증코드입니다.</p>"
-                    + "<div style='background-color: #f9f9f9; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; color: #4A90E2; letter-spacing: 5px;'>"
-                    +     code
-                    + "</div>"
-                    + "<p style='color: #888; font-size: 12px; margin-top: 20px;'>본 인증코드는 " + typeLabel + " 페이지에서만 사용 가능합니다.</p>"
-                    + "</div>";
-
-            helper.setText(htmlContent, true);
-
-            mailSender.send(message);
-            log.info("비동기 메일 발송 성공 ({}) : {}", typeLabel, email);
-
-        } catch (Exception e) {
-            log.error("비동기 메일 발송 중 에러 발생 ({}) : {}", typeLabel, email, e);
-        }
-    }
 }
