@@ -13,6 +13,7 @@ export default function useAdminReservationUI({
   partners,
   addPartner,
   updatePartner,
+  fetchReservationDetail,
 }) {
   // ─── 1. 예약 검색 및 필터 상태 ───
   const [search, setSearch] = useState('');
@@ -25,6 +26,20 @@ export default function useAdminReservationUI({
   // ─── 3. 파트너 신규 빠른 등록 폼 상태 ───
   const [companyName, setCompanyName] = useState('');
   const [companyBizNum, setCompanyBizNum] = useState('');
+
+  // ─── 3-1. 예약 상세 모달 상태 ───
+  const [detailModal, setDetailModal] = useState(null); // null | ReservationDetailResDto
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  const openDetailModal = async (row) => {
+    setDetailLoading(true);
+    setDetailModal({}); // 모달 먼저 열어 로딩 표시
+    const data = await fetchReservationDetail(row.id);
+    setDetailModal(data);
+    setDetailLoading(false);
+  };
+
+  const closeDetailModal = () => setDetailModal(null);
 
   // ─── 4. 파트너사 정보 인라인 수정 상태 ───
   const [editingId, setEditingId] = useState(null);
@@ -110,5 +125,11 @@ export default function useAdminReservationUI({
     startEdit,
     saveEdit,
     cancelEdit,
+
+    // 예약 상세 모달
+    detailModal,
+    detailLoading,
+    openDetailModal,
+    closeDetailModal,
   };
 }

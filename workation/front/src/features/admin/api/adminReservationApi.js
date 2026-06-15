@@ -35,3 +35,8 @@ export async function updatePartnerCompany(id, dto) {
 export async function togglePartnerCompanyStatus(id) {
   return await api.delete(`/admin/company/${id}`);
 }
+
+/** 예약 상세 조회 (ReservationDetailResDto — 첨부파일 포함) */
+export async function getAdminReservationDetail(id) {
+  return await api.get(`/admin/reservation/${id}`);
+}
