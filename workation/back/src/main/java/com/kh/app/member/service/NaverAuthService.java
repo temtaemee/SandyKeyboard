@@ -1,43 +1,48 @@
 package com.kh.app.member.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kh.app.member.dto.request.SocialLoginReqDto;
 import com.kh.app.member.dto.response.SocialLoginRespDto;
 import com.kh.app.member.entity.MemberEntity;
 import com.kh.app.member.entity.MemberProfileEntity;
 import com.kh.app.member.entity.Role;
 import com.kh.app.member.entity.SocialAccountEntity;
+import com.kh.app.member.exception.SocialLinkRequiredException;
 import com.kh.app.member.exception.SocialWithdrawnUserException;
 import com.kh.app.member.repository.MemberRepository;
 import com.kh.app.member.repository.ProfileRepository;
 import com.kh.app.member.repository.SocialAccountRepository;
 import com.kh.app.security.util.JwtUtil;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Optional;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-
 public class NaverAuthService {
+
+    private static final String PROVIDER = "NAVER";
 
     private final SocialAccountRepository socialAccountRepository;
     private final MemberRepository memberRepository;
     private final ProfileRepository memberProfileRepository;
     private final JwtUtil jwtUtil;
 
-    // 🔑 네이버 개발자 센터에서 발급받은 실제 키 값들을 넣어주세요!
     @Value("${naver.client-id:}")
     private String clientId;
 
@@ -48,69 +53,25 @@ public class NaverAuthService {
     private String redirectUri;
 
     @Transactional
-    public SocialLoginRespDto naverLogin(SocialLoginReqDto dto) { // ✨ 리턴 타입 변경
-        // 1. 네이버 토큰 교환 및 유저 정보 파싱
+    public SocialLoginRespDto naverLogin(SocialLoginReqDto dto) {
         String naverAccessToken = getNaverAccessToken(dto);
         JsonNode userInfo = getNaverUserInfo(naverAccessToken);
 
-        JsonNode responseNode = userInfo.get("response");
-        String socialId = responseNode.get("id").asText();
-        String email = responseNode.has("email") ? responseNode.get("email").asText() : "NAVER_" + socialId;
+        JsonNode responseNode = userInfo.path("response");
+        String socialId = responseNode.path("id").asText();
+        String email = responseNode.has("email")
+                ? responseNode.get("email").asText()
+                : "NAVER_" + socialId;
 
-        // 2. DB 검증 및 신규 유저 판단 플래그 세팅 🔍
-        // NaverAuthService.java 의 회원 검증 로직 최종 교체 🛠️
-
-// 1. 소셜 매핑 테이블이 아니라, 우리 서비스의 'MEMBER' 테이블 자체에 이 이메일(username)로 가입한 사람이 있는지 먼저 찾습니다.
-        Optional<MemberEntity> memberOpt = memberRepository.findMemberByUsername(email);
-        MemberEntity memberEntity;
-        boolean isNewUser = false;
-
-        if (memberOpt.isEmpty()) {
-            // [Case A] 진짜 우리 서비스에 단 한 번도 온 적 없는 생판 처음인 소셜 유저!
-            memberEntity = new MemberEntity();
-            memberEntity.setUsername(email);
-            memberEntity.setPassword("");
-            memberEntity.getRoleSet().add(Role.USER);
-            memberRepository.save(memberEntity);
-
-            // 소셜 매핑 테이블도 새로 생성
-            SocialAccountEntity newSocialEntity = new SocialAccountEntity();
-            newSocialEntity.setSocialId(socialId);
-            newSocialEntity.setMember(memberEntity);
-            newSocialEntity.setProvider("NAVER");
-            socialAccountRepository.save(newSocialEntity);
-
-            isNewUser = true; // 🌟 당연히 프로필도 없으므로 신규 유저 확정!
-        } else {
-            // [Case B] 이메일(MEMBER 테이블)은 이미 존재함
-            memberEntity = memberOpt.get();
-            if (memberEntity.getDeletedAt() != null) {
-                // 🌟 꼼수 문자열 더하기 대신, 예외 객체에 이메일을 다이렉트로 주입!
-                throw new SocialWithdrawnUserException("탈퇴 처리된 계정입니다.", email);
-            }
-
-            // 소셜 연동 데이터 누락 방어 코드
-            Optional<SocialAccountEntity> socialOpt = socialAccountRepository.findBySocialIdAndProvider(socialId, "NAVER");
-            if (socialOpt.isEmpty()) {
-                SocialAccountEntity newSocialEntity = new SocialAccountEntity();
-                newSocialEntity.setSocialId(socialId);
-                newSocialEntity.setMember(memberEntity);
-                newSocialEntity.setProvider("NAVER");
-                socialAccountRepository.save(newSocialEntity);
-            }
-
-            // 🚨 [핵심 해결 지점] 프록시 껍데기(memberEntity.getProfile())에 속지 않고,
-            // MemberProfileRepository를 주입받아 진짜 프로필 레코드가 DB에 존재하는지 직접 select 해봅니다!
-            // (주의: 서비스 상단에 @RequiredArgsConstructor와 private final MemberProfileRepository memberProfileRepository; 를 선언해주세요!)
-            Optional<MemberProfileEntity> profileOpt = memberProfileRepository.findById(memberEntity.getId());
-
-            if (profileOpt.isEmpty()) {
-                isNewUser = true; // 🌟 이메일 계정은 파여있지만, 진짜 프로필 정보가 없으므로 추가 정보 입력 대상으로 확정!
-            }
+        if (!StringUtils.hasText(socialId)) {
+            throw new IllegalStateException("Naver user id is missing from provider response.");
+        }
+        if (!StringUtils.hasText(email)) {
+            throw new IllegalStateException("Naver account email is missing from provider response.");
         }
 
-
-        // 3. 서비스 전용 자체 JWT 토큰 발행
+        LoginMemberResult loginMember = resolveLoginMember(email, socialId);
+        MemberEntity memberEntity = loginMember.memberEntity();
         memberEntity.getRoleSet().add(Role.USER);
 
         String appAccessToken = jwtUtil.createJwt(
@@ -118,22 +79,57 @@ public class NaverAuthService {
                 memberEntity.getUsername(),
                 List.of("USER")
         );
+
         String area = null;
-        if (memberEntity != null && memberEntity.getProfile() != null) {
-            area = (memberEntity.getProfile().getPreferredArea() != null)
-                    ? memberEntity.getProfile().getPreferredArea().name()
-                    : null;
+        if (memberEntity.getProfile() != null && memberEntity.getProfile().getPreferredArea() != null) {
+            area = memberEntity.getProfile().getPreferredArea().name();
         }
 
-
-        // 4. 확장 설계된 공용 DTO 빌더 반환 💯
         return SocialLoginRespDto.builder()
                 .token(appAccessToken)
-                .isNewUser(isNewUser)
+                .isNewUser(loginMember.isNewUser())
                 .roles(memberEntity.getRoleSet().stream().toList())
                 .email(email)
                 .preferredArea(area)
                 .build();
+    }
+
+    private LoginMemberResult resolveLoginMember(String email, String socialId) {
+        Optional<SocialAccountEntity> linkedSocial =
+                socialAccountRepository.findBySocialIdAndProvider(socialId, PROVIDER);
+
+        if (linkedSocial.isPresent()) {
+            MemberEntity member = linkedSocial.get().getMember();
+            rejectDeleted(member, member.getUsername());
+            boolean needsProfile = memberProfileRepository.findById(member.getId()).isEmpty();
+            return new LoginMemberResult(member, needsProfile);
+        }
+
+        Optional<MemberEntity> existingMember = memberRepository.findMemberByUsername(email);
+        if (existingMember.isPresent()) {
+            rejectDeleted(existingMember.get(), email);
+            throw new SocialLinkRequiredException(email, socialId, PROVIDER);
+        }
+
+        MemberEntity member = new MemberEntity();
+        member.setUsername(email);
+        member.setPassword("");
+        member.getRoleSet().add(Role.USER);
+        memberRepository.save(member);
+
+        SocialAccountEntity social = new SocialAccountEntity();
+        social.setSocialId(socialId);
+        social.setMember(member);
+        social.setProvider(PROVIDER);
+        socialAccountRepository.save(social);
+
+        return new LoginMemberResult(member, true);
+    }
+
+    private void rejectDeleted(MemberEntity member, String email) {
+        if (member.getDeletedAt() != null) {
+            throw new SocialWithdrawnUserException("탈퇴 처리된 계정입니다.", email);
+        }
     }
 
     private String getNaverAccessToken(SocialLoginReqDto dto) {
@@ -154,17 +150,23 @@ public class NaverAuthService {
         }
 
         HttpEntity<MultiValueMap<String, String>> tokenRequest = new HttpEntity<>(params, headers);
-        ResponseEntity<String> response = rt.exchange(
-                "https://nid.naver.com/oauth2.0/token",
-                HttpMethod.POST,
-                tokenRequest,
-                String.class
-        );
+        ResponseEntity<String> response;
+        try {
+            response = rt.exchange(
+                    "https://nid.naver.com/oauth2.0/token",
+                    HttpMethod.POST,
+                    tokenRequest,
+                    String.class
+            );
+        } catch (RestClientResponseException e) {
+            throw new IllegalStateException("Naver token request failed: "
+                    + e.getStatusCode().value() + " " + e.getResponseBodyAsString(), e);
+        }
 
         try {
             return new ObjectMapper().readTree(response.getBody()).get("access_token").asText();
         } catch (Exception e) {
-            throw new RuntimeException("네이버 토큰 파싱 실패", e);
+            throw new RuntimeException("Naver token parsing failed", e);
         }
     }
 
@@ -174,17 +176,23 @@ public class NaverAuthService {
         headers.add("Authorization", "Bearer " + accessToken);
 
         HttpEntity<Void> profileRequest = new HttpEntity<>(headers);
-        ResponseEntity<String> response = rt.exchange(
-                "https://openapi.naver.com/v1/nid/me",
-                HttpMethod.GET,
-                profileRequest,
-                String.class
-        );
+        ResponseEntity<String> response;
+        try {
+            response = rt.exchange(
+                    "https://openapi.naver.com/v1/nid/me",
+                    HttpMethod.GET,
+                    profileRequest,
+                    String.class
+            );
+        } catch (RestClientResponseException e) {
+            throw new IllegalStateException("Naver userinfo request failed: "
+                    + e.getStatusCode().value() + " " + e.getResponseBodyAsString(), e);
+        }
 
         try {
             return new ObjectMapper().readTree(response.getBody());
         } catch (Exception e) {
-            throw new RuntimeException("네이버 유저 정보 조회 실패", e);
+            throw new RuntimeException("Naver userinfo parsing failed", e);
         }
     }
 
@@ -192,5 +200,8 @@ public class NaverAuthService {
         if (!StringUtils.hasText(clientId) || !StringUtils.hasText(clientSecret)) {
             throw new IllegalStateException("Naver OAuth config is missing. Set NAVER_CLIENT_ID and NAVER_CLIENT_SECRET.");
         }
+    }
+
+    private record LoginMemberResult(MemberEntity memberEntity, boolean isNewUser) {
     }
 }

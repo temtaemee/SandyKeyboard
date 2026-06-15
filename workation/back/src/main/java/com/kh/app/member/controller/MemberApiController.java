@@ -3,12 +3,14 @@ package com.kh.app.member.controller;
 import com.kh.app.common.dto.PageRespDto;
 import com.kh.app.member.dto.request.*;
 import com.kh.app.member.dto.response.*;
+import com.kh.app.member.exception.SocialLinkRequiredException;
 import com.kh.app.member.exception.SocialWithdrawnUserException;
 import com.kh.app.member.repository.BankRepository;
 import com.kh.app.member.service.GoogleAuthService;
 import com.kh.app.member.service.KakaoAuthService;
 import com.kh.app.member.service.MemberService;
 import com.kh.app.member.service.NaverAuthService;
+import com.kh.app.member.service.SocialLinkService;
 import com.kh.app.security.user.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +35,7 @@ public class MemberApiController {
     private final KakaoAuthService kakaoAuthService;
     private final NaverAuthService naverAuthService;
     private final GoogleAuthService googleAuthService;
+    private final SocialLinkService socialLinkService;
 
     @PostMapping("/guest/join")
     public ResponseEntity<Object> join(@RequestBody MemberJoinReqDto dto){
@@ -155,6 +158,8 @@ public class MemberApiController {
                             .message(e.getMessage())
                             .email(e.getEmail()) // 🌟 예외 객체에서 이메일 깔끔하게 추출!
                             .build());
+        } catch (SocialLinkRequiredException e) {
+            return socialLinkRequired(e);
         } catch (IllegalStateException e) {
             log.warn("Kakao social login failed: {}", e.getMessage());
             return ResponseEntity
@@ -187,6 +192,8 @@ public class MemberApiController {
                             .message(e.getMessage())
                             .email(e.getEmail())
                             .build());
+        } catch (SocialLinkRequiredException e) {
+            return socialLinkRequired(e);
         } catch (IllegalStateException e) {
             log.warn("Naver social login request failed: {}", e.getMessage());
             return ResponseEntity
@@ -221,6 +228,8 @@ public class MemberApiController {
                             .message(e.getMessage())
                             .email(e.getEmail())
                             .build());
+        } catch (SocialLinkRequiredException e) {
+            return socialLinkRequired(e);
         } catch (IllegalStateException e) {
             log.warn("Google social login request failed: {}", e.getMessage());
             return ResponseEntity
@@ -245,6 +254,25 @@ public class MemberApiController {
         memberService.createSocialProfile(dto);
         return ResponseEntity.ok("소셜 연동 및 가입 완료!");
     }
+
+    @PostMapping("/public/social/send-code")
+    public ResponseEntity<Void> sendSocialLinkCode(@RequestBody EmailVerifyReqDto dto) {
+        memberService.sendSocialLinkEmailCode(dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/public/social/verify-code")
+    public ResponseEntity<Void> verifySocialLinkCode(@RequestBody VerifyEmailCodeReqDto dto) {
+        memberService.verifyEmailCode(dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/public/social/link")
+    public ResponseEntity<Void> socialLink(@RequestBody SocialLinkReqDto dto) {
+        socialLinkService.socialLink(dto);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/seller/me")
     public ResponseEntity<SellerRespDto> getSellerInfo(@AuthenticationPrincipal(expression = "memberId") Long memberId){
         return ResponseEntity.ok(memberService.getSellerInfo(memberId));
@@ -264,6 +292,18 @@ public class MemberApiController {
         String username = requestMap.get("username");
         memberService.restoreAccount(username);
         return ResponseEntity.ok().body("{\"result\": \"success\"}");
+    }
+
+    private ResponseEntity<SocialLoginErrorRespDto> socialLinkRequired(SocialLinkRequiredException e) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(SocialLoginErrorRespDto.builder()
+                        .result("LINK_REQUIRED")
+                        .message(e.getMessage())
+                        .email(e.getEmail())
+                        .socialId(e.getSocialId())
+                        .provider(e.getProvider())
+                        .build());
     }
 
 

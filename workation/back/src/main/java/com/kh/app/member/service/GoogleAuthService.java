@@ -1,21 +1,25 @@
 package com.kh.app.member.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kh.app.member.dto.request.SocialLoginReqDto;
 import com.kh.app.member.dto.response.SocialLoginRespDto;
 import com.kh.app.member.entity.MemberEntity;
+import com.kh.app.member.entity.MemberProfileEntity;
 import com.kh.app.member.entity.Role;
 import com.kh.app.member.entity.SocialAccountEntity;
-import com.kh.app.member.entity.MemberProfileEntity;
+import com.kh.app.member.exception.SocialLinkRequiredException;
 import com.kh.app.member.exception.SocialWithdrawnUserException;
 import com.kh.app.member.repository.MemberRepository;
 import com.kh.app.member.repository.ProfileRepository;
 import com.kh.app.member.repository.SocialAccountRepository;
 import com.kh.app.security.util.JwtUtil;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
@@ -24,16 +28,19 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Optional;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class GoogleAuthService {
+
+    private static final String PROVIDER = "GOOGLE";
 
     private final SocialAccountRepository socialAccountRepository;
     private final MemberRepository memberRepository;
-    private final ProfileRepository memberProfileRepository; // 💡 프록시 방어용
+    private final ProfileRepository memberProfileRepository;
     private final JwtUtil jwtUtil;
 
     @Value("${google.client-id:}")
@@ -47,84 +54,81 @@ public class GoogleAuthService {
 
     @Transactional
     public SocialLoginRespDto googleLogin(SocialLoginReqDto dto) {
-        // 1. 구글로부터 access_token 발급받기
         String googleAccessToken = getGoogleAccessToken(dto);
-
-        // 2. access_token으로 구글 유저 정보(이메일, 고유 ID 등) 파싱
         JsonNode userInfo = getGoogleUserInfo(googleAccessToken);
-        String socialId = userInfo.get("id").asText(); // 구글의 고유 유저 ID
-        String email = userInfo.get("email").asText(); // 구글 이메일
 
-        // 3. DB 회원 검증 및 신규 유저 판단 플래그 세팅 (네이버와 동일 구조)
-        Optional<MemberEntity> memberOpt = memberRepository.findMemberByUsername(email);
-        MemberEntity memberEntity;
-        boolean isNewUser = false;
+        String socialId = userInfo.path("id").asText();
+        String email = userInfo.path("email").asText();
 
-        if (memberOpt.isEmpty()) {
-            // 완전히 처음 온 신규 구글 유저 가입 처리
-            memberEntity = new MemberEntity();
-            memberEntity.setUsername(email);
-            memberEntity.setPassword("");
-            memberEntity.getRoleSet().add(Role.USER);
-            memberRepository.save(memberEntity);
-
-            SocialAccountEntity newSocialEntity = new SocialAccountEntity();
-            newSocialEntity.setSocialId(socialId);
-            newSocialEntity.setMember(memberEntity);
-            newSocialEntity.setProvider("GOOGLE"); // 🔵 프로바이더 구글 지정
-            socialAccountRepository.save(newSocialEntity);
-
-            isNewUser = true;
-        } else {
-            memberEntity = memberOpt.get();
-            if (memberEntity.getDeletedAt() != null) {
-                // 🌟 꼼수 문자열 더하기 대신, 예외 객체에 이메일을 다이렉트로 주입!
-                throw new SocialWithdrawnUserException("탈퇴 처리된 계정입니다.", email);
-            }
-
-            // 소셜 연동 데이터 누락 방어
-            Optional<SocialAccountEntity> socialOpt = socialAccountRepository.findBySocialIdAndProvider(socialId, "GOOGLE");
-            if (socialOpt.isEmpty()) {
-                SocialAccountEntity newSocialEntity = new SocialAccountEntity();
-                newSocialEntity.setSocialId(socialId);
-                newSocialEntity.setMember(memberEntity);
-                newSocialEntity.setProvider("GOOGLE");
-                socialAccountRepository.save(newSocialEntity);
-            }
-
-            // ✨ 유저님이 발견해낸 완벽한 1:1 영속성 프록시 방어 코드 적용!
-            Optional<MemberProfileEntity> profileOpt = memberProfileRepository.findById(memberEntity.getId());
-            if (profileOpt.isEmpty()) {
-                isNewUser = true;
-            }
+        if (!StringUtils.hasText(socialId)) {
+            throw new IllegalStateException("Google user id is missing from provider response.");
+        }
+        if (!StringUtils.hasText(email)) {
+            throw new IllegalStateException("Google account email is missing from provider response.");
         }
 
+        LoginMemberResult loginMember = resolveLoginMember(email, socialId);
+        MemberEntity memberEntity = loginMember.memberEntity();
         memberEntity.getRoleSet().add(Role.USER);
 
-        // 4. 서비스 전용 자체 JWT 토큰 발행
         String appAccessToken = jwtUtil.createJwt(
                 memberEntity.getId(),
                 memberEntity.getUsername(),
                 List.of("USER")
         );
+
         String area = null;
-        if (memberEntity != null && memberEntity.getProfile() != null) {
-            area = (memberEntity.getProfile().getPreferredArea() != null)
-                    ? memberEntity.getProfile().getPreferredArea().name()
-                    : null;
+        if (memberEntity.getProfile() != null && memberEntity.getProfile().getPreferredArea() != null) {
+            area = memberEntity.getProfile().getPreferredArea().name();
         }
 
-        // 5. 공용 DTO 규격으로 리턴 (@JsonProperty("isNewUser")가 작동합니다)
         return SocialLoginRespDto.builder()
                 .token(appAccessToken)
                 .roles(memberEntity.getRoleSet().stream().toList())
-                .isNewUser(isNewUser)
+                .isNewUser(loginMember.isNewUser())
                 .email(email)
                 .preferredArea(area)
                 .build();
     }
 
-    // 🔵 구글 토큰 요청 RestTemplate 로직
+    private LoginMemberResult resolveLoginMember(String email, String socialId) {
+        Optional<SocialAccountEntity> linkedSocial =
+                socialAccountRepository.findBySocialIdAndProvider(socialId, PROVIDER);
+
+        if (linkedSocial.isPresent()) {
+            MemberEntity member = linkedSocial.get().getMember();
+            rejectDeleted(member, member.getUsername());
+            boolean needsProfile = memberProfileRepository.findById(member.getId()).isEmpty();
+            return new LoginMemberResult(member, needsProfile);
+        }
+
+        Optional<MemberEntity> existingMember = memberRepository.findMemberByUsername(email);
+        if (existingMember.isPresent()) {
+            rejectDeleted(existingMember.get(), email);
+            throw new SocialLinkRequiredException(email, socialId, PROVIDER);
+        }
+
+        MemberEntity member = new MemberEntity();
+        member.setUsername(email);
+        member.setPassword("");
+        member.getRoleSet().add(Role.USER);
+        memberRepository.save(member);
+
+        SocialAccountEntity social = new SocialAccountEntity();
+        social.setSocialId(socialId);
+        social.setMember(member);
+        social.setProvider(PROVIDER);
+        socialAccountRepository.save(social);
+
+        return new LoginMemberResult(member, true);
+    }
+
+    private void rejectDeleted(MemberEntity member, String email) {
+        if (member.getDeletedAt() != null) {
+            throw new SocialWithdrawnUserException("탈퇴 처리된 계정입니다.", email);
+        }
+    }
+
     private String getGoogleAccessToken(SocialLoginReqDto dto) {
         validateGoogleConfig();
 
@@ -143,7 +147,7 @@ public class GoogleAuthService {
         ResponseEntity<String> response;
         try {
             response = rt.exchange(
-                    "https://oauth2.googleapis.com/token", // 구글 토큰 교환 주소
+                    "https://oauth2.googleapis.com/token",
                     HttpMethod.POST,
                     tokenRequest,
                     String.class
@@ -156,11 +160,10 @@ public class GoogleAuthService {
         try {
             return new ObjectMapper().readTree(response.getBody()).get("access_token").asText();
         } catch (Exception e) {
-            throw new RuntimeException("구글 토큰 파싱 실패", e);
+            throw new RuntimeException("Google token parsing failed", e);
         }
     }
 
-    // 🔵 구글 유저 정보 요청 RestTemplate 로직
     private JsonNode getGoogleUserInfo(String accessToken) {
         RestTemplate rt = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
@@ -170,7 +173,7 @@ public class GoogleAuthService {
         ResponseEntity<String> response;
         try {
             response = rt.exchange(
-                    "https://www.googleapis.com/oauth2/v2/userinfo", // 구글 유저 정보 주소
+                    "https://www.googleapis.com/oauth2/v2/userinfo",
                     HttpMethod.GET,
                     profileRequest,
                     String.class
@@ -183,7 +186,7 @@ public class GoogleAuthService {
         try {
             return new ObjectMapper().readTree(response.getBody());
         } catch (Exception e) {
-            throw new RuntimeException("구글 유저 정보 조회 실패", e);
+            throw new RuntimeException("Google userinfo parsing failed", e);
         }
     }
 
@@ -191,5 +194,8 @@ public class GoogleAuthService {
         if (!StringUtils.hasText(clientId) || !StringUtils.hasText(clientSecret)) {
             throw new IllegalStateException("Google OAuth config is missing. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.");
         }
+    }
+
+    private record LoginMemberResult(MemberEntity memberEntity, boolean isNewUser) {
     }
 }
