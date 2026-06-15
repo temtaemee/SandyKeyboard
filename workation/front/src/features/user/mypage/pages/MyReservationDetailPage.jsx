@@ -18,6 +18,7 @@ import {
   getReservationOne,
   updateReservation,
 } from '../../reservation/api/reservationApi';
+import { resolveAssetUrl } from '../../../../app/config/env';
 
 function MyReservationDetailPage() {
   const { id } = useParams(); // URL의 :id 값 추출
@@ -174,9 +175,11 @@ function MyReservationDetailPage() {
                 src={
                   // 💡 stay.pictures[0]이 존재하면 그 경로를, 없으면 기존대로 space.imageUrl 등을 사용
                   stay.pictures && stay.pictures.length > 0
-                    ? stay.pictures[0].filePath
-                    : space.imageUrl ||
-                      'https://via.placeholder.com/800x450?text=No+Image'
+                    ? resolveAssetUrl(stay.pictures[0].filePath)
+                    : resolveAssetUrl(
+                        space.imageUrl ||
+                          '/dummy-images/gangwon/hotel1/강원1외관.png'
+                      )
                 }
                 alt={stay.name || space.name || '상품 이미지'}
               />

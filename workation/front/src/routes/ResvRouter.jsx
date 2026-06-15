@@ -5,6 +5,7 @@ import { Route, Routes } from 'react-router-dom';
 import ReservationInsertPage from '../features/user/reservation/pages/ReservationInsertPage';
 import ReservationUpdatePage from './../features/user/reservation/pages/ReservationUpdatePage';
 import PaymentSuccessPage from '../features/user/reservation/pages/PaymentSuccessPage';
+import PaymentFailPage from '../features/user/reservation/pages/PaymentFailPage';
 
 // 2. 💡 환불 전용 패키지로 통합 임포트
 import RefundRequestPage from '../features/refund/pages/RefundRequestPage';
@@ -25,6 +26,7 @@ function ResvRouter() {
       <Route path="insert/:stayId" element={<ReservationInsertPage />} />
       <Route path="update" element={<ReservationUpdatePage />} />
       <Route path="payment/success" element={<PaymentSuccessPage />} />
+      <Route path="payment/fail" element={<PaymentFailPage />} />
 
       {/* =========================================================================
           💡 환불(Refund) 관련 라우팅 (중복 제거 및 경로 단일화 완료)

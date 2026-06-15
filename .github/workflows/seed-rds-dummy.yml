@@ -1,0 +1,103 @@
+name: Seed RDS Dummy Data
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type RESET_RDS_AND_SEED to truncate production RDS and load dummy data"
+        required: true
+        type: string
+
+concurrency:
+  group: seed-rds-dummy
+  cancel-in-progress: false
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate confirmation
+        run: |
+          if [ "${{ inputs.confirm }}" != "RESET_RDS_AND_SEED" ]; then
+            echo "::error::Confirmation text did not match."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Copy seed SQL to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_KEY }}
+          source: workation/back/dev-seed/test-open-dummy-data.sql
+          target: /tmp/sandykeyboard-seed
+          strip_components: 3
+
+      - name: Reset RDS and load dummy data from EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_KEY }}
+          command_timeout: 20m
+          script: |
+            set -euo pipefail
+
+            SEED_SQL=/tmp/sandykeyboard-seed/test-open-dummy-data.sql
+            APP_ENV=/tmp/sandykeyboard.env
+
+            if [ ! -f "$SEED_SQL" ]; then
+              echo "Seed SQL not found: $SEED_SQL"
+              exit 1
+            fi
+
+            if [ ! -f "$APP_ENV" ]; then
+              echo "App env file not found: $APP_ENV"
+              exit 1
+            fi
+
+            DB_URL="$(sed -n 's/^DB_URL=//p' "$APP_ENV" | tail -n 1)"
+            DB_USERNAME="$(sed -n 's/^DB_USERNAME=//p' "$APP_ENV" | tail -n 1)"
+            DB_PASSWORD="$(sed -n 's/^DB_PASSWORD=//p' "$APP_ENV" | tail -n 1)"
+
+            if [ -z "${DB_URL:-}" ] || [ -z "${DB_USERNAME:-}" ] || [ -z "${DB_PASSWORD:-}" ]; then
+              echo "DB_URL, DB_USERNAME, or DB_PASSWORD is missing from app env."
+              exit 1
+            fi
+
+            raw="${DB_URL#jdbc:postgresql://}"
+            hostport="${raw%%/*}"
+            database="${raw#*/}"
+            database="${database%%\?*}"
+            db_host="${hostport%%:*}"
+            db_port="${hostport#*:}"
+            if [ "$db_port" = "$hostport" ]; then
+              db_port=5432
+            fi
+
+            conn="sslmode=require host=$db_host port=$db_port dbname=$database user=$DB_USERNAME"
+
+            echo "Resetting public schema tables from EC2..."
+            sudo docker run --rm \
+              -e PGPASSWORD="$DB_PASSWORD" \
+              postgres:16-alpine \
+              psql "$conn" -q -v ON_ERROR_STOP=1 \
+              -c "DO \$\$ DECLARE table_list text; BEGIN SELECT string_agg(format('%I.%I', schemaname, tablename), ', ') INTO table_list FROM pg_tables WHERE schemaname = 'public'; IF table_list IS NOT NULL THEN EXECUTE 'TRUNCATE TABLE ' || table_list || ' RESTART IDENTITY CASCADE'; END IF; END \$\$;"
+
+            echo "Loading dummy SQL from EC2..."
+            sudo docker run --rm \
+              -e PGPASSWORD="$DB_PASSWORD" \
+              -v "$SEED_SQL:/seed.sql:ro" \
+              postgres:16-alpine \
+              psql "$conn" -q -1 -v ON_ERROR_STOP=1 -f /seed.sql
+
+            echo "Verifying seeded rows..."
+            sudo docker run --rm \
+              -e PGPASSWORD="$DB_PASSWORD" \
+              postgres:16-alpine \
+              psql "$conn" -v ON_ERROR_STOP=1 \
+              -c "select username from member where username in ('admin', 'user0001', 'seller-seoul') order by username;"

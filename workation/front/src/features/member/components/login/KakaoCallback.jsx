@@ -33,7 +33,7 @@ function KakaoCallback() {
             const photoParam = profileImageUrl
               ? `&profileImageUrl=${encodeURIComponent(profileImageUrl)}`
               : '';
-            navigate(`/join?type=social&email=${email}&tempToken=${token}`);
+            navigate(`/join?type=social&email=${encodeURIComponent(email)}&tempToken=${encodeURIComponent(token)}${photoParam}`);
           } else {
             // 기존 연동 유저라면 즉시 로그인 처리 후 홈으로 프리패스
             localStorage.setItem('accessToken', token);
@@ -84,6 +84,10 @@ function KakaoCallback() {
                 }
               }
             }
+          }
+          const message = error.response?.data?.message;
+          if (message) {
+            alert(message);
           }
           isProcessed.current = false;
           navigate('/login');

@@ -16,6 +16,7 @@ import { getBookedDates } from '../../reservation/api/reservationApi';
 
 import useDestination from './../hooks/useDestination';
 import useAuth from './../../../member/hooks/useAuth';
+import { resolveAssetUrl } from '../../../../app/config/env';
 
 // =========================================================================
 
@@ -108,9 +109,9 @@ const ThumbItem = styled.div`
 
   cursor: pointer;
 
-  border: 2px solid ${(props) => (props.active ? '#3f6971' : 'transparent')};
+  border: 2px solid ${(props) => (props.$active ? '#3f6971' : 'transparent')};
 
-  opacity: ${(props) => (props.active ? '1' : '0.5')};
+  opacity: ${(props) => (props.$active ? '1' : '0.5')};
 
   transition: all 0.2s;
 
@@ -424,10 +425,8 @@ function StayDetailPage() {
 
   const [excludeDates, setExcludeDates] = useState([]);
 
-  const SERVER_HOST = 'http://localhost:80';
-
   const FALLBACK_STAY =
-    'https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=800&q=80';
+    resolveAssetUrl('/dummy-images/gangwon/hotel1/강원1스테이(디럭스룸)1.png');
 
   const { isLoggedIn } = useAuth();
 
@@ -487,11 +486,7 @@ function StayDetailPage() {
 
   const imageList =
     stay.pictures && stay.pictures.length > 0
-      ? stay.pictures.map((p) =>
-          p.filePath.startsWith('http')
-            ? p.filePath
-            : `${SERVER_HOST}${p.filePath}`
-        )
+      ? stay.pictures.map((p) => resolveAssetUrl(p.filePath))
       : [FALLBACK_STAY];
 
   return (
@@ -506,7 +501,7 @@ function StayDetailPage() {
             {imageList.map((imgUrl, index) => (
               <ThumbItem
                 key={index}
-                active={activeImgIdx === index}
+                $active={activeImgIdx === index}
                 onClick={() => setActiveImgIdx(index)}
               >
                 <img src={imgUrl} alt="방 사진" />

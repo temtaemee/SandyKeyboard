@@ -1,0 +1,225 @@
+name: Backend Deploy
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - ".github/workflows/backend-deploy.yml"
+      - "workation/back/**"
+
+concurrency:
+  group: backend-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+
+      - name: Build boot jar
+        working-directory: workation/back
+        run: |
+          chmod +x ./gradlew
+          ./gradlew bootJar --no-daemon
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        working-directory: workation/back
+        env:
+          IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/sandykeyboard
+          SHA_TAG: ${{ github.sha }}
+        run: |
+          docker build -t "$IMAGE:$SHA_TAG" -t "$IMAGE:latest" .
+          docker push "$IMAGE:$SHA_TAG"
+          docker push "$IMAGE:latest"
+
+      - name: Validate deployment configuration
+        env:
+          DB_URL: ${{ secrets.DB_URL || vars.DB_URL }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME || vars.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          TOSS_SECRET_KEY: ${{ secrets.TOSS_SECRET_KEY }}
+          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+          KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY || secrets.VITE_KAKAO_REST_API_KEY || vars.KAKAO_REST_API_KEY || vars.VITE_KAKAO_REST_API_KEY }}
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID || secrets.VITE_NAVER_CLIENT_ID || vars.NAVER_CLIENT_ID || vars.VITE_NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID || secrets.VITE_GOOGLE_CLIENT_ID || vars.GOOGLE_CLIENT_ID || vars.VITE_GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET || secrets.S3_BUCKET_NAME }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_KEY: ${{ secrets.EC2_KEY }}
+        run: |
+          missing=0
+          for name in DB_URL DB_USERNAME DB_PASSWORD JWT_SECRET TOSS_SECRET_KEY MAIL_USERNAME MAIL_PASSWORD KAKAO_REST_API_KEY NAVER_CLIENT_ID GOOGLE_CLIENT_ID AWS_S3_BUCKET AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY DOCKERHUB_USERNAME EC2_HOST EC2_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is not configured in GitHub Actions Secrets/Variables."
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Deploy to EC2 with health check
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/sandykeyboard:${{ github.sha }}
+          DB_URL: ${{ secrets.DB_URL || vars.DB_URL }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME || vars.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_EXPIRATION: ${{ vars.JWT_EXPIRATION || '360000000' }}
+          TOSS_SECRET_KEY: ${{ secrets.TOSS_SECRET_KEY }}
+          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+          KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY || secrets.VITE_KAKAO_REST_API_KEY || vars.KAKAO_REST_API_KEY || vars.VITE_KAKAO_REST_API_KEY }}
+          KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
+          KAKAO_CLIENT_SECRET_ENABLED: ${{ vars.KAKAO_CLIENT_SECRET_ENABLED || 'false' }}
+          KAKAO_REDIRECT_URI: ${{ vars.KAKAO_REDIRECT_URI || 'https://sandykey.shop/oauth/callback/kakao' }}
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID || secrets.VITE_NAVER_CLIENT_ID || vars.NAVER_CLIENT_ID || vars.VITE_NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+          NAVER_REDIRECT_URI: ${{ vars.NAVER_REDIRECT_URI || 'https://sandykey.shop/oauth/callback/naver' }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID || secrets.VITE_GOOGLE_CLIENT_ID || vars.GOOGLE_CLIENT_ID || vars.VITE_GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REDIRECT_URI: ${{ vars.GOOGLE_REDIRECT_URI || 'https://sandykey.shop/oauth/callback/google' }}
+          APP_PUBLIC_BASE_URL: ${{ vars.APP_PUBLIC_BASE_URL || 'https://api.sandykey.shop' }}
+          APP_CORS_ALLOWED_ORIGINS: ${{ vars.APP_CORS_ALLOWED_ORIGINS || 'https://sandykey.shop' }}
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET || secrets.S3_BUCKET_NAME || 'finalproject-s3-bucket-243050855199-ap-northeast-2-an' }}
+          AWS_REGION: ${{ vars.AWS_REGION || 'ap-northeast-2' }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_S3_BASE_URL: ${{ vars.AWS_S3_BASE_URL || 'https://finalproject-s3-bucket-243050855199-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com' }}
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_KEY }}
+          command_timeout: 25m
+          envs: IMAGE,DB_URL,DB_USERNAME,DB_PASSWORD,JWT_SECRET,JWT_EXPIRATION,TOSS_SECRET_KEY,MAIL_USERNAME,MAIL_PASSWORD,KAKAO_REST_API_KEY,KAKAO_CLIENT_SECRET,KAKAO_CLIENT_SECRET_ENABLED,KAKAO_REDIRECT_URI,NAVER_CLIENT_ID,NAVER_CLIENT_SECRET,NAVER_REDIRECT_URI,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,GOOGLE_REDIRECT_URI,APP_PUBLIC_BASE_URL,APP_CORS_ALLOWED_ORIGINS,AWS_S3_BUCKET,AWS_REGION,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_S3_BASE_URL
+          script: |
+            set -euo pipefail
+
+            cat > /tmp/sandykeyboard.env <<EOF
+            SPRING_PROFILES_ACTIVE=cloud
+            DB_URL=$DB_URL
+            DB_USERNAME=$DB_USERNAME
+            DB_PASSWORD=$DB_PASSWORD
+            JWT_SECRET=$JWT_SECRET
+            JWT_EXPIRATION=$JWT_EXPIRATION
+            TOSS_SECRET_KEY=$TOSS_SECRET_KEY
+            MAIL_USERNAME=$MAIL_USERNAME
+            MAIL_PASSWORD=$MAIL_PASSWORD
+            KAKAO_REST_API_KEY=$KAKAO_REST_API_KEY
+            KAKAO_CLIENT_SECRET=$KAKAO_CLIENT_SECRET
+            KAKAO_CLIENT_SECRET_ENABLED=$KAKAO_CLIENT_SECRET_ENABLED
+            KAKAO_REDIRECT_URI=$KAKAO_REDIRECT_URI
+            NAVER_CLIENT_ID=$NAVER_CLIENT_ID
+            NAVER_CLIENT_SECRET=$NAVER_CLIENT_SECRET
+            NAVER_REDIRECT_URI=$NAVER_REDIRECT_URI
+            GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID
+            GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET
+            GOOGLE_REDIRECT_URI=$GOOGLE_REDIRECT_URI
+            APP_PUBLIC_BASE_URL=$APP_PUBLIC_BASE_URL
+            APP_CORS_ALLOWED_ORIGINS=$APP_CORS_ALLOWED_ORIGINS
+            AWS_S3_BUCKET=$AWS_S3_BUCKET
+            AWS_REGION=$AWS_REGION
+            AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+            AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+            AWS_S3_BASE_URL=$AWS_S3_BASE_URL
+            JAVA_TOOL_OPTIONS=-Xms128m -Xmx384m -XX:+ExitOnOutOfMemoryError
+            EOF
+
+            PREVIOUS_IMAGE=$(sudo docker inspect -f '{{.Config.Image}}' sandykeyboard 2>/dev/null || true)
+            sudo docker container prune -f || true
+            sudo docker image prune -af || true
+            sudo docker builder prune -af || true
+
+            sudo docker pull "$IMAGE"
+            sudo docker stop sandykeyboard || true
+            sudo docker rm sandykeyboard || true
+            sudo docker run -d \
+              --name sandykeyboard \
+              --restart unless-stopped \
+              --env-file /tmp/sandykeyboard.env \
+              -p 8001:8001 \
+              "$IMAGE"
+
+            for attempt in $(seq 1 300); do
+              if curl -fsS http://127.0.0.1:8001/actuator/health >/tmp/sandykeyboard-health.json; then
+                break
+              fi
+              if [ "$attempt" -eq 300 ]; then
+                sudo docker exec sandykeyboard sh -c 'kill -3 1' || true
+                sleep 5
+                sudo docker inspect sandykeyboard --format 'state={{.State.Status}} exit={{.State.ExitCode}} oom={{.State.OOMKilled}} error={{.State.Error}}' || true
+                sudo docker logs sandykeyboard || true
+                sudo docker rm -f sandykeyboard || true
+
+                if [ -n "$PREVIOUS_IMAGE" ]; then
+                  echo "Rolling back to previous image: $PREVIOUS_IMAGE"
+                  sudo docker run -d \
+                    --name sandykeyboard \
+                    --restart unless-stopped \
+                    --env-file /tmp/sandykeyboard.env \
+                    -p 8001:8001 \
+                    "$PREVIOUS_IMAGE"
+
+                  for rollback_attempt in $(seq 1 300); do
+                    if curl -fsS http://127.0.0.1:8001/actuator/health >/tmp/sandykeyboard-rollback-health.json; then
+                      echo "Rollback health check passed."
+                      break
+                    fi
+                    if [ "$rollback_attempt" -eq 300 ]; then
+                      sudo docker inspect sandykeyboard --format 'rollback_state={{.State.Status}} exit={{.State.ExitCode}} oom={{.State.OOMKilled}} error={{.State.Error}}' || true
+                      sudo docker logs sandykeyboard || true
+                      echo "Rollback health check failed."
+                    fi
+                    sleep 2
+                  done
+                else
+                  echo "No previous image found for rollback."
+                fi
+                exit 1
+              fi
+              sleep 2
+            done
+
+            sudo tee /etc/nginx/conf.d/sandykeyboard-websocket-map.conf >/dev/null <<'EOF'
+            map $http_upgrade $connection_upgrade {
+              default upgrade;
+              '' close;
+            }
+            EOF
+
+            NGINX_API_CONF=$(sudo grep -Rsl "server_name .*api\.sandykey\.shop" /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null | head -n 1 || true)
+            if [ -n "$NGINX_API_CONF" ] && ! sudo grep -q "location /ws-connect" "$NGINX_API_CONF"; then
+              sudo cp "$NGINX_API_CONF" "$NGINX_API_CONF.bak.$(date +%Y%m%d%H%M%S)"
+              sudo perl -0pi -e 's#(server\s*\{(?:(?!server\s*\{).)*server_name\s+[^;]*api\.sandykey\.shop[^;]*;(?:(?!server\s*\{).)*?)(\n\s*})#$1\n\n    location /ws-connect {\n        proxy_pass http://127.0.0.1:8001/ws-connect;\n        proxy_http_version 1.1;\n        proxy_set_header Upgrade \$http_upgrade;\n        proxy_set_header Connection \$connection_upgrade;\n        proxy_set_header Host \$host;\n        proxy_set_header X-Real-IP \$remote_addr;\n        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n        proxy_set_header X-Forwarded-Proto \$scheme;\n        proxy_read_timeout 3600s;\n        proxy_send_timeout 3600s;\n    }\n$2#s' "$NGINX_API_CONF"
+            fi
+
+            if [ -n "$NGINX_API_CONF" ]; then
+              sudo nginx -t
+              sudo systemctl reload nginx
+            else
+              echo "::warning::Could not find nginx server block for api.sandykey.shop; WebSocket proxy was not configured."
+            fi
+
+            sudo docker image prune -f

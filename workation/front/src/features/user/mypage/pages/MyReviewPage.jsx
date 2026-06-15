@@ -4,6 +4,7 @@ import { Pencil, Trash2, Search, Star } from 'lucide-react';
 import { deleteReview, getMyReviewList } from '../../board/review/api/reviewApi';
 import MyPageSidebar from '../components/MyPageSidebar';
 import { useNavigate } from 'react-router-dom';
+import { resolveAssetUrl, resolveS3AssetUrl } from '../../../../app/config/env';
 
 function MyReviewPage() {
   // 1. 상태(State) 관리
@@ -93,8 +94,8 @@ function MyReviewPage() {
               // S3 Key나 이미지 리스트를 기반으로 썸네일 URL 조합 (없으면 기본 이미지)
               const hasImage = review.images && review.images.length > 0;
               const thumbnailUrl = hasImage
-                ? `https://your-s3-bucket-url.s3.amazonaws.com/${review.images[0].s3Key}` // 본인 S3 주소에 맞게 수정
-                : 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200'; // 이미지 없을 때 디폴트
+                ? resolveS3AssetUrl(review.images[0].s3Key)
+                : resolveAssetUrl('/dummy-images/gangwon/hotel1/강원1외관.png');
 
               return (
                 <ReviewCard key={review.id}>

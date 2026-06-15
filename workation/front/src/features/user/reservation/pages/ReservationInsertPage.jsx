@@ -12,7 +12,9 @@ import { BANK_LIST } from '../bankData';
 import { getPublicStayDetail } from '../../destination/api/destinationApi';
 
 function ReservationInsertPage() {
-  const clientKey = 'test_ck_5OWRapdA8djRAOLzPxRYVo1zEqZK';
+  const clientKey =
+    import.meta.env.VITE_TOSS_CLIENT_KEY ||
+    'test_ck_5OWRapdA8djRAOLzPxRYVo1zEqZK';
   const { stayId } = useParams();
   const { insertReservation } = useReservationInsert();
 

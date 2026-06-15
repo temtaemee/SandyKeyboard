@@ -4,6 +4,7 @@ import { X, Star, Upload, ZoomIn, Search, MapPin, GripVertical } from 'lucide-re
 import LoadingSpinner from '../common/LoadingSpinner';
 import { INIT_CATEGORIES } from './SpaceFormStep2';
 import SpaceFormStep3 from './SpaceFormStep3';
+import { resolveSellerImageUrl } from '../../utils/imageUrl';
 
 const EDIT_ACCENT = '#3ec9a7';
 
@@ -81,7 +82,7 @@ export default function SpaceEditForm({ space, onSubmit, loading, disabled = fal
     (space?.pictures ?? []).map(p => ({
       type: 'existing',
       id: p.id,
-      previewUrl: p.filePath,
+      previewUrl: resolveSellerImageUrl(p.filePath),
       category: p.category ?? 'OTHERS',
       isMain: p.mainYn === 'Y',
     }))

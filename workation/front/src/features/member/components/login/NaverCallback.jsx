@@ -43,7 +43,7 @@ function NaverCallback() {
           // 💡 불리언, 문자열, 혹은 undefined 등 모든 예외 상황을 완벽하게 필터링하는 조건문
           if (isNewUser === true || String(isNewUser) === 'true') {
             alert('추가 회원 정보 입력 페이지로 이동합니다.');
-            navigate(`/join?type=social&email=${email}`);
+            navigate(`/join?type=social&email=${encodeURIComponent(email)}&tempToken=${encodeURIComponent(token)}`);
           } else {
             localStorage.setItem('accessToken', token);
             alert('네이버 로그인 성공!');
@@ -86,6 +86,11 @@ function NaverCallback() {
           }
 
           // 일반 에러 시 기본 동작
+          const errorMessage =
+            error.response?.data?.message ||
+            error.message ||
+            'Naver login failed.';
+          alert(errorMessage);
           isProcessed.current = false;
           navigate('/login');
         });

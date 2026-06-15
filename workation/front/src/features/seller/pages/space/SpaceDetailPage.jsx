@@ -8,6 +8,7 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
 import StayCard from '../../components/stay/StayCard';
 import EmptyState from '../../components/common/EmptyState';
+import { resolveSellerImageUrl } from '../../utils/imageUrl';
 
 const ACCENT = '#3ec9a7';
 const TABS = ['스테이 목록', '리뷰'];
@@ -104,6 +105,7 @@ export default function SpaceDetailPage() {
 
   const fullAddress = [space.address1, space.address2].filter(Boolean).join(' ');
   const hasCoord = space.latitude != null && space.longitude != null;
+  const thumbnailUrl = resolveSellerImageUrl(space.thumbnailUrl);
 
   const isApproved = space.approvalStatus === 'APPROVED';
 
@@ -153,8 +155,8 @@ export default function SpaceDetailPage() {
       <InfoCard>
         <InfoCardHeader>
           <SpaceThumbnail>
-            {space.thumbnailUrl ? (
-              <ThumbnailImg src={space.thumbnailUrl} alt={space.name} />
+            {thumbnailUrl ? (
+              <ThumbnailImg src={thumbnailUrl} alt={space.name} />
             ) : (
               <ThumbnailInitial>{space.name?.[0] ?? '?'}</ThumbnailInitial>
             )}
@@ -232,7 +234,7 @@ export default function SpaceDetailPage() {
                 $isMain={pic.mainYn === 'Y'}
                 onClick={() => setLightbox({ pics: space.pictures, idx })}
               >
-                <PhotoImg src={pic.filePath} alt={space.name} />
+                <PhotoImg src={resolveSellerImageUrl(pic.filePath)} alt={space.name} />
                 {pic.mainYn === 'Y' && <MainBadge>대표</MainBadge>}
                 {pic.category && (
                   <CategoryBadge>{CATEGORY_LABEL[pic.category] ?? pic.category}</CategoryBadge>
@@ -288,7 +290,7 @@ export default function SpaceDetailPage() {
           <LbBox onClick={(e) => e.stopPropagation()}>
             <LbCloseBtn onClick={() => setLightbox(null)}><XIcon size={20} /></LbCloseBtn>
 
-            <LbImg src={lightbox.pics[lightbox.idx].filePath} alt="" />
+            <LbImg src={resolveSellerImageUrl(lightbox.pics[lightbox.idx].filePath)} alt="" />
 
             {lightbox.pics.length > 1 && (
               <>

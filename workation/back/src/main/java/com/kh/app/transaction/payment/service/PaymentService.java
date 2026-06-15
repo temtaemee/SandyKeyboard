@@ -11,6 +11,7 @@ import com.kh.app.transaction.payment.dto.request.PaymentConfirmReqDto;
 import com.kh.app.transaction.payment.entity.PaymentEntity;
 import com.kh.app.transaction.payment.enums.PaymentMethod;
 import com.kh.app.transaction.payment.enums.PaymentStatus;
+import com.kh.app.transaction.payment.exception.PaymentConfirmException;
 import com.kh.app.transaction.payment.repository.PaymentRepository;
 import com.kh.app.transaction.payout.service.PayoutService;
 import com.kh.app.transaction.reservation.entity.ReservationEntity;
@@ -21,9 +22,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 
 import java.nio.charset.StandardCharsets;
@@ -48,18 +51,25 @@ public class PaymentService {
     private final SalesService salesService;
     private final PayoutService payoutService;
     private final MemberCouponRepository memberCouponRepository;
+    private final PaymentFailureRecorder paymentFailureRecorder;
 
 
     @Transactional
-    public void confirmPayment(PaymentConfirmReqDto dto) {
+    public void confirmPayment(PaymentConfirmReqDto dto, String username) {
 
 
         if (paymentRepository.existsByPaymentKey(dto.getPaymentKey())) {
-            throw new RuntimeException("이미 승인된 결제");
+            throw new PaymentConfirmException(HttpStatus.CONFLICT.value(),
+                    "이미 처리된 결제입니다. 예약 내역을 확인해 주세요.");
         }
 
         ReservationEntity reservation = reservationRepository.findById(dto.getReservationId())
                 .orElseThrow(() -> new RuntimeException("예약 없음 (ID: " + dto.getReservationId() + ")"));
+
+        if (username == null || reservation.getMember() == null ||
+                !username.equals(reservation.getMember().getUsername())) {
+            throw new AccessDeniedException("Payment confirmation is allowed only for the reservation owner.");
+        }
 
         try {
             RestTemplate restTemplate = new RestTemplate();
@@ -176,14 +186,25 @@ public class PaymentService {
 
             notificationService.createNotification(notificationCreateReqDto);
 
+        } catch (RestClientResponseException e) {
+            String providerBody = e.getResponseBodyAsString(StandardCharsets.UTF_8);
+            log.error("Toss payment confirm failed. status={}, body={}",
+                    e.getStatusCode().value(), providerBody, e);
+            paymentFailureRecorder.record(reservation, dto, providerBody);
+            throw new PaymentConfirmException(HttpStatus.BAD_GATEWAY.value(),
+                    "Toss 결제 승인 API가 실패했습니다. 잠시 후 새 결제로 다시 시도해 주세요.",
+                    providerBody);
+        } catch (PaymentConfirmException e) {
+            throw e;
         } catch (Exception e) {
             log.error("결제 승인 중 예외 발생 -> 실패 기록 작업을 별도 트랜잭션으로 진행", e);
 
             // 💡 [핵심 수정] 자신의 프록시 객체나 빈을 직접 호출하는 대신,
             // 별도 트랜잭션 수단을 동반한 내부 로직으로 유도하거나 안전하게 저장 처리를 위임
-            saveFailedPayment(reservation, dto, e.getMessage());
+            paymentFailureRecorder.record(reservation, dto, e.getMessage());
 
-            throw new RuntimeException("결제 승인 실패: " + e.getMessage());
+            throw new PaymentConfirmException(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                    "결제 승인 후 서버 처리 중 오류가 발생했습니다: " + e.getMessage());
         }
     }
 

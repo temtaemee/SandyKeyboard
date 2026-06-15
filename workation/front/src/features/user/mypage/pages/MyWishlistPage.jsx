@@ -3,6 +3,7 @@ import { Heart, Layout, MapPin, Star, Trash2 } from 'lucide-react';
 import useWishlist from '../hooks/useWishlist';
 import MyPageSidebar from '../components/MyPageSidebar';
 import { useNavigate } from 'react-router-dom';
+import { resolveAssetUrl } from '../../../../app/config/env';
 
 function MyWishlistPage() {
   const { wishlist, isLoading, asyncDeleteWishlist } = useWishlist();
@@ -38,8 +39,9 @@ function MyWishlistPage() {
                 <ThumbnailWrapper>
                   <Thumbnail
                     src={
-                      item.thumbnailUrl ||
-                      'https://placehold.co/300x200?text=No+Image'
+                      item.thumbnailUrl
+                        ? resolveAssetUrl(item.thumbnailUrl)
+                        : resolveAssetUrl('/dummy-images/gangwon/hotel1/강원1외관.png')
                     }
                     alt={item.spaceName}
                   />

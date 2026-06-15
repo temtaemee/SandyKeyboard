@@ -1,0 +1,86 @@
+name: Frontend Deploy
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - ".github/workflows/frontend-deploy.yml"
+      - "workation/front/**"
+
+concurrency:
+  group: frontend-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: workation/front/package-lock.json
+
+      - name: Install dependencies
+        working-directory: workation/front
+        run: npm ci
+
+      - name: Validate frontend configuration
+        env:
+          VITE_NAVER_CLIENT_ID: ${{ vars.VITE_NAVER_CLIENT_ID || secrets.VITE_NAVER_CLIENT_ID || secrets.NAVER_CLIENT_ID }}
+          VITE_KAKAO_REST_API_KEY: ${{ vars.VITE_KAKAO_REST_API_KEY || secrets.VITE_KAKAO_REST_API_KEY || secrets.KAKAO_REST_API_KEY }}
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID || secrets.VITE_GOOGLE_CLIENT_ID || secrets.GOOGLE_CLIENT_ID }}
+          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+          CLOUDFRONT_ID: ${{ secrets.CLOUDFRONT_ID }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          missing=0
+          for name in VITE_NAVER_CLIENT_ID VITE_KAKAO_REST_API_KEY VITE_GOOGLE_CLIENT_ID S3_BUCKET_NAME CLOUDFRONT_ID AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is not configured in GitHub Actions Secrets/Variables."
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Create production env
+        run: |
+          cat > .env.production <<EOF
+          VITE_API_BASE_URL=${{ vars.VITE_API_BASE_URL || 'https://api.sandykey.shop/api' }}
+          VITE_SERVER_BASE_URL=${{ vars.VITE_SERVER_BASE_URL || 'https://api.sandykey.shop' }}
+          VITE_WS_URL=${{ vars.VITE_WS_URL || 'wss://api.sandykey.shop/ws-connect' }}
+          VITE_S3_ASSET_BASE_URL=${{ vars.VITE_S3_ASSET_BASE_URL || 'https://finalproject-s3-bucket-243050855199-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com' }}
+          VITE_TOSS_CLIENT_KEY=${{ vars.VITE_TOSS_CLIENT_KEY || secrets.VITE_TOSS_CLIENT_KEY || 'test_ck_5OWRapdA8djRAOLzPxRYVo1zEqZK' }}
+          VITE_NAVER_CLIENT_ID=${{ vars.VITE_NAVER_CLIENT_ID || secrets.VITE_NAVER_CLIENT_ID || secrets.NAVER_CLIENT_ID }}
+          VITE_NAVER_REDIRECT_URI=${{ vars.VITE_NAVER_REDIRECT_URI || 'https://sandykey.shop/oauth/callback/naver' }}
+          VITE_KAKAO_REDIRECT_URI=${{ vars.VITE_KAKAO_REDIRECT_URI || 'https://sandykey.shop/oauth/callback/kakao' }}
+          VITE_GOOGLE_REDIRECT_URI=${{ vars.VITE_GOOGLE_REDIRECT_URI || 'https://sandykey.shop/oauth/callback/google' }}
+          VITE_KAKAO_REST_API_KEY=${{ vars.VITE_KAKAO_REST_API_KEY || secrets.VITE_KAKAO_REST_API_KEY || secrets.KAKAO_REST_API_KEY }}
+          VITE_KAKAO_JS_KEY=${{ vars.VITE_KAKAO_JS_KEY || secrets.VITE_KAKAO_JS_KEY || vars.VITE_KAKAO_REST_API_KEY || secrets.VITE_KAKAO_REST_API_KEY || secrets.KAKAO_REST_API_KEY }}
+          VITE_GOOGLE_CLIENT_ID=${{ vars.VITE_GOOGLE_CLIENT_ID || secrets.VITE_GOOGLE_CLIENT_ID || secrets.GOOGLE_CLIENT_ID }}
+          EOF
+
+      - name: Build
+        working-directory: workation/front
+        run: npm run build -- --mode production
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION || 'ap-northeast-2' }}
+
+      - name: Deploy to S3
+        run: aws s3 sync ./workation/front/dist s3://${{ secrets.S3_BUCKET_NAME }} --delete
+
+      - name: Invalidate CloudFront
+        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_ID }} --paths "/*"

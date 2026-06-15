@@ -1,6 +1,7 @@
 import styled from 'styled-components';
 import Badge from '../common/Badge';
 import { OPTION_LABELS } from './OptionSelector';
+import { resolveSellerImageUrl } from '../../utils/imageUrl';
 
 /**
  * 스테이 카드 (상세에서 사용)
@@ -11,6 +12,7 @@ export default function StayCard({ stay }) {
 
   const thumbnail = stay.pictures?.find((p) => p.mainYn === 'Y')?.filePath
     ?? stay.pictures?.[0]?.filePath;
+  const thumbnailUrl = resolveSellerImageUrl(thumbnail);
 
   const formatTime = (t) => {
     if (!t) return '-';
@@ -29,8 +31,8 @@ export default function StayCard({ stay }) {
   return (
     <Card>
       <Thumbnail>
-        {thumbnail ? (
-          <ThumbnailImg src={thumbnail} alt={stay.name} />
+        {thumbnailUrl ? (
+          <ThumbnailImg src={thumbnailUrl} alt={stay.name} />
         ) : (
           <ThumbnailInitial>{stay.name?.[0] ?? '?'}</ThumbnailInitial>
         )}

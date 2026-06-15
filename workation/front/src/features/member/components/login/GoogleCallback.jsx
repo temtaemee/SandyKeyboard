@@ -70,6 +70,11 @@ function GoogleCallback() {
           }
 
           // 일반 에러 시 기본 동작
+          const errorMessage =
+            error.response?.data?.message ||
+            error.message ||
+            'Google login failed.';
+          alert(errorMessage);
           isProcessed.current = false;
           navigate('/login');
         });

@@ -285,13 +285,6 @@ function SignupForm() {
             이미 계정이 있으신가요?
             <LoginLink onClick={() => navi('/login')}>로그인</LoginLink>
           </LoginText>
-          <Divider>
-            <span>간편 가입</span>
-          </Divider>
-          <SocialArea>
-            <SocialButton type="button">🟨</SocialButton>
-            <SocialButton type="button">🔵</SocialButton>
-          </SocialArea>
         </>
       )}
     </Card>

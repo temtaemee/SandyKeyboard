@@ -40,6 +40,8 @@ import GoogleCallback from './features/member/components/login/GoogleCallback';
 import { useEffect } from 'react';
 import PrivacyPage from './home/components/home/PrivacyPage';
 import TermsPage from './home/components/home/TermsPage';
+import NotFoundPage from './home/pages/NotFoundPage';
+import PaymentFailPage from './features/user/reservation/pages/PaymentFailPage';
 
 export default function App() {
   const { loading, isSeller, isAdmin } = useAuth();
@@ -122,6 +124,8 @@ export default function App() {
 
           {/* 이벤트 라우트 */}
           <Route path="event" element={<EventPage />} />
+          <Route path="payment/fail" element={<PaymentFailPage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
 
         {/* 판매자(Seller) 관련 라우트 - 팀원 김영욱 */}

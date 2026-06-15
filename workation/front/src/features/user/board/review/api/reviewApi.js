@@ -1,4 +1,5 @@
 import api from '../../../../../app/api/axios';
+import { resolveS3AssetUrl } from '../../../../../app/config/env';
 
 // ================================
 // 리뷰 게시판 API 주소
@@ -22,8 +23,7 @@ const USER_BASE = '/user/reviews';
  */
 export const getImageUrl = (s3Key) => {
   if (!s3Key) return '';
-  if (s3Key.startsWith('http')) return s3Key;
-  return `https://finalproject-s3-bucket-243050855199-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/${s3Key}`;
+  return resolveS3AssetUrl(s3Key);
 };
 
 // ================================
