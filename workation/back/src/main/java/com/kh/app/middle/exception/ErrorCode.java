@@ -40,6 +40,8 @@ public enum ErrorCode {
     INVALID_COUPON_CONDITION(7005, "COUPON-7005", "사용 조건에 맞지 않는 쿠폰입니다.", HttpStatus.BAD_REQUEST),
     DUPLICATE_COUPON_ISSUE(7006, "COUPON-7006", "이미 발급받은 쿠폰입니다.", HttpStatus.BAD_REQUEST),
     COUPON_OWNER_RESTRICTION(7007, "COUPON-7007", "본인의 쿠폰만 사용 가능합니다.", HttpStatus.BAD_REQUEST),
+    COUPON_NOT_NEW_MEMBER(7008, "COUPON-7008", "신규가입 환영쿠폰은 가입 후 3개월 이내에만 발급 가능합니다.", HttpStatus.BAD_REQUEST),
+    COUPON_NO_REVIEW(7009, "COUPON-7009", "베스트 리뷰자 쿠폰은 리뷰를 1개 이상 작성한 회원에게만 발급 가능합니다.", HttpStatus.BAD_REQUEST),
 
     //event (8001 ~ 8099)
     EVENT_NOT_FOUND(8001, "EVENT-8001", "존재하지 않는 이벤트입니다.", HttpStatus.NOT_FOUND);

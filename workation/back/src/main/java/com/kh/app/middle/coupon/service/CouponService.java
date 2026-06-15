@@ -1,5 +1,6 @@
 package com.kh.app.middle.coupon.service;
 
+import com.kh.app.board.review.repository.ReviewRepository;
 import com.kh.app.member.entity.MemberEntity;
 import com.kh.app.member.repository.MemberRepository;
 import com.kh.app.middle.coupon.dto.request.CouponCreateDto;
@@ -32,6 +33,10 @@ public class CouponService {
     private final CouponRepository couponRepository;
     private final MemberCouponRepository memberCouponRepository;
     private final MemberRepository memberRepository;
+    private final ReviewRepository reviewRepository;
+
+    private static final long WELCOME_COUPON_ID = 1L;
+    private static final long BEST_REVIEWER_COUPON_ID = 3L;
 
     // 쿠폰 등록
     @Transactional
@@ -87,6 +92,14 @@ public class CouponService {
             throw new MiddleException(ErrorCode.DUPLICATE_COUPON_ISSUE);
         }
 
+        // 신규가입 환영쿠폰: 가입 후 3개월 이내 회원만 발급 가능
+        if (couponId.equals(WELCOME_COUPON_ID)) {
+            if (member.getCreatedAt() == null ||
+                    member.getCreatedAt().isBefore(LocalDateTime.now().minusMonths(3))) {
+                throw new MiddleException(ErrorCode.COUPON_NOT_NEW_MEMBER);
+            }
+        }
+
         memberCouponRepository.save(MemberCouponEntity.builder()
                 .member(member)
                 .couponId(coupon)
@@ -105,6 +118,13 @@ public class CouponService {
 
         if (memberCouponRepository.existsByMemberIdAndCouponIdId(member.getId(), reqDto.getCouponId())) {
             throw new MiddleException(ErrorCode.DUPLICATE_COUPON_ISSUE);
+        }
+
+        // 베스트 리뷰자 쿠폰: 리뷰를 1개 이상 작성한 회원만 발급 가능
+        if (reqDto.getCouponId().equals(BEST_REVIEWER_COUPON_ID)) {
+            if (!reviewRepository.existsByMemberIdAndDelYn(member.getId(), "N")) {
+                throw new MiddleException(ErrorCode.COUPON_NO_REVIEW);
+            }
         }
 
         memberCouponRepository.save(MemberCouponEntity.builder()
