@@ -37,6 +37,9 @@ public interface ReviewRepository extends JpaRepository<ReviewEntity, Long> {
     // 해당 예약으로 작성된 리뷰가 이미 있는지 확인
     boolean existsByReservationId(Long reservationId);
 
+    // 해당 멤버가 작성한 리뷰(삭제되지 않은) 존재 여부 확인
+    boolean existsByMemberIdAndDelYn(Long memberId, String delYn);
+
     @Query("SELECT COALESCE(AVG(r.rating), 0.0) FROM ReviewEntity r WHERE r.space.id = :spaceId")
     List<Double> findAverageRatingBySpaceId(@Param("spaceId") Long spaceId);
 }

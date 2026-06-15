@@ -115,7 +115,8 @@ export default function useAdminSellersUI({
       setShowIssuePanel(false);
       setSelectedTemplate(null);
     } catch (err) {
-      alert('쿠폰 발급에 실패했습니다.');
+      const msg = err?.response?.data?.message;
+      alert(msg || '쿠폰 발급에 실패했습니다.');
     }
   };
 
