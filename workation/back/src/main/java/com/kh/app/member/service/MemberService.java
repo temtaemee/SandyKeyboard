@@ -317,6 +317,24 @@ public class MemberService {
         verifiedEmailSet.add(dto.getEmail());
     }
 
+    public void sendSocialLinkEmailCode(EmailVerifyReqDto dto) {
+        memberRepository.findMemberByUsername(dto.getEmail())
+                .orElseThrow(() -> new RuntimeException("회원 없음"));
+
+        FindPasswordReqDto mailDto = new FindPasswordReqDto();
+        mailDto.setUsername(dto.getEmail());
+        mailDto.setEmail(dto.getEmail());
+        sendEmailCode(mailDto);
+    }
+
+    public boolean isVerifiedEmail(String email) {
+        return verifiedEmailSet.contains(email);
+    }
+
+    public void removeVerifiedEmail(String email) {
+        verifiedEmailSet.remove(email);
+    }
+
     @Transactional
     public void resetPassword(ResetPasswordReqDto dto) {
         // 1. 인증 여부 체크
