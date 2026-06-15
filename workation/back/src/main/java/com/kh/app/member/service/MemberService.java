@@ -11,6 +11,7 @@ import com.kh.app.member.repository.BankRepository;
 import com.kh.app.member.repository.MemberRepository;
 import com.kh.app.member.repository.ProfileRepository;
 import com.kh.app.member.repository.SellerRepository;
+import com.kh.app.product.space.entity.Area;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -102,6 +103,7 @@ public class MemberService {
         String address = null;
         String addressDetail = null;
         String profileImageUrl = null; // 🚨 안전하게 격리 완료
+        Area preferredArea = null;
 
         // 2. 핵심 널 방어: 실제 데이터가 존재할 때만 안전하게 추출
         if (memberProfile != null) {
@@ -112,7 +114,7 @@ public class MemberService {
             address = memberProfile.getAddress();
             addressDetail = memberProfile.getAddressDetail();
             profileImageUrl = memberProfile.getProfileImageUrl(); // 🚨 안전 구역 안에서 주입
-
+            preferredArea = memberProfile.getPreferredArea();
             if (memberProfile.getCompany() != null) {
                 companyName = memberProfile.getCompany().getCompanyName();
             }
@@ -136,6 +138,7 @@ public class MemberService {
                 .address(address)
                 .addressDetail(addressDetail)
                 .companyName(companyName)
+                .preferredArea(preferredArea)
                 .build();
     }
 
