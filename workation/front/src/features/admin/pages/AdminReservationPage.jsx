@@ -9,6 +9,8 @@ import {
   Pencil,
   Check,
   Ban,
+  Paperclip,
+  Download,
 } from 'lucide-react';
 import AdminSearchInput from '../components/common/AdminSearchInput';
 import useAdminReservation from '../hooks/useAdminReservation';
@@ -48,6 +50,7 @@ export default function AdminReservationPage() {
     fetchPartners,
     fetchAllReservations,
     fetchDashboardSummary,
+    fetchReservationDetail,
     addPartner,
     updatePartner,
     togglePartnerStatus,
@@ -77,10 +80,15 @@ export default function AdminReservationPage() {
     startEdit,
     saveEdit,
     cancelEdit,
+    detailModal,
+    detailLoading,
+    openDetailModal,
+    closeDetailModal,
   } = useAdminReservationUI({
     partners,
     addPartner,
     updatePartner,
+    fetchReservationDetail,
   });
 
   useEffect(() => {
@@ -260,7 +268,7 @@ export default function AdminReservationPage() {
               </TR>
             ) : (
               displayedReservations.map((row) => (
-                <TR key={row.id} $hoverable>
+                <TR key={row.id} $hoverable $clickable onClick={() => openDetailModal(row)}>
                   <TD>
                     <ResvId>{row.id}</ResvId>
                   </TD>
@@ -318,6 +326,92 @@ export default function AdminReservationPage() {
           <div style={{ width: '120px' }} />
         </TableFooter>
       </TableSection>
+
+      {/* ── 예약 상세 모달 ── */}
+      {detailModal !== null && (
+        <ModalOverlay onClick={closeDetailModal}>
+          <DetailModalContent onClick={(e) => e.stopPropagation()}>
+            <ModalHeader>
+              <DetailModalTitle>예약 상세</DetailModalTitle>
+              <ModalCloseBtn onClick={closeDetailModal}><X size={20} /></ModalCloseBtn>
+            </ModalHeader>
+
+            {detailLoading || !detailModal.id ? (
+              <DetailLoading>불러오는 중...</DetailLoading>
+            ) : (
+              <DetailBody>
+                {/* 상태 배지 */}
+                <DetailStatusRow>
+                  <DetailStatusBadge $status={detailModal.status}>
+                    {detailModal.statusLabel || detailModal.status}
+                  </DetailStatusBadge>
+                  <DetailResvId>#{detailModal.id}</DetailResvId>
+                </DetailStatusRow>
+
+                {/* 섹션: 예약자 정보 */}
+                <DetailSection>
+                  <DetailSectionTitle>예약자 정보</DetailSectionTitle>
+                  <DetailGrid>
+                    <DetailRow><DetailLabel>이름</DetailLabel><DetailValue>{detailModal.primaryGuestName || '—'}</DetailValue></DetailRow>
+                    <DetailRow><DetailLabel>연락처</DetailLabel><DetailValue>{detailModal.primaryGuestPhone || '—'}</DetailValue></DetailRow>
+                    <DetailRow><DetailLabel>이메일</DetailLabel><DetailValue>{detailModal.primaryGuestEmail || '—'}</DetailValue></DetailRow>
+                    <DetailRow><DetailLabel>인원</DetailLabel><DetailValue>{detailModal.guestCount}명</DetailValue></DetailRow>
+                  </DetailGrid>
+                </DetailSection>
+
+                {/* 섹션: 공간 / 숙소 */}
+                <DetailSection>
+                  <DetailSectionTitle>공간 / 숙소</DetailSectionTitle>
+                  <DetailGrid>
+                    <DetailRow><DetailLabel>공간명</DetailLabel><DetailValue>{detailModal.space?.name || '—'}</DetailValue></DetailRow>
+                    <DetailRow><DetailLabel>숙소명</DetailLabel><DetailValue>{detailModal.stay?.name || '—'}</DetailValue></DetailRow>
+                    <DetailRow><DetailLabel>체크인</DetailLabel><DetailValue>{detailModal.checkinDate || '—'}</DetailValue></DetailRow>
+                    <DetailRow><DetailLabel>체크아웃</DetailLabel><DetailValue>{detailModal.checkoutDate || '—'}</DetailValue></DetailRow>
+                  </DetailGrid>
+                </DetailSection>
+
+                {/* 섹션: 결제 정보 */}
+                <DetailSection>
+                  <DetailSectionTitle>결제 정보</DetailSectionTitle>
+                  <DetailGrid>
+                    <DetailRow><DetailLabel>원가</DetailLabel><DetailValue>₩{Number(detailModal.originalPrice || 0).toLocaleString()}</DetailValue></DetailRow>
+                    <DetailRow><DetailLabel>할인</DetailLabel><DetailValue>-₩{Number(detailModal.discountAmount || 0).toLocaleString()}</DetailValue></DetailRow>
+                    <DetailRow><DetailLabel>최종 결제</DetailLabel><DetailValue $bold>₩{Number(detailModal.totalPrice || 0).toLocaleString()}</DetailValue></DetailRow>
+                    {detailModal.payment && (
+                      <>
+                        <DetailRow><DetailLabel>결제 수단</DetailLabel><DetailValue>{detailModal.payment.paymentMethod || '—'}</DetailValue></DetailRow>
+                        <DetailRow><DetailLabel>카드사</DetailLabel><DetailValue>{detailModal.payment.cardCompany || '—'}</DetailValue></DetailRow>
+                        <DetailRow><DetailLabel>카드번호</DetailLabel><DetailValue>{detailModal.payment.cardNumber || '—'}</DetailValue></DetailRow>
+                        <DetailRow><DetailLabel>결제상태</DetailLabel><DetailValue>{detailModal.payment.paymentStatus || '—'}</DetailValue></DetailRow>
+                        <DetailRow><DetailLabel>승인일시</DetailLabel><DetailValue>{detailModal.payment.approvedAt ? String(detailModal.payment.approvedAt).replace('T', ' ').slice(0, 16) : '—'}</DetailValue></DetailRow>
+                      </>
+                    )}
+                  </DetailGrid>
+                </DetailSection>
+
+                {/* 섹션: 첨부파일 */}
+                {detailModal.files && detailModal.files.length > 0 && (
+                  <DetailSection>
+                    <DetailSectionTitle>
+                      <Paperclip size={14} style={{ marginRight: 4 }} />
+                      첨부파일 ({detailModal.files.length})
+                    </DetailSectionTitle>
+                    <FileList>
+                      {detailModal.files.map((file) => (
+                        <FileItem key={file.id} href={file.fileUrl} target="_blank" rel="noreferrer">
+                          <FileIcon><Paperclip size={13} /></FileIcon>
+                          <FileName>{file.originalFileName}</FileName>
+                          <Download size={13} color="#94a3b8" />
+                        </FileItem>
+                      ))}
+                    </FileList>
+                  </DetailSection>
+                )}
+              </DetailBody>
+            )}
+          </DetailModalContent>
+        </ModalOverlay>
+      )}
 
       {/* ── 파트너사 관리 모달 ── */}
       {partnerModalOpen && (
@@ -618,6 +712,7 @@ const TR = styled.tr`
   border-top: ${({ $hoverable, theme }) =>
     $hoverable ? `1px solid ${theme.colors.borderLight}` : 'none'};
   transition: background 0.1s;
+  cursor: ${({ $clickable }) => ($clickable ? 'pointer' : 'default')};
   &:hover {
     background: ${({ $hoverable }) => ($hoverable ? '#fafbfc' : 'transparent')};
   }
@@ -877,6 +972,146 @@ const RegisterBtn = styled.button`
 
 /* ── Modal: ModalOverlay / ModalContent / ModalHeader / ModalCloseBtn 은
    components/common/AdminModal.styles.js 에서 공통 import ── */
+
+/* 예약 상세 모달 */
+const DetailModalContent = styled(ModalContent)`
+  width: 560px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+`;
+
+const DetailModalTitle = styled.h2`
+  font-size: 18px;
+  font-weight: 600;
+  color: #0d1c2e;
+`;
+
+const DetailLoading = styled.div`
+  padding: 48px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 14px;
+`;
+
+const DetailBody = styled.div`
+  padding: 20px 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+`;
+
+const DetailStatusRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+const STATUS_COLOR_MAP = {
+  RESERVED: { bg: '#dbeafe', color: '#1d4ed8' },
+  PAYMENT_COMPLETED: { bg: '#fef3c7', color: '#b45309' },
+  COMPLETED: { bg: '#dcfce7', color: '#15803d' },
+  USER_CANCELLED: { bg: '#fee2e2', color: '#b91c1c' },
+  SELLER_CANCELLED: { bg: '#fee2e2', color: '#b91c1c' },
+  REFUND_COMPLETED: { bg: '#f1f5f9', color: '#64748b' },
+};
+
+const DetailStatusBadge = styled.span`
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: ${({ $status }) => STATUS_COLOR_MAP[$status]?.bg ?? '#f1f5f9'};
+  color: ${({ $status }) => STATUS_COLOR_MAP[$status]?.color ?? '#64748b'};
+`;
+
+const DetailResvId = styled.span`
+  font-size: 13px;
+  color: #94a3b8;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+`;
+
+const DetailSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const DetailSectionTitle = styled.h3`
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #f1f5f9;
+`;
+
+const DetailGrid = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+`;
+
+const DetailRow = styled.div`
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+`;
+
+const DetailLabel = styled.span`
+  font-size: 12px;
+  color: #94a3b8;
+  width: 80px;
+  flex-shrink: 0;
+`;
+
+const DetailValue = styled.span`
+  font-size: 13px;
+  color: ${({ $bold }) => ($bold ? '#0d1c2e' : '#334155')};
+  font-weight: ${({ $bold }) => ($bold ? '700' : '400')};
+  word-break: break-all;
+`;
+
+const FileList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+`;
+
+const FileItem = styled.a`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+  &:hover {
+    background: #eff6ff;
+    border-color: #93c5fd;
+  }
+`;
+
+const FileIcon = styled.span`
+  color: #64748b;
+  display: flex;
+  align-items: center;
+`;
+
+const FileName = styled.span`
+  flex: 1;
+  font-size: 13px;
+  color: #334155;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
 
 const ModalSearchRow = styled.div`
   margin-bottom: 16px;

@@ -116,12 +116,6 @@ export default function useAdminSellers() {
             totalCount: data.totalCount || 0,
           })
         );
-        if (!params?.status) {
-          const newCount = mappedContent.filter((item) =>
-            isNewMember(item.joinDate)
-          ).length;
-          dispatch(setCustomersNewCount(newCount));
-        }
       } catch (err) {
         console.error('고객 목록 fetch 에러:', err);
       } finally {
@@ -146,12 +140,6 @@ export default function useAdminSellers() {
             totalCount: data.totalCount || 0,
           })
         );
-        if (!params?.status) {
-          const newCount = mappedContent.filter((item) =>
-            isNewMember(item.joinedAt)
-          ).length;
-          dispatch(setSellersNewCount(newCount));
-        }
       } catch (err) {
         console.error('판매자 목록 fetch 에러:', err);
       } finally {
@@ -168,13 +156,23 @@ export default function useAdminSellers() {
         searchSellers({ page: 1, size: 1, status: 'ACTIVE' }),
         searchSellers({ page: 1, size: 1, status: 'BANNED' }),
       ]);
+      const total = allData.totalCount || 0;
       dispatch(
         setSellersStatusCounts({
-          total: allData.totalCount || 0,
+          total,
           active: activeData.totalCount || 0,
           banned: bannedData.totalCount || 0,
         })
       );
+      // 전체 데이터 기준으로 신규 판매자 수 계산
+      if (total > 0) {
+        const fullData = await searchSellers({ page: 1, size: total });
+        const allMapped = (fullData.content || []).map(mapBackendSellerToFrontend);
+        const newCount = allMapped.filter((item) => isNewMember(item.joinedAt)).length;
+        dispatch(setSellersNewCount(newCount));
+      } else {
+        dispatch(setSellersNewCount(0));
+      }
     } catch (err) {
       console.error('판매자 통계 fetch 에러:', err);
     }
@@ -187,13 +185,25 @@ export default function useAdminSellers() {
         searchMembers({ page: 1, size: 1, status: 'ACTIVE' }),
         searchMembers({ page: 1, size: 1, status: 'BANNED' }),
       ]);
+      const total = allData.totalCount || 0;
       dispatch(
         setCustomersStatusCounts({
-          total: allData.totalCount || 0,
+          total,
           active: activeData.totalCount || 0,
           banned: bannedData.totalCount || 0,
         })
       );
+      // 전체 데이터 기준으로 신규 고객 수 계산
+      if (total > 0) {
+        const fullData = await searchMembers({ page: 1, size: total });
+        const allMapped = (fullData.content || [])
+          .map(mapBackendCustomerToFrontend)
+          .filter((item) => item.id !== '1');
+        const newCount = allMapped.filter((item) => isNewMember(item.joinDate)).length;
+        dispatch(setCustomersNewCount(newCount));
+      } else {
+        dispatch(setCustomersNewCount(0));
+      }
     } catch (err) {
       console.error('고객 통계 fetch 에러:', err);
     }

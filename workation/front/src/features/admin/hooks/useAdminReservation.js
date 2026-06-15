@@ -7,6 +7,7 @@ import {
   updatePartnerCompany,
   togglePartnerCompanyStatus,
   getAdminDashboardSummary,
+  getAdminReservationDetail,
 } from '../api/adminReservationApi';
 import {
   setReservations,
@@ -234,6 +235,17 @@ export default function useAdminReservation() {
     [dispatch, fetchPartners]
   );
 
+  // ─── 예약 상세 조회 (ReservationDetailResDto) ───
+  const fetchReservationDetail = useCallback(async (id) => {
+    try {
+      const resp = await getAdminReservationDetail(id);
+      return resp.data;
+    } catch (err) {
+      console.error('예약 상세 fetch 에러:', err);
+      return null;
+    }
+  }, []);
+
   // ─── 파트너사 활성/비활성 토글 ───
   const togglePartnerStatus = useCallback(
     async (id) => {
@@ -263,6 +275,7 @@ export default function useAdminReservation() {
     fetchReservations,
     fetchAllReservations,
     fetchDashboardSummary,
+    fetchReservationDetail,
     fetchPartners,
     addPartner,
     updatePartner,
