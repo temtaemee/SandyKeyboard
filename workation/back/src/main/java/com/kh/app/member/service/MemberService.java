@@ -404,7 +404,7 @@ public class MemberService {
     @Scheduled(fixedDelay = 60000)
     public void cleanUpExpiredAuthCodes() {
         long currentTime = System.currentTimeMillis();
-        long tenMinutesInMillis = 10 * 60 * 1000; // 10분을 밀리초로 환산 (600,000ms)
+        long tenMinutesInMillis = 3 * 60 * 1000; 
 
         log.info("[스케줄러 락 가동] 만료된 인증코드 청소를 시작합니다.");
 

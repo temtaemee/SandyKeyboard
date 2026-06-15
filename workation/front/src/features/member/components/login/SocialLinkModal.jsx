@@ -1,11 +1,27 @@
 // src/features/member/components/login/SocialLinkModal.jsx
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import api from '../../../../app/api/axios';
 
 function SocialLinkModal({ isOpen, onClose, linkData, onSuccess }) {
   const [step, setStep] = useState(1); // 1: 코드 발송 전, 2: 코드 입력 단계
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(180); // 3분 = 180초 기본 세팅
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+
+  const handleSendCodeSuccess = () => {
+    setTimeLeft(180); // 3분 초기화
+    setIsTimerRunning(true); // 타이머 시작
+  };
+  useEffect(() => {
+    if (!isTimerRunning || timeLeft <= 0) return;
+
+    const intervalId = setInterval(() => {
+      setTimeLeft((prev) => prev - 1); // 1초마다 1씩 감소
+    }, 1000);
+
+    return () => clearInterval(intervalId); // 컴포넌트 닫히면 타이머 해제
+  }, [isTimerRunning, timeLeft]);
 
   if (!isOpen || !linkData) return null;
 
@@ -15,6 +31,7 @@ function SocialLinkModal({ isOpen, onClose, linkData, onSuccess }) {
     try {
       await api.post('/public/social/send-code', { email: linkData.email });
       alert('인증 코드가 이메일로 발송되었습니다. 메일함을 확인해주세요.');
+      handleSendCodeSuccess();
       setStep(2);
     } catch (error) {
       alert('인증 코드 발송에 실패했습니다. 다시 시도해주세요.');
@@ -22,6 +39,12 @@ function SocialLinkModal({ isOpen, onClose, linkData, onSuccess }) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const formatTime = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
   };
 
   // 2️⃣ 코드 검증 및 연동 처리
@@ -91,6 +114,19 @@ function SocialLinkModal({ isOpen, onClose, linkData, onSuccess }) {
         ) : (
           <>
             <p style={styles.text}>이메일로 발송된 인증 코드를 입력해주세요.</p>
+
+            <div
+              style={{
+                ...styles.timer,
+                color: timeLeft <= 0 ? '#dc3545' : '#ff9900',
+                fontWeight: 'bold',
+                marginBottom: '10px',
+              }}
+            >
+              {timeLeft > 0
+                ? `남은 시간: ${formatTime(timeLeft)}`
+                : '인증 시간이 만료되었습니다.'}
+            </div>
             <input
               type="text"
               value={code}
@@ -107,13 +143,24 @@ function SocialLinkModal({ isOpen, onClose, linkData, onSuccess }) {
               >
                 취소
               </button>
-              <button
-                onClick={handleVerifyAndLink}
-                style={styles.confirmBtn}
-                disabled={isLoading}
-              >
-                {isLoading ? '처리 중...' : '확인 및 연동'}
-              </button>
+
+              {timeLeft <= 0 ? (
+                <button
+                  onClick={handleSendCode} // 다시 1단계 발송 함수 호출
+                  style={{ ...styles.confirmBtn, backgroundColor: '#28a745' }}
+                  disabled={isLoading}
+                >
+                  {isLoading ? '발송 중...' : '인증코드 재발송'}
+                </button>
+              ) : (
+                <button
+                  onClick={handleVerifyAndLink}
+                  style={styles.confirmBtn}
+                  disabled={isLoading}
+                >
+                  {isLoading ? '처리 중...' : '확인 및 연동'}
+                </button>
+              )}
             </div>
           </>
         )}
@@ -177,6 +224,11 @@ const styles = {
     backgroundColor: '#007bff',
     color: '#fff',
     cursor: 'pointer',
+  },
+  timer: {
+    fontSize: '14px',
+    textAlign: 'right',
+    paddingRight: '5px',
   },
 };
 
