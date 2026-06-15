@@ -1,21 +1,25 @@
 package com.kh.app.member.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kh.app.member.dto.request.SocialLoginReqDto;
 import com.kh.app.member.dto.response.SocialLoginRespDto;
 import com.kh.app.member.entity.MemberEntity;
+import com.kh.app.member.entity.MemberProfileEntity;
 import com.kh.app.member.entity.Role;
 import com.kh.app.member.entity.SocialAccountEntity;
-import com.kh.app.member.entity.MemberProfileEntity;
+import com.kh.app.member.exception.SocialLinkRequiredException;
 import com.kh.app.member.exception.SocialWithdrawnUserException;
 import com.kh.app.member.repository.MemberRepository;
 import com.kh.app.member.repository.ProfileRepository;
 import com.kh.app.member.repository.SocialAccountRepository;
 import com.kh.app.security.util.JwtUtil;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
@@ -24,36 +28,38 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Optional;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class KakaoAuthService {
 
+    private static final String PROVIDER = "KAKAO";
+
     private final SocialAccountRepository socialAccountRepository;
     private final MemberRepository memberRepository;
-    private final ProfileRepository memberProfileRepository; // 💡 프록시 방어용
+    private final ProfileRepository memberProfileRepository;
     private final JwtUtil jwtUtil;
 
     @Value("${kakao.rest-api-key}")
     private String clientId;
+
     @Value("${kakao.redirect-uri}")
     private String redirectUri;
+
     @Value("${kakao.client-secret}")
     private String clientSecret;
+
     @Value("${kakao.client-secret-enabled:false}")
     private boolean clientSecretEnabled;
-    // 💡 방
 
     @Transactional
     public SocialLoginRespDto kakaoLogin(SocialLoginReqDto dto) {
-        // 1. 카카오로부터 access_token 발급받기
         String kakaoAccessToken = getKakaoAccessToken(dto);
-
-        // 2. access_token으로 카카오 유저 정보 파싱
         JsonNode userInfo = getKakaoUserInfo(kakaoAccessToken);
+
         String socialId = userInfo.path("id").asText();
         JsonNode kakaoAccount = userInfo.path("kakao_account");
         String email = kakaoAccount.path("email").asText(null);
@@ -65,7 +71,6 @@ public class KakaoAuthService {
             throw new IllegalStateException("Kakao account email is missing. Check Kakao consent settings for account_email.");
         }
 
-        // 🚨 [수정 포인트 1] 카카오 JSON에서 프로필 이미지 URL 안전하게 파싱하기
         String profileImageUrl = null;
         if (kakaoAccount.has("profile")) {
             JsonNode profileNode = kakaoAccount.get("profile");
@@ -74,56 +79,8 @@ public class KakaoAuthService {
             }
         }
 
-        // 3. DB 회원 검증 및 신규 유저 판단 플래그 세팅
-        Optional<MemberEntity> memberOpt = memberRepository.findMemberByUsername(email);
-        MemberEntity memberEntity;
-        boolean isNewUser = false;
-
-        if (memberOpt.isEmpty()) {
-            // 신규 카카오 유저 가입 처리
-            memberEntity = new MemberEntity();
-            memberEntity.setUsername(email);
-            memberEntity.setPassword("");
-            memberEntity.getRoleSet().add(Role.USER);
-            memberRepository.save(memberEntity);
-
-            SocialAccountEntity newSocialEntity = new SocialAccountEntity();
-            newSocialEntity.setSocialId(socialId);
-            newSocialEntity.setMember(memberEntity);
-            newSocialEntity.setProvider("KAKAO");
-            socialAccountRepository.save(newSocialEntity);
-
-            isNewUser = true;
-        } else {
-            memberEntity = memberOpt.get();
-
-            if (memberEntity.getDeletedAt() != null) {
-                // 🌟 꼼수 문자열 더하기 대신, 예외 객체에 이메일을 다이렉트로 주입!
-                throw new SocialWithdrawnUserException("탈퇴 처리된 계정입니다.", email);
-            }
-
-            // 소셜 연동 데이터 누락 방어
-            Optional<SocialAccountEntity> socialOpt = socialAccountRepository.findBySocialIdAndProvider(socialId, "KAKAO");
-            if (socialOpt.isEmpty()) {
-                SocialAccountEntity newSocialEntity = new SocialAccountEntity();
-                newSocialEntity.setSocialId(socialId);
-                newSocialEntity.setMember(memberEntity);
-                newSocialEntity.setProvider("KAKAO");
-                socialAccountRepository.save(newSocialEntity);
-            }
-
-            // 🚨 [수정 포인트 2] 기존 로그인 유저일 경우: 매번 로그인할 때마다 카카오 프로필 사진 최신화하기 🚀
-            Optional<MemberProfileEntity> profileOpt = memberProfileRepository.findById(memberEntity.getId());
-            if (profileOpt.isEmpty()) {
-                isNewUser = true;
-            } else {
-                // 이미 가입된 회원은 프로필 엔티티에 카카오 사진을 실시간으로 동기화해 줍니다! (더티 체킹)
-                MemberProfileEntity memberProfile = profileOpt.get();
-                memberProfile.updateProfileImageUrl(profileImageUrl);
-            }
-        }
-
-        // 4. 모래묻은 키보드 서비스 전용 JWT 토큰 발행
+        LoginMemberResult loginMember = resolveLoginMember(email, socialId, profileImageUrl);
+        MemberEntity memberEntity = loginMember.memberEntity();
         memberEntity.getRoleSet().add(Role.USER);
 
         String appAccessToken = jwtUtil.createJwt(
@@ -131,25 +88,66 @@ public class KakaoAuthService {
                 memberEntity.getUsername(),
                 List.of("USER")
         );
+
         String area = null;
-        if (memberEntity != null && memberEntity.getProfile() != null) {
-            area = (memberEntity.getProfile().getPreferredArea() != null)
-                    ? memberEntity.getProfile().getPreferredArea().name()
-                    : null;
+        if (memberEntity.getProfile() != null && memberEntity.getProfile().getPreferredArea() != null) {
+            area = memberEntity.getProfile().getPreferredArea().name();
         }
 
-        // 5. 공용 DTO 규격으로 리턴
         return SocialLoginRespDto.builder()
                 .token(appAccessToken)
-                .isNewUser(isNewUser)
+                .isNewUser(loginMember.isNewUser())
                 .roles(memberEntity.getRoleSet().stream().toList())
                 .email(email)
                 .preferredArea(area)
-                .profileImageUrl(profileImageUrl) // 🚨 [수정 포인트 3] 신규 유저를 위해 리액트 가입 폼으로 사진을 토스! ✨
+                .profileImageUrl(profileImageUrl)
                 .build();
     }
 
-    // 🟨 카카오 토큰 교환 RestTemplate 로직
+    private LoginMemberResult resolveLoginMember(String email, String socialId, String profileImageUrl) {
+        Optional<SocialAccountEntity> linkedSocial =
+                socialAccountRepository.findBySocialIdAndProvider(socialId, PROVIDER);
+
+        if (linkedSocial.isPresent()) {
+            MemberEntity member = linkedSocial.get().getMember();
+            rejectDeleted(member, member.getUsername());
+
+            Optional<MemberProfileEntity> profileOpt = memberProfileRepository.findById(member.getId());
+            if (profileOpt.isEmpty()) {
+                return new LoginMemberResult(member, true);
+            }
+
+            profileOpt.get().updateProfileImageUrl(profileImageUrl);
+            return new LoginMemberResult(member, false);
+        }
+
+        Optional<MemberEntity> existingMember = memberRepository.findMemberByUsername(email);
+        if (existingMember.isPresent()) {
+            rejectDeleted(existingMember.get(), email);
+            throw new SocialLinkRequiredException(email, socialId, PROVIDER);
+        }
+
+        MemberEntity member = new MemberEntity();
+        member.setUsername(email);
+        member.setPassword("");
+        member.getRoleSet().add(Role.USER);
+        memberRepository.save(member);
+
+        SocialAccountEntity social = new SocialAccountEntity();
+        social.setSocialId(socialId);
+        social.setMember(member);
+        social.setProvider(PROVIDER);
+        socialAccountRepository.save(social);
+
+        return new LoginMemberResult(member, true);
+    }
+
+    private void rejectDeleted(MemberEntity member, String email) {
+        if (member.getDeletedAt() != null) {
+            throw new SocialWithdrawnUserException("탈퇴 처리된 계정입니다.", email);
+        }
+    }
+
     private String getKakaoAccessToken(SocialLoginReqDto dto) {
         validateKakaoConfig();
 
@@ -170,7 +168,7 @@ public class KakaoAuthService {
         ResponseEntity<String> response;
         try {
             response = rt.exchange(
-                    "https://kauth.kakao.com/oauth/token", // 카카오 토큰 교환 주소
+                    "https://kauth.kakao.com/oauth/token",
                     HttpMethod.POST,
                     tokenRequest,
                     String.class
@@ -182,11 +180,10 @@ public class KakaoAuthService {
         try {
             return new ObjectMapper().readTree(response.getBody()).get("access_token").asText();
         } catch (Exception e) {
-            throw new RuntimeException("카카오 토큰 파싱 실패", e);
+            throw new RuntimeException("Kakao token parsing failed", e);
         }
     }
 
-    // 🟨 카카오 유저 프로필 요청 RestTemplate 로직
     private JsonNode getKakaoUserInfo(String accessToken) {
         RestTemplate rt = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
@@ -197,7 +194,7 @@ public class KakaoAuthService {
         ResponseEntity<String> response;
         try {
             response = rt.exchange(
-                    "https://kapi.kakao.com/v2/user/me", // 카카오 유저 정보 조회 주소
+                    "https://kapi.kakao.com/v2/user/me",
                     HttpMethod.GET,
                     profileRequest,
                     String.class
@@ -209,7 +206,7 @@ public class KakaoAuthService {
         try {
             return new ObjectMapper().readTree(response.getBody());
         } catch (Exception e) {
-            throw new RuntimeException("카카오 유저 정보 조회 실패", e);
+            throw new RuntimeException("Kakao userinfo parsing failed", e);
         }
     }
 
@@ -217,5 +214,8 @@ public class KakaoAuthService {
         if (!StringUtils.hasText(clientId) || !StringUtils.hasText(redirectUri)) {
             throw new IllegalStateException("Kakao OAuth config is missing. Set KAKAO_REST_API_KEY and KAKAO_REDIRECT_URI.");
         }
+    }
+
+    private record LoginMemberResult(MemberEntity memberEntity, boolean isNewUser) {
     }
 }

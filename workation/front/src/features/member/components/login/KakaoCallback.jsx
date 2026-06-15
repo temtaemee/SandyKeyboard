@@ -1,113 +1,125 @@
-// src/features/member/components/login/KakaoCallback.jsx 생성
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../../app/api/axios';
 import { restoreAccount } from '../../api/memberApi';
+import SocialLinkModal from './SocialLinkModal';
 
 function KakaoCallback() {
   const navigate = useNavigate();
   const isProcessed = useRef(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [linkData, setLinkData] = useState(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const code = params.get('code'); // 카카오가 던져준 인가 코드
+    const code = params.get('code');
 
-    if (isProcessed.current) return;
+    if (isProcessed.current || !code) return;
+    isProcessed.current = true;
 
-    if (code) {
-      isProcessed.current = true; // 🔒 중복 요청 방지 락
-      let kakaoEmail = '';
-      // 백엔드 통합 DTO 스펙에 맞춰 code 전송 (카카오는 state가 없으므로 생략)
-      api
-        .post('/guest/kakao', { code: code, state: null })
-        .then((response) => {
-          const targetData = response.data ? response.data : response;
-          const { token, isNewUser, email, profileImageUrl } = targetData;
-          kakaoEmail = email; // 🌟 성공 시 변수에 이메일 백업
+    api
+      .post('/guest/kakao', { code, state: null })
+      .then((response) => {
+        const targetData = response.data ? response.data : response;
+        const { token, isNewUser, email, profileImageUrl } = targetData;
 
-          if (isNewUser) {
-            // 💡 1번 방식 반영: 신규 유저면 추가 가입 양식으로 가되, 발급된 토큰을 주소창에 숨겨서 이동!
-            alert(
-              '카카오 연동을 위해 추가 회원 정보 입력 페이지로 이동합니다.'
-            );
-            const photoParam = profileImageUrl
-              ? `&profileImageUrl=${encodeURIComponent(profileImageUrl)}`
-              : '';
-            navigate(`/join?type=social&email=${encodeURIComponent(email)}&tempToken=${encodeURIComponent(token)}${photoParam}`);
-          } else {
-            // 기존 연동 유저라면 즉시 로그인 처리 후 홈으로 프리패스
-            localStorage.setItem('accessToken', token);
-            alert('카카오 계정으로 로그인 성공!');
-            navigate('/');
-          }
-        })
-        .catch(async (error) => {
-          console.error('카카오 로그인 처리 중 에러:', error);
+        if (isNewUser) {
+          alert('카카오 연동을 위해 추가 회원 정보 입력 페이지로 이동합니다.');
+          const photoParam = profileImageUrl
+            ? `&profileImageUrl=${encodeURIComponent(profileImageUrl)}`
+            : '';
+          navigate(`/join?type=social&email=${encodeURIComponent(email)}&tempToken=${encodeURIComponent(token)}${photoParam}`);
+          return;
+        }
 
-          if (error.response && error.response.status === 401) {
-            const serverMessage = error.response.data?.message;
+        localStorage.setItem('accessToken', token);
+        alert('카카오 계정으로 로그인 성공!');
+        navigate('/');
+      })
+      .catch(async (error) => {
+        if (handleLinkRequired(error, 'KAKAO')) return;
+        if (await handleWithdrawn(error)) return;
 
-            if (serverMessage && serverMessage.includes('탈퇴')) {
-              const isRestore = window.confirm(
-                '탈퇴한 계정입니다. 계정을 복구하고 다시 로그인하시겠습니까?'
-              );
-
-              if (isRestore) {
-                try {
-                  // 🌟 백엔드가 무조건 쥐여준 이메일을 안전하게 꺼내옴 (trim으로 공백 방어)
-                  const userEmail = error.response.data?.email;
-                  console.log('최종 전송될 userEmail:', userEmail);
-
-                  if (!userEmail) {
-                    alert(
-                      '이메일 정보를 가져오지 못했습니다. 일반 로그인을 이용해 주세요.'
-                    );
-                    isProcessed.current = false;
-                    navigate('/login');
-                    return;
-                  }
-
-                  // 공용 복구 API 호출
-                  await restoreAccount({ username: userEmail });
-
-                  alert(
-                    '계정이 성공적으로 복구되었습니다! 다시 로그인을 시도해 주세요.'
-                  );
-                  isProcessed.current = false;
-                  navigate('/login');
-                  return;
-                } catch (restoreErr) {
-                  alert('계정 복구에 실패했습니다. 고객센터로 문의해 주세요.');
-                  isProcessed.current = false;
-                  navigate('/login');
-                  return;
-                }
-              }
-            }
-          }
-          const message = error.response?.data?.message;
-          if (message) {
-            alert(message);
-          }
-          isProcessed.current = false;
-          navigate('/login');
-        });
-    }
+        const message = error.response?.data?.message || error.message || 'Kakao login failed.';
+        alert(message);
+        isProcessed.current = false;
+        navigate('/login');
+      });
   }, [navigate]);
 
+  const handleLinkRequired = (error, provider) => {
+    const data = error.response?.data;
+    if (error.response?.status !== 409 || data?.result !== 'LINK_REQUIRED') {
+      return false;
+    }
+
+    setLinkData({
+      email: data.email,
+      socialId: data.socialId,
+      provider: data.provider || provider,
+    });
+    setIsModalOpen(true);
+    return true;
+  };
+
+  const handleWithdrawn = async (error) => {
+    if (error.response?.status !== 401) return false;
+
+    const serverMessage = error.response.data?.message || '';
+    if (!serverMessage.includes('탈퇴')) return false;
+
+    const isRestore = window.confirm('탈퇴한 계정입니다. 계정을 복구하고 다시 로그인하시겠습니까?');
+    if (!isRestore) return true;
+
+    const userEmail = error.response.data?.email;
+    if (!userEmail) {
+      alert('이메일 정보를 가져오지 못했습니다. 일반 로그인을 이용해 주세요.');
+      isProcessed.current = false;
+      navigate('/login');
+      return true;
+    }
+
+    try {
+      await restoreAccount({ username: userEmail });
+      alert('계정이 복구되었습니다. 다시 로그인해주세요.');
+      navigate('/login');
+    } catch (restoreErr) {
+      alert('계정 복구에 실패했습니다. 고객센터로 문의해 주세요.');
+      isProcessed.current = false;
+      navigate('/login');
+    }
+    return true;
+  };
+
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        color: '#3a4a57',
-      }}
-    >
-      <h3>카카오 계정으로 모래묻은 키보드에 연결 중... 🟨</h3>
-    </div>
+    <>
+      <div style={styles.wrapper}>
+        <h3>카카오 계정으로 연결 중...</h3>
+      </div>
+      <SocialLinkModal
+        isOpen={isModalOpen}
+        linkData={linkData}
+        onClose={() => {
+          setIsModalOpen(false);
+          navigate('/login');
+        }}
+        onSuccess={() => {
+          setIsModalOpen(false);
+          navigate('/login');
+        }}
+      />
+    </>
   );
 }
+
+const styles = {
+  wrapper: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100vh',
+    color: '#3a4a57',
+  },
+};
 
 export default KakaoCallback;

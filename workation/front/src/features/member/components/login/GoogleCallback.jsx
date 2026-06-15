@@ -1,99 +1,123 @@
-// features/member/components/login/GoogleCallback.jsx
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../../app/api/axios';
 import { restoreAccount } from '../../api/memberApi';
+import SocialLinkModal from './SocialLinkModal';
 
 function GoogleCallback() {
   const navigate = useNavigate();
   const isProcessed = useRef(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [linkData, setLinkData] = useState(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const code = params.get('code'); // 구글이 준 인가 코드
+    const code = params.get('code');
 
-    if (isProcessed.current) return;
+    if (isProcessed.current || !code) return;
+    isProcessed.current = true;
 
-    if (code) {
-      isProcessed.current = true;
-      let googleEmail = '';
+    api
+      .post('/guest/google', { code })
+      .then((response) => {
+        const targetData = response.data ? response.data : response;
+        const { token, isNewUser, email } = targetData;
 
-      // 🔵 우리가 통합한 SocialLoginReqDto 규격에 맞춰 code 전송 (구글은 state가 없으므로 생략)
-      api
-        .post('/guest/google', { code: code })
-        .then((response) => {
-          const targetData = response.data ? response.data : response;
-          const { token, isNewUser, email } = targetData;
-          googleEmail = email;
-          if (isNewUser) {
-            alert('구글 연동을 위해 추가 회원 정보 입력 페이지로 이동합니다.');
-            navigate(`/join?type=social&email=${email}&tempToken=${token}`);
-          } else {
-            localStorage.setItem('accessToken', token);
-            alert('구글 계정으로 로그인 성공!');
-            navigate('/');
-          }
-        })
-        .catch(async (error) => {
-          // 🌟 비동기 처리를 위해 async 추가
-          console.error('구글 로그인 처리 중 에러:', error);
+        if (isNewUser) {
+          alert('구글 연동을 위해 추가 회원 정보 입력 페이지로 이동합니다.');
+          navigate(`/join?type=social&email=${encodeURIComponent(email)}&tempToken=${encodeURIComponent(token)}`);
+          return;
+        }
 
-          // 🌟 백엔드 시큐리티가 던진 401(탈퇴 유저) 에러인지 확인
-          if (error.response && error.response.status === 401) {
-            const serverMessage = error.response.data?.message;
+        localStorage.setItem('accessToken', token);
+        alert('구글 계정으로 로그인 성공!');
+        navigate('/');
+      })
+      .catch(async (error) => {
+        if (handleLinkRequired(error, 'GOOGLE')) return;
+        if (await handleWithdrawn(error)) return;
 
-            if (serverMessage && serverMessage.includes('탈퇴')) {
-              // 1. 탈퇴 복구 의사 묻기
-              const isRestore = window.confirm(
-                '탈퇴한 계정입니다. 계정을 복구하고 다시 로그인하시겠습니까?'
-              );
-
-              if (isRestore) {
-                try {
-                  // 2. 소셜 가입은 이메일이나 소셜 ID가 username 역할을 하므로,
-                  // 백엔드에서 에러와 함께 던져준 email이나 데이터를 활용해 복구 요청을 보냅니다.
-                  // (만약 백엔드가 401 에러 바디에 email을 같이 안 준다면, 에러 발생 전 수신하려던 email 변수나 response 구조 확인 필요)
-                  const userEmail = error.response.data?.email;
-
-                  await restoreAccount({ username: userEmail });
-
-                  alert(
-                    '계정이 성공적으로 복구되었습니다! 다시 로그인을 시도해 주세요.'
-                  );
-                  navigate('/login'); // 복구 완료 후 로그인 페이지로 안전하게 이동
-                  return;
-                } catch (restoreErr) {
-                  alert('계정 복구에 실패했습니다. 고객센터로 문의해 주세요.');
-                }
-              }
-            }
-          }
-
-          // 일반 에러 시 기본 동작
-          const errorMessage =
-            error.response?.data?.message ||
-            error.message ||
-            'Google login failed.';
-          alert(errorMessage);
-          isProcessed.current = false;
-          navigate('/login');
-        });
-    }
+        const errorMessage =
+          error.response?.data?.message ||
+          error.message ||
+          'Google login failed.';
+        alert(errorMessage);
+        isProcessed.current = false;
+        navigate('/login');
+      });
   }, [navigate]);
 
+  const handleLinkRequired = (error, provider) => {
+    const data = error.response?.data;
+    if (error.response?.status !== 409 || data?.result !== 'LINK_REQUIRED') {
+      return false;
+    }
+
+    setLinkData({
+      email: data.email,
+      socialId: data.socialId,
+      provider: data.provider || provider,
+    });
+    setIsModalOpen(true);
+    return true;
+  };
+
+  const handleWithdrawn = async (error) => {
+    if (error.response?.status !== 401) return false;
+
+    const serverMessage = error.response.data?.message || '';
+    if (!serverMessage.includes('탈퇴')) return false;
+
+    const isRestore = window.confirm('탈퇴한 계정입니다. 계정을 복구하고 다시 로그인하시겠습니까?');
+    if (!isRestore) return true;
+
+    const userEmail = error.response.data?.email;
+    if (!userEmail) {
+      alert('이메일 정보를 가져오지 못했습니다. 일반 로그인을 이용해 주세요.');
+      isProcessed.current = false;
+      navigate('/login');
+      return true;
+    }
+
+    try {
+      await restoreAccount({ username: userEmail });
+      alert('계정이 복구되었습니다. 다시 로그인해주세요.');
+      navigate('/login');
+    } catch (restoreErr) {
+      alert('계정 복구에 실패했습니다. 고객센터로 문의해 주세요.');
+    }
+    return true;
+  };
+
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        color: '#3a4a57',
-      }}
-    >
-      <h3>구글 계정으로 모래묻은 키보드에 연결 중... 🔵</h3>
-    </div>
+    <>
+      <div style={styles.wrapper}>
+        <h3>구글 계정으로 연결 중...</h3>
+      </div>
+      <SocialLinkModal
+        isOpen={isModalOpen}
+        linkData={linkData}
+        onClose={() => {
+          setIsModalOpen(false);
+          navigate('/login');
+        }}
+        onSuccess={() => {
+          setIsModalOpen(false);
+          navigate('/login');
+        }}
+      />
+    </>
   );
 }
+
+const styles = {
+  wrapper: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100vh',
+    color: '#3a4a57',
+  },
+};
 
 export default GoogleCallback;
