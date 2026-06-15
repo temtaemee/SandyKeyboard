@@ -9,7 +9,11 @@ public class SocialLinkRequiredException extends RuntimeException {
     private final String socialId;
     private final String provider;
 
-    public SocialLinkRequiredException(String email, String socialId, String provider) {
+    public SocialLinkRequiredException(
+            String email,
+            String socialId,
+            String provider
+    ) {
         super("기존 계정과 연동이 필요합니다.");
         this.email = email;
         this.socialId = socialId;
