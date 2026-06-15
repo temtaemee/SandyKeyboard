@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,7 +38,7 @@ public class MemberService {
     private final SellerRepository sellerRepository;
     private final BankRepository bankRepository;
     private final JavaMailSender mailSender;
-    private final Map<String, String> authCodeStore
+    private final Map<String, AuthInfo> authCodeStore
             = new ConcurrentHashMap<>();
     private final Set<String> verifiedEmailSet = new HashSet<>();
     private final CompanyRepository companyRepository;
@@ -272,7 +273,7 @@ public class MemberService {
                 .orElseThrow(() -> new RuntimeException("회원 없음"));
 
         String code = String.valueOf((int)((Math.random() * 900000) + 100000));
-        authCodeStore.put(dto.getEmail(), code);
+        authCodeStore.put(dto.getEmail(), new AuthInfo(code));
 
         // 🚨 공통 비동기 메서드 호출 ("비밀번호 재설정" 라벨 투입)
         emailSender.sendEmailAsync(dto.getEmail(), code, "비밀번호 재설정");
@@ -281,12 +282,13 @@ public class MemberService {
     public void verifyEmailCode(
             VerifyEmailCodeReqDto dto
     ) {
-        String savedCode =
+        AuthInfo authInfo =
                 authCodeStore.get(dto.getEmail());
-        if (savedCode == null) {
+
+        if (authInfo == null) {
             throw new RuntimeException("인증코드 없음");
         }
-        if (!savedCode.equals(dto.getCode())) {
+        if (!authInfo.getCode().equals(dto.getCode())) {
             throw new RuntimeException("인증코드 불일치");
         }
         verifiedEmailSet.add(dto.getEmail());
@@ -392,12 +394,50 @@ public class MemberService {
 
         // 인증코드 생성 및 세션/메모리 저장
         String code = String.valueOf((int)((Math.random() * 900000) + 100000));
-        authCodeStore.put(dto.getEmail(), code);
+        authCodeStore.put(dto.getEmail(), new AuthInfo(code));
 
         // 🚨 [비동기 호출] 진짜 무거운 메일 조립 및 발송은 별도 쓰레드에 던지고, 이 메서드는 바로 종료(리턴)됩니다!
         emailSender.sendEmailAsync(dto.getEmail(), code,"소셜연동");
     }
 
-    // 2. 비동기 전송 전용 메서드 추가
+    // 💡 fixedDelay = 60000: 1분(60,000밀리초)마다 이 메서드를 주기적으로 자동 실행합니다.
+    @Scheduled(fixedDelay = 60000)
+    public void cleanUpExpiredAuthCodes() {
+        long currentTime = System.currentTimeMillis();
+        long tenMinutesInMillis = 10 * 60 * 1000; // 10분을 밀리초로 환산 (600,000ms)
+
+        log.info("[스케줄러 락 가동] 만료된 인증코드 청소를 시작합니다.");
+
+        // Map 전체를 돌면서 생성된 지 10분이 지난 이메일 방을 찾아 삭제합니다.
+        authCodeStore.entrySet().removeIf(entry -> {
+            long duration = currentTime - entry.getValue().getCreatedAt();
+            boolean isExpired = duration > tenMinutesInMillis;
+
+            if (isExpired) {
+                log.info("[인증코드 만료 삭제] 이메일: {}, 방치 시간: {}초",
+                        entry.getKey(), duration / 1000);
+            }
+            return isExpired;
+        });
+    }
+
+    public static class AuthInfo {
+        private final String code;
+        private final long createdAt;
+
+        public AuthInfo(String code) {
+            this.code = code;
+            this.createdAt = System.currentTimeMillis();
+        }
+
+        // 💡 반환 타입을 확실하게 'String'으로 명시하고 내부 문자열 변수를 리턴해야 합니다!
+        public String getCode() {
+            return this.code;
+        }
+
+        public long getCreatedAt() {
+            return this.createdAt;
+        }
+    }
 
 }
