@@ -6,7 +6,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class SocialLinkReqDto {
-    private String provider;
+    private String provider; // KAKAO, NAVER, GOOGLE
     private String email;
     private String socialId;
 }

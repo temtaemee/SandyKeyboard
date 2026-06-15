@@ -13,35 +13,46 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class SocialLinkService {
-
     private final MemberService memberService;
     private final MemberRepository memberRepository;
     private final SocialAccountRepository socialAccountRepository;
 
     @Transactional
     public void socialLink(SocialLinkReqDto dto) {
-        if (!memberService.isVerifiedEmail(dto.getEmail())) {
+
+        if(!memberService.isVerifiedEmail(dto.getEmail())) {
             throw new RuntimeException("이메일 인증 필요");
         }
 
-        MemberEntity member = memberRepository.findMemberByUsername(dto.getEmail())
-                .orElseThrow(() -> new RuntimeException("회원 없음"));
+        MemberEntity member =
+                memberRepository.findMemberByUsername(dto.getEmail())
+                        .orElseThrow();
 
-        boolean socialIdExists = socialAccountRepository
-                .findBySocialIdAndProvider(dto.getSocialId(), dto.getProvider())
-                .isPresent();
-        if (socialIdExists) {
+        boolean exists =
+                socialAccountRepository
+                        .findBySocialIdAndProvider(
+                                dto.getSocialId(),
+                                dto.getProvider()
+                        )
+                        .isPresent();
+
+        if(exists){
             throw new RuntimeException("이미 연동된 계정");
         }
-
-        if (socialAccountRepository.existsByMemberAndProvider(member, dto.getProvider())) {
+        if (
+                socialAccountRepository.existsByMemberAndProvider(
+                        member,
+                        dto.getProvider()
+                )
+        ) {
             throw new RuntimeException("이미 해당 소셜이 연동되어 있습니다.");
         }
-
         SocialAccountEntity social = new SocialAccountEntity();
+
         social.setSocialId(dto.getSocialId());
         social.setProvider(dto.getProvider());
         social.setMember(member);
+
         socialAccountRepository.save(social);
 
         memberService.removeVerifiedEmail(dto.getEmail());
