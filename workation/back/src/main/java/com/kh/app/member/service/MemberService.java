@@ -11,13 +11,14 @@ import com.kh.app.member.repository.BankRepository;
 import com.kh.app.member.repository.MemberRepository;
 import com.kh.app.member.repository.ProfileRepository;
 import com.kh.app.member.repository.SellerRepository;
+import com.kh.app.product.space.entity.Area;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +41,7 @@ public class MemberService {
             = new ConcurrentHashMap<>();
     private final Set<String> verifiedEmailSet = new HashSet<>();
     private final CompanyRepository companyRepository;
+    private final EmailSender emailSender;
 
     @Transactional
     public void join(MemberJoinReqDto dto) {
@@ -102,6 +104,7 @@ public class MemberService {
         String address = null;
         String addressDetail = null;
         String profileImageUrl = null; // 🚨 안전하게 격리 완료
+        Area preferredArea = null;
 
         // 2. 핵심 널 방어: 실제 데이터가 존재할 때만 안전하게 추출
         if (memberProfile != null) {
@@ -112,7 +115,7 @@ public class MemberService {
             address = memberProfile.getAddress();
             addressDetail = memberProfile.getAddressDetail();
             profileImageUrl = memberProfile.getProfileImageUrl(); // 🚨 안전 구역 안에서 주입
-
+            preferredArea = memberProfile.getPreferredArea();
             if (memberProfile.getCompany() != null) {
                 companyName = memberProfile.getCompany().getCompanyName();
             }
@@ -136,6 +139,7 @@ public class MemberService {
                 .address(address)
                 .addressDetail(addressDetail)
                 .companyName(companyName)
+                .preferredArea(preferredArea)
                 .build();
     }
 
@@ -268,39 +272,10 @@ public class MemberService {
                 .orElseThrow(() -> new RuntimeException("회원 없음"));
 
         String code = String.valueOf((int)((Math.random() * 900000) + 100000));
-
-        // 1. MimeMessage 객체 생성
-        MimeMessage message = mailSender.createMimeMessage();
-
-        try {
-            // 2. MimeMessageHelper를 이용해 편리하게 세팅 (true는 멀티파트/첨부파일 사용 여부)
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-            helper.setTo(dto.getEmail());
-            helper.setSubject("[모래묻은키보드] 비밀번호 재설정 인증코드");
-
-            // 3. HTML 문자열 작성
-            String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px;'>"
-                    + "<h2>[모래묻은키보드] 비밀번호 재설정</h2>"
-                    + "<p>안녕하세요. 요청하신 비밀번호 재설정 인증코드입니다.</p>"
-                    + "<div style='background-color: #f9f9f9; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; color: #4A90E2; letter-spacing: 5px;'>"
-                    +     code
-                    + "</div>"
-                    + "<p style='color: #888; font-size: 12px; margin-top: 20px;'>본 인증코드는 비밀번호 재설정 페이지에서만 사용 가능합니다.</p>"
-                    + "</div>";
-
-            // 4. 핵심: 두 번째 인자에 true를 넣어야 HTML로 렌더링됩니다!
-            helper.setText(htmlContent, true);
-
-        } catch (Exception e) {
-            log.error("메일 생성 중 에러 발생", e);
-            throw new RuntimeException("메일 발송 실패");
-        }
-
         authCodeStore.put(dto.getEmail(), code);
 
-        // 5. 메일 발송
-        mailSender.send(message);
+        // 🚨 공통 비동기 메서드 호출 ("비밀번호 재설정" 라벨 투입)
+        emailSender.sendEmailAsync(dto.getEmail(), code, "비밀번호 재설정");
     }
 
     public void verifyEmailCode(
@@ -324,7 +299,7 @@ public class MemberService {
         FindPasswordReqDto mailDto = new FindPasswordReqDto();
         mailDto.setUsername(dto.getEmail());
         mailDto.setEmail(dto.getEmail());
-        sendEmailCode(mailDto);
+        sendSocialEmailCode(mailDto);
     }
 
     public boolean isVerifiedEmail(String email) {
@@ -408,4 +383,21 @@ public class MemberService {
                 .orElseThrow(() -> new IllegalArgumentException("회원 없음"));
         member.unDelete();
     }
+
+    // 1. 기존 메서드: 컨트롤러가 호출하는 곳 (동기)
+    public void sendSocialEmailCode(FindPasswordReqDto dto) {
+        // 💡 [동기 처리] 회원 검증은 즉시 실행해서 에러가 나면 프론트에 바로 400/500 에러를 던집니다.
+        profileRepository.findByMemberUsernameAndEmail(dto.getUsername(), dto.getEmail())
+                .orElseThrow(() -> new RuntimeException("회원 없음"));
+
+        // 인증코드 생성 및 세션/메모리 저장
+        String code = String.valueOf((int)((Math.random() * 900000) + 100000));
+        authCodeStore.put(dto.getEmail(), code);
+
+        // 🚨 [비동기 호출] 진짜 무거운 메일 조립 및 발송은 별도 쓰레드에 던지고, 이 메서드는 바로 종료(리턴)됩니다!
+        emailSender.sendEmailAsync(dto.getEmail(), code,"소셜연동");
+    }
+
+    // 2. 비동기 전송 전용 메서드 추가
+
 }
