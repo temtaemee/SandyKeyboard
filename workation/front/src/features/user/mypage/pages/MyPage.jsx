@@ -11,6 +11,7 @@ import MyPageSidebar from '../components/MyPageSidebar';
 import useMypage from '../hooks/useMypage';
 import { useNavigate } from 'react-router-dom';
 import ProfileAvatar from '../components/ProfileAvatar';
+import { resolveAssetUrl } from '../../../../app/config/env';
 
 function MyPage() {
   // 리팩토링된 훅에서 dashboardData를 함께 꺼내옵니다. ✨
@@ -147,7 +148,11 @@ function MyPage() {
             <ReservationCard>
               {/* 백엔드 S3 동적 썸네일 주소 바인딩 ✨ */}
               <ReservationImage
-                src={currentRes.roomImageUrl}
+                src={
+                  currentRes.roomImageUrl?.startsWith('http')
+                    ? currentRes.roomImageUrl // 💡 이미 http로 시작하면 날것 그대로 사용
+                    : resolveAssetUrl(currentRes.roomImageUrl) // 상대 경로일 때만 S3/로컬 주소 결합
+                }
                 alt={currentRes.workspaceName}
               />
 
@@ -195,29 +200,43 @@ function MyPage() {
                 이전 워케이션 히스토리가 존재하지 않습니다.
               </EmptyHistoryText>
             ) : (
-              pastWorkations.map((history) => (
-                <HistoryItem
-                  key={history.reservationId}
-                  onClick={() => {
-                    navi(`/mypage/reservation/${history.reservationId}`);
-                  }}
-                >
-                  <HistoryThumb
-                    src={history.workspaceImageUrl}
-                    alt={history.workspaceName}
-                  />
+              pastWorkations.map((history) => {
+                console.log('history=', history);
+                console.log('workspaceImageUrl =', history.workspaceImageUrl);
+                return (
+                  <HistoryItem
+                    key={history.reservationId}
+                    onClick={() => {
+                      navi(`/mypage/reservation/${history.reservationId}`);
+                    }}
+                  >
+                    <HistoryThumb
+                      src={
+                        history.workspaceImageUrl?.includes('localhost')
+                          ? resolveAssetUrl(
+                              history.workspaceImageUrl.replace(
+                                'http://localhost:8001/',
+                                ''
+                              )
+                            )
+                          : history.workspaceImageUrl?.startsWith('http')
+                            ? history.workspaceImageUrl
+                            : resolveAssetUrl(history.workspaceImageUrl)
+                      }
+                    />
 
-                  <HistoryInfo>
-                    <h4>{history.workspaceName}</h4>
-                    <p>
-                      {formatDate(history.startDate)} -{' '}
-                      {formatDate(history.endDate)}
-                    </p>
-                  </HistoryInfo>
+                    <HistoryInfo>
+                      <h4>{history.workspaceName}</h4>
+                      <p>
+                        {formatDate(history.startDate)} -{' '}
+                        {formatDate(history.endDate)}
+                      </p>
+                    </HistoryInfo>
 
-                  <ChevronRight size={18} />
-                </HistoryItem>
-              ))
+                    <ChevronRight size={18} />
+                  </HistoryItem>
+                );
+              })
             )}
           </HistoryCard>
         </BottomSection>

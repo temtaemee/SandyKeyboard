@@ -122,14 +122,28 @@ public class MyPageService {
                 .limit(2) // 최대 2건
                 .map(res -> {
                     String pastImageUrl = defaultSpaceImageUrl();
+
                     try {
                         StayResDto stayInfo = stayService.selectOne(res.getStayId());
                         // 💡 [변경] 지난 워케이션도 SpaceService를 연동해 공간의 사진을 가져옵니다.
                         SpaceResDto spaceInfo = spaceService.selectOne(stayInfo.getSpaceId());
-                        if (spaceInfo.getPictures() != null && !spaceInfo.getPictures().isEmpty()) {
-                            pastImageUrl = spaceInfo.getPictures().get(0).getFilePath();
+                        
+                        if (
+                                stayInfo.getPictures() != null &&
+                                        !stayInfo.getPictures().isEmpty()
+                        ) {
+
+                            log.info(
+                                    "first picture path={}",
+                                    stayInfo.getPictures().get(0).getFilePath()
+                            );
+
+                            pastImageUrl =
+                                    stayInfo.getPictures().get(0).getFilePath();
                         }
-                    } catch (Exception ignored) {}
+                    } catch (Exception e) {
+                        log.error("pastWorkation 이미지 조회 실패",e);
+                    }
 
                     return MyPageDashboardRespDto.PastWorkationDto.builder()
                             .reservationId(res.getId())
