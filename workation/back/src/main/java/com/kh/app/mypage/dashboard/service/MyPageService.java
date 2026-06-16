@@ -91,24 +91,41 @@ public class MyPageService {
         MyPageDashboardRespDto.CurrentReservationDto currentResDto = null;
         if (currentValidRes != null) {
             try {
-                StayResDto stayInfo = stayService.selectOne(currentValidRes.getStayId());
-                SpaceResDto spaceInfo = spaceService.selectOne(stayInfo.getSpaceId());
+                StayResDto stayInfo =
+                        stayService.selectOne(currentValidRes.getStayId());
 
-                String mainImageUrl = (spaceInfo.getPictures() != null && !spaceInfo.getPictures().isEmpty())
-                        ? spaceInfo.getPictures().get(0).getFilePath()
-                        : defaultSpaceImageUrl();
+                SpaceResDto spaceInfo =
+                        spaceService.selectOne(stayInfo.getSpaceId());
 
-                currentResDto = MyPageDashboardRespDto.CurrentReservationDto.builder()
-                        .reservationId(currentValidRes.getId())
-                        .workspaceName(currentValidRes.getStayName())
-                        .roomTypeName(stayInfo.getName())
-                        .startDate(currentValidRes.getCheckinDate() != null ? currentValidRes.getCheckinDate().atStartOfDay() : null)
-                        .endDate(currentValidRes.getCheckoutDate() != null ? currentValidRes.getCheckoutDate().atStartOfDay() : null)
-                        .locationAddress(spaceInfo.getAddress1())
-                        .roomImageUrl(mainImageUrl)
-                        .build();
+                String mainImageUrl = defaultSpaceImageUrl();
+
+                if (
+                        stayInfo.getPictures() != null &&
+                                !stayInfo.getPictures().isEmpty()
+                ) {
+                    mainImageUrl =
+                            stayInfo.getPictures().get(0).getFilePath();
+                }
+
+                log.info("current roomImageUrl={}", mainImageUrl);
+
+                currentResDto =
+                        MyPageDashboardRespDto.CurrentReservationDto.builder()
+                                .reservationId(currentValidRes.getId())
+                                .workspaceName(currentValidRes.getStayName())
+                                .roomTypeName(stayInfo.getName())
+                                .startDate(currentValidRes.getCheckinDate() != null
+                                        ? currentValidRes.getCheckinDate().atStartOfDay()
+                                        : null)
+                                .endDate(currentValidRes.getCheckoutDate() != null
+                                        ? currentValidRes.getCheckoutDate().atStartOfDay()
+                                        : null)
+                                .locationAddress(spaceInfo.getAddress1())
+                                .roomImageUrl(mainImageUrl)
+                                .build();
+
             } catch (Exception e) {
-                log.error("마이페이지 대시보드 상품 연동 중 에러 발생 (임시 데이터 대체)", e);
+                log.error("마이페이지 대시보드 상품 연동 중 에러 발생", e);
             }
         }
 
@@ -127,7 +144,7 @@ public class MyPageService {
                         StayResDto stayInfo = stayService.selectOne(res.getStayId());
                         // 💡 [변경] 지난 워케이션도 SpaceService를 연동해 공간의 사진을 가져옵니다.
                         SpaceResDto spaceInfo = spaceService.selectOne(stayInfo.getSpaceId());
-                        
+
                         if (
                                 stayInfo.getPictures() != null &&
                                         !stayInfo.getPictures().isEmpty()
