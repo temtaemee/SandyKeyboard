@@ -1,6 +1,5 @@
 package com.kh.app.member.service;
 
-import com.kh.app.board.review.repository.CommentRepository;
 import com.kh.app.common.dto.PageRespDto;
 import com.kh.app.company.entity.CompanyEntity;
 import com.kh.app.company.repository.CompanyRepository;
@@ -12,13 +11,10 @@ import com.kh.app.member.repository.MemberRepository;
 import com.kh.app.member.repository.ProfileRepository;
 import com.kh.app.member.repository.SellerRepository;
 import com.kh.app.product.space.entity.Area;
-import jakarta.mail.internet.MimeMessage;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -37,7 +33,6 @@ public class MemberService {
     private final ProfileRepository profileRepository;
     private final SellerRepository sellerRepository;
     private final BankRepository bankRepository;
-    private final JavaMailSender mailSender;
     private final Map<String, AuthInfo> authCodeStore
             = new ConcurrentHashMap<>();
     private final Set<String> verifiedEmailSet = new HashSet<>();

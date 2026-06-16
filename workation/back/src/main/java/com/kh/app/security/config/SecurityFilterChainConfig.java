@@ -55,6 +55,7 @@ public class SecurityFilterChainConfig {
                                 .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
                                 .requestMatchers("/api/seller/**").hasAnyAuthority("SELLER", "ADMIN")
                                 .requestMatchers("/api/user/payment/confirm").authenticated()
+                                .requestMatchers("/dummy-images/**").permitAll()
                                 .requestMatchers("/api/user/**").hasAnyAuthority("SELLER", "USER")
                                 .requestMatchers("/api/auth/**").authenticated()
                                 .requestMatchers(
