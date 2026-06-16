@@ -149,9 +149,16 @@ function MyPage() {
               {/* 백엔드 S3 동적 썸네일 주소 바인딩 ✨ */}
               <ReservationImage
                 src={
-                  currentRes.roomImageUrl?.startsWith('http')
-                    ? currentRes.roomImageUrl // 💡 이미 http로 시작하면 날것 그대로 사용
-                    : resolveAssetUrl(currentRes.roomImageUrl) // 상대 경로일 때만 S3/로컬 주소 결합
+                  currentRes.roomImageUrl?.includes('localhost')
+                    ? resolveAssetUrl(
+                        currentRes.roomImageUrl.replace(
+                          'http://localhost:8001/',
+                          ''
+                        )
+                      )
+                    : currentRes.roomImageUrl?.startsWith('http')
+                      ? currentRes.roomImageUrl
+                      : resolveAssetUrl(currentRes.roomImageUrl)
                 }
                 alt={currentRes.workspaceName}
               />
@@ -203,6 +210,7 @@ function MyPage() {
               pastWorkations.map((history) => {
                 console.log('history=', history);
                 console.log('workspaceImageUrl =', history.workspaceImageUrl);
+                console.log(currentRes?.roomImageUrl);
                 return (
                   <HistoryItem
                     key={history.reservationId}
