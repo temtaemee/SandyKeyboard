@@ -29,7 +29,7 @@ function MyPageSidebar({ memberInfo }) {
           onClick={() => navi('/mypage')}
         >
           <User size={18} />
-          <span>내 프로필</span>
+          <span>대시보드</span>
         </MenuItem>
 
         <MenuItem
