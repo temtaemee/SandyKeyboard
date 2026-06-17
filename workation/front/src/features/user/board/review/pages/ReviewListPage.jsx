@@ -447,7 +447,12 @@ export default function ReviewListPage() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
   const topRef = useRef(null);
+
+  const PAGE_GROUP_SIZE = 5;
+  const startPage = Math.floor(currentPage / PAGE_GROUP_SIZE) * PAGE_GROUP_SIZE;
+  const endPage = Math.min(startPage + PAGE_GROUP_SIZE, totalPages);
 
   useEffect(() => {
     setLoading(true);
@@ -455,6 +460,7 @@ export default function ReviewListPage() {
       .then((data) => {
         setList(data.content ?? []);
         setTotalPages(data.totalPages ?? 1);
+        setTotalElements(data.totalElements ?? 0);
       })
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));
@@ -471,6 +477,7 @@ export default function ReviewListPage() {
       const data = await getReviewList(currentPage);
       setList(data.content ?? []);
       setTotalPages(data.totalPages ?? 1);
+      setTotalElements(data.totalElements ?? 0);
       if ((data.content ?? []).length === 0 && currentPage > 0)
         setCurrentPage((p) => p - 1);
     } catch (err) {
@@ -486,7 +493,7 @@ export default function ReviewListPage() {
       <div ref={topRef} />
       <ListHeader>
         <ReviewCount>
-          ⭐ 전체 후기 <Strong>{totalPages * 10}개+</Strong>
+          ⭐ 전체 후기 <Strong>{totalElements}개</Strong>
         </ReviewCount>
       </ListHeader>
       <FeedList>
@@ -503,25 +510,40 @@ export default function ReviewListPage() {
       {totalPages > 1 && (
         <Pagination>
           <PageBtn
+            onClick={() => handlePageChange(startPage - 1)}
+            disabled={startPage === 0}
+          >
+            «
+          </PageBtn>
+          <PageBtn
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 0}
           >
             ‹
           </PageBtn>
-          {Array.from({ length: totalPages }, (_, i) => (
-            <PageBtn
-              key={i}
-              $active={i === currentPage}
-              onClick={() => handlePageChange(i)}
-            >
-              {i + 1}
-            </PageBtn>
-          ))}
+          {Array.from({ length: endPage - startPage }, (_, i) => {
+            const pageIdx = startPage + i;
+            return (
+              <PageBtn
+                key={pageIdx}
+                $active={pageIdx === currentPage}
+                onClick={() => handlePageChange(pageIdx)}
+              >
+                {pageIdx + 1}
+              </PageBtn>
+            );
+          })}
           <PageBtn
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages - 1}
           >
             ›
+          </PageBtn>
+          <PageBtn
+            onClick={() => handlePageChange(endPage)}
+            disabled={endPage >= totalPages}
+          >
+            »
           </PageBtn>
         </Pagination>
       )}
