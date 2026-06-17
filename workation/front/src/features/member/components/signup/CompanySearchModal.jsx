@@ -48,16 +48,6 @@ function CompanySearchModal({ onClose, onSelect }) {
           <CloseButton onClick={onClose}>&times;</CloseButton>
         </ModalHeader>
 
-        <SearchForm onSubmit={handleSearchSubmit}>
-          <SearchInput
-            type="text"
-            placeholder="기업명을 입력하세요 (예: 모래컴퍼니)"
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-          />
-          <SearchButton type="submit">검색</SearchButton>
-        </SearchForm>
-
         <CompanyListZone>
           {companyList.length === 0 ? (
             <EmptyText>검색 결과가 없습니다.</EmptyText>
