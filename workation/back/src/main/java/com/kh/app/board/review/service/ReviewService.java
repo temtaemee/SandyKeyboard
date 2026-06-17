@@ -49,7 +49,7 @@ public class ReviewService {
     // 전체 목록 조회 - 일반 사용자용 (숨긴 리뷰 제외)
     @Transactional(readOnly = true)
     public Page<ReviewListRespDto> findAll(int page) {
-        Pageable pageable = PageRequest.of(page, 10);
+        Pageable pageable = PageRequest.of(page, 5);
         return reviewRepository.findAllByDelYnAndHideYnOrderByCreatedAtDesc("N", "N", pageable)
                 .map(review -> {
                     List<ReviewImageEntity> images =
@@ -64,7 +64,7 @@ public class ReviewService {
         MemberEntity member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
 
-        Pageable pageable = PageRequest.of(page, 10);
+        Pageable pageable = PageRequest.of(page, 5);
         return reviewRepository.findAllByMemberAndDelYnOrderByCreatedAtDesc(member, "N", pageable)
                 .map(review -> {
                     List<ReviewImageEntity> images =
@@ -220,7 +220,7 @@ public class ReviewService {
     // seller용 - 본인 숙소 리뷰 목록 조회
     @Transactional(readOnly = true)
     public Page<ReviewListRespDto> findReviewsBySeller(Long memberId, int page) {
-        Pageable pageable = PageRequest.of(page, 10);
+        Pageable pageable = PageRequest.of(page, 5);
         return reviewRepository.findAllBySeller(memberId, pageable)
                 .map(review -> {
                     List<ReviewImageEntity> images =
@@ -280,7 +280,7 @@ public class ReviewService {
     // 전체 목록 조회 - 관리자용 (숨긴 리뷰 포함)
     @Transactional(readOnly = true)
     public Page<ReviewListRespDto> findAllForAdmin(int page) {
-        Pageable pageable = PageRequest.of(page, 10);
+        Pageable pageable = PageRequest.of(page, 5);
         return reviewRepository.findAllByDelYnOrderByIdDesc("N", pageable)
                 .map(review -> {
                     List<ReviewImageEntity> images =

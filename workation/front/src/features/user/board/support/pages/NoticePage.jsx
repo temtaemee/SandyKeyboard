@@ -38,6 +38,10 @@ export default function NoticePage() {
   const { notices, loading, currentPage, setCurrentPage, totalPages } =
     useNoticeList();
 
+  const PAGE_GROUP_SIZE = 5;
+  const startPage = Math.floor(currentPage / PAGE_GROUP_SIZE) * PAGE_GROUP_SIZE;
+  const endPage = Math.min(startPage + PAGE_GROUP_SIZE, totalPages);
+
   const fixedNotices = notices.filter((n) => n.pinYn === 'Y');
   const normalNotices = notices.filter((n) => n.pinYn !== 'Y');
 
@@ -99,25 +103,40 @@ export default function NoticePage() {
       {totalPages > 1 && (
         <Pagination>
           <PageBtn
+            onClick={() => setCurrentPage(startPage - 1)}
+            disabled={startPage === 0}
+          >
+            «
+          </PageBtn>
+          <PageBtn
             onClick={() => setCurrentPage((p) => p - 1)}
             disabled={currentPage === 0}
           >
             ‹
           </PageBtn>
-          {Array.from({ length: totalPages }, (_, i) => (
-            <PageBtn
-              key={i}
-              $active={i === currentPage}
-              onClick={() => setCurrentPage(i)}
-            >
-              {i + 1}
-            </PageBtn>
-          ))}
+          {Array.from({ length: endPage - startPage }, (_, i) => {
+            const pageIdx = startPage + i;
+            return (
+              <PageBtn
+                key={pageIdx}
+                $active={pageIdx === currentPage}
+                onClick={() => setCurrentPage(pageIdx)}
+              >
+                {pageIdx + 1}
+              </PageBtn>
+            );
+          })}
           <PageBtn
             onClick={() => setCurrentPage((p) => p + 1)}
             disabled={currentPage === totalPages - 1}
           >
             ›
+          </PageBtn>
+          <PageBtn
+            onClick={() => setCurrentPage(endPage)}
+            disabled={endPage >= totalPages}
+          >
+            »
           </PageBtn>
         </Pagination>
       )}

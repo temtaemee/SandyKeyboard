@@ -39,7 +39,7 @@ function MyPage() {
 
       {/* 메인 */}
       <Main>
-        <PageTitle>마이페이지</PageTitle>
+        <PageTitle>My 워케이션</PageTitle>
         <PageDesc>
           {memberInfo?.name || '회원'} 님의 워케이션 여정을 관리하세요.
         </PageDesc>
