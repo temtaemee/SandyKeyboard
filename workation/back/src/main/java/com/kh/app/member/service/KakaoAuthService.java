@@ -121,9 +121,15 @@ public class KakaoAuthService {
             return new LoginMemberResult(member, false);
         }
 
-        Optional<MemberEntity> existingMember = memberRepository.findMemberByUsername(email);
-        if (existingMember.isPresent()) {
-            rejectDeleted(existingMember.get(), email);
+        Optional<MemberEntity> existingMemberByUsername = memberRepository.findMemberByUsername(email);
+        Optional<MemberEntity> existingMemberByEmail = memberRepository.findByProfileEmail(email); // 👈 추가 필요
+
+        // 둘 중 하나라도 이미 존재하는 유저가 있다면, 신규 가입을 막고 연동 예외를 던짐
+        if (existingMemberByUsername.isPresent() || existingMemberByEmail.isPresent()) {
+            MemberEntity member = existingMemberByUsername.orElseGet(existingMemberByEmail::get);
+            rejectDeleted(member, email);
+
+            // 이 예외가 터져야 프론트엔드가 "이미 가입된 이메일입니다. 연동하시겠습니까?" 팝업을 띄울 수 있음
             throw new SocialLinkRequiredException(email, socialId, PROVIDER);
         }
 
