@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   getReviewList,
   deleteReview,
@@ -347,7 +347,14 @@ function ReviewCard({ review, onDelete, onEdit }) {
           </TitleRow>
           <WriterMeta>
             <WriterName>{review.writer}</WriterName>
-            {review.stayName && <StayInfo>📍 {review.stayName}</StayInfo>}
+            {review.stayName && (
+              <StayInfo
+                as={review.stayId ? Link : 'span'}
+                to={review.stayId ? `/resv/stay/${review.stayId}` : undefined}
+              >
+                📍 {review.stayName}
+              </StayInfo>
+            )}
             <StarDisplay rating={review.rating} />
             <ReviewLikeBtn reviewId={review.id} />
             <DateText>{formatDate(review.createdAt)}</DateText>

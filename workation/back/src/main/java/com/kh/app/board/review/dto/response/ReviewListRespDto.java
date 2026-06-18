@@ -24,6 +24,7 @@ public class ReviewListRespDto {
     private List<ImageDto> images;
 
     // 다녀온 곳 정보 추가
+    private Long stayId;
     private String stayName;
     private LocalDate checkinDate;
     private LocalDate checkoutDate;
@@ -47,10 +48,12 @@ public class ReviewListRespDto {
 
     // 이미지 없이 목록만 만들 때
     public static ReviewListRespDto from(ReviewEntity entity) {
+        Long stayId = null;
         String stayName = null;
         LocalDate checkin = null;
         LocalDate checkout = null;
         if (entity.getReservation() != null && entity.getReservation().getStay() != null) {
+            stayId = entity.getReservation().getStay().getId();
             stayName = entity.getReservation().getStay().getName();
             checkin = entity.getReservation().getCheckinDate();
             checkout = entity.getReservation().getCheckoutDate();
@@ -65,6 +68,7 @@ public class ReviewListRespDto {
                 .rating(entity.getRating())
                 .hideYn(entity.getHideYn())
                 .createdAt(entity.getCreatedAt())
+                .stayId(stayId)
                 .stayName(stayName)
                 .checkinDate(checkin)
                 .checkoutDate(checkout)
@@ -74,10 +78,12 @@ public class ReviewListRespDto {
 
     // 이미지 포함 버전
     public static ReviewListRespDto from(ReviewEntity entity, List<ReviewImageEntity> images) {
+        Long stayId = null;
         String stayName = null;
         LocalDate checkin = null;
         LocalDate checkout = null;
         if (entity.getReservation() != null && entity.getReservation().getStay() != null) {
+            stayId = entity.getReservation().getStay().getId();
             stayName = entity.getReservation().getStay().getName();
             checkin = entity.getReservation().getCheckinDate();
             checkout = entity.getReservation().getCheckoutDate();
@@ -92,6 +98,7 @@ public class ReviewListRespDto {
                 .rating(entity.getRating())
                 .hideYn(entity.getHideYn())
                 .createdAt(entity.getCreatedAt())
+                .stayId(stayId)
                 .stayName(stayName)
                 .checkinDate(checkin)
                 .checkoutDate(checkout)
