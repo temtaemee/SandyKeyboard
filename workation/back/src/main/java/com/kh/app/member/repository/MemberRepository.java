@@ -25,4 +25,6 @@ public interface MemberRepository extends JpaRepository<MemberEntity, Long>,Memb
 
     // 로그인용 (탈퇴회원 포함)
     Optional<MemberEntity> findMemberByUsername(String username);
+
+    Optional<MemberEntity> findByProfileEmail(String email);
 }
