@@ -24,15 +24,18 @@ public class ReviewRespDto {
     private List<ReviewImageRespDto> images;
 
     // 다녀온 곳 정보 추가
+    private Long stayId;
     private String stayName;
     private LocalDate checkinDate;
     private LocalDate checkoutDate;
 
     public static ReviewRespDto from(ReviewEntity entity, List<ReviewImageEntity> images) {
+        Long stayId = null;
         String stayName = null;
         LocalDate checkin = null;
         LocalDate checkout = null;
         if (entity.getReservation() != null && entity.getReservation().getStay() != null) {
+            stayId = entity.getReservation().getStay().getId();
             stayName = entity.getReservation().getStay().getName();
             checkin = entity.getReservation().getCheckinDate();
             checkout = entity.getReservation().getCheckoutDate();
@@ -47,6 +50,7 @@ public class ReviewRespDto {
                 .writer(entity.getMember().getUsername())
                 .hideYn(entity.getHideYn())
                 .createdAt(entity.getCreatedAt())
+                .stayId(stayId)
                 .stayName(stayName)
                 .checkinDate(checkin)
                 .checkoutDate(checkout)
