@@ -6,6 +6,7 @@ import com.kh.app.company.repository.CompanyRepository;
 import com.kh.app.member.dto.request.*;
 import com.kh.app.member.dto.response.*;
 import com.kh.app.member.entity.*;
+import com.kh.app.member.exception.DuplicateEmailException;
 import com.kh.app.member.repository.BankRepository;
 import com.kh.app.member.repository.MemberRepository;
 import com.kh.app.member.repository.ProfileRepository;
@@ -41,7 +42,9 @@ public class MemberService {
 
     @Transactional
     public void join(MemberJoinReqDto dto) {
-
+        if (memberRepository.findByProfileEmail(dto.getEmail()).isPresent()) {
+            throw new DuplicateEmailException("이미 가입된 이메일 주소입니다. 다른 이메일을 사용해 주세요.");
+        }
         String encodedPw = passwordEncoder.encode(dto.getPassword());
 
         // MEMBER 저장
@@ -51,6 +54,7 @@ public class MemberService {
 
         // PROFILE 저장
         MemberProfileEntity profile = dto.toProfileEntity(member);
+
         MemberProfileEntity memberProfile = profileRepository.save(profile);
         if (dto.getCompanyId() != null) {
             // 팀원이 만들어둔 companyRepository를 주입받아 사용합니다.
@@ -271,14 +275,16 @@ public class MemberService {
         authCodeStore.put(dto.getEmail(), new AuthInfo(code));
 
         // 🚨 공통 비동기 메서드 호출 ("비밀번호 재설정" 라벨 투입)
-        emailSender.sendEmailAsync(dto.getEmail(), code, "비밀번호 재설정");
+        emailSender.sendEmailAsync(dto.getUsername(), code, "비밀번호 재설정");
     }
 
     public void verifyEmailCode(
             VerifyEmailCodeReqDto dto
     ) {
+        MemberEntity member = memberRepository.findByProfileEmail(dto.getEmail())
+                .orElseThrow(() -> new RuntimeException("해당 이메일로 가입된 회원이 없습니다."));
         AuthInfo authInfo =
-                authCodeStore.get(dto.getEmail());
+                authCodeStore.get(member.getUsername());
 
         if (authInfo == null) {
             throw new RuntimeException("인증코드 없음");
@@ -286,15 +292,15 @@ public class MemberService {
         if (!authInfo.getCode().equals(dto.getCode())) {
             throw new RuntimeException("인증코드 불일치");
         }
-        verifiedEmailSet.add(dto.getEmail());
+        verifiedEmailSet.add(member.getUsername());
     }
 
     public void sendSocialLinkEmailCode(EmailVerifyReqDto dto) {
-        memberRepository.findMemberByUsername(dto.getEmail())
-                .orElseThrow(() -> new RuntimeException("회원 없음"));
+        MemberEntity member = memberRepository.findByProfileEmail(dto.getEmail())
+                .orElseThrow(() -> new RuntimeException("해당 이메일로 가입된 기존 회원 정보가 존재하지 않습니다."));
 
         FindPasswordReqDto mailDto = new FindPasswordReqDto();
-        mailDto.setUsername(dto.getEmail());
+        mailDto.setUsername(member.getUsername());
         mailDto.setEmail(dto.getEmail());
         sendSocialEmailCode(mailDto);
     }
@@ -389,7 +395,7 @@ public class MemberService {
 
         // 인증코드 생성 및 세션/메모리 저장
         String code = String.valueOf((int)((Math.random() * 900000) + 100000));
-        authCodeStore.put(dto.getEmail(), new AuthInfo(code));
+        authCodeStore.put(dto.getUsername(), new AuthInfo(code));
 
         // 🚨 [비동기 호출] 진짜 무거운 메일 조립 및 발송은 별도 쓰레드에 던지고, 이 메서드는 바로 종료(리턴)됩니다!
         emailSender.sendEmailAsync(dto.getEmail(), code,"소셜연동");

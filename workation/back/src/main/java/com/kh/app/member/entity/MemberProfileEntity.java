@@ -36,7 +36,7 @@ public class MemberProfileEntity {
     @Column(name = "PHONE", length = 13)
     private String phone;
 
-    @Column(name = "EMAIL", length = 50)
+    @Column(name = "EMAIL", length = 50, unique = true)
     private String email;
 
     // MemberProfileEntity.java 예시
