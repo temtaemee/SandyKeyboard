@@ -74,6 +74,7 @@ export default function AdminSellersPage() {
     setSearchQuery,
     handleViewChange,
     confirmTarget,
+    setConfirmTarget,
     isSellerSuspended,
     isCustomerSuspended,
     handleToggleClick,
