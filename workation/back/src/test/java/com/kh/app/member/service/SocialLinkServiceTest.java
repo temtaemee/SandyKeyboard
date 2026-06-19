@@ -36,8 +36,11 @@ class SocialLinkServiceTest {
     @Test
     void socialLinkRejectsUnverifiedEmail() {
         SocialLinkReqDto dto = socialLinkReqDto();
+        MemberEntity member = new MemberEntity();
+        member.setUsername("user_username");
 
-        when(memberService.isVerifiedEmail(dto.getEmail())).thenReturn(false);
+        when(memberRepository.findByProfileEmail(dto.getEmail())).thenReturn(Optional.of(member));
+        when(memberService.isVerifiedEmail(member.getUsername())).thenReturn(false);
 
         assertThatThrownBy(() -> socialLinkService.socialLink(dto))
                 .isInstanceOf(RuntimeException.class)
@@ -50,10 +53,10 @@ class SocialLinkServiceTest {
     void socialLinkRejectsAlreadyLinkedProviderForMember() {
         SocialLinkReqDto dto = socialLinkReqDto();
         MemberEntity member = new MemberEntity();
-        member.setUsername(dto.getEmail());
+        member.setUsername("user_username");
 
-        when(memberService.isVerifiedEmail(dto.getEmail())).thenReturn(true);
-        when(memberRepository.findMemberByUsername(dto.getEmail())).thenReturn(Optional.of(member));
+        when(memberRepository.findByProfileEmail(dto.getEmail())).thenReturn(Optional.of(member));
+        when(memberService.isVerifiedEmail(member.getUsername())).thenReturn(true);
         when(socialAccountRepository.findBySocialIdAndProvider(dto.getSocialId(), dto.getProvider()))
                 .thenReturn(Optional.empty());
         when(socialAccountRepository.existsByMemberAndProvider(member, dto.getProvider())).thenReturn(true);

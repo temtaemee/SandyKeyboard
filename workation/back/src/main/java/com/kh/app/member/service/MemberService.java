@@ -220,6 +220,9 @@ public class MemberService {
     @Transactional
     public void editMyInfo(Long memberId, MemberUpdateReqDto dto) {
         MemberProfileEntity profile = profileRepository.findById(memberId).orElseThrow(() -> new RuntimeException("회원 없음"));
+        if (profile.getEmail() != null && !profile.getEmail().equals(dto.getEmail())) {
+            throw new IllegalArgumentException("이메일은 변경할 수 없습니다.");
+        }
         profile.updateProfile(
                 dto.getName(),
                 dto.getPhone(),
