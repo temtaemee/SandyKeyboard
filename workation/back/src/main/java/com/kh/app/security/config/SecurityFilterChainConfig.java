@@ -1,5 +1,6 @@
 package com.kh.app.security.config;
 
+import com.kh.app.member.repository.MemberRepository;
 import com.kh.app.security.filter.CustomLoginFilter;
 import com.kh.app.security.filter.JwtFilter;
 import com.kh.app.security.util.JwtUtil;
@@ -29,6 +30,7 @@ public class SecurityFilterChainConfig {
     private final AuthenticationConfiguration configuration;
     private final JwtUtil jwtUtil;
     private final ObjectMapper objectMapper;
+    private final MemberRepository memberRepository;
 
     @Value("${app.cors.allowed-origins:http://localhost:5173,http://127.0.0.1:5173}")
     private String allowedOrigins;
@@ -70,7 +72,7 @@ public class SecurityFilterChainConfig {
         );
 
         //JWT 필터 설정
-        JwtFilter jwtFilter = new JwtFilter(jwtUtil);
+        JwtFilter jwtFilter = new JwtFilter(jwtUtil,memberRepository);
         hs.addFilterBefore(jwtFilter , UsernamePasswordAuthenticationFilter.class);
 
         //로그인 필터 설정
