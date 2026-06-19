@@ -23,4 +23,5 @@ public class MemberMeRespDto {
     private String address;
     private String addressDetail;
     private String profileImageUrl;
+    private String provider;
 }

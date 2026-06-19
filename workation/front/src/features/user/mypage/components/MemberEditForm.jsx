@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import useMypage from '../hooks/useMypage';
 import { editMyInfo } from '../api/mypageApi';
+import AddressSearchModal from './../../../../home/components/AddressSearchModal';
 
 function MemberEditForm({ setEditMode }) {
   const { memberInfo, loading } = useMypage();
@@ -81,7 +82,9 @@ function MemberEditForm({ setEditMode }) {
           type="email"
           name="email"
           value={vo.email}
+          readOnly={memberInfo && memberInfo.provider !== 'LOCAL'}
           onChange={handleChange}
+          $isSocial={memberInfo && memberInfo.provider !== 'LOCAL'}
         />
       </InputGroup>
 
@@ -195,21 +198,28 @@ const Label = styled.label`
 const Input = styled.input`
   width: 100%;
   height: 52px;
-
   border: 1px solid #dbe2e8;
   border-radius: 14px;
-
   padding: 0 16px;
-
   font-size: 14px;
-
   outline: none;
-
   transition: 0.2s;
 
   &:focus {
     border-color: #3f6971;
   }
+
+  /* 소셜 계정이라 readOnly 상태일 때의 스타일 */
+  ${(props) =>
+    props.$isSocial &&
+    `
+    background-color: #f3f4f6; /* 회색 배경 */
+    color: #9ca3af;            /* 흐린 글자색 */
+    cursor: not-allowed;       /* 금지 아이콘 커서 */
+    &:focus {
+      border-color: #dbe2e8;   /* 포커스 시 테두리 색상 유지 */
+    }
+  `}
 `;
 // 💡 주소 정렬용 행 레이아웃
 const AddressRow = styled.div`

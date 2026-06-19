@@ -7,10 +7,7 @@ import com.kh.app.member.dto.request.*;
 import com.kh.app.member.dto.response.*;
 import com.kh.app.member.entity.*;
 import com.kh.app.member.exception.DuplicateEmailException;
-import com.kh.app.member.repository.BankRepository;
-import com.kh.app.member.repository.MemberRepository;
-import com.kh.app.member.repository.ProfileRepository;
-import com.kh.app.member.repository.SellerRepository;
+import com.kh.app.member.repository.*;
 import com.kh.app.product.space.entity.Area;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +36,7 @@ public class MemberService {
     private final Set<String> verifiedEmailSet = new HashSet<>();
     private final CompanyRepository companyRepository;
     private final EmailSender emailSender;
+    private final SocialAccountRepository socialAccountRepository;
 
     @Transactional
     public void join(MemberJoinReqDto dto) {
@@ -93,9 +91,18 @@ public class MemberService {
         MemberEntity member = memberRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("회원 없음"));
 
+        // 💡 1. 소셜 어카운트 리포지토리에서 해당 멤버 객체로 소셜 연동 정보를 조회
+        List<SocialAccountEntity> socialAccounts = socialAccountRepository.findByMember(member);
+
+        // 💡 2. 소셜 연동 데이터가 존재하면 소셜 로그인 유저로 판단 (첫 번째 프로바이더명 추출, 없으면 "LOCAL")
+        String provider = "LOCAL";
+        if (socialAccounts != null && !socialAccounts.isEmpty()) {
+            provider = socialAccounts.get(0).getProvider(); // 예: "KAKAO", "NAVER" 등
+        }
+
         MemberProfileEntity memberProfile = member.getProfile();
 
-        // 1. 초기값 세팅 (profileImageUrl도 여기에 null로 초기화합니다)
+        // 초기값 세팅
         String companyName = null;
         String name = null;
         String phone = null;
@@ -103,29 +110,30 @@ public class MemberService {
         String zonecode = null;
         String address = null;
         String addressDetail = null;
-        String profileImageUrl = null; // 🚨 안전하게 격리 완료
+        String profileImageUrl = null;
         Area preferredArea = null;
 
-        // 2. 핵심 널 방어: 실제 데이터가 존재할 때만 안전하게 추출
+        // 핵심 널 방어
         if (memberProfile != null) {
             name = memberProfile.getName();
             phone = memberProfile.getPhone();
-            email = memberProfile.getEmail();
+            email = memberProfile.getEmail(); // 💡 일반/소셜 모두 프로필이 작성되었다면 여기서 정상적으로 이메일을 가져옵니다.
             zonecode = memberProfile.getZonecode();
             address = memberProfile.getAddress();
             addressDetail = memberProfile.getAddressDetail();
-            profileImageUrl = memberProfile.getProfileImageUrl(); // 🚨 안전 구역 안에서 주입
+            profileImageUrl = memberProfile.getProfileImageUrl();
             preferredArea = memberProfile.getPreferredArea();
             if (memberProfile.getCompany() != null) {
                 companyName = memberProfile.getCompany().getCompanyName();
             }
         } else {
-            // 소셜 신규 가입자를 위한 방어선
+            // 소셜 신규 가입자를 위한 방어선 (아직 마이페이지 프로필을 한 번도 저장하지 않은 유저)
             name = "소셜 가입 회원";
+            // 💡 빨간 줄 해결: SocialAccount에 email이 없으므로, 시큐리티 컨텍스트에 담겨 전송된 username(이메일 형식일 가능성이 높음)을 우선 대입합니다.
             email = member.getUsername();
         }
 
-        // 3. 빌더 패턴에는 널 검증이 완전히 끝난 로컬 변수들만 매핑!
+        // 빌더 패턴 매핑
         return MemberMeRespDto.builder()
                 .memberId(member.getId())
                 .joinDate(member.getCreatedAt())
@@ -135,11 +143,12 @@ public class MemberService {
                 .phone(phone)
                 .email(email)
                 .zonecode(zonecode)
-                .profileImageUrl(profileImageUrl) // 🚨 객체가 아닌 검증된 '변수'를 매핑해서 절대 안 터짐
+                .profileImageUrl(profileImageUrl)
                 .address(address)
                 .addressDetail(addressDetail)
                 .companyName(companyName)
                 .preferredArea(preferredArea)
+                .provider(provider)
                 .build();
     }
 
