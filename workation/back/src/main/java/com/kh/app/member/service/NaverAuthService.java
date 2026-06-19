@@ -105,9 +105,13 @@ public class NaverAuthService {
             return new LoginMemberResult(member, needsProfile);
         }
 
-        Optional<MemberEntity> existingMember = memberRepository.findMemberByUsername(email);
-        if (existingMember.isPresent()) {
-            rejectDeleted(existingMember.get(), email);
+        Optional<MemberEntity> existingMemberByUsername = memberRepository.findMemberByUsername(email);
+        Optional<MemberEntity> existingMemberByEmail = memberRepository.findByProfileEmail(email);
+        if (existingMemberByUsername.isPresent() || existingMemberByEmail.isPresent()) {
+            MemberEntity member = existingMemberByUsername.orElseGet(existingMemberByEmail::get);
+            rejectDeleted(member, email);
+
+            // 이 예외가 터져야 프론트엔드가 "이미 가입된 이메일입니다. 연동하시겠습니까?" 팝업을 띄울 수 있음
             throw new SocialLinkRequiredException(email, socialId, PROVIDER);
         }
 

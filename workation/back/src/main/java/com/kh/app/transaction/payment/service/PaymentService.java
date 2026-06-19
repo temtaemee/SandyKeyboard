@@ -7,6 +7,7 @@ import com.kh.app.middle.coupon.repository.MemberCouponRepository;
 import com.kh.app.notification.dto.request.NotificationCreateReqDto;
 import com.kh.app.notification.entity.NotificationType;
 import com.kh.app.notification.service.NotificationService;
+import com.kh.app.product.stay.repository.StayRepository;
 import com.kh.app.transaction.payment.dto.request.PaymentConfirmReqDto;
 import com.kh.app.transaction.payment.entity.PaymentEntity;
 import com.kh.app.transaction.payment.enums.PaymentMethod;
@@ -52,6 +53,7 @@ public class PaymentService {
     private final PayoutService payoutService;
     private final MemberCouponRepository memberCouponRepository;
     private final PaymentFailureRecorder paymentFailureRecorder;
+    private final StayRepository stayRepository;
 
 
     @Transactional
@@ -69,6 +71,24 @@ public class PaymentService {
         if (username == null || reservation.getMember() == null ||
                 !username.equals(reservation.getMember().getUsername())) {
             throw new AccessDeniedException("Payment confirmation is allowed only for the reservation owner.");
+        }
+
+        // ==========================================
+        //  [동시성 제어] 결제 승인 API 호출 직전 중복 예약 검증 및 락 획득
+        // ==========================================
+        // 1. 해당 숙소(Stay) row에 대해 비관적 락을 획득합니다. (다른 동시 요청이 있다면 락이 풀릴 때까지 대기합니다.)
+        stayRepository.findByIdWithLock(reservation.getStay().getId())
+                .orElseThrow(() -> new EntityNotFoundException("숙소 정보가 존재하지 않습니다."));
+        // 2. 락을 획득한 시점에서 최신 예약 데이터를 기준으로 중복 예약이 이미 결제 완료되었는지 재조회합니다.
+        long duplicateCount = reservationRepository.countDuplicateReservations(
+                reservation.getStay().getId(),
+                reservation.getCheckinDate(),
+                reservation.getCheckoutDate()
+        );
+        if (duplicateCount > 0) {
+            // 이미 다른 트랜잭션에서 결제를 완료(PAYMENT_COMPLETED 등)한 상태라면 예외를 던져 결제 승인을 차단합니다.
+            throw new PaymentConfirmException(HttpStatus.CONFLICT.value(),
+                    "이미 다른 회원의 결제가 완료된 일정입니다. 결제가 진행되지 않았습니다.");
         }
 
         try {

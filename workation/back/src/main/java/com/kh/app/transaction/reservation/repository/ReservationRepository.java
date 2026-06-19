@@ -1,10 +1,13 @@
 package com.kh.app.transaction.reservation.repository;
 
 import com.kh.app.member.entity.MemberEntity;
+import com.kh.app.product.stay.entity.StayEntity;
 import com.kh.app.transaction.reservation.entity.ReservationEntity;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -81,4 +84,9 @@ public interface ReservationRepository extends JpaRepository<ReservationEntity, 
            "AND NOT EXISTS (SELECT rev FROM ReviewEntity rev WHERE rev.reservation.id = r.id AND rev.delYn = 'N') " +
            "ORDER BY r.id DESC")
     List<ReservationEntity> findUnreviewedReservations(@Param("memberId") Long memberId);
+
+
+
+
 }
+

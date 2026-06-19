@@ -591,4 +591,17 @@ export const StayInfo = styled.span`
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.primary}20;
+    border-color: ${({ theme }) => theme.colors.primary}60;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
 `;

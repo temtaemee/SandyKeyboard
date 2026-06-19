@@ -250,7 +250,7 @@ public class MemberApiController {
     }
     @PostMapping("/guest/social-join")
     public ResponseEntity<String> socialJoin(@RequestBody SocialJoinReqDto dto) {
-        // 💡 소셜 회원가입 마무리(프로필 생성) 로직 호출
+        // 💡 소셜 회원가입 마무리(프로필 생성)
         memberService.createSocialProfile(dto);
         return ResponseEntity.ok("소셜 연동 및 가입 완료!");
     }
