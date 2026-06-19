@@ -54,6 +54,8 @@ function useLogin() {
               alert("계정 복구에 실패했습니다. 고객센터로 문의해 주세요.");
             }
           }
+        } else if (serverMessage.includes('잠겨')) {
+          setError('정지된 계정입니다. 관리자에게 문의해주세요.');
         } else {
           // 2. 일반 로그인 실패인 경우 (자격 증명 오류 등 강제 고정)
           setError('아이디 또는 비밀번호가 일치하지 않습니다.');
