@@ -30,7 +30,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SpacePublicApiController {
 
-        private final SpaceService spaceService;
+    private final SpaceService spaceService;
 
     @Operation(summary = "공개 공간 목록 조회",
             description = "visibleYn=Y, delYn=N 조건이 강제 적용됩니다. keyword/area 동적 필터 지원.")
@@ -81,5 +81,3 @@ public class SpacePublicApiController {
         return ResponseEntity.ok(spaceService.getRecommendedSpaces(area, memberId));
     }
 }
-//
-//dsds
