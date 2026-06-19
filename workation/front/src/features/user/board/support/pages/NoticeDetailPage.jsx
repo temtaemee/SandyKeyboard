@@ -92,16 +92,10 @@ export default function NoticeDetailPage() {
                 <FileIcon>📎</FileIcon>
                 <FileName>{file.originalFileName}</FileName>
                 <DownloadBtn
-                  onClick={async () => {
+                  onClick={() => {
                     const url = resolveS3AssetUrl(file.s3Key);
-                    const response = await fetch(url);
-                    const blob = await response.blob();
-                    const blobUrl = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = blobUrl;
-                    a.download = file.originalFileName;
-                    a.click();
-                    URL.revokeObjectURL(blobUrl);
+                    // 새 창(새 탭)에서 S3 주소를 바로 열어 브라우저 자체 다운로드 기능을 작동시킵니다.
+                    window.open(url, '_blank');
                   }}
                 >
                   다운로드
