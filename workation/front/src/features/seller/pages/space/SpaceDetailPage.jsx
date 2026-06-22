@@ -265,9 +265,13 @@ export default function SpaceDetailPage() {
             ) : stays.length === 0 ? (
               <EmptyState
                 title="등록된 스테이가 없습니다"
-                description="이 공간에 스테이(객실)를 등록해보세요."
-                actionLabel="스테이 등록"
-                onAction={() => navigate('/seller/stays/register')}
+                description={
+                  isApproved
+                    ? '이 공간에 스테이(객실)를 등록해보세요.'
+                    : '관리자 승인 완료 후 스테이를 등록할 수 있습니다.'
+                }
+                actionLabel={isApproved ? '스테이 등록' : undefined}
+                onAction={isApproved ? () => navigate('/seller/stays/register') : undefined}
               />
             ) : (
               <StayGrid>
