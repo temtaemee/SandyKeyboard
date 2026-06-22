@@ -132,7 +132,7 @@ public class NaverAuthService {
 
     private void rejectDeleted(MemberEntity member, String email) {
         if (member.getDeletedAt() != null) {
-            throw new SocialWithdrawnUserException("탈퇴 처리된 계정입니다.", email);
+            throw new SocialWithdrawnUserException("탈퇴한 회원입니다.", email);
         }
     }
 

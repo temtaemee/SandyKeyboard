@@ -158,7 +158,7 @@ class MemberServiceTest {
         when(socialAccountRepository.findByMember(member)).thenReturn(java.util.Collections.singletonList(socialAccount)); // social user
 
         assertThatThrownBy(() -> memberService.editMyInfo(memberId, dto))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(com.kh.app.member.exception.MemberException.class)
                 .hasMessage("소셜 로그인 회원은 이메일을 변경할 수 없습니다.");
     }
 
