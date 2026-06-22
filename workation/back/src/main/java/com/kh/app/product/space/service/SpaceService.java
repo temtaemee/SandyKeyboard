@@ -203,7 +203,19 @@ public class SpaceService {
                 .map(stay -> {
                     List<StayOption> options = stayOptionRepository.findByStay(stay)
                             .stream().map(StayOptionEntity::getStayOption).toList();
-                    return StayResDto.from(stay, options, stayPictureRepository.findByStayOrderBySortOrder(stay));
+                    List<StayResDto.PictureInfo> stayPictures = stayPictureRepository.findByStayOrderBySortOrder(stay)
+                            .stream()
+                            .map(p -> StayResDto.PictureInfo.builder()
+                                    .id(p.getId())
+                                    .filePath(resolveImageUrl(p.getFilePath()))
+                                    .originName(p.getOriginName())
+                                    .mainYn(p.getMainYn())
+                                    .sortOrder(p.getSortOrder())
+                                    .contentType(p.getContentType())
+                                    .fileSize(p.getFileSize())
+                                    .build())
+                            .toList();
+                    return StayResDto.from(stay, options, stayPictures, true);
                 })
                 .toList();
 
