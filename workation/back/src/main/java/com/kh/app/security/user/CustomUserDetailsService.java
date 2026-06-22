@@ -24,10 +24,10 @@ public class CustomUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         MemberEntity entity = memberRepository
                 .findMemberByUsername(username)
-                .orElseThrow(()-> new UsernameNotFoundException("회원 없음"));
+                .orElseThrow(()-> new UsernameNotFoundException("존재하지 않는 회원입니다."));
 
         if (entity.getDeletedAt() != null) {
-            throw new WithdrawnUserException("탈퇴 처리된 계정입니다.");
+            throw new WithdrawnUserException("탈퇴한 회원입니다.");
         }
         Area preferredArea = (entity.getProfile() != null) ? entity.getProfile().getPreferredArea()
                 : null;
