@@ -124,7 +124,8 @@ public class SpaceRepositoryImpl implements SpaceRepositoryCustom {
                 .selectFrom(space)
                 .leftJoin(space.seller, member).fetchJoin()
                 .where(
-                        space.seller.id.eq(memberId)
+                        space.seller.id.eq(memberId),
+                        space.delYn.eq("N")
                 )
                 .orderBy(space.createdAt.desc())
                 .fetch();
@@ -157,6 +158,7 @@ public class SpaceRepositoryImpl implements SpaceRepositoryCustom {
                 // 💡 review.space를 직접 조인 (가장 안전한 방식)
                 .innerJoin(review).on(review.space.eq(space))
                 .where(
+                        space.delYn.eq("N"),
                         space.visibleYn.eq("Y"),
                         area != null ? space.area.eq(area) : null
                 )

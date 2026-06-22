@@ -194,7 +194,7 @@ public class SpaceService {
     }
 
     public SpaceResDto selectOneForSeller(Long id, Long memberId) {
-        SpaceEntity space = spaceRepository.findById(id)
+        SpaceEntity space = spaceRepository.findByIdAndDelYn(id, "N")
                 .orElseThrow(() -> new ProductException(ErrorCode.SPACE_NOT_FOUND));
         verifySpaceOwnership(space, memberId);
 
