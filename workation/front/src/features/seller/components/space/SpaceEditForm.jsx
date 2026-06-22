@@ -5,6 +5,7 @@ import LoadingSpinner from '../common/LoadingSpinner';
 import { INIT_CATEGORIES } from './SpaceFormStep2';
 import SpaceFormStep3 from './SpaceFormStep3';
 import { resolveSellerImageUrl } from '../../utils/imageUrl';
+import { geocodeAddress } from '../../utils/kakaoMapLoader';
 
 const EDIT_ACCENT = '#3ec9a7';
 
@@ -162,17 +163,20 @@ export default function SpaceEditForm({ space, onSubmit, loading, disabled = fal
   const openPostcode = () => {
     if (!window.daum?.Postcode) { alert('주소 검색 서비스를 불러오는 중입니다.'); return; }
     new window.daum.Postcode({
-      oncomplete(result) {
+      async oncomplete(result) {
         const address = result.roadAddress || result.jibunAddress;
         set('address1', address);
-        const geocoder = new window.kakao.maps.services.Geocoder();
-        geocoder.addressSearch(address, (results, status) => {
-          if (status !== window.kakao.maps.services.Status.OK) return;
-          const { y: lat, x: lng } = results[0];
+        set('latitude', '');
+        set('longitude', '');
+
+        try {
+          const { lat, lng } = await geocodeAddress(address);
           set('latitude', lat);
           set('longitude', lng);
           movePin(Number(lat), Number(lng));
-        });
+        } catch (error) {
+          alert('주소 좌표를 확인하지 못했습니다. 다른 주소를 선택하거나 잠시 후 다시 시도하세요.');
+        }
       },
     }).open();
   };

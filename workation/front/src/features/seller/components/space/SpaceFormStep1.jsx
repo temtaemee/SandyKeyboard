@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { Search, MapPin } from 'lucide-react';
+import { geocodeAddress } from '../../utils/kakaoMapLoader';
 
 const ACCENT = '#3ec9a7';
 
@@ -68,22 +69,23 @@ export default function SpaceFormStep1({ data, onChange, errors = {} }) {
     }
 
     new window.daum.Postcode({
-      oncomplete(result) {
+      async oncomplete(result) {
         const address = result.roadAddress || result.jibunAddress;
         onChange('address1', address);
+        onChange('latitude', '');
+        onChange('longitude', '');
 
-        // Geocoder로 좌표 변환
-        const geocoder = new window.kakao.maps.services.Geocoder();
-        geocoder.addressSearch(address, (results, status) => {
-          if (status !== window.kakao.maps.services.Status.OK) return;
-          const { y: lat, x: lng } = results[0];
+        try {
+          const { lat, lng } = await geocodeAddress(address);
           onChange('latitude',  lat);
           onChange('longitude', lng);
 
           if (mapObjRef.current && markerRef.current) {
             movePin(mapObjRef.current, markerRef.current, Number(lat), Number(lng));
           }
-        });
+        } catch (error) {
+          alert('주소 좌표를 확인하지 못했습니다. 다른 주소를 선택하거나 잠시 후 다시 시도하세요.');
+        }
       },
     }).open();
   };
