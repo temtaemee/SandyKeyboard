@@ -178,8 +178,8 @@ jobs:
             AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
             AWS_S3_BASE_URL=$AWS_S3_BASE_URL
             SPRING_JPA_HIBERNATE_DDL_AUTO=none
-            SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE=100MB
-            SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE=100MB
+            SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE=10GB
+            SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE=10GB
             JAVA_TOOL_OPTIONS=-Xms128m -Xmx384m -XX:+ExitOnOutOfMemoryError
             EOF
 
@@ -241,10 +241,10 @@ jobs:
             NGINX_API_CONF=$(sudo grep -Rsl "server_name .*api\.sandykey\.shop" /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null | head -n 1 || true)
             if [ -n "$NGINX_API_CONF" ] && sudo perl -0ne 'exit((/server\s*\{(?:(?!server\s*\{).)*server_name\s+[^;]*api\.sandykey\.shop[^;]*;(?:(?!server\s*\{).)*client_max_body_size/s) ? 0 : 1)' "$NGINX_API_CONF"; then
               sudo cp "$NGINX_API_CONF" "$NGINX_API_CONF.bak.$(date +%Y%m%d%H%M%S)"
-              sudo perl -0pi -e 's#(server\s*\{(?:(?!server\s*\{).)*server_name\s+[^;]*api\.sandykey\.shop[^;]*;(?:(?!server\s*\{).)*?)client_max_body_size\s+\S+;#$1client_max_body_size 100m;#s' "$NGINX_API_CONF"
+              sudo perl -0pi -e 's#(server\s*\{(?:(?!server\s*\{).)*server_name\s+[^;]*api\.sandykey\.shop[^;]*;(?:(?!server\s*\{).)*?)client_max_body_size\s+\S+;#$1client_max_body_size 10g;#s' "$NGINX_API_CONF"
             elif [ -n "$NGINX_API_CONF" ]; then
               sudo cp "$NGINX_API_CONF" "$NGINX_API_CONF.bak.$(date +%Y%m%d%H%M%S)"
-              sudo perl -0pi -e 's#(server\s*\{(?:(?!server\s*\{).)*server_name\s+[^;]*api\.sandykey\.shop[^;]*;\n)#$1\n    client_max_body_size 100m;\n#s' "$NGINX_API_CONF"
+              sudo perl -0pi -e 's#(server\s*\{(?:(?!server\s*\{).)*server_name\s+[^;]*api\.sandykey\.shop[^;]*;\n)#$1\n    client_max_body_size 10g;\n#s' "$NGINX_API_CONF"
             fi
             if [ -n "$NGINX_API_CONF" ] && ! sudo grep -q "location /ws-connect" "$NGINX_API_CONF"; then
               sudo cp "$NGINX_API_CONF" "$NGINX_API_CONF.bak.$(date +%Y%m%d%H%M%S)"
