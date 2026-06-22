@@ -24,7 +24,7 @@ public class SocialLinkService {
         MemberEntity member = memberRepository.findByProfileEmail(dto.getEmail())
                 .orElseThrow(() -> new RuntimeException("해당 이메일로 가입된 회원 정보가 존재하지 않습니다."));
 
-        // 2. 🔥 [수정] 이메일 주소가 아닌, 회원의 진짜 아이디(member.getUsername())로 인증 여부를 검사합니다!
+        // 2. 🔥 [수정] 이메일 주소가 아닌, 회원의 진짜 아이디(member.getUsername())로 인증 여부를 검사
         if (!memberService.isVerifiedEmail(member.getUsername())) {
             throw new RuntimeException("이메일 인증 필요");
         }

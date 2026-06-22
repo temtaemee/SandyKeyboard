@@ -84,7 +84,7 @@ function MyCouponPage() {
 
                 <CouponButton
                   onClick={() => {
-                    navi(`/event`);
+                    navi(`/board/event`);
                   }}
                 >
                   새로운 쿠폰 등록

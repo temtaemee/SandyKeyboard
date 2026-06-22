@@ -59,6 +59,7 @@ function FindPasswordPage() {
   async function handleVerifyCode() {
     try {
       TODO: await verifyCode({
+        username: userInfo.username,
         email: userInfo.email,
         code: authCode,
       });
