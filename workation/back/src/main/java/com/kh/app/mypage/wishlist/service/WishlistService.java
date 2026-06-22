@@ -11,6 +11,8 @@ import com.kh.app.product.space.repository.SpacePictureRepository;
 import com.kh.app.product.space.repository.SpaceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import com.kh.app.member.exception.MemberException;
+import com.kh.app.member.exception.ErrorCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,15 +32,15 @@ public class WishlistService {
     @Transactional
     public void insertWishlist(Long memberId, Long spaceId) {
         if (wishlistRepository.existsByMemberIdAndSpaceId(memberId, spaceId)) {
-            throw new IllegalArgumentException("이미 찜한 공간입니다.");
+            throw new MemberException(ErrorCode.DUPLICATE_WISHLIST);
         }
         log.info("spaceId = {}", spaceId);
 
         MemberEntity member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new RuntimeException("유저 없음"));
+                .orElseThrow(() -> new MemberException(ErrorCode.MEMBER_NOT_FOUND));
 
         SpaceEntity space = spaceRepository.findById(spaceId)
-                .orElseThrow(() -> new RuntimeException("공간 없음"));
+                .orElseThrow(() -> new MemberException(ErrorCode.SPACE_NOT_FOUND));
         log.info("space = {}", space.getId());
 
         WishlistEntity wishlist = WishlistEntity.builder()
@@ -53,10 +55,10 @@ public class WishlistService {
     @Transactional
     public void deleteWishlist(Long memberId, Long wishlistId) {
         WishlistEntity wishlist = wishlistRepository.findById(wishlistId)
-                .orElseThrow(() -> new RuntimeException("찜 없음"));
+                .orElseThrow(() -> new MemberException(ErrorCode.SYSTEM_ERROR, "찜 없음"));
 
         if (!wishlist.getMember().getId().equals(memberId)) {
-            throw new RuntimeException("삭제 권한 없음");
+            throw new MemberException(ErrorCode.WISHLIST_ACCESS_DENIED);
         }
         wishlistRepository.delete(wishlist);
     }

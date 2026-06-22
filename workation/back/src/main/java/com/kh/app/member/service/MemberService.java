@@ -7,6 +7,8 @@ import com.kh.app.member.dto.request.*;
 import com.kh.app.member.dto.response.*;
 import com.kh.app.member.entity.*;
 import com.kh.app.member.exception.DuplicateEmailException;
+import com.kh.app.member.exception.MemberException;
+import com.kh.app.member.exception.ErrorCode;
 import com.kh.app.member.repository.*;
 import com.kh.app.product.space.entity.Area;
 import jakarta.persistence.EntityNotFoundException;
@@ -41,7 +43,7 @@ public class MemberService {
     @Transactional
     public void join(MemberJoinReqDto dto) {
         if (memberRepository.findByProfileEmail(dto.getEmail()).isPresent()) {
-            throw new DuplicateEmailException("이미 가입된 이메일 주소입니다. 다른 이메일을 사용해 주세요.");
+            throw new MemberException(ErrorCode.DUPLICATE_EMAIL);
         }
         String encodedPw = passwordEncoder.encode(dto.getPassword());
 
@@ -69,14 +71,14 @@ public class MemberService {
     public void registerSeller(SellerApplyReqDto reqDto, Long memberId) {
         // 1. 이미 판매자인지 중복 체크
         if (sellerRepository.existsById(memberId)) {
-            throw new RuntimeException("이미 등록된 판매자입니다.");
+            throw new MemberException(ErrorCode.ALREADY_SELLER_APPLIED);
         }
         // 2. MemberEntity 조회
         MemberEntity member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 회원입니다."));
+                .orElseThrow(() -> new MemberException(ErrorCode.MEMBER_NOT_FOUND));
         // 3. BankEntity 조회 (reqDto에 담긴 bankId 활용)
         BankEntity bank = bankRepository.findById(reqDto.getBankId())
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 은행 정보입니다."));
+                .orElseThrow(() -> new MemberException(ErrorCode.SYSTEM_ERROR, "존재하지 않는 은행 정보입니다."));
         // 4. 권한 추가 (SELLER 권한 부여)
         // 중복 추가 방지를 위해 contains 체크를 하거나 Set의 특성을 활용합니다.
         if (!member.getRoleSet().contains(Role.SELLER)) {
@@ -203,9 +205,9 @@ public class MemberService {
     @Transactional
     public void banMember(Long id) {
         MemberEntity member = memberRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("회원 없음"));
+                .orElseThrow(() -> new MemberException(ErrorCode.MEMBER_NOT_FOUND));
         if ("Y".equals(member.getBanYn())) {
-            throw new RuntimeException("이미 정지된 회원");
+            throw new MemberException(ErrorCode.SYSTEM_ERROR, "이미 정지된 회원");
         }
         member.ban();
     }
@@ -213,18 +215,18 @@ public class MemberService {
     @Transactional
     public void unbanMember(Long id) {
         MemberEntity member = memberRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("회원 없음"));
+                .orElseThrow(() -> new MemberException(ErrorCode.MEMBER_NOT_FOUND));
         member.unban();
     }
 
     @Transactional
     public void editMyInfo(Long memberId, MemberUpdateReqDto dto) {
-        MemberProfileEntity profile = profileRepository.findById(memberId).orElseThrow(() -> new RuntimeException("회원 없음"));
+        MemberProfileEntity profile = profileRepository.findById(memberId).orElseThrow(() -> new MemberException(ErrorCode.MEMBER_NOT_FOUND));
         
         List<SocialAccountEntity> socialAccounts = socialAccountRepository.findByMember(profile.getMember());
         boolean isSocial = socialAccounts != null && !socialAccounts.isEmpty();
         if (isSocial && profile.getEmail() != null && !profile.getEmail().equals(dto.getEmail())) {
-            throw new IllegalArgumentException("소셜 로그인 회원은 이메일을 변경할 수 없습니다.");
+            throw new MemberException(ErrorCode.DUPLICATE_EMAIL, "소셜 로그인 회원은 이메일을 변경할 수 없습니다.");
         }
         
         profile.updateProfile(
@@ -241,18 +243,18 @@ public class MemberService {
     @Transactional
     public void updatePassword(Long memberId, MemberPasswordUpdateReqDto dto) {
         MemberEntity member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new RuntimeException("회원 없음"));
+                .orElseThrow(() -> new MemberException(ErrorCode.MEMBER_NOT_FOUND));
         // 현재 비밀번호 검증
         if (!passwordEncoder.matches(
                 dto.getCurrentPassword(),
                 member.getPassword()
         )) {
-            throw new RuntimeException("현재 비밀번호 불일치");
+            throw new MemberException(ErrorCode.PASSWORD_MISMATCH, "현재 비밀번호 불일치");
         }
         // 새 비밀번호 확인 검증
         if (!dto.getNewPassword()
                 .equals(dto.getNewPasswordCheck())) {
-            throw new RuntimeException("새 비밀번호 확인 불일치");
+            throw new MemberException(ErrorCode.PASSWORD_MISMATCH, "새 비밀번호 확인 불일치");
         }
         // 암호화
         String encodedPw =
@@ -298,22 +300,22 @@ public class MemberService {
             VerifyEmailCodeReqDto dto
     ) {
         MemberEntity member = memberRepository.findByProfileEmail(dto.getEmail())
-                .orElseThrow(() -> new RuntimeException("해당 이메일로 가입된 회원이 없습니다."));
+                .orElseThrow(() -> new MemberException(ErrorCode.MEMBER_NOT_FOUND, "해당 이메일로 가입된 회원이 없습니다."));
         AuthInfo authInfo =
                 authCodeStore.get(member.getUsername());
-
+ 
         if (authInfo == null) {
-            throw new RuntimeException("인증코드 없음");
+            throw new MemberException(ErrorCode.SYSTEM_ERROR, "인증코드 없음");
         }
         if (!authInfo.getCode().equals(dto.getCode())) {
-            throw new RuntimeException("인증코드 불일치");
+            throw new MemberException(ErrorCode.SYSTEM_ERROR, "인증코드 불일치");
         }
         verifiedEmailSet.add(member.getUsername());
     }
 
     public void sendSocialLinkEmailCode(EmailVerifyReqDto dto) {
         MemberEntity member = memberRepository.findByProfileEmail(dto.getEmail())
-                .orElseThrow(() -> new RuntimeException("해당 이메일로 가입된 기존 회원 정보가 존재하지 않습니다."));
+                .orElseThrow(() -> new MemberException(ErrorCode.MEMBER_NOT_FOUND, "해당 이메일로 가입된 기존 회원 정보가 존재하지 않습니다."));
 
         FindPasswordReqDto mailDto = new FindPasswordReqDto();
         mailDto.setUsername(member.getUsername());
@@ -333,12 +335,12 @@ public class MemberService {
     public void resetPassword(ResetPasswordReqDto dto) {
         // 1. 인증 여부 체크
         if (!verifiedEmailSet.contains(dto.getEmail())) {
-            throw new RuntimeException("인증되지 않은 사용자");
+            throw new MemberException(ErrorCode.SYSTEM_ERROR, "인증되지 않은 사용자");
         }
         // 2. 비밀번호 확인
         if (!dto.getNewPassword()
                 .equals(dto.getNewPasswordCheck())) {
-            throw new RuntimeException("비밀번호 불일치");
+            throw new MemberException(ErrorCode.PASSWORD_MISMATCH, "비밀번호 불일치");
         }
         // 3. 회원 조회 (email → profile → member)
         MemberProfileEntity profile =
@@ -361,7 +363,7 @@ public class MemberService {
     public void createSocialProfile(SocialJoinReqDto dto) {
         // 1. 소셜 로그인 시 이미 생성해둔 Member를 username(이메일)으로 찾습니다.
         MemberEntity member = memberRepository.findByUsername(dto.getUsername())
-                .orElseThrow(() -> new RuntimeException("해당 소셜 계정이 존재하지 않습니다."));
+                .orElseThrow(() -> new MemberException(ErrorCode.MEMBER_NOT_FOUND, "해당 소셜 계정이 존재하지 않습니다."));
 
         // 2. 이 유저를 위한 프로필 엔티티를 빌더로 생성합니다.
         MemberProfileEntity profile = MemberProfileEntity.builder()
@@ -381,17 +383,17 @@ public class MemberService {
 
     public SellerRespDto getSellerInfo(Long memberId) {
         SellerEntity seller = sellerRepository.findByIdWithMemberAndBank(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 셀러입니다."));
+                .orElseThrow(() -> new MemberException(ErrorCode.SELLER_NOT_FOUND));
         return SellerRespDto.from(seller);
     }
 
     @Transactional
     public void updateSellerInfo(Long memberId, SellerUpdateReqDto dto) {
         SellerEntity seller = sellerRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 셀러입니다."));
+                .orElseThrow(() -> new MemberException(ErrorCode.SELLER_NOT_FOUND));
 
         BankEntity bank = bankRepository.findById(dto.getBankId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 은행입니다."));
+                .orElseThrow(() -> new MemberException(ErrorCode.SYSTEM_ERROR, "존재하지 않는 은행 정보입니다."));
 
         seller.updateSeller(dto, bank);
     }
@@ -399,7 +401,7 @@ public class MemberService {
     @Transactional
     public void restoreAccount(String username) {
         MemberEntity member = memberRepository.findMemberByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("회원 없음"));
+                .orElseThrow(() -> new MemberException(ErrorCode.MEMBER_NOT_FOUND));
         member.unDelete();
     }
 
@@ -407,7 +409,7 @@ public class MemberService {
     public void sendSocialEmailCode(FindPasswordReqDto dto) {
         // 💡 [동기 처리] 회원 검증은 즉시 실행해서 에러가 나면 프론트에 바로 400/500 에러를 던집니다.
         profileRepository.findByMemberUsernameAndEmail(dto.getUsername(), dto.getEmail())
-                .orElseThrow(() -> new RuntimeException("회원 없음"));
+                .orElseThrow(() -> new MemberException(ErrorCode.MEMBER_NOT_FOUND));
 
         // 인증코드 생성 및 세션/메모리 저장
         String code = String.valueOf((int)((Math.random() * 900000) + 100000));

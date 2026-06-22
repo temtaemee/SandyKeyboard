@@ -11,56 +11,97 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-@RestControllerAdvice(basePackages = "com.kh.app.member")
+@RestControllerAdvice(basePackages = {"com.kh.app.member", "com.kh.app.mypage"})
 @Slf4j
 public class MemberExceptionHandler {
 
+    @ExceptionHandler(MemberException.class)
+    public ResponseEntity<Map<String, Object>> handleMemberException(MemberException e) {
+        log.warn("MemberException occurred: {}", e.getMessage());
+        ErrorCode errorCode = e.getErrorCode();
+        Map<String, Object> body = Map.of(
+                "code", errorCode.getCode(),
+                "combineCode", errorCode.getCombineCode(),
+                "message", e.getMessage(),
+                "result", "fail"
+        );
+        return ResponseEntity.status(errorCode.getStatus()).body(body);
+    }
+
     @ExceptionHandler(DuplicateEmailException.class)
     public ResponseEntity<Map<String, Object>> handleDuplicateEmail(DuplicateEmailException e) {
-
-        // 프론트엔드가 파싱하기 좋게 딱 정제된 JSON 바디를 만듭니다.
+        log.warn("DuplicateEmailException occurred: {}", e.getMessage());
         Map<String, Object> body = Map.of(
-                "status", 400,
-                "error", "Bad Request",
-                "message", e.getMessage() // 👈 서비스에서 적은 "이미 가입된 이메일 주소입니다..."가 들어감
+                "code", 2002,
+                "combineCode", "MEMBER-2002",
+                "message", e.getMessage(),
+                "result", "fail"
         );
-
-        // 프론트에게 400 코드와 함께 위 바디를 리턴
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<SocialLoginErrorRespDto> handleDataIntegrity(DataIntegrityViolationException e) {
-        log.warn("Member request failed due to invalid data", e);
-        return badRequest("요청 값이 올바르지 않습니다.");
+    public ResponseEntity<Map<String, Object>> handleDataIntegrity(DataIntegrityViolationException e) {
+        log.warn("DataIntegrityViolationException occurred", e);
+        Map<String, Object> body = Map.of(
+                "code", 9998,
+                "combineCode", "SYSTEM-9998",
+                "message", "요청 값이 올바르지 않습니다.",
+                "result", "fail"
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
     @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class, NoSuchElementException.class})
-    public ResponseEntity<SocialLoginErrorRespDto> handleBadRequest(RuntimeException e) {
-        log.warn("Member request failed: {}", e.getMessage());
-        return badRequest(resolveMessage(e));
+    public ResponseEntity<Map<String, Object>> handleBadRequest(RuntimeException e) {
+        log.warn("Member bad request: {}", e.getMessage());
+        Map<String, Object> body = Map.of(
+                "code", 9999,
+                "combineCode", "SYSTEM-9999",
+                "message", resolveMessage(e),
+                "result", "fail"
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
-
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<SocialLoginErrorRespDto> handleRuntime(RuntimeException e) {
-        log.warn("Member request failed", e);
-        return badRequest(resolveMessage(e));
-    }
-
-    private ResponseEntity<SocialLoginErrorRespDto> badRequest(String message) {
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(SocialWithdrawnUserException.class)
+    public ResponseEntity<SocialLoginErrorRespDto> handleSocialWithdrawnUser(SocialWithdrawnUserException e) {
+        log.warn("SocialWithdrawnUserException occurred: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(SocialLoginErrorRespDto.builder()
                         .result("fail")
-                        .message(message)
+                        .message(e.getMessage())
+                        .email(e.getEmail())
                         .build());
+    }
+
+    @ExceptionHandler(SocialLinkRequiredException.class)
+    public ResponseEntity<SocialLoginErrorRespDto> handleSocialLinkRequired(SocialLinkRequiredException e) {
+        log.warn("SocialLinkRequiredException occurred: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(SocialLoginErrorRespDto.builder()
+                        .result("fail")
+                        .message("소셜 연동이 필요합니다.")
+                        .email(e.getEmail())
+                        .socialId(e.getSocialId())
+                        .provider(e.getProvider())
+                        .build());
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Map<String, Object>> handleRuntime(RuntimeException e) {
+        log.warn("Member runtime request failed", e);
+        Map<String, Object> body = Map.of(
+                "code", 9999,
+                "combineCode", "SYSTEM-9999",
+                "message", resolveMessage(e),
+                "result", "fail"
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
     private String resolveMessage(RuntimeException e) {
         String message = e.getMessage();
         return message == null || message.isBlank() ? "요청을 처리할 수 없습니다." : message;
     }
-
-
 }
