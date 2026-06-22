@@ -286,14 +286,19 @@ public class MemberService {
     }
 
     public void sendEmailCode(FindPasswordReqDto dto) {
-        profileRepository.findByMemberUsernameAndEmail(dto.getUsername(), dto.getEmail())
+        // 1. DB에서 회원 정보(프로필) 검증 및 조회
+        MemberProfileEntity profile = profileRepository.findByMemberUsernameAndEmail(dto.getUsername(), dto.getEmail())
                 .orElseThrow(() -> new RuntimeException("회원 없음"));
 
+        // 2. 인증코드 생성
         String code = String.valueOf((int)((Math.random() * 900000) + 100000));
-        authCodeStore.put(dto.getEmail(), new AuthInfo(code));
 
-        // 🚨 공통 비동기 메서드 호출 ("비밀번호 재설정" 라벨 투입)
-        emailSender.sendEmailAsync(dto.getUsername(), code, "비밀번호 재설정");
+        // 💡 [수정] 원래 설계 의도대로 Key를 dto.getUsername()으로 저장합니다!
+        // 이렇게 해야 나중에 verifyEmailCode에서 member.getUsername()으로 찾을 수 있습니다.
+        authCodeStore.put(dto.getUsername(), new AuthInfo(code));
+
+        // 💡 [수정] 메일은 아이디가 아니라 실제 이메일 주소(profile.getEmail())로 발송합니다.
+        emailSender.sendEmailAsync(profile.getEmail(), code, "비밀번호 재설정");
     }
 
     public void verifyEmailCode(
@@ -333,30 +338,22 @@ public class MemberService {
 
     @Transactional
     public void resetPassword(ResetPasswordReqDto dto) {
-        // 1. 인증 여부 체크
-        if (!verifiedEmailSet.contains(dto.getEmail())) {
+        // 💡 [수정] dto.getEmail() 대신 dto.getUsername()으로 인증 여부를 체크합니다.
+        if (!verifiedEmailSet.contains(dto.getUsername())) {
             throw new MemberException(ErrorCode.SYSTEM_ERROR, "인증되지 않은 사용자");
         }
-        // 2. 비밀번호 확인
-        if (!dto.getNewPassword()
-                .equals(dto.getNewPasswordCheck())) {
-            throw new MemberException(ErrorCode.PASSWORD_MISMATCH, "비밀번호 불일치");
-        }
-        // 3. 회원 조회 (email → profile → member)
-        MemberProfileEntity profile =
-                profileRepository
-                        .findByEmail(dto.getEmail())
-                        .orElseThrow();
-        MemberEntity member = profile.getMember();
+
+        // 3. 회원 조회 (가져온 username 기반으로 안전하게 조회)
+        MemberEntity member = memberRepository.findByUsername(dto.getUsername())
+                .orElseThrow(() -> new MemberException(ErrorCode.MEMBER_NOT_FOUND));
 
         // 4. 비밀번호 변경
-        String encoded =
-                passwordEncoder.encode(dto.getNewPassword());
-
+        String encoded = passwordEncoder.encode(dto.getNewPassword());
         member.changePassword(encoded);
 
-        // 5. 인증 상태 제거 (1회성)
-        verifiedEmailSet.remove(dto.getEmail());
+        // 5. 인증 상태 제거 (1회성 처리)
+        // 💡 [수정] 지울 때도 당연히 username을 지워줍니다.
+        verifiedEmailSet.remove(dto.getUsername());
     }
 
     @Transactional
