@@ -159,8 +159,7 @@ public class StayService {
     }
 
     public StayResDto selectOneForSeller(Long id, Long memberId) {
-        StayEntity stay = stayRepository.findById(id)
-                .orElseThrow(() -> new ProductException(ErrorCode.STAY_NOT_FOUND));
+        StayEntity stay = findStay(id);
         verifyStayOwnership(stay, memberId);
 
         List<StayResDto.PictureInfo> pictures = stayPictureRepository.findByStayOrderBySortOrder(stay)
@@ -382,8 +381,12 @@ public class StayService {
     }
 
     private StayEntity findStay(Long id) {
-        return stayRepository.findByIdAndDelYn(id, "N")
+        StayEntity stay = stayRepository.findByIdAndDelYn(id, "N")
                 .orElseThrow(() -> new ProductException(ErrorCode.STAY_NOT_FOUND));
+        if (stay.getSpace() == null || "Y".equals(stay.getSpace().getDelYn())) {
+            throw new ProductException(ErrorCode.STAY_NOT_FOUND);
+        }
+        return stay;
     }
 
     private void verifySpaceOwnership(SpaceEntity space, Long memberId) {
