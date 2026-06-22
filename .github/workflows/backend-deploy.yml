@@ -223,20 +223,31 @@ jobs:
             }
             EOF
 
-            NGINX_API_CONF=$(sudo grep -Rsl "server_name .*api\.sandykey\.shop" /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null | head -n 1 || true)
-            if [ -n "$NGINX_API_CONF" ] && sudo perl -0ne 'exit((/server\s*\{(?:(?!server\s*\{).)*server_name\s+[^;]*api\.sandykey\.shop[^;]*;(?:(?!server\s*\{).)*client_max_body_size/s) ? 0 : 1)' "$NGINX_API_CONF"; then
-              sudo cp "$NGINX_API_CONF" "$NGINX_API_CONF.bak.$(date +%Y%m%d%H%M%S)"
-              sudo perl -0pi -e 's#(server\s*\{(?:(?!server\s*\{).)*server_name\s+[^;]*api\.sandykey\.shop[^;]*;(?:(?!server\s*\{).)*?)client_max_body_size\s+\S+;#$1client_max_body_size 10g;#s' "$NGINX_API_CONF"
-            elif [ -n "$NGINX_API_CONF" ]; then
-              sudo cp "$NGINX_API_CONF" "$NGINX_API_CONF.bak.$(date +%Y%m%d%H%M%S)"
-              sudo perl -0pi -e 's#(server\s*\{(?:(?!server\s*\{).)*server_name\s+[^;]*api\.sandykey\.shop[^;]*;\n)#$1\n    client_max_body_size 10g;\n#s' "$NGINX_API_CONF"
+            sudo tee /etc/nginx/conf.d/sandykeyboard-upload-limit.conf >/dev/null <<'EOF'
+            client_max_body_size 10g;
+            EOF
+
+            NGINX_API_CONFS=$(sudo grep -Rsl "server_name .*api\.sandykey\.shop" /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null || true)
+            if [ -n "$NGINX_API_CONFS" ]; then
+              printf '%s\n' "$NGINX_API_CONFS" | while IFS= read -r NGINX_API_CONF; do
+                [ -n "$NGINX_API_CONF" ] || continue
+                echo "Updating nginx API server block: $NGINX_API_CONF"
+                sudo cp "$NGINX_API_CONF" "$NGINX_API_CONF.bak.$(date +%Y%m%d%H%M%S)"
+                if sudo grep -q "client_max_body_size" "$NGINX_API_CONF"; then
+                  sudo perl -0pi -e 's#client_max_body_size\s+\S+;#client_max_body_size 10g;#g' "$NGINX_API_CONF"
+                else
+                  sudo perl -0pi -e 's#(server\s*\{(?:(?!server\s*\{).)*server_name\s+[^;]*api\.sandykey\.shop[^;]*;\n)#$1\n    client_max_body_size 10g;\n#s' "$NGINX_API_CONF"
+                fi
+              done
             fi
+
+            NGINX_API_CONF=$(printf '%s\n' "$NGINX_API_CONFS" | head -n 1 || true)
             if [ -n "$NGINX_API_CONF" ] && ! sudo grep -q "location /ws-connect" "$NGINX_API_CONF"; then
               sudo cp "$NGINX_API_CONF" "$NGINX_API_CONF.bak.$(date +%Y%m%d%H%M%S)"
               sudo perl -0pi -e 's#(server\s*\{(?:(?!server\s*\{).)*server_name\s+[^;]*api\.sandykey\.shop[^;]*;(?:(?!server\s*\{).)*?)(\n\s*})#$1\n\n    location /ws-connect {\n        proxy_pass http://127.0.0.1:8001/ws-connect;\n        proxy_http_version 1.1;\n        proxy_set_header Upgrade \$http_upgrade;\n        proxy_set_header Connection \$connection_upgrade;\n        proxy_set_header Host \$host;\n        proxy_set_header X-Real-IP \$remote_addr;\n        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n        proxy_set_header X-Forwarded-Proto \$scheme;\n        proxy_read_timeout 3600s;\n        proxy_send_timeout 3600s;\n    }\n$2#s' "$NGINX_API_CONF"
             fi
 
-            if [ -n "$NGINX_API_CONF" ]; then
+            if [ -n "$NGINX_API_CONFS" ]; then
               sudo nginx -t
               sudo systemctl reload nginx
             else
