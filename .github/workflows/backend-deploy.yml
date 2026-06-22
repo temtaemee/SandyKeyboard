@@ -118,9 +118,7 @@ jobs:
             set -euo pipefail
 
             APP_NAME=sandykeyboard
-            CANDIDATE_NAME=sandykeyboard-candidate
             APP_PORT=8001
-            CANDIDATE_PORT=8002
 
             wait_for_health() {
               local url="$1"
@@ -188,20 +186,8 @@ jobs:
             echo "Pulling image: $IMAGE"
             sudo docker pull "$IMAGE"
 
-            echo "Starting candidate container on port $CANDIDATE_PORT before touching current production container."
-            sudo docker rm -f "$CANDIDATE_NAME" || true
-            sudo docker run -d \
-              --name "$CANDIDATE_NAME" \
-              --env-file /tmp/sandykeyboard.env \
-              -p "$CANDIDATE_PORT:$APP_PORT" \
-              "$IMAGE"
-
-            if ! wait_for_health "http://127.0.0.1:$CANDIDATE_PORT/actuator/health" "$CANDIDATE_NAME" 90 /tmp/sandykeyboard-candidate-health.json; then
-              sudo docker rm -f "$CANDIDATE_NAME" || true
-              exit 1
-            fi
-
-            echo "Candidate is healthy. Replacing production container."
+            echo "Replacing production container on port $APP_PORT."
+            sudo docker rm -f sandykeyboard-candidate || true
             sudo docker stop "$APP_NAME" || true
             sudo docker rm "$APP_NAME" || true
             sudo docker run -d \
@@ -210,9 +196,8 @@ jobs:
               --env-file /tmp/sandykeyboard.env \
               -p "$APP_PORT:$APP_PORT" \
               "$IMAGE"
-            sudo docker rm -f "$CANDIDATE_NAME" || true
 
-            if ! wait_for_health "http://127.0.0.1:$APP_PORT/actuator/health" "$APP_NAME" 60 /tmp/sandykeyboard-health.json; then
+            if ! wait_for_health "http://127.0.0.1:$APP_PORT/actuator/health" "$APP_NAME" 90 /tmp/sandykeyboard-health.json; then
               sudo docker rm -f "$APP_NAME" || true
 
               if [ -n "$PREVIOUS_IMAGE" ]; then
@@ -223,7 +208,7 @@ jobs:
                   --env-file /tmp/sandykeyboard.env \
                   -p "$APP_PORT:$APP_PORT" \
                   "$PREVIOUS_IMAGE"
-                wait_for_health "http://127.0.0.1:$APP_PORT/actuator/health" "$APP_NAME" 60 /tmp/sandykeyboard-rollback-health.json
+                wait_for_health "http://127.0.0.1:$APP_PORT/actuator/health" "$APP_NAME" 90 /tmp/sandykeyboard-rollback-health.json
               else
                 echo "No previous image found for rollback."
               fi
