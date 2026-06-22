@@ -84,7 +84,9 @@ public class StayRepositoryImpl implements StayRepositoryCustom {
                 .selectFrom(stay)
                 .join(stay.space).fetchJoin()
                 .where(
-                        stay.space.seller.id.eq(memberId)
+                        stay.space.seller.id.eq(memberId),
+                        stay.delYn.eq("N"),
+                        stay.space.delYn.eq("N")
                 )
                 .orderBy(stay.createdAt.desc())
                 .fetch();

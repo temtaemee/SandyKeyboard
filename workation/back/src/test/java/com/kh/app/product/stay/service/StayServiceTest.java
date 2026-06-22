@@ -65,7 +65,21 @@ class StayServiceTest {
 
     @Test
     void selectOneForSellerFailsIfStayNotFound() {
-        when(stayRepository.findById(1L)).thenReturn(Optional.empty());
+        when(stayRepository.findByIdAndDelYn(1L, "N")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> stayService.selectOneForSeller(1L, 10L))
+                .isInstanceOf(ProductException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.STAY_NOT_FOUND);
+    }
+
+    @Test
+    void selectOneForSellerFailsIfSpaceIsDeleted() {
+        MemberEntity seller = MemberEntity.builder().id(10L).build();
+        SpaceEntity space = SpaceEntity.builder().seller(seller).build();
+        space.delete();
+        StayEntity stay = StayEntity.builder().id(1L).space(space).build();
+
+        when(stayRepository.findByIdAndDelYn(1L, "N")).thenReturn(Optional.of(stay));
 
         assertThatThrownBy(() -> stayService.selectOneForSeller(1L, 10L))
                 .isInstanceOf(ProductException.class)
@@ -78,7 +92,7 @@ class StayServiceTest {
         SpaceEntity space = SpaceEntity.builder().seller(seller).build();
         StayEntity stay = StayEntity.builder().id(1L).space(space).build();
 
-        when(stayRepository.findById(1L)).thenReturn(Optional.of(stay));
+        when(stayRepository.findByIdAndDelYn(1L, "N")).thenReturn(Optional.of(stay));
 
         assertThatThrownBy(() -> stayService.selectOneForSeller(1L, 999L)) // non-owner memberId
                 .isInstanceOf(ProductException.class)
