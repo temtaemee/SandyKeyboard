@@ -227,7 +227,7 @@ jobs:
             client_max_body_size 10g;
             EOF
 
-            NGINX_API_CONFS=$(sudo grep -Rsl "server_name .*api\.sandykey\.shop" /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null || true)
+            NGINX_API_CONFS=$(sudo grep -Rsl --exclude="*.bak*" "server_name .*api\.sandykey\.shop" /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null || true)
             if [ -n "$NGINX_API_CONFS" ]; then
               printf '%s\n' "$NGINX_API_CONFS" | while IFS= read -r NGINX_API_CONF; do
                 [ -n "$NGINX_API_CONF" ] || continue
